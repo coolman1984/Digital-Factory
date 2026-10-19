@@ -50,7 +50,8 @@
     }
     if (acc2 > 1) {
       acc2 = 0;
-      if (['leadership', 'predict', 'energy', 'control', 'scenarios'].includes(DF.view)) DF.refresh();
+      if (DF.view === 'control') DF.renderControl(false, true);
+      else if (['leadership', 'predict', 'energy', 'scenarios'].includes(DF.view)) DF.refresh();
       if (DF.view === 'maintenance') DF.renderMachines();
     }
   });
@@ -108,9 +109,24 @@
       if (!b) return;
       const sp = +b.dataset.simspeed;
       Sim.setSpeed(sp);
-      simSpeed.querySelectorAll('[data-simspeed]').forEach(btn => btn.classList.toggle('on', +btn.dataset.simspeed === sp));
+      simSpeed.querySelectorAll('[data-simspeed]').forEach(btn => {
+        const on = +btn.dataset.simspeed === sp;
+        btn.classList.toggle('on', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
     });
-    Sim.on(e => { if (e.type === 'speed') simSpeed.querySelectorAll('[data-simspeed]').forEach(btn => btn.classList.toggle('on', +btn.dataset.simspeed === e.speed)); });
+    simSpeed.querySelectorAll('[data-simspeed]').forEach(btn => {
+      const on = btn.classList.contains('on');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    Sim.on(e => {
+      if (e.type !== 'speed') return;
+      simSpeed.querySelectorAll('[data-simspeed]').forEach(btn => {
+        const on = +btn.dataset.simspeed === e.speed;
+        btn.classList.toggle('on', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    });
   }
 
   Sim.start();

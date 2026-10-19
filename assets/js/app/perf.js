@@ -284,7 +284,6 @@
     const hours = o.shifts * 7.5;
     const common = { hours, maxSteps: 4200, lineSpeed: o.speed / 100 };
     const r = Sim.runShiftSimulation(Object.assign({ seedSalt: 0x77686174, pdm: o.pdm, vision: o.vision, energy: o.energy }, common));
-    const b = Sim.runShiftSimulation(Object.assign({ seedSalt: 0x77686175, pdm: false, vision: false, energy: false }, common));
     const lines = r.lines.map(l => ({
       id: l.id, name: l.name,
       cap: l.good,
@@ -296,7 +295,7 @@
     const scrap = r.scrap;
     const cost = (o.shifts * 380000 + out * kwhU * 2.2 + scrap * 1800) / Math.max(1, out);
     const bottleneck = lines.slice().sort((a, b) => a.cap / a.req - b.cap / b.req)[0];
-    return { oee: r.oee, oeeBaseline: b.oee, lines, req, out, otd: out / req, cost, mwh: out * kwhU / 1000, scrap, bottleneck };
+    return { oee: r.oee, lines, req, out, otd: out / req, cost, mwh: out * kwhU / 1000, scrap, bottleneck };
   }
   DF.model = model;
   const inputs = () => ({ demand: +$('#sDemand').value, shifts: +$('#sShifts').value, speed: +$('#sSpeed').value, pdm: $('#tPdm').checked, vision: $('#tVision').checked, energy: $('#tEnergy').checked });
@@ -342,7 +341,9 @@
     }
     $('#simAdvice').innerHTML = `${icon('sparkles')}<p>${adv}</p>`;
   };
-  $$('.sim-controls input').forEach(i => i.addEventListener('input', DF.runSim));
+  let simDebounce;
+  const scheduleSim = () => { clearTimeout(simDebounce); simDebounce = setTimeout(DF.runSim, 280); };
+  $$('.sim-controls input').forEach(i => i.addEventListener('input', scheduleSim));
   $$('[data-preset]').forEach(b => b.addEventListener('click', () => {
     const p = b.dataset.preset;
     if (p === 'peak') { $('#sDemand').value = 135; $('#sShifts').value = 2; $('#sSpeed').value = 100; $('#tPdm').checked = $('#tVision').checked = $('#tEnergy').checked = true; }

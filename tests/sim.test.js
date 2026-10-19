@@ -16,7 +16,7 @@ function approx(a, b, eps) {
 }
 
 function ledgerStateSum(L) {
-  return L.run + L.plannedStop + L.starved + L.blocked + L.slow + L.down.breakdown + L.down.other;
+  return L.run + L.plannedStop + L.starved + L.blocked + L.setup + L.minorStop + L.down.breakdown + L.down.other;
 }
 
 function checkOeeLine(l) {
@@ -27,7 +27,15 @@ function checkOeeLine(l) {
   assert(c.Q >= 0 && c.Q <= 1, 'Q in range');
   assert(c.oee >= 0 && c.oee <= 1, 'OEE in range');
   approx(c.oee, c.A * c.P * c.Q, 1e-4);
-  approx(ledgerStateSum(L), L.elapsed, Math.max(0.5, L.elapsed * 0.02));
+  approx(ledgerStateSum(L), L.elapsed, Math.max(1e-6, L.elapsed * 1e-6));
+
+  approx(L.losses.minorStop + L.losses.reducedSpeed, L.slow, Math.max(1e-4, L.slow * 1e-4));
+
+  const rejSec = (L.total - L.good) * L.idealCycle;
+  approx(L.losses.productionRejects + L.losses.startupRejects, rejSec, Math.max(1e-4, rejSec * 1e-4));
+
+  const plannedProd = Math.max(0, L.planned - L.plannedStop);
+  approx(plannedProd * c.A, L.run, Math.max(1e-6, L.run * 1e-6));
 }
 
 const t0 = Date.now();
@@ -40,6 +48,10 @@ const runC = Sim.runShiftSimulation({ hours: 2, seedSalt: 43, maxSteps: 900 });
 assert(runA.out !== runC.out || runA.scrap !== runC.scrap, 'different seed salt => different output');
 
 runA.lines.forEach(checkOeeLine);
+
+const pdm = Sim.runShiftSimulation({ hours: 15, seedSalt: 99, maxSteps: 4200, pdm: true, vision: false, energy: false });
+const base = Sim.runShiftSimulation({ hours: 15, seedSalt: 99, maxSteps: 4200, pdm: false, vision: false, energy: false });
+assert(pdm.oee > base.oee + 0.002, 'PdM should lift OEE meaningfully');
 
 const elapsed = Date.now() - t0;
 assert(elapsed < 8000, 'headless runs complete in reasonable time (' + elapsed + ' ms)');
