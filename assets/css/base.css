@@ -1,0 +1,137 @@
+/* Digital Factory — shared design tokens & primitives */
+/* Fonts: Alexandria (Arabic + Latin) and JetBrains Mono, SIL OFL 1.1 — see assets/fonts/ */
+@font-face { font-family: "Alexandria"; src: url("../fonts/Alexandria-latin.woff2") format("woff2"); font-weight: 100 900; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+@font-face { font-family: "Alexandria"; src: url("../fonts/Alexandria-arabic.woff2") format("woff2"); font-weight: 100 900; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F; }
+@font-face { font-family: "JetBrains Mono"; src: url("../fonts/JetBrainsMono-latin.woff2") format("woff2"); font-weight: 100 800; font-display: swap; }
+:root {
+  --bg: #05080f;
+  --bg-2: #0a1020;
+  --panel: rgba(16, 26, 48, 0.72);
+  --panel-solid: #0f1930;
+  --panel-2: rgba(22, 36, 66, 0.8);
+  --line: rgba(120, 170, 255, 0.14);
+  --line-strong: rgba(120, 170, 255, 0.3);
+  --text: #e8f0ff;
+  --text-2: #9fb2d4;
+  --text-3: #8797b8;
+  --cyan: #22d3ee;
+  --blue: #4f8cff;
+  --violet: #a78bfa;
+  --green: #34d399;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --pink: #f472b6;
+  --grad: linear-gradient(120deg, #22d3ee 0%, #4f8cff 50%, #a78bfa 100%);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  --font: "Alexandria", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  --mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+a { color: var(--cyan); text-decoration: none; }
+button { font-family: inherit; }
+
+.grad-text {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-grid {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(79, 140, 255, 0.18), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(34, 211, 238, 0.12), transparent 60%),
+    linear-gradient(var(--bg), var(--bg));
+}
+.bg-grid::after {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(120, 170, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 170, 255, 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 22px; border-radius: 999px;
+  font-weight: 600; font-size: 15px; cursor: pointer;
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.04); color: var(--text);
+  transition: transform .15s ease, background .2s ease, box-shadow .2s ease;
+}
+.btn:hover { transform: translateY(-1px); background: rgba(255, 255, 255, 0.08); }
+.btn.primary {
+  border: none; color: #04101f;
+  background: var(--grad);
+  box-shadow: 0 8px 30px rgba(79, 140, 255, 0.35);
+}
+.btn.primary:hover { box-shadow: 0 10px 40px rgba(79, 140, 255, 0.55); }
+.btn.sm { padding: 8px 15px; font-size: 14px; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(79, 140, 255, 0.08);
+  font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text-2);
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
+.dot.live { animation: pulse 1.6s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.mono { font-family: var(--mono); }
+.muted { color: var(--text-2); }
+.faint { color: var(--text-3); }
+.c-green { color: var(--green); } .c-amber { color: var(--amber); } .c-red { color: var(--red); }
+.c-cyan { color: var(--cyan); } .c-blue { color: var(--blue); } .c-violet { color: var(--violet); }
+
+.logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: -.01em; color: var(--text); }
+.logo-mark {
+  width: 30px; height: 30px; border-radius: 9px; position: relative;
+  background: var(--grad); box-shadow: 0 0 24px rgba(79, 140, 255, 0.5);
+}
+.logo-mark::before, .logo-mark::after {
+  content: ""; position: absolute; background: #05080f; border-radius: 2px;
+}
+.logo-mark::before { left: 7px; top: 7px; width: 7px; height: 16px; }
+.logo-mark::after { left: 16px; top: 13px; width: 7px; height: 10px; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(120, 170, 255, 0.2); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Motion vocabulary (after the Animation studio's web kit): rise from blur, words one by one. Opt-in by data attributes. */
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 6px; }
+[data-reveal] { transition: opacity .9s var(--ease), transform .9s var(--ease), filter .9s var(--ease); }
+.js [data-reveal]:not(.in) { opacity: 0; transform: translateY(28px); filter: blur(8px); }
+[data-split] .w { display: inline-block; transition: opacity .7s var(--ease), transform .7s var(--ease), filter .7s var(--ease); transition-delay: calc(var(--i) * 70ms + var(--d, 0ms)); }
+.js [data-split]:not(.in) .w { opacity: 0; transform: translateY(.45em); filter: blur(10px); }
+.progress-top { position: fixed; inset-inline: 0; top: 0; height: 3px; background: var(--grad); transform-origin: 0 50%; transform: scaleX(0); z-index: 100; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; transition-delay: 0ms !important; }
+  [data-reveal], [data-split] .w { opacity: 1 !important; transform: none !important; filter: none !important; }
+}
