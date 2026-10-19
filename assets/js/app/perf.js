@@ -281,15 +281,22 @@
   /* ---------------- what-if ---------------- */
   const REQ = { L1: 0.80, L2: 0.72, L3: 0.86, L4: 0.78, L5: 0.75 };
   function model(o) {
-    const over = Math.max(0, o.speed - 100);
-    const A = (o.pdm ? 0.93 : 0.855) - over * 0.0022, Pf = 0.95 - Math.max(0, 100 - o.speed) * 0.001, Q = (o.vision ? 0.992 : 0.974) - over * 0.0011;
-    const oee = A * Pf * Q, hours = o.shifts * 7.5;
-    const lines = Sim.state.lines.map(l => ({ id: l.id, name: l.name, cap: l.rate * (o.speed / 100) * hours * oee, req: l.rate * 15 * REQ[l.id] * (o.demand / 100) }));
-    const req = lines.reduce((a, l) => a + l.req, 0), out = lines.reduce((a, l) => a + Math.min(l.cap, l.req), 0);
-    const kwhU = 1.18 * (o.energy ? 0.9 : 1), scrap = out * (1 - Q);
+    const hours = o.shifts * 7.5;
+    const common = { hours, maxSteps: 4200, lineSpeed: o.speed / 100 };
+    const r = Sim.runShiftSimulation(Object.assign({ seedSalt: 0x77686174, pdm: o.pdm, vision: o.vision, energy: o.energy }, common));
+    const b = Sim.runShiftSimulation(Object.assign({ seedSalt: 0x77686175, pdm: false, vision: false, energy: false }, common));
+    const lines = r.lines.map(l => ({
+      id: l.id, name: l.name,
+      cap: l.good,
+      req: l.rate * hours * REQ[l.id] * (o.demand / 100)
+    }));
+    const req = lines.reduce((a, l) => a + l.req, 0);
+    const out = lines.reduce((a, l) => a + Math.min(l.cap, l.req), 0);
+    const kwhU = 1.18 * (o.energy ? 0.9 : 1);
+    const scrap = r.scrap;
     const cost = (o.shifts * 380000 + out * kwhU * 2.2 + scrap * 1800) / Math.max(1, out);
     const bottleneck = lines.slice().sort((a, b) => a.cap / a.req - b.cap / b.req)[0];
-    return { oee, lines, req, out, otd: out / req, cost, mwh: out * kwhU / 1000, scrap, bottleneck };
+    return { oee: r.oee, oeeBaseline: b.oee, lines, req, out, otd: out / req, cost, mwh: out * kwhU / 1000, scrap, bottleneck };
   }
   DF.model = model;
   const inputs = () => ({ demand: +$('#sDemand').value, shifts: +$('#sShifts').value, speed: +$('#sSpeed').value, pdm: $('#tPdm').checked, vision: $('#tVision').checked, energy: $('#tEnergy').checked });

@@ -348,9 +348,11 @@
         if (shiftWarmup && made > 0) L.losses.startupRejects += (made - good) * 0.35;
         L.elapsed += simDt;
         L.planned += simDt;
+        let minor = false;
+        for (const s of l.stations) if (s.stoch && s.stoch.minorLeft > 0) { minor = true; break; }
         if (l.stopped || l.paused) {
           L.down.other += simDt;
-          L.losses.breakdown += simDt * 0.5;
+          L.losses.breakdown += simDt;
         } else if (l.starved) {
           L.starved += simDt;
         } else if (maint) {
@@ -359,16 +361,15 @@
         } else if (breakdown) {
           L.down.breakdown += simDt;
           L.losses.breakdown += simDt;
-        } else if (blocked && !breakdown) {
+        } else if (blocked) {
           L.blocked += simDt;
-        } else if (halted) {
-          L.down.other += simDt;
+        } else if (slow || minor) {
+          L.slow += simDt;
+          L.run += simDt;
+          if (slow) L.losses.reducedSpeed += simDt;
+          if (minor) L.losses.minorStop += simDt;
         } else {
           L.run += simDt;
-          if (slow) { L.slow += simDt; L.losses.reducedSpeed += simDt; }
-          for (const s of l.stations) {
-            if (s.stoch && s.stoch.minorLeft > 0) { L.minorStop += simDt; L.losses.minorStop += simDt; break; }
-          }
         }
         const comp = oeeFromLedger(L);
         l.oeeComponents = comp;
