@@ -2,6 +2,7 @@
 (function () {
   'use strict';
   const { $, fmt, pct, money, esc, STATE_LABEL } = DF;
+  const copilotRng = DFRng.stream('copilot');
   const chat = $('#chat');
   const CHIPS = ['Summarize this shift', 'Will we hit the plan?', 'What should I decide now?', 'Why is OEE not higher?', 'What are the alarms about?', 'Write the shift handover'];
   $('#chips').innerHTML = CHIPS.map(c => `<button type="button" class="chip-btn">${c}</button>`).join('');
@@ -29,7 +30,7 @@
     user(q);
     const t = document.createElement('div'); t.className = 'msg bot'; t.innerHTML = '<span class="typing"><i></i><i></i><i></i></span>';
     chat.append(t); chat.scrollTop = chat.scrollHeight;
-    setTimeout(() => { t.remove(); const a = answer(q); bot(a.html, a.src); }, 600 + Math.random() * 500);
+    setTimeout(() => { t.remove(); const a = answer(q); bot(a.html, a.src); }, 600 + copilotRng.range(0, 500));
   }
   DF.ask = ask;
 

@@ -2,6 +2,8 @@
 (function () {
   'use strict';
   const { $, $$, fmt, pct, money, esc, icon, P, STATE_LABEL, STATE_CHIP } = DF;
+  const acousticRng = DFRng.stream('acoustic');
+  const visionRng = DFRng.stream('vision');
 
   /* ---------------- leadership ---------------- */
   const PILLARS = [
@@ -102,10 +104,10 @@
     ctx.putImageData(img, 0, 0);
     for (let b = 0; b < bins; b++) {
       const f = 1 - b / bins;
-      let e = 0.08 + Math.random() * 0.08;
+      let e = 0.08 + acousticRng.range(0, 0.08);
       if (!idle) {
         e += Math.exp(-((f - 0.12) ** 2) / 0.002) * 0.7 + Math.exp(-((f - 0.24) ** 2) / 0.002) * 0.4;
-        if (defect) e += Math.exp(-((f - 0.7) ** 2) / 0.004) * (0.25 + wear * 1.6) * (0.6 + Math.random() * 0.4);
+        if (defect) e += Math.exp(-((f - 0.7) ** 2) / 0.004) * (0.25 + wear * 1.6) * (0.6 + acousticRng.range(0, 0.4));
       }
       e = Math.min(1, e);
       const c = e > 0.6 ? `rgba(255,176,32,${e})` : `rgba(33,137,255,${Math.min(1, e * 1.4)})`;
@@ -137,18 +139,18 @@
   function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
   function newBoard() {
     const S = Sim.state, lineId = boardNo % 2 ? 'L2' : 'L1', l = Sim.line(lineId), parts = [];
-    for (let i = 0; i < 4; i++) parts.push({ type: 'ic', x: 0.08 + i * 0.19 + Math.random() * 0.03, y: 0.18 + Math.random() * 0.08, w: 0.11 + Math.random() * 0.04, h: 0.16 + Math.random() * 0.05 });
+    for (let i = 0; i < 4; i++) parts.push({ type: 'ic', x: 0.08 + i * 0.19 + visionRng.range(0, 0.03), y: 0.18 + visionRng.range(0, 0.08), w: 0.11 + visionRng.range(0, 0.04), h: 0.16 + visionRng.range(0, 0.05) });
     for (let r = 0; r < 3; r++) for (let c = 0; c < 9; c++) parts.push({ type: 'p', x: 0.08 + c * 0.095, y: 0.56 + r * 0.12, w: 0.035, h: 0.02, rot: (r + c) % 3 === 0 });
     parts.push({ type: 'cap', x: 0.86, y: 0.16, r: 0.04 });
     const defs = [];
-    if (Math.random() < Math.min(0.85, 0.22 * l.defectMult)) {
+    if (visionRng.chance(Math.min(0.85, 0.22 * l.defectMult))) {
       const hot = S.active.solder && lineId === 'L2';
-      const type = hot ? (Math.random() < 0.8 ? 'Solder bridge' : 'Insufficient solder') : DEFECTS[Math.floor(Math.random() * DEFECTS.length)];
+      const type = hot ? (visionRng.chance(0.8) ? 'Solder bridge' : 'Insufficient solder') : DEFECTS[visionRng.int(DEFECTS.length)];
       const cands = parts.filter(q => type === 'Solder bridge' ? q.type === 'ic' : q.type === 'p');
-      const target = cands[Math.floor(Math.random() * cands.length)];
-      target.defect = type; defs.push({ type, part: target, conf: (95 + Math.random() * 4.6).toFixed(1) });
+      const target = cands[visionRng.int(cands.length)];
+      target.defect = type; defs.push({ type, part: target, conf: (95 + visionRng.range(0, 4.6)).toFixed(1) });
     }
-    board = { no: boardNo++, line: lineId, parts, defs, t: 0, ms: (11 + Math.random() * 6).toFixed(1), counted: false };
+    board = { no: boardNo++, line: lineId, parts, defs, t: 0, ms: (11 + visionRng.range(0, 6)).toFixed(1), counted: false };
   }
   function drawPart(ctx, p, bx, by, BW, BH) {
     const x = bx + BW * p.x, y = by + BH * p.y;
