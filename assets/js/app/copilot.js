@@ -83,7 +83,7 @@
     }
     if (/oee|slow|why|drop|down|stop|perform/.test(s)) {
       const wl = worst(), iss = issues(wl), loss = (0.85 - S.oee) * 100;
-      return { src: `${wl.id} PLC · MES · root-cause model`, html: `Plant OEE is <b>${pct(S.oee)}</b>${loss > 0 ? `, ${loss.toFixed(1)} points below world-class` : ', above world-class'}.<br>The biggest drag is <b>${wl.name}</b> at ${pct(wl.oee, 0)} OEE${iss.length ? ', because ' + iss.join(' and ') : ''}.<br>${iss.length ? (waiting()[0] ? `Action: approve “${esc(waiting()[0].title)}”.` : 'The line is already recovering.') : 'No active faults. The remaining gap is short stops; I can rank them by station.'}` };
+      return { src: `${wl.id} PLC · MES · root-cause model`, html: `Plant OEE is <b>${pct(S.oee)}</b>${loss > 0 ? `, ${loss.toFixed(1)} points below the 85% benchmark` : ', above the 85% benchmark'}.<br>The biggest drag is <b>${wl.name}</b> at ${pct(wl.oee, 0)} OEE${iss.length ? ', because ' + iss.join(' and ') : ''}.<br>${iss.length ? (waiting()[0] ? `Action: approve “${esc(waiting()[0].title)}”.` : 'The line is already recovering.') : 'No active faults. The remaining gap is short stops; I can rank them by station.'}` };
     }
     if (/demand|capacity|order|season|export|handle|\+/.test(s)) {
       const m = s.match(/(\d{1,3})\s*%/); const d = m ? 100 + +m[1] : 120;

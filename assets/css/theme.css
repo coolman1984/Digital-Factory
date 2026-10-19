@@ -9,8 +9,16 @@
   --line: var(--border);
   --line-strong: var(--border-strong);
   --accent: var(--brand-2);
-  --grad: var(--brand-grad);
-  --violet: #7C5CFF;
+  --grad: var(--brand);
+  --indigo: #3B4CCA;             /* second blue from the Samsung family, for charts */
+  --action: #1428A0;             /* primary button fill; white text 10:1 */
+  /* type scale (ratio ≥ 1.25) */
+  --t-sm: 13px; --t-body: 17px; --t-lg: 22px;
+  --t-h3: clamp(26px, 2.6vw, 36px); --t-h2: clamp(36px, 5vw, 72px); --t-display: clamp(44px, 7.2vw, 116px);
+  --section: clamp(96px, 12vw, 176px);
+  --r: 24px;
+  /* motion: one ease-out curve, no bounce */
+  --ease-out: cubic-bezier(.22, 1, .36, 1); --dur-ui: 200ms; --dur-in: 700ms;
   --text-3: #646B78;            /* kit #8A919E is below 4.5:1 on white; darkened for AA */
   --lane: rgba(15, 17, 21, 0.025);
   --camera: #0B0E14;
@@ -21,7 +29,8 @@
   --danger-text: #C42B2E;
 }
 [data-theme="dark"] {
-  --violet: #A78BFA;
+  --indigo: #8C9BFF;
+  --action: #1565D8;             /* white text 5:1 */
   --text-3: #8B93A3;
   --lane: rgba(255, 255, 255, 0.025);
   --brand-text: #4DA3FF;
@@ -50,15 +59,19 @@ body { font-size: 15px; height: auto; min-height: 100%; }
   background: var(--surface); color: var(--text); border-color: var(--border-strong);
 }
 .btn:where(:not(.btn-primary, .btn-secondary, .btn-ghost, .btn-success, .btn-danger, .primary)):hover:not(:disabled) { background: var(--surface-3); }
-.btn.primary { background: var(--brand-grad); color: #fff; box-shadow: 0 4px 14px rgba(33, 137, 255, .28); }
-.btn.primary:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(33, 137, 255, .4); filter: brightness(1.05); }
+.btn.primary, .btn-primary { background: var(--action); color: #fff; box-shadow: none; }
+.btn.primary:hover:not(:disabled), .btn-primary:hover:not(:disabled) { box-shadow: none; filter: none; background: var(--brand-3); }
+[data-theme="dark"] .btn.primary:hover:not(:disabled), [data-theme="dark"] .btn-primary:hover:not(:disabled) { background: var(--brand); }
+.btn { transition: background-color var(--dur-ui) var(--ease-out), border-color var(--dur-ui) var(--ease-out), color var(--dur-ui) var(--ease-out), transform var(--dur-ui) var(--ease-out); }
+.btn:active:not(:disabled) { transform: scale(.98); }
+.kpi-indigo .kpi-icon { background: color-mix(in srgb, var(--indigo) 14%, transparent); color: var(--indigo); }
 .btn.sm { height: 32px; padding: 0 13px; font-size: 13px; gap: 6px; }
 .btn .icon { width: 18px; height: 18px; }
 
 /* brand lockup (our own mark, not a third-party logo) */
 .logo { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; }
 .logo-word { font-size: 19px; font-weight: 800; letter-spacing: -0.8px; line-height: 1; }
-.logo-mark { width: 30px; height: 30px; border-radius: 9px; position: relative; flex: none; background: var(--brand-grad); }
+.logo-mark { width: 30px; height: 30px; border-radius: 9px; position: relative; flex: none; background: var(--brand); }
 .logo-mark::before, .logo-mark::after { content: ""; position: absolute; background: #fff; border-radius: 2px; }
 .logo-mark::before { left: 8px; top: 8px; width: 5px; height: 14px; }
 .logo-mark::after { left: 16px; top: 13px; width: 5px; height: 9px; }
@@ -79,11 +92,11 @@ body { font-size: 15px; height: auto; min-height: 100%; }
 #toast-root .toast { max-width: min(520px, calc(100vw - 44px)); }
 
 /* motion (after the Animation studio's web kit): rise from blur, words one by one */
-[data-reveal] { transition: opacity .9s var(--ease), transform .9s var(--ease), filter .9s var(--ease); }
+[data-reveal] { transition: opacity var(--dur-in) var(--ease-out), transform var(--dur-in) var(--ease-out), filter var(--dur-in) var(--ease-out); }
 .js [data-reveal]:not(.in) { opacity: 0; transform: translateY(24px); filter: blur(6px); }
 [data-split] .w { display: inline-block; transition: opacity .7s var(--ease), transform .7s var(--ease), filter .7s var(--ease); transition-delay: calc(var(--i) * 60ms + var(--d, 0ms)); }
 .js [data-split]:not(.in) .w { opacity: 0; transform: translateY(.4em); filter: blur(8px); }
-.progress-top { position: fixed; inset-inline: 0; top: 0; height: 3px; background: var(--brand-grad); transform-origin: 0 50%; transform: scaleX(0); z-index: 200; }
+.progress-top { position: fixed; inset-inline: 0; top: 0; height: 3px; background: var(--brand-2); transform-origin: 0 50%; transform: scaleX(0); z-index: 200; }
 
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 9px; }

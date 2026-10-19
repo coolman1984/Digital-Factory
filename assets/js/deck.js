@@ -57,7 +57,7 @@
       requestAnimationFrame(fitDemo);
     }
     const note = s.querySelector('.sn');
-    $('#notesTitle').textContent = `SPEAKER NOTES · ${n + 1}/${slides.length}`;
+    $('#notesTitle').textContent = `Speaker notes · ${n + 1}/${slides.length}`;
     $('#notesBody').textContent = note ? note.textContent.trim() : '';
     if (!fromHash && ready) history.replaceState(null, '', '#' + s.dataset.id);
   }
