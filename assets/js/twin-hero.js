@@ -4,6 +4,7 @@
    Simulated data. Pauses off-screen; with reduced motion it draws one still frame. */
 (() => {
   'use strict';
+  const heroRng = (typeof DFRng !== 'undefined' && DFRng.stream) ? DFRng.stream('twin-hero') : { range: (a, b) => a + Math.random() * (b - a) };
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   let C = {};
@@ -142,8 +143,8 @@
   set('units', units.toLocaleString('en-US')); clock();
   if (!reduce) setInterval(() => {
     clock();
-    oee = Math.min(87.2, Math.max(85.6, oee + (Math.random() - .5) * .3)); set('oee', oee.toFixed(1) + '%');
-    risk = Math.min(76, Math.max(70, risk + (Math.random() - .45) * .6)); set('risk', Math.round(risk) + '%');
+    oee = Math.min(87.2, Math.max(85.6, oee + (heroRng.range(0, 1) - .5) * .3)); set('oee', oee.toFixed(1) + '%');
+    risk = Math.min(76, Math.max(70, risk + (heroRng.range(0, 1) - .45) * .6)); set('risk', Math.round(risk) + '%');
   }, 1000);
 
   if (reduce) return;

@@ -5,13 +5,15 @@
 (function (g) {
   'use strict';
 
+  const rng = (g.DFRng && g.DFRng.stream) ? g.DFRng.stream('sim') : { range: (a, b) => a + Math.random() * (b - a), chance: p => Math.random() < p, float: () => Math.random() };
+
   const SIM_SPEED = 20;              // simulated seconds per real second
   const START = 9 * 3600 + 12 * 60;  // 09:12, shift A runs 06:00–14:00
   const SHIFT_END = 14 * 3600;
   const HIST = 120;                  // telemetry points per series
   const TIMELINE = 900;              // time-machine snapshots (one per real second)
 
-  const rnd = (a, b) => a + Math.random() * (b - a);
+  const rnd = (a, b) => rng.range(a, b);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const ema = (prev, v, k) => prev + (v - prev) * k;
 
@@ -250,7 +252,7 @@
         s.cycle = busy ? (3600 / (l.rate * l.speed)) * (1 + (s.state === 'warn' ? 0.16 : 0) + rnd(-0.03, 0.03)) : 0;
         if (s.state === 'down' || s.state === 'maint') blocked = true;
         if (s.state === 'warn') slow = true;
-        if (!warm || Math.random() < 0.6) {
+        if (!warm || rng.chance(0.6)) {
           s.hist.vib.push(+s.vib.toFixed(2)); s.hist.temp.push(+s.temp.toFixed(1)); s.hist.cycle.push(+s.cycle.toFixed(1));
           for (const k in s.hist) if (s.hist[k].length > HIST) s.hist[k].shift();
         }
@@ -345,7 +347,7 @@
       const first = l.units.filter(u => !u.flagged).reduce((m, u) => Math.min(m, u.x), 9);
       if (l.spawnAcc >= every && first > gap) {
         l.spawnAcc = 0;
-        l.units.push({ x: 0, defect: Math.random() < Math.min(0.6, defectRate * 9), flagged: false, out: 0 });
+        l.units.push({ x: 0, defect: rng.chance(Math.min(0.6, defectRate * 9)), flagged: false, out: 0 });
       }
     }
   }
@@ -751,7 +753,7 @@
   }
 
   g.Sim = {
-    SIM_SPEED, SCENARIOS, SHIFT_END,
+    SIM_SPEED, SCENARIOS, SHIFT_END, get seed() { return g.DFRng ? g.DFRng.seed : 0 },
     get state() { return S; },
     on(fn) { listeners.push(fn); },
     start() { if (!S) reset(); running = true; last = 0; requestAnimationFrame(loop); },
