@@ -20,9 +20,9 @@ window.DF = (function () {
       text: v('--text'), text2: v('--text-2'), text3: v('--text-3'), border: v('--border'), borderStrong: v('--border-strong'),
       surface: v('--surface'), surface2: v('--surface-2'), surface3: v('--surface-3'), bg: v('--bg'),
       brand: v('--brand'), brand2: v('--brand-2'), success: v('--success'), warning: v('--warning'), danger: v('--danger'),
-      violet: v('--violet'), lane: v('--lane'), dark: document.documentElement.dataset.theme === 'dark'
+      indigo: v('--indigo'), lane: v('--lane'), dark: document.documentElement.dataset.theme === 'dark'
     });
-    P.state = { run: P.success, warn: P.warning, down: P.danger, maint: P.violet };
+    P.state = { run: P.success, warn: P.warning, down: P.danger, maint: P.indigo };
   }
   readPalette();
   addEventListener('themechange', () => requestAnimationFrame(readPalette));

@@ -61,7 +61,7 @@ body { overflow-x: hidden; }
 #floor { display: block; width: 100%; height: 470px; }
 .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--text-2); }
 .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-inline-end: 6px; }
-.lg-run { background: var(--success); } .lg-warn { background: var(--warning); } .lg-down { background: var(--danger); } .lg-maint { background: var(--violet); }
+.lg-run { background: var(--success); } .lg-warn { background: var(--warning); } .lg-down { background: var(--danger); } .lg-maint { background: var(--indigo); }
 .cmd-grid .col .card { padding: 16px 18px; }
 .cmd-grid .grow { display: flex; flex-direction: column; }
 .cmd-bottom { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 16px; }
@@ -140,14 +140,14 @@ table.league, table.audit, table.alarms { width: 100%; border-collapse: collapse
 .league td, .audit td, .alarms td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .league td.num, .alarms td.num { font-variant-numeric: tabular-nums; font-weight: 650; }
 .mini-bar { height: 6px; border-radius: 99px; background: var(--surface-3); overflow: hidden; min-width: 70px; }
-.mini-bar i { display: block; height: 100%; border-radius: 99px; background: var(--brand-grad); }
+.mini-bar i { display: block; height: 100%; border-radius: 99px; background: var(--brand); }
 .readiness { display: flex; flex-direction: column; gap: 14px; }
 .rd .row { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 6px; }
 .rd .row b { font-weight: 650; }
 .rd .bar { height: 10px; border-radius: 99px; background: var(--surface-3); position: relative; overflow: hidden; }
 .rd .bar i { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: 99px; }
 .rd .bar i.now { background: var(--text-3); opacity: .45; }
-.rd .bar i.pilot { background: var(--brand-grad); }
+.rd .bar i.pilot { background: var(--brand); }
 .rd small { color: var(--text-2); font-size: 12px; }
 
 /* agents */
@@ -271,7 +271,7 @@ table.league, table.audit, table.alarms { width: 100%; border-collapse: collapse
 .pb { font-size: 13px; }
 .pb .row { display: flex; justify-content: space-between; margin-bottom: 4px; }
 .pb .bar { height: 8px; border-radius: 6px; background: var(--surface-3); overflow: hidden; }
-.pb .bar i { display: block; height: 100%; background: var(--brand-grad); border-radius: 6px; transition: width .5s; }
+.pb .bar i { display: block; height: 100%; background: var(--brand); border-radius: 6px; transition: width .5s; }
 .det-list { max-height: 300px; overflow-y: auto; font-size: 12.5px; }
 .det { display: grid; grid-template-columns: 44px 1fr auto; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
 
@@ -302,7 +302,7 @@ table.league, table.audit, table.alarms { width: 100%; border-collapse: collapse
 .drawer-h { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); }
 .chat { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: var(--bg); }
 .msg { max-width: 92%; padding: 11px 14px; border-radius: 18px; font-size: 14px; line-height: 1.55; animation: slideIn .25s; }
-.msg.user { align-self: flex-end; background: var(--brand-grad); color: #fff; border-end-end-radius: 6px; }
+.msg.user { align-self: flex-end; background: var(--brand); color: #fff; border-end-end-radius: 6px; }
 .msg.bot { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-end-start-radius: 6px; }
 .msg.bot ul, .msg.bot ol { margin: 6px 0; padding-inline-start: 18px; }
 .msg.bot .src { margin-top: 8px; font-size: 11.5px; color: var(--text-3); }
@@ -372,3 +372,8 @@ body.embed .menu-btn, body.embed #tmBtn { display: none; }
 .rd .row .hl, .ctrl label.sp b, .ctl b { color: var(--brand-text); }
 .money b.ok-text { color: var(--success-text); } .money b.danger-text { color: var(--danger-text); }
 .appr .val { color: var(--danger-text); }
+
+/* touch: topbar controls at 44px */
+@media (max-width: 980px) {
+  .topbar .btn, .topbar .btn-icon { min-height: 44px; min-width: 44px; }
+}

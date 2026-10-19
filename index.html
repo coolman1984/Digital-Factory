@@ -6,246 +6,196 @@
   <title>Digital Factory</title>
   <meta name="description" content="Digital Factory: a live digital twin, predictive AI and a production copilot for electronics manufacturing. A vision prepared for the client plant.">
   <script>try{var t=localStorage.getItem('df-theme')}catch(e){}document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')</script>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%232189FF'/%3E%3Cstop offset='1' stop-color='%231428A0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3Crect x='8' y='8' width='5' height='15' rx='1' fill='%23fff'/%3E%3Crect x='16' y='13' width='5' height='10' rx='1' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231428A0'/%3E%3Crect x='8' y='8' width='5' height='15' rx='1' fill='%23fff'/%3E%3Crect x='16' y='13' width='5' height='10' rx='1' fill='%23fff'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="assets/kit/fonts.css">
   <link rel="stylesheet" href="assets/kit/brand-ui.css">
   <link rel="stylesheet" href="assets/css/theme.css">
-  <style>
-    html { scroll-behavior: smooth; overflow-x: clip; }
-    body { overflow-x: clip; }
-    .wrap { width: min(1240px, 100% - 2 * clamp(16px, 4vw, 48px)); margin-inline: auto; }
-    .top { position: sticky; top: 0; z-index: 50; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); }
-    .top .logo { min-height: 44px; }
-    .top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 72px; }
-    .top-actions { display: flex; align-items: center; gap: 10px; }
-    .for { font-size: 13px; color: var(--text-2); display: inline-flex; align-items: center; gap: 8px; }
-    .top .btn { height: 44px; }
-
-    .hero { padding: clamp(48px, 7vw, 96px) 0 clamp(56px, 7vw, 88px); }
-    .hero .wrap { display: grid; grid-template-columns: 1.45fr 1fr; gap: clamp(28px, 4vw, 56px); align-items: center; }
-    .hero h1 { font-size: clamp(40px, 5.2vw, 72px); line-height: 1.06; font-weight: 800; letter-spacing: -0.045em; margin: 22px 0 22px; }
-    .hero .lead { font-size: clamp(16px, .6vw + 12px, 19px); line-height: 1.75; color: var(--text-2); max-width: 600px; margin-bottom: 30px; }
-    .hero .actions { display: flex; gap: 12px; flex-wrap: wrap; }
-    .hero .caption { display: block; color: var(--text-3); font-size: 13px; margin-top: 14px; }
-
-    .status-card { border-radius: 28px; padding: 24px; margin: 0; }
-    .status-card .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-    .sym { width: 40px; height: 40px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand-2); border-radius: 13px; }
-    .status-card h2 { font-size: 20px; letter-spacing: -.4px; }
-    .status-card > p { color: var(--text-2); font-size: 13.5px; margin: 4px 0 16px; }
-    .srow { display: flex; align-items: center; gap: 14px; padding: 13px 14px; border-radius: 16px; background: var(--surface-2); margin-bottom: 8px; }
-    .srow .t { flex: 1; min-width: 0; }
-    .srow .t b { display: block; font-size: 14px; }
-    .srow .t span { font-size: 12.5px; color: var(--text-2); }
-    .srow .v { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
-    .ring.blue { width: 48px; height: 48px; background: radial-gradient(closest-side, var(--surface-2) 76%, transparent 78% 100%), conic-gradient(var(--brand-2) calc(var(--p) * 1%), var(--surface-3) 0); }
-
-    section.block { padding: clamp(64px, 9vw, 120px) 0; border-top: 1px solid var(--border); }
-    h2.title { font-size: clamp(30px, 3.6vw, 50px); line-height: 1.1; font-weight: 800; letter-spacing: -0.035em; margin: 16px 0 14px; max-width: 22ch; }
-    .sub { color: var(--text-2); font-size: clamp(15px, .5vw + 12px, 18px); line-height: 1.75; max-width: 660px; }
-
-    .proof { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
-    .proof .kpi { margin: 0; padding: 24px; }
-    .proof .kpi-value { font-size: 34px; }
-    .proof .kpi-sub { white-space: normal; font-size: 13px; color: var(--text-2); }
-    .proof .kpi-label { -webkit-line-clamp: unset; }
-    .src { font-size: 12.5px; color: var(--text-3); margin-top: 14px; }
-
-    .steps { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 5vw, 80px); margin-top: 26px; }
-    .pin { position: sticky; top: 18vh; align-self: start; margin: 0; padding: 26px; border-radius: 28px; }
-    .pin .lyr { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 16px; margin-bottom: 10px; background: var(--surface-2); border: 1px solid transparent; opacity: .5; transition: opacity .5s var(--ease), border-color .5s, background .5s, transform .5s var(--ease); }
-    .pin .lyr:last-child { margin-bottom: 0; }
-    .pin .lyr .kpi-icon { width: 42px; height: 42px; border-radius: 13px; }
-    .pin .lyr b { font-size: 15px; display: block; }
-    .pin .lyr span.s { font-size: 12.5px; color: var(--text-2); }
-    [data-active="0"] .pin .l0, [data-active="1"] .pin .l1, [data-active="2"] .pin .l2, [data-active="3"] .pin .l3 { opacity: 1; border-color: var(--brand-2); background: var(--brand-soft); transform: translateX(6px); }
-    [data-step] { min-height: 58vh; display: flex; flex-direction: column; justify-content: center; opacity: .35; transition: opacity .5s var(--ease); }
-    [data-step].on { opacity: 1; }
-    [data-step] .n { font-size: 13px; color: var(--brand-text); font-weight: 700; letter-spacing: 1.4px; }
-    [data-step] h3 { font-size: clamp(24px, 2.2vw, 34px); font-weight: 800; letter-spacing: -.03em; margin: 10px 0 12px; }
-    [data-step] p { color: var(--text-2); font-size: 16.5px; line-height: 1.75; max-width: 46ch; margin-bottom: 16px; }
-
-    .mods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
-    .mod { margin: 0; padding: 24px; color: var(--text); display: block; transition: transform .35s var(--ease), box-shadow .35s; }
-    .mod:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
-    .mod .kpi-icon { margin-bottom: 18px; }
-    .mod h3 { font-size: 18px; margin-bottom: 6px; }
-    .mod p { color: var(--text-2); font-size: 14.5px; line-height: 1.65; }
-    .mod .go { margin-top: 16px; font-size: 14px; color: var(--brand-text); font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
-    .mod .go .icon { width: 16px; height: 16px; }
-
-    .plan { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 40px; }
-    .plan .card { margin: 0; padding: 22px; position: relative; }
-    .plan .wk { font-size: 12.5px; font-weight: 700; color: var(--brand-text); letter-spacing: .5px; }
-    .plan .n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--brand-grad); color: #fff; font-weight: 800; font-size: 13px; margin-bottom: 14px; }
-    .plan h3 { margin: 6px 0; font-size: 17px; }
-    .plan p { color: var(--text-2); font-size: 14px; line-height: 1.6; }
-
-    .cta { margin: 0; padding: clamp(36px, 5vw, 64px); text-align: center; border-radius: 32px; background: var(--brand-grad); color: #fff; border: none; }
-    .cta h2 { font-size: clamp(28px, 3.4vw, 46px); font-weight: 800; letter-spacing: -0.035em; line-height: 1.1; }
-    .cta p { opacity: .9; margin: 14px auto 26px; max-width: 560px; font-size: 16px; line-height: 1.7; }
-    .cta .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    .cta .btn-white { background: #fff; color: var(--brand); }
-    .cta .btn-line { background: transparent; color: #fff; border-color: rgba(255,255,255,.55); }
-
-    footer { color: var(--text-2); font-size: 13px; padding: 34px 0 50px; line-height: 1.8; }
-    footer .wrap { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
-
-    @media (max-width: 980px) {
-      .hero .wrap { grid-template-columns: 1fr; }
-      .mods { grid-template-columns: 1fr 1fr; }
-      .plan { grid-template-columns: 1fr 1fr; }
-      .steps { grid-template-columns: 1fr; }
-      .pin { display: none; }
-      [data-step] { min-height: auto; opacity: 1; padding: 22px 0; border-bottom: 1px solid var(--border); }
-    }
-    @media (max-width: 640px) {
-      .proof, .mods, .plan { grid-template-columns: 1fr; }
-      .for, .top .btn-secondary { display: none; }
-    }
-  </style>
+  <link rel="stylesheet" href="assets/css/site.css">
 </head>
 <body>
   <div class="progress-top" aria-hidden="true"></div>
-  <div id="toast-root" aria-live="polite"></div>
+  <a class="skip" href="#main">Skip to content</a>
 
   <header class="top">
     <div class="wrap">
       <a class="logo" href="./" aria-label="Digital Factory home"><span class="logo-mark" aria-hidden="true"></span><span class="logo-word">Digital Factory</span></a>
+      <nav class="links" aria-label="Sections">
+        <a href="#how">How it works</a>
+        <a href="#mandate">2030</a>
+        <a href="#plan">The plan</a>
+      </nav>
       <div class="top-actions">
-        <span class="for"><span class="status-dot"></span>Prepared for the client plant</span>
         <button type="button" class="btn btn-secondary theme-btn" data-theme-toggle><span class="ti" aria-hidden="true"></span><span class="tl">Light</span></button>
-        <a class="btn btn-secondary" href="deck.html">Presentation</a>
+        <a class="btn btn-secondary hide-sm" href="deck.html">Presentation</a>
         <a class="btn btn-primary" href="app.html">Live demo</a>
       </div>
     </div>
   </header>
 
-  <main>
-    <section class="hero">
+  <main id="main">
+    <!-- Hero: the line is a word in the sentence, then opens full width below -->
+    <section class="hero" aria-labelledby="h1">
       <div class="wrap">
+        <h1 id="h1" class="display">
+          <span class="l1">See the <span class="slot"><canvas data-twin="slot" aria-hidden="true"></canvas><span class="sr-only">line</span></span></span>
+          <span class="l2">before it stops.</span>
+        </h1>
+        <p class="horizon"><span>A live digital twin of your plant,</span> <span>with AI that acts before the line does.</span></p>
+      </div>
+      <figure class="twin" data-ui>
+        <div class="twin-crop"><div class="twin-in">
+          <canvas data-twin="full" aria-hidden="true"></canvas>
+        </div>
+          <div class="read r-risk"><b>Mounter B</b><span>Bearing wear · failure risk <em data-read="risk">72%</em> in about 40 h</span></div>
+          <div class="read r-oee"><b data-read="oee">86.4%</b><span>Line OEE</span></div>
+          <div class="read r-units"><b data-read="units">12,480</b><span>Units this shift</span></div>
+          <div class="read r-clock"><b data-read="clock">—</b><span>Shift clock</span></div>
+        </div>
+        <figcaption class="wrap">A running simulation of one SMT line. Plant data on this site is simulated. <a href="app.html">Open the full command room</a></figcaption>
+      </figure>
+    </section>
+
+    <!-- Proof: who already works this way -->
+    <section class="block proof" aria-labelledby="proof-h">
+      <div class="wrap split">
         <div>
-          <div class="eyebrow" data-reveal>Digital Factory · Vision 2027</div>
-          <h1 data-split>See every line live. <span class="hl">Fix problems before they happen.</span></h1>
-          <p class="lead" data-reveal style="transition-delay:.3s">Digital Factory connects the machines you already own, mirrors them in a live digital twin, and uses AI to predict failures, catch defects and recommend the next best action.</p>
-          <div class="actions" data-reveal style="transition-delay:.45s">
-            <a class="btn btn-primary btn-lg" href="app.html">Open the live demo <span data-icon="arrowRight"></span></a>
-            <a class="btn btn-secondary btn-lg" href="deck.html">View the presentation</a>
-          </div>
-          <span class="caption" data-reveal style="transition-delay:.55s">Runs in any browser. Works offline. Plant data in the demo is simulated.</span>
+          <h2 id="proof-h" class="h2" data-reveal>The best plants already run this way.</h2>
+          <p class="names" data-names data-reveal>
+            <span data-n="0">Siemens in Nanjing</span>, <span data-n="1">Haier in Qingdao</span>, <span data-n="2">Foxconn</span> and the <span data-n="3">238 Lighthouse factories</span> chosen by the World Economic Forum run on live twins and AI.
+          </p>
         </div>
+        <div class="figure" data-reveal>
+          <div class="big" data-fig>−78%</div>
+          <p data-figl>Lead time at the Siemens electronics plant in Nanjing</p>
+        </div>
+      </div>
+      <div class="wrap facts">
+        <div data-reveal><b>30–50%</b><span>less unplanned downtime with predictive maintenance<sup>1</sup></span></div>
+        <div data-reveal><b>Up to 90%</b><span>better defect detection with AI visual inspection<sup>2</sup></span></div>
+        <div data-reveal><b>12 weeks</b><span>from kick-off to a measured result on one line</span></div>
+      </div>
+      <p class="wrap src">Sources: Siemens, Haier and NVIDIA/Foxconn releases; World Economic Forum Global Lighthouse Network 2025–2026. <sup>1</sup> McKinsey &amp; Company research on predictive maintenance. <sup>2</sup> Published studies of AI visual inspection against manual inspection. Results depend on the starting point.</p>
+    </section>
 
-        <aside class="card status-card" data-reveal style="transition-delay:.4s" aria-label="Sample plant status from the live demo">
-          <div class="head"><span class="sym" data-icon="live"></span><span class="chip chip-info">Sample · simulated</span></div>
-          <h2>Plant status, right now.</h2>
-          <p>What a production head sees first every morning.</p>
-          <div class="srow"><div class="ring blue" style="--p:86" role="img" aria-label="86 percent"><span>86%</span></div><div class="t"><b>Plant OEE</b><span>World-class is 85% or higher</span></div></div>
-          <div class="srow"><span class="kpi-icon" style="background:var(--warning-soft);color:var(--warning);width:44px;height:44px;border-radius:14px" data-icon="alert"></span><div class="t"><b>Mounter B, SMT Line 1</b><span>Bearing failure predicted in about 40 hours</span></div></div>
-          <div class="srow"><span class="kpi-icon" style="background:var(--success-soft);color:var(--success);width:44px;height:44px;border-radius:14px" data-icon="checkCircle"></span><div class="t"><b>Repair scheduled at 14:00</b><span>25-minute planned stop instead of 4.5 hours down</span></div></div>
-        </aside>
+    <!-- How it works: four layers, the machine in view -->
+    <section class="block" id="how" data-steps aria-labelledby="how-h">
+      <div class="wrap split">
+        <div>
+          <h2 id="how-h" class="h2" data-reveal>Four layers on the machines you already own.</h2>
+          <p class="sub" data-reveal>Nothing is replaced. Digital Factory sits on top of the equipment, MES and ERP the plant already runs.</p>
+          <figure class="shot only-sm"><img src="assets/img/pnp.jpg" width="1000" height="1250" alt="A placement head puts components on a green circuit board" loading="lazy"></figure>
+          <div class="lstep" data-step="0"><h3>Connect every signal.</h3><p>PLCs, SMT equipment, AOI and SPI, testers, energy meters and the MES stream into one place over open industrial standards. We start read-only, so production is never touched.</p></div>
+          <div class="lstep" data-step="1"><h3>See the whole plant live.</h3><p>Every line, station and unit, updated every second. One shared picture for operators, engineers and management, on screens and on mobile.</p></div>
+          <div class="lstep" data-step="2"><h3>Predict what comes next.</h3><p>Machine-health models forecast failures days ahead. Vision AI inspects every board. Root-cause models link each defect to the step that caused it.</p></div>
+          <div class="lstep" data-step="3"><h3>Act on the best decision.</h3><p>Actions ranked by their value in EGP, work orders raised for you, and a copilot that answers questions about the plant in plain language.</p></div>
+        </div>
+        <figure class="pin" aria-hidden="true">
+          <img src="assets/img/pnp.jpg" width="1000" height="1250" alt="" loading="lazy">
+          <div class="reticle"></div>
+          <div class="tag t0"><b>214</b> signals a second from this machine</div>
+          <div class="tag t1">Twin updated <b>every second</b></div>
+          <div class="tag t2">Nozzle wear <b>risk 18%</b> · next 7 days</div>
+          <div class="tag t3">Swap nozzle at <b>14:00</b> · saves EGP 41k</div>
+          <div class="sample">Sample readouts</div>
+        </figure>
       </div>
     </section>
 
-    <section class="block">
+    <!-- Mandate: the date on the horizon -->
+    <section class="block mandate" id="mandate" aria-labelledby="m-h">
       <div class="wrap">
-        <div class="eyebrow" data-reveal>Why it matters</div>
-        <h2 class="title" data-split>Every hour of downtime and every escaped defect has a price.</h2>
-        <p class="sub" data-reveal>Leading manufacturers already use this approach. Published results are clear and consistent.</p>
-        <div class="proof">
-          <div class="kpi kpi-blue" data-reveal><div class="kpi-icon" data-icon="clock"></div><div class="kpi-body"><div class="kpi-label">Unplanned downtime</div><div class="kpi-value">30–50% less</div><div class="kpi-sub">with predictive maintenance <sup>1</sup></div></div></div>
-          <div class="kpi kpi-green" data-reveal style="transition-delay:.08s"><div class="kpi-icon" data-icon="eye"></div><div class="kpi-body"><div class="kpi-label">Defect detection</div><div class="kpi-value">Up to 90% better</div><div class="kpi-sub">with AI visual inspection <sup>2</sup></div></div></div>
-          <div class="kpi kpi-indigo" data-reveal style="transition-delay:.16s"><div class="kpi-icon" data-icon="calendar"></div><div class="kpi-body"><div class="kpi-label">Time to proof</div><div class="kpi-value">12 weeks</div><div class="kpi-sub">from kick-off to a measured pilot result</div></div></div>
+        <div class="split">
+        <h2 id="m-h" class="h2" data-reveal>the client set 2030. Plant EG-01 can be ready first.</h2>
+        <p class="sub lead-r" data-reveal>In March 2026 the client announced that all its factories, in Korea and overseas, will be AI-driven by 2030: a digital twin across the value chain, AI agents for quality, production and logistics, safety AI and robotics. Digital Factory puts these pillars to work on one Plant EG-01 line, starting this quarter.</p>
         </div>
-        <p class="src">1 McKinsey &amp; Company research on predictive maintenance. 2 Published studies of AI visual inspection compared with manual inspection. Results depend on the starting point.</p>
-      </div>
-    </section>
-
-    <section class="block" data-steps>
-      <div class="wrap">
-        <div class="eyebrow" data-reveal>How it works</div>
-        <h2 class="title" data-split>Four layers. One clear picture of the whole plant.</h2>
-        <p class="sub" data-reveal>Nothing is replaced. Digital Factory sits on top of the machines, MES and ERP the plant already runs.</p>
-        <div class="steps">
-          <div class="card pin" aria-hidden="true">
-            <div class="lyr l0"><span class="kpi-icon" style="background:var(--success-soft);color:var(--success)" data-icon="link"></span><div><b>1 · Connect</b><span class="s">Every machine signal, live</span></div></div>
-            <div class="lyr l1"><span class="kpi-icon" style="background:var(--brand-soft);color:var(--brand-2)" data-icon="dashboard"></span><div><b>2 · See</b><span class="s">A live digital twin</span></div></div>
-            <div class="lyr l2"><span class="kpi-icon" style="background:rgba(139,92,246,.14);color:#8B5CF6" data-icon="sparkles"></span><div><b>3 · Predict</b><span class="s">AI that sees problems coming</span></div></div>
-            <div class="lyr l3"><span class="kpi-icon" style="background:var(--warning-soft);color:var(--warning)" data-icon="checkCircle"></span><div><b>4 · Act</b><span class="s">Clear decisions, ranked by value</span></div></div>
-          </div>
-          <div>
-            <div data-step="0"><div class="n">1 · CONNECT</div><h3>Every signal, in real time.</h3><p>PLCs, SMT equipment, AOI and SPI, testers, energy meters, AGVs and the MES stream into one place through open industrial standards. We start read-only, so production is never touched.</p></div>
-            <div data-step="1"><div class="n">2 · SEE</div><h3>A live digital twin of the plant.</h3><p>Every line, station and unit, updated every second. One shared picture for operators, engineers and management, on screens and on mobile.</p></div>
-            <div data-step="2"><div class="n">3 · PREDICT</div><h3>AI that sees problems coming.</h3><p>Machine-health models forecast failures days ahead. Vision AI inspects every board. Root-cause models link each defect to the process step that caused it.</p></div>
-            <div data-step="3"><div class="n">4 · ACT</div><h3>Decisions, not dashboards.</h3><p>Actions ranked by their value in EGP, work orders raised automatically, and a copilot that answers questions about the plant in plain language.</p></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="block">
-      <div class="wrap">
-        <div class="eyebrow" data-reveal>The direction is already set</div>
-        <h2 class="title" data-split>Every the client factory will be AI-driven by 2030. Plant EG-01 can be ready early.</h2>
-        <p class="sub" data-reveal>In March 2026 the client announced that all its factories, in Korea and overseas, will become AI-driven by 2030: a digital twin across the value chain, AI agents for quality, production and logistics, safety AI and robotics. Digital Factory puts these pillars to work on one Plant EG-01 line, starting this quarter.</p>
+        <ol class="road" data-reveal>
+          <li><b>March 2026</b><span>the client announces AI-driven factories worldwide</span></li>
+          <li class="here"><b>This quarter</b><span>Pilot on one Plant EG-01 line (proposed)</span></li>
+          <li><b>2030</b><span>Every the client factory AI-driven</span></li>
+        </ol>
         <p class="src">Source: the client announcement of 1 March 2026, as reported by The Korea Times and Korea JoongAng Daily.</p>
       </div>
+      <figure class="band">
+        <img src="assets/img/operator.jpg" width="1600" height="1067" alt="An operator's gloved hand on a machine on a production line" loading="lazy">
+        <figcaption><span>People stay in charge. The AI advises, ranks and explains; your team decides.</span></figcaption>
+      </figure>
     </section>
 
-    <section class="block">
-      <div class="wrap">
-        <div class="eyebrow" data-reveal>Built today</div>
-        <h2 class="title" data-split>Nine capabilities you can try in the live command room now.</h2>
-        <p class="sub" data-reveal>Each one runs on a simulated electronics plant. In production, each one connects to the real equipment.</p>
-        <div class="mods">
-          <a class="card mod kpi-blue" href="app.html#command" data-reveal><div class="kpi-icon" data-icon="dashboard"></div><h3>Command room</h3><p>Every line, station and unit live, with alarms, decisions and the agent crew on one screen.</p><span class="go">Open <span data-icon="arrowRight"></span></span></a>
-          <a class="card mod kpi-purple" href="app.html#agents" data-reveal style="transition-delay:.06s"><div class="kpi-icon" data-icon="sparkles"></div><h3>AI agent crew</h3><p>Six agents for maintenance, quality, logistics, energy, planning and safety. You set how much each may do alone.</p><span class="go">Open <span data-icon="arrowRight"></span></span></a>
-          <a class="card mod kpi-red" href="app.html#alarms" data-reveal style="transition-delay:.12s"><div class="kpi-icon" data-icon="alert"></div><h3>Alarm flood to one cause</h3><p>When a machine stops, dozens of alarms fire. The AI turns them into one incident with its root cause.</p><span class="go">Open <span data-icon="arrowRight"></span></span></a>
-          <a class="card mod kpi-teal" href="app.html#predict" data-reveal><div class="kpi-icon" data-icon="chart"></div><h3>Shift forecast</h3><p>The chance of hitting today's plan, updated every second, with failure risk for every machine.</p><span class="go">Open <span data-icon="arrowRight"></span></span></a>
-          <a class="card mod kpi-indigo" href="app.html#rootcause" data-reveal style="transition-delay:.06s"><div class="kpi-icon" data-icon="layers"></div><h3>Root-cause chains</h3><p>From symptom to cause to cost in one picture, with the evidence behind it.</p><span class="go">Open <span data-icon="arrowRight"></span></span></a>
-          <a class="card mod kpi-amber" href="app.html#command" data-reveal style="transition-delay:.12s"><div class="kpi-icon" data-icon="history"></div><h3>Time machine</h3><p>Rewind the plant and replay any minute of the shift, exactly as it happened.</p><span class="go">Open <span data-icon="arrowRight"></span></span></a>
-          <a class="card mod kpi-green" href="app.html#scenarios" data-reveal><div class="kpi-icon" data-icon="play"></div><h3>Scenario lab</h3><p>Ten real-world drills: breakdowns, heat waves, power dips, supplier delays, safety events.</p><span class="go">Open <span data-icon="arrowRight"></span></span></a>
-          <a class="card mod kpi-slate" href="app.html#control" data-reveal style="transition-delay:.06s"><div class="kpi-icon" data-icon="settings"></div><h3>Simulate before you act</h3><p>See the expected output, yield and power before any change, with a full audit trail.</p><span class="go">Open <span data-icon="arrowRight"></span></span></a>
-          <a class="card mod kpi-blue" href="app.html#leadership" data-reveal style="transition-delay:.12s"><div class="kpi-icon" data-icon="trophy"></div><h3>Leadership view</h3><p>Plant health score, value saved, and decisions ranked by money at stake.</p><span class="go">Open <span data-icon="arrowRight"></span></span></a>
-        </div>
+    <!-- Benefits on colour fields -->
+    <section class="fields" aria-labelledby="f-h">
+      <div class="field f-blue">
+        <p data-reveal>Machine-health models hear a mounter bearing wearing out days ahead. The repair goes into a planned 25-minute stop instead of a 4.5-hour breakdown.</p>
+        <h2 id="f-h" data-reveal>Fix it before it breaks.</h2>
+      </div>
+      <div class="field f-ink alt">
+        <p data-reveal>When a machine stops, dozens of alarms fire at once. The AI groups them into one incident, names the root cause and suggests the fix.</p>
+        <h2 data-reveal>One cause, not fifty alarms.</h2>
+      </div>
+      <div class="field f-soft">
+        <p data-reveal>Every recommendation carries its value in Egyptian pounds and its risk, so the morning meeting starts with the decision that matters most.</p>
+        <h2 data-reveal>Decide in pounds, not percent.</h2>
       </div>
     </section>
 
-    <section class="block">
-      <div class="wrap">
-        <div class="eyebrow" data-reveal>The proposal</div>
-        <h2 class="title" data-split>One line. Twelve weeks. Results your team measures.</h2>
-        <div class="plan">
-          <div class="card" data-reveal><div class="n">1</div><div class="wk">WEEKS 1–2</div><h3>Connect</h3><p>Choose the pilot line together. Read-only data connection. Agree the baseline.</p></div>
-          <div class="card" data-reveal style="transition-delay:.06s"><div class="n">2</div><div class="wk">WEEKS 3–6</div><h3>See</h3><p>The pilot line live on screens and mobile for the line team.</p></div>
-          <div class="card" data-reveal style="transition-delay:.12s"><div class="n">3</div><div class="wk">WEEKS 7–10</div><h3>Predict</h3><p>Predictive maintenance, vision AI and the copilot switched on.</p></div>
-          <div class="card" data-reveal style="transition-delay:.18s"><div class="n">4</div><div class="wk">WEEKS 11–12</div><h3>Prove</h3><p>Results measured against the baseline and signed off by your team.</p></div>
+    <!-- Capabilities index -->
+    <section class="block caps" aria-labelledby="c-h">
+      <div class="wrap split">
+        <div>
+          <h2 id="c-h" class="h2" data-reveal>Nine capabilities you can open now.</h2>
+          <p class="sub" data-reveal>Each runs on a simulated electronics plant. In production, each connects to the real equipment.</p>
+          <figure class="shot"><img src="assets/img/robot.jpg" width="1287" height="1125" alt="A robot arm working inside an automated machine cell" loading="lazy"></figure>
         </div>
+        <ul class="caplist">
+          <li><a href="app.html#command"><b>Command room</b><span>Every line, station and unit live, with alarms, decisions and the agent crew on one screen.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#agents"><b>AI agent crew</b><span>Six agents for maintenance, quality, logistics, energy, planning and safety. You set how much each may do alone.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#alarms"><b>Alarm flood to one cause</b><span>Dozens of alarms become one incident with its root cause.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#predict"><b>Shift forecast</b><span>The chance of hitting today's plan, updated every second, with failure risk for every machine.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#rootcause"><b>Root-cause chains</b><span>From symptom to cause to cost in one picture, with the evidence behind it.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#command"><b>Time machine</b><span>Rewind the plant and replay any minute of the shift.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#scenarios"><b>Scenario lab</b><span>Ten real-world drills: breakdowns, heat waves, power dips, supplier delays, safety events.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#control"><b>Simulate before you act</b><span>Expected output, yield and power before any change, with a full audit trail.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#leadership"><b>Leadership view</b><span>Plant health score, value saved, and decisions ranked by money at stake.</span><i data-icon="arrowRight"></i></a></li>
+        </ul>
       </div>
     </section>
 
-    <section class="block" style="border-top:none;padding-top:0">
+    <!-- Plan: the bar is the diagram; widths follow the real weeks -->
+    <section class="block" id="plan" aria-labelledby="p-h">
       <div class="wrap">
-        <div class="card cta" data-reveal>
-          <h2>See it working. Then decide.</h2>
-          <p>Open the live demo, trigger a machine fault, and watch the AI respond before the line stops.</p>
-          <div class="actions">
-            <a class="btn btn-lg btn-white" href="app.html">Open the live demo</a>
-            <a class="btn btn-lg btn-line" href="deck.html#plan">See the 12-week plan</a>
-          </div>
-        </div>
+        <h2 id="p-h" class="h2" data-reveal>Twelve weeks to a measured result.</h2>
+        <ol class="bar" data-ui data-reveal>
+          <li style="--w:2" class="s1"><b>Two weeks</b><span>First, connect: choose the pilot line together, link the data read-only, agree the baseline.</span></li>
+          <li style="--w:4" class="s2"><b>Four weeks</b><span>Then see: the pilot line live on screens and mobile for the line team.</span></li>
+          <li style="--w:4" class="s3"><b>Four weeks</b><span>Next, predict: predictive maintenance, vision AI and the copilot switched on.</span></li>
+          <li style="--w:2" class="s4"><b>Two weeks</b><span>Finally, prove: results measured against the baseline and signed off by your team.</span></li>
+        </ol>
+      </div>
+      <div class="wrap duo">
+        <figure class="shot"><img src="assets/img/crew.jpg" width="1600" height="1067" alt="Two workers at a machine control panel" loading="lazy"></figure>
+        <figure class="shot"><img src="assets/img/connectors.jpg" width="1600" height="1064" alt="A row of industrial air connectors on a machine" loading="lazy"></figure>
+      </div>
+    </section>
+
+    <!-- Closing sentence: the last word is the action -->
+    <section class="block close" aria-labelledby="x-h">
+      <div class="wrap">
+        <h2 id="x-h" class="close-s">Break a machine. Watch the AI <a class="word" href="app.html#scenarios">respond<i data-icon="arrowRight"></i></a></h2>
+        <p class="after">Opens the command room with ten real-world drills. Prefer the business case? <a href="deck.html#plan">See the 12-week plan</a>.</p>
       </div>
     </section>
   </main>
 
   <footer>
     <div class="wrap">
-      <div>Digital Factory · Concept demonstration. All plant data shown is simulated.</div>
-      <div>the client plant is named as the intended audience only.</div>
+      <div>Digital Factory · Concept demonstration. All plant data shown is simulated. the client plant is named as the intended audience only.</div>
+      <div>Photos: Shixart1985, CC BY 2.0, via Wikimedia Commons. They show factories in general, not the client plants.</div>
     </div>
   </footer>
 
   <script src="assets/kit/icons.js"></script>
   <script src="assets/js/theme.js"></script>
   <script src="assets/js/motion.js"></script>
+  <script src="assets/js/twin-hero.js"></script>
+  <script src="assets/js/site.js"></script>
 </body>
 </html>
