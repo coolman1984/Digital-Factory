@@ -281,10 +281,50 @@
   };
 
   /* ---------------- what-if ---------------- */
-  function model(o) {
+  const whatIfCache = new Map();
+  let whatIfWorker, whatIfSeq = 0;
+  const pendingWhatIf = new Map();
+
+  function whatIfRunOptions(o) {
     const hours = o.shifts * 7.5;
     const common = { hours, maxSteps: 4200, lineSpeed: o.speed / 100 };
-    const r = Sim.runShiftSimulation(Object.assign({ seedSalt: 0x77686174, pdm: o.pdm, vision: o.vision, energy: o.energy }, common));
+    return Object.assign({ seedSalt: 0x77686174, pdm: o.pdm, vision: o.vision, energy: o.energy }, common);
+  }
+
+  function runWhatIfShift(opt) {
+    const key = Sim.shiftSimCacheKey(opt);
+    if (whatIfCache.has(key)) return Promise.resolve(whatIfCache.get(key));
+    if (typeof Worker === 'undefined' || typeof window === 'undefined') {
+      const r = Sim.runShiftSimulationCached(opt);
+      whatIfCache.set(key, r);
+      return Promise.resolve(r);
+    }
+    return new Promise((resolve, reject) => {
+      if (!whatIfWorker) {
+        whatIfWorker = new Worker('assets/js/sim-worker.js');
+        whatIfWorker.onmessage = (ev) => {
+          const { id, result, error } = ev.data;
+          const pending = pendingWhatIf.get(id);
+          if (!pending) return;
+          pendingWhatIf.delete(id);
+          if (error) pending.reject(new Error(error));
+          else {
+            whatIfCache.set(pending.key, result);
+            pending.resolve(result);
+          }
+        };
+        whatIfWorker.onerror = (err) => {
+          pendingWhatIf.forEach(p => p.reject(err));
+          pendingWhatIf.clear();
+        };
+      }
+      const id = ++whatIfSeq;
+      pendingWhatIf.set(id, { resolve, reject, key });
+      whatIfWorker.postMessage({ id, opt });
+    });
+  }
+
+  function modelFromRun(r, o) {
     const lines = r.lines.map(l => ({
       id: l.id, name: l.name,
       cap: l.good,
@@ -298,12 +338,34 @@
     const bottleneck = lines.slice().sort((a, b) => a.cap / a.req - b.cap / b.req)[0];
     return { oee: r.oee, lines, req, out, otd: out / req, cost, mwh: out * kwhU / 1000, scrap, bottleneck };
   }
+
+  function model(o) {
+    const r = Sim.runShiftSimulationCached(whatIfRunOptions(o));
+    return modelFromRun(r, o);
+  }
+
+  async function modelAsync(o) {
+    const r = await runWhatIfShift(whatIfRunOptions(o));
+    return modelFromRun(r, o);
+  }
+
   DF.model = model;
+  DF.whatIfRunOptions = whatIfRunOptions;
+  DF.runWhatIfShift = runWhatIfShift;
   const inputs = () => ({ demand: +$('#sDemand').value, shifts: +$('#sShifts').value, speed: +$('#sSpeed').value, pdm: $('#tPdm').checked, vision: $('#tVision').checked, energy: $('#tEnergy').checked });
-  DF.runSim = function () {
+  let simRunToken = 0;
+  DF.runSim = async function () {
     const o = inputs();
+    const token = ++simRunToken;
     $('#vDemand').textContent = o.demand + '%'; $('#vShifts').textContent = o.shifts; $('#vSpeed').textContent = o.speed + '%';
-    const r = model(o), b = model(Object.assign({}, o, { pdm: false, vision: false, energy: false }));
+    const baseOpt = whatIfRunOptions(Object.assign({}, o, { pdm: false, vision: false, energy: false }));
+    const [rShift, bShift] = await Promise.all([
+      runWhatIfShift(whatIfRunOptions(o)),
+      runWhatIfShift(baseOpt)
+    ]);
+    if (token !== simRunToken) return;
+    const r = modelFromRun(rShift, o);
+    const b = modelFromRun(bShift, Object.assign({}, o, { pdm: false, vision: false, energy: false }));
     const usingDF = o.pdm || o.vision || o.energy;
     const delta = (a, c, good, f) => {
       if (!usingDF || Math.abs(a - c) < 1e-9) return '<span class="muted">baseline</span>';

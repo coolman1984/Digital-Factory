@@ -40,6 +40,57 @@
     return { A, P, Q, oee: clamp(A * P * Q, 0, 1) };
   }
 
+  function intervalUnionLength(segments) {
+    if (!segments.length) return 0;
+    const sorted = segments.slice().sort((a, b) => a[0] - b[0]);
+    const merged = [];
+    for (const [a, b] of sorted) {
+      if (!merged.length || a > merged[merged.length - 1][1]) merged.push([a, b]);
+      else merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], b);
+    }
+    return merged.reduce((sum, [a, b]) => sum + (b - a), 0);
+  }
+
+  function lineStopSlices(plantDt, downSegs, minorSegs) {
+    const bounds = new Set([0, plantDt]);
+    downSegs.concat(minorSegs).forEach(([a, b]) => { bounds.add(a); bounds.add(b); });
+    const pts = Array.from(bounds).sort((x, y) => x - y);
+    const inSegs = (segs, t) => segs.some(([a, b]) => t >= a && t < b);
+    let breakdown = 0, minor = 0, run = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const len = pts[i + 1] - pts[i];
+      if (len <= 0) continue;
+      const mid = pts[i] + len * 0.5;
+      if (inSegs(downSegs, mid)) breakdown += len;
+      else if (inSegs(minorSegs, mid)) minor += len;
+      else run += len;
+    }
+    return { breakdown, minor, run };
+  }
+
+  function createPerLineDebounce(onFire) {
+    const timers = {};
+    return {
+      schedule(lineId, ms) {
+        clearTimeout(timers[lineId]);
+        timers[lineId] = setTimeout(() => {
+          delete timers[lineId];
+          onFire(lineId);
+        }, ms);
+      },
+      pending(lineId) { return timers[lineId] != null; },
+      pendingCount() { return Object.keys(timers).length; }
+    };
+  }
+
+  function controlPreviewCacheKey(lineId, draftSpeed, baseSpeed) {
+    return lineId + ':' + draftSpeed.toFixed(3) + ':' + baseSpeed.toFixed(3);
+  }
+
+  function shiftSimCacheKey(options) {
+    return JSON.stringify(options);
+  }
+
   function sampleWeibull(beta, eta) {
     return eta * Math.pow(-Math.log(Math.max(1e-9, 1 - rng.float())), 1 / beta);
   }
@@ -297,7 +348,7 @@
     for (const l of S.lines) {
       const L = l.ledger;
       let blocked = false, slow = false, maint = false, breakdown = false;
-      let lineDownSec = 0, lineMinorSec = 0;
+      const downSegs = [], minorSegs = [];
       for (const s of l.stations) {
         const st = s.stoch;
         if (!warm && st && !s.scripted) {
@@ -335,8 +386,8 @@
           blocked = true; breakdown = true;
           if (!s._downSec) s._downSec = plantDt;
         }
-        if (s._downSec) lineDownSec = Math.max(lineDownSec, s._downSec);
-        if (s._minorSec) lineMinorSec = Math.max(lineMinorSec, s._minorSec);
+        if (s._downSec) downSegs.push([0, s._downSec]);
+        if (s._minorSec) minorSegs.push([0, s._minorSec]);
         if (s.state === 'maint') { blocked = true; maint = true; }
         if (s.state === 'warn') slow = true;
         if (!fast && (!warm || rng.chance(0.6))) {
@@ -359,10 +410,9 @@
       const q = 1 - defectRate;
       const cycles = l.stations.map(s => s.cycle).filter(c => c > 0);
       const bottleneckCycle = cycles.length ? Math.max(...cycles) : L.idealCycle;
-      const stillMinor = lineMinorSec > 0 && l.stations.some(s => s.stoch && s.stoch.minorLeft > 0);
-      const minorBlockSec = lineMinorSec > 0 ? (stillMinor ? plantDt : lineMinorSec) : 0;
+      const stopUnion = intervalUnionLength(downSegs.concat(minorSegs));
       const prodSec = (!warm && avail && !l.stopped && !l.paused)
-        ? Math.max(0, plantDt - lineDownSec - minorBlockSec) : 0;
+        ? Math.max(0, plantDt - stopUnion) : 0;
       let made = 0;
       if (prodSec > 0) made = prodSec / bottleneckCycle;
       const tph = plantDt > 0 ? made * 3600 / plantDt : 0;
@@ -388,38 +438,15 @@
         } else if (maint) {
           L.setup += plantDt;
           L.losses.setupAdjust += plantDt;
-        } else if (breakdown && blocked) {
-          L.down.breakdown += plantDt;
-          L.losses.breakdown += plantDt;
-        } else if (lineMinorSec > 0) {
-          const minorBooked = stillMinor ? plantDt : lineMinorSec;
-          L.minorStop += minorBooked;
-          L.losses.minorStop += minorBooked;
-          L.slow += minorBooked;
-          const runSec = plantDt - minorBooked;
-          if (runSec > 0) {
-            L.run += runSec;
-            const perfGap = Math.max(0, runSec - L.idealCycle * made);
-            if (perfGap > 0) {
-              L.losses.reducedSpeed += perfGap;
-              L.slow += perfGap;
-            }
-          }
-        } else if (lineDownSec > 0) {
-          L.down.breakdown += lineDownSec;
-          L.losses.breakdown += lineDownSec;
-          const runSec = plantDt - lineDownSec;
-          if (runSec > 0) {
-            L.run += runSec;
-            const perfGap = Math.max(0, runSec - L.idealCycle * made);
-            if (perfGap > 0) {
-              L.losses.reducedSpeed += perfGap;
-              L.slow += perfGap;
-            }
-          }
         } else {
-          L.run += plantDt;
-          const perfGap = Math.max(0, plantDt - L.idealCycle * made);
+          const slices = lineStopSlices(plantDt, downSegs, minorSegs);
+          L.down.breakdown += slices.breakdown;
+          L.losses.breakdown += slices.breakdown;
+          L.minorStop += slices.minor;
+          L.losses.minorStop += slices.minor;
+          L.slow += slices.minor;
+          L.run += slices.minor + slices.run;
+          const perfGap = Math.max(0, slices.run - L.idealCycle * made);
           if (perfGap > 0) {
             L.losses.reducedSpeed += perfGap;
             L.slow += perfGap;
@@ -1006,6 +1033,15 @@
     return { oee, lines, out, scrap, fpy, energyKwh: S.energyKwh };
   }
 
+  const shiftSimCache = new Map();
+  function runShiftSimulationCached(options) {
+    const key = shiftSimCacheKey(options);
+    if (shiftSimCache.has(key)) return shiftSimCache.get(key);
+    const r = runShiftSimulation(options);
+    shiftSimCache.set(key, r);
+    return r;
+  }
+
   function runShiftSimulation(options) {
     const opt = Object.assign({
       seedSalt: 0, hours: 8, maxSteps: 4500, lineSpeed: null, lineSpeeds: null,
@@ -1068,7 +1104,9 @@
     start() { if (!S) reset(); running = true; last = 0; requestAnimationFrame(loop); },
     reset() { reset(); lastStoryT = -1; },
     trigger(name) { if (scenarios[name]) { audit('You', 'Started scenario', (SCENARIOS.find(s => s.id === name) || {}).title || name); scenarios[name](); } },
-    act, control, preview, previewCacheKey, clock, line, st, machines, allStations, rulHours, agent, oeeFromLedger, runShiftSimulation,
+    act, control, preview, previewCacheKey, controlPreviewCacheKey, clock, line, st, machines, allStations, rulHours, agent, oeeFromLedger,
+    runShiftSimulation, runShiftSimulationCached, shiftSimCacheKey,
+    intervalUnionLength, lineStopSlices, createPerLineDebounce,
     PLAN_DAY_HOURS, LINE_REQ, dailyRequirement,
     forecast, failureRisk, healthScore, unitsToday, planToday: () => planAt(S.t), planAt,
     setAutonomy(id, level) {
