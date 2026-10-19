@@ -48,6 +48,10 @@
     n = Math.max(0, Math.min(slides.length - 1, n));
     slides.forEach((s, k) => { s.classList.toggle('active', k === n); s.classList.toggle('prev', k < n); });
     i = n;
+    // the footer and the progress rail follow the active slide's colour field
+    stage.dataset.tone = slides[n].classList.contains('tone-blue') ? 'blue' : slides[n].classList.contains('tone-ink') ? 'ink' : '';
+    if (!stage.dataset.tone) delete stage.dataset.tone;
+    if (stage.dataset.tone) document.body.dataset.tone = stage.dataset.tone; else delete document.body.dataset.tone;
     rail(n);
     $('#counter').textContent = `${n + 1} / ${slides.length}`;
     const s = slides[n];

@@ -32,8 +32,10 @@
     const ch = $('#fcChip'); ch.textContent = Math.round(f.prob * 100) + '% chance';
     ch.className = 'chip ' + (f.prob >= 0.8 ? 'chip-success' : f.prob >= 0.5 ? 'chip-warning' : 'chip-danger');
     const waiting = S.insights.filter(i => i.level !== 'ok' && i.actions && i.actions.some(a => a.primary)).sort((a, b) => (b.risk || 0) - (a.risk || 0));
-    $('#mSaved').textContent = money(S.saved);
-    $('#mRisk').textContent = money(waiting.reduce((a, i) => a + (i.risk || 0), 0));
+    // a zero is printed in ink; green and red only once there is money saved or at risk
+    const atRisk = waiting.reduce((a, i) => a + (i.risk || 0), 0);
+    $('#mSaved').textContent = money(S.saved); $('#mSaved').className = S.saved > 0 ? 'ok-text' : '';
+    $('#mRisk').textContent = money(atRisk); $('#mRisk').className = atRisk > 0 ? 'danger-text' : '';
     $('#mActions').textContent = S.agents.reduce((a, g) => a + g.actions, 0);
     $('#approvals').innerHTML = waiting.length ? waiting.map(i => {
       const a = i.actions.find(x => x.primary); const ag = i.agent ? Sim.agent(i.agent) : null;
@@ -249,8 +251,8 @@
       .map(([l, v]) => `<div class="mk"><div class="kpi-label">${l}</div><div class="v">${v}</div></div>`).join('');
     const dyn = S.insights.filter(i => i.agent === 'energy');
     const stat = [
-      { level: 'info', icon: 'clock', title: 'Reflow ovens heat during breaks', body: 'Lowering ovens to 180 °C during the 30-minute lunch break saves about 410 kWh a day with no warm-up penalty.', conf: 'EGP 27k / month', actions: [] },
-      { level: 'info', icon: 'alert', title: 'Compressed-air leak suspected · Zone C', body: 'Night-time air flow is up 11% since last week. An ultrasonic check on header C-3 is recommended.', conf: 'EGP 12k / month', actions: [] }
+      { level: 'info', agent: 'energy', icon: 'clock', title: 'Reflow ovens heat during breaks', body: 'Lowering ovens to 180 °C during the 30-minute lunch break saves about 410 kWh a day with no warm-up penalty.', conf: 'EGP 27k / month', actions: [] },
+      { level: 'info', agent: 'energy', icon: 'alert', title: 'Compressed-air leak suspected · Zone C', body: 'Night-time air flow is up 11% since last week. An ultrasonic check on header C-3 is recommended.', conf: 'EGP 12k / month', actions: [] }
     ];
     $('#eRecs').innerHTML = dyn.concat(stat).map(i => DF.insightHtml(i, { skip: ['energy'] })).join('');
   };
