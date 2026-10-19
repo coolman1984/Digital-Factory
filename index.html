@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Digital Factory</title>
+  <meta name="description" content="Digital Factory — a live digital twin, predictive AI and a production copilot for electronics manufacturing.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Crect x='8' y='8' width='7' height='16' fill='%2305080f'/%3E%3Crect x='17' y='14' width='7' height='10' fill='%2305080f'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <style>
+    .nav { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between;
+      padding: 18px clamp(16px, 4vw, 48px); backdrop-filter: blur(12px); background: rgba(5, 8, 15, 0.6); border-bottom: 1px solid var(--line); }
+    .nav-links { display: flex; gap: 10px; }
+    .hero { position: relative; min-height: 92vh; display: grid; place-items: center; text-align: center; padding: 60px 16px; overflow: hidden; }
+    #net { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .7; }
+    .hero-inner { position: relative; max-width: 980px; }
+    .hero h1 { font-size: clamp(40px, 7.5vw, 92px); line-height: 1.02; letter-spacing: -.035em; margin: 22px 0 18px; font-weight: 800; }
+    .hero p.lead { font-size: clamp(17px, 2vw, 22px); color: var(--text-2); max-width: 760px; margin: 0 auto 34px; }
+    .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .ticker { margin-top: 56px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; max-width: 900px; margin-left: auto; margin-right: auto; }
+    .tick { padding: 18px; text-align: left; }
+    .tick .v { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+    .tick .l { font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; }
+    section.block { padding: 100px clamp(16px, 5vw, 64px); max-width: 1240px; margin: 0 auto; }
+    .eyebrow { color: var(--cyan); font-weight: 700; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
+    h2 { font-size: clamp(30px, 4.5vw, 52px); letter-spacing: -.025em; line-height: 1.08; margin: 12px 0 18px; }
+    .sub { color: var(--text-2); font-size: 18px; max-width: 720px; }
+    .layers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 48px; }
+    .layer { padding: 26px; position: relative; overflow: hidden; }
+    .layer .n { font-family: var(--mono); color: var(--text-3); font-size: 13px; }
+    .layer h3 { margin: 10px 0 8px; font-size: 22px; }
+    .layer p { margin: 0; color: var(--text-2); font-size: 15px; }
+    .layer::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--grad); opacity: .7; }
+    .mods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 48px; }
+    .mod { padding: 26px; transition: transform .2s, border-color .2s; }
+    .mod:hover { transform: translateY(-3px); border-color: var(--line-strong); }
+    .mod .ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 22px;
+      background: rgba(79, 140, 255, 0.12); border: 1px solid var(--line-strong); }
+    .mod h3 { margin: 16px 0 6px; font-size: 19px; }
+    .mod p { margin: 0; color: var(--text-2); font-size: 14.5px; }
+    .mod .kpi { margin-top: 14px; font-size: 13px; color: var(--green); font-weight: 600; }
+    .cta { text-align: center; padding: 70px 24px; margin: 0 auto 100px; max-width: 1100px;
+      background: radial-gradient(600px 300px at 50% 0%, rgba(79, 140, 255, 0.25), transparent 70%), var(--panel); }
+    footer { text-align: center; color: var(--text-3); font-size: 13px; padding: 30px 16px 50px; border-top: 1px solid var(--line); }
+    @media (max-width: 900px) {
+      .layers, .mods { grid-template-columns: 1fr 1fr; }
+      .ticker { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 560px) {
+      .layers, .mods { grid-template-columns: 1fr; }
+      .nav-links .btn:not(.primary) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+
+  <nav class="nav">
+    <a class="logo" href="./"><span class="logo-mark"></span> Digital Factory</a>
+    <div class="nav-links">
+      <a class="btn sm" href="deck.html">Presentation</a>
+      <a class="btn sm primary" href="app.html">Open live demo →</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <canvas id="net"></canvas>
+    <div class="hero-inner">
+      <span class="pill"><span class="dot live"></span> Vision 2027 · Electronics manufacturing in Egypt</span>
+      <h1>The factory that <span class="grad-text">sees, predicts</span><br>and decides.</h1>
+      <p class="lead">A living digital twin of every line, machine and product — with AI that catches failures before they happen, finds defects humans miss, and tells managers exactly what to do next.</p>
+      <div class="hero-cta">
+        <a class="btn primary" href="app.html">▶ Launch the live Digital Twin</a>
+        <a class="btn" href="deck.html">View the vision deck</a>
+      </div>
+      <div class="ticker">
+        <div class="tick card"><div class="v grad-text" data-count="30" data-suffix="–50%">0</div><div class="l">Less unplanned downtime*</div></div>
+        <div class="tick card"><div class="v grad-text" data-count="90" data-prefix="up to " data-suffix="%">0</div><div class="l">Better defect detection*</div></div>
+        <div class="tick card"><div class="v grad-text" data-count="12" data-suffix=" wks">0</div><div class="l">From kickoff to pilot ROI</div></div>
+        <div class="tick card"><div class="v grad-text" data-count="100" data-suffix="%">0</div><div class="l">On-premise · your data stays home</div></div>
+      </div>
+    </div>
+  </header>
+
+  <section class="block">
+    <div class="eyebrow">The vision</div>
+    <h2>Four layers. One brain for the whole factory.</h2>
+    <p class="sub">We don't replace your machines, MES or ERP. We connect to them, and turn the data they already produce into foresight and action.</p>
+    <div class="layers">
+      <div class="layer card"><div class="n">01 · CONNECT</div><h3>Every signal</h3><p>PLCs, SMT mounters, AOI, testers, energy meters and MES — streamed in real time over OPC UA &amp; MQTT.</p></div>
+      <div class="layer card"><div class="n">02 · SEE</div><h3>Live digital twin</h3><p>A real-time mirror of every line, station and unit. One screen from the shop floor to the boardroom.</p></div>
+      <div class="layer card"><div class="n">03 · PREDICT</div><h3>AI foresight</h3><p>Machine-health models predict failures days ahead. Vision AI spots defects at line speed.</p></div>
+      <div class="layer card"><div class="n">04 · ACT</div><h3>Decisions, not dashboards</h3><p>A production copilot that explains <em>why</em>, recommends <em>what</em>, and simulates the outcome first.</p></div>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:20px">
+    <div class="eyebrow">Built today — try it live</div>
+    <h2>Six modules, working in your browser right now.</h2>
+    <p class="sub">Everything below runs in the live demo with a simulated electronics plant. In production it plugs into your real equipment.</p>
+    <div class="mods">
+      <a class="mod card" href="app.html#twin"><div class="ic">🏭</div><h3>Live Digital Twin</h3><p>Animated plant floor: SMT, final assembly, test &amp; pack — every station's status, cycle time and health.</p><div class="kpi">● Real-time OEE, FPY, throughput</div></a>
+      <a class="mod card" href="app.html#maintenance"><div class="ic">🛠️</div><h3>Predictive Maintenance</h3><p>Vibration, temperature and current signatures turned into a remaining-useful-life forecast per machine.</p><div class="kpi">● Fix it on schedule, not on failure</div></a>
+      <a class="mod card" href="app.html#quality"><div class="ic">👁️</div><h3>AI Vision Quality</h3><p>Deep-learning inspection of every PCB: bridges, missing parts, tombstones, misalignment.</p><div class="kpi">● 100% inspection, zero fatigue</div></a>
+      <a class="mod card" href="app.html#simulator"><div class="ic">🧪</div><h3>What-If Simulator</h3><p>Test a demand spike, a third shift or a new line speed on the twin before touching the real line.</p><div class="kpi">● Decide with evidence</div></a>
+      <a class="mod card" href="app.html#energy"><div class="ic">⚡</div><h3>Energy &amp; Sustainability</h3><p>kWh and CO₂ per unit, per line, per hour — with AI peak-shaving recommendations.</p><div class="kpi">● Lower bills, greener exports</div></a>
+      <a class="mod card" href="app.html#copilot"><div class="ic">🤖</div><h3>Production Copilot</h3><p>Ask in plain language: "Why did Line 1 slow down?" — and get an answer grounded in live plant data.</p><div class="kpi">● Answers in seconds, not meetings</div></a>
+    </div>
+  </section>
+
+  <section class="cta card">
+    <div class="eyebrow">The proposal</div>
+    <h2>One line. Twelve weeks. Measurable ROI.</h2>
+    <p class="sub" style="margin:0 auto 28px">Start with a single pilot line, prove the numbers on your own floor, then scale plant-wide.</p>
+    <div class="hero-cta">
+      <a class="btn primary" href="app.html">Open the live demo</a>
+      <a class="btn" href="deck.html#roadmap">See the 12-week pilot plan</a>
+    </div>
+  </section>
+
+  <footer>
+    Digital Factory · Concept demo — all plant data shown is simulated for illustration.<br>
+    * Ranges from published industry studies (e.g. McKinsey, WEF Global Lighthouse Network); actual results depend on the baseline.
+  </footer>
+
+  <script>
+    // Animated network background
+    (function () {
+      const c = document.getElementById('net'), ctx = c.getContext('2d');
+      let w, h, pts = [];
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      function resize() {
+        w = c.clientWidth; h = c.clientHeight; c.width = w * dpr; c.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const n = Math.round(Math.min(90, w * h / 16000));
+        pts = Array.from({ length: n }, () => ({ x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - .5) * .35, vy: (Math.random() - .5) * .35 }));
+      }
+      function frame() {
+        ctx.clearRect(0, 0, w, h);
+        for (const p of pts) { p.x += p.vx; p.y += p.vy; if (p.x < 0 || p.x > w) p.vx *= -1; if (p.y < 0 || p.y > h) p.vy *= -1; }
+        for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+          const a = pts[i], b = pts[j], d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < 140) { ctx.strokeStyle = `rgba(79,140,255,${(1 - d / 140) * .35})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+        }
+        for (const p of pts) { ctx.fillStyle = 'rgba(34,211,238,.8)'; ctx.beginPath(); ctx.arc(p.x, p.y, 1.6, 0, 7); ctx.fill(); }
+        requestAnimationFrame(frame);
+      }
+      addEventListener('resize', resize); resize(); frame();
+    })();
+    // Count-up numbers
+    document.querySelectorAll('[data-count]').forEach(el => {
+      const end = +el.dataset.count, pre = el.dataset.prefix || '', suf = el.dataset.suffix || '';
+      const t0 = performance.now();
+      (function step(t) { const k = Math.min(1, (t - t0) / 1600), e = 1 - Math.pow(1 - k, 3);
+        el.textContent = pre + Math.round(end * e) + suf; if (k < 1) requestAnimationFrame(step); })(t0);
+    });
+  </script>
+</body>
+</html>
