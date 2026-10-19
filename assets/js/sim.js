@@ -5,7 +5,7 @@
 (function (g) {
   'use strict';
 
-  const rng = (g.DFRng && g.DFRng.stream) ? g.DFRng.stream('sim') : { range: (a, b) => a + Math.random() * (b - a), chance: p => Math.random() < p, float: () => Math.random() };
+  let rng = (g.DFRng && g.DFRng.stream) ? g.DFRng.stream('sim') : { range: (a, b) => a + Math.random() * (b - a), chance: p => Math.random() < p, float: () => Math.random() };
 
   const FIXED_DT = 0.1;              // fixed simulation step (sim seconds)
   const SIM_SPEED_DEFAULT = 20;      // default sim seconds per real second (UI: 20×)
@@ -794,10 +794,15 @@
   // what the twin expects if a change is applied (shown before "Apply")
   function preview(lineId, speed) {
     const l = line(lineId);
-    const fpyAt = s => 1 - (1 - l.fpy) * (1 + Math.max(0, s - 1) * 6);
+    const hours = 1.5;
+    const base = runShiftSimulation({ hours, maxSteps: 1600, seedSalt: 0x707276, lineSpeeds: { [lineId]: l.speed } });
+    const next = runShiftSimulation({ hours, maxSteps: 1600, seedSalt: 0x707276, lineSpeeds: { [lineId]: speed } });
+    const b = base.lines.find(x => x.id === lineId);
+    const n = next.lines.find(x => x.id === lineId);
+    const tphNow = b.good / hours;
+    const tph = n.good / hours;
     return {
-      tph: l.rate * speed * l.availBase * l.perf, tphNow: l.rate * l.speed * l.availBase * l.perf,
-      fpy: fpyAt(speed), fpyNow: fpyAt(l.speed),
+      tph, tphNow, fpy: n.Q, fpyNow: b.Q,
       kw: l.kw * (0.85 + 0.15 * speed), kwNow: l.kw * (0.85 + 0.15 * l.speed)
     };
   }
@@ -885,6 +890,71 @@
   }
   bindVisibility();
 
+  const SHIFT_START_PLANT = 6 * 3600;
+
+  function applyRunParams(opt) {
+    for (const l of S.lines) {
+      const sp = (opt.lineSpeeds && opt.lineSpeeds[l.id] != null) ? opt.lineSpeeds[l.id] : (opt.lineSpeed != null ? opt.lineSpeed : l.speed);
+      l.speed = clamp(sp, 0.8, 1.15);
+      if (opt.vision) l.fpy = Math.min(0.9995, l.fpy + 0.003);
+      if (opt.pdm) l.stations.forEach(s => { if (s.stoch) { s.stoch.weibullEta *= 1.4; s.stoch.minorRate *= 0.55; } });
+      if (opt.energy) l.kw *= 0.96;
+    }
+  }
+
+  function summarizeShift() {
+    const lines = S.lines.map(l => {
+      const c = oeeFromLedger(l.ledger);
+      return {
+        id: l.id, name: l.name, rate: l.rate, oee: c.oee, A: c.A, P: c.P, Q: c.Q,
+        produced: l.produced, good: l.good, ledger: l.ledger, kw: l.kw
+      };
+    });
+    const rateSum = lines.reduce((a, l) => a + l.rate, 0) || 1;
+    const oee = lines.reduce((a, l) => a + l.oee * l.rate, 0) / rateSum;
+    const out = lines.reduce((a, l) => a + l.good, 0);
+    const scrap = lines.reduce((a, l) => a + Math.max(0, l.produced - l.good), 0);
+    const fpy = lines.reduce((a, l) => a + l.Q * l.rate, 0) / rateSum;
+    return { oee, lines, out, scrap, fpy, energyKwh: S.energyKwh };
+  }
+
+  function runShiftSimulation(options) {
+    const opt = Object.assign({
+      seedSalt: 0, hours: 8, maxSteps: 4500, lineSpeed: null, lineSpeeds: null,
+      pdm: false, vision: false, energy: false, autoplay: false
+    }, options);
+    const saved = { S, seq, running, autoplay, speedMult, simAccum, lastStoryT, headlessMode, rng };
+    if (g.DFRng) rng = g.DFRng.create((g.DFRng.seed ^ opt.seedSalt) >>> 0, 0x53696d);
+    headlessMode = true;
+    running = false;
+    autoplay = !!opt.autoplay;
+    reset();
+    lastStoryT = -1;
+    S.t = SHIFT_START_PLANT;
+    S.real = 0;
+    applyRunParams(opt);
+    const totalSim = opt.hours * 3600;
+    const dt = Math.max(0.25, totalSim / opt.maxSteps);
+    const end = SHIFT_START_PLANT + totalSim;
+    let steps = 0;
+    while (S.t < end && steps < opt.maxSteps + 5) {
+      tick(dt);
+      if (autoplay) story();
+      steps++;
+    }
+    const result = summarizeShift();
+    S = saved.S;
+    seq = saved.seq;
+    running = saved.running;
+    autoplay = saved.autoplay;
+    speedMult = saved.speedMult;
+    simAccum = saved.simAccum;
+    lastStoryT = saved.lastStoryT;
+    headlessMode = saved.headlessMode;
+    rng = saved.rng;
+    return result;
+  }
+
   g.Sim = {
     FIXED_DT, SIM_SPEED: SIM_SPEED_DEFAULT, SPEED_OPTIONS, SCENARIOS, SHIFT_END, get seed() { return g.DFRng ? g.DFRng.seed : 0 },
     get speed() { return speedMult; },
@@ -898,7 +968,7 @@
     start() { if (!S) reset(); running = true; last = 0; requestAnimationFrame(loop); },
     reset() { reset(); lastStoryT = -1; },
     trigger(name) { if (scenarios[name]) { audit('You', 'Started scenario', (SCENARIOS.find(s => s.id === name) || {}).title || name); scenarios[name](); } },
-    act, control, preview, clock, line, st, machines, allStations, rulHours, agent, oeeFromLedger,
+    act, control, preview, clock, line, st, machines, allStations, rulHours, agent, oeeFromLedger, runShiftSimulation,
     forecast, failureRisk, healthScore, unitsToday, planToday: () => planAt(S.t), planAt,
     setAutonomy(id, level) {
       const a = agent(id); if (!a || a.locked) return;
@@ -923,4 +993,7 @@
     setAutoplay(v) { autoplay = v; },
     get autoplay() { return autoplay; }
   };
-})(window);
+})(typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : global);
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = (typeof globalThis !== 'undefined' ? globalThis : global).Sim;
+}
