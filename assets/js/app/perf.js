@@ -282,8 +282,72 @@
 
   /* ---------------- what-if ---------------- */
   const whatIfCache = new Map();
-  let whatIfWorker, whatIfSeq = 0;
+  let whatIfWorker, whatIfWorkerDisabled = false, whatIfSeq = 0;
   const pendingWhatIf = new Map();
+
+  function whatIfSyncResult(opt) {
+    const key = Sim.shiftSimCacheKey(opt);
+    if (whatIfCache.has(key)) return whatIfCache.get(key);
+    const r = Sim.runShiftSimulationCached(opt);
+    whatIfCache.set(key, r);
+    return r;
+  }
+
+  function whatIfWorkerUrl() {
+    const seed = Sim.seed;
+    return 'assets/js/sim-worker.js' + (seed != null && seed !== '' ? '?seed=' + (seed >>> 0) : '');
+  }
+
+  function disableWhatIfWorker() {
+    whatIfWorkerDisabled = true;
+    if (!whatIfWorker) return;
+    try { whatIfWorker.terminate(); } catch (e) { /* already dead */ }
+    whatIfWorker = null;
+  }
+
+  function recoverWhatIfViaSync() {
+    const pending = Array.from(pendingWhatIf.values());
+    pendingWhatIf.clear();
+    disableWhatIfWorker();
+    pending.forEach(p => {
+      try {
+        const result = whatIfSyncResult(p.opt);
+        p.resolve(result);
+      } catch (e) {
+        p.reject(e);
+      }
+    });
+  }
+
+  function ensureWhatIfWorker() {
+    if (whatIfWorkerDisabled || whatIfWorker) return whatIfWorker;
+    try {
+      whatIfWorker = new Worker(whatIfWorkerUrl());
+      whatIfWorker.onmessage = (ev) => {
+        const { id, result, error } = ev.data;
+        const pending = pendingWhatIf.get(id);
+        if (!pending) return;
+        pendingWhatIf.delete(id);
+        if (error) {
+          try {
+            const fallback = whatIfSyncResult(pending.opt);
+            pending.resolve(fallback);
+          } catch (e) {
+            pending.reject(new Error(error));
+          }
+          return;
+        }
+        whatIfCache.set(pending.key, result);
+        pending.resolve(result);
+      };
+      whatIfWorker.onerror = () => { recoverWhatIfViaSync(); };
+      whatIfWorker.onmessageerror = () => { recoverWhatIfViaSync(); };
+    } catch (e) {
+      disableWhatIfWorker();
+      return null;
+    }
+    return whatIfWorker;
+  }
 
   function whatIfRunOptions(o) {
     const hours = o.shifts * 7.5;
@@ -294,33 +358,24 @@
   function runWhatIfShift(opt) {
     const key = Sim.shiftSimCacheKey(opt);
     if (whatIfCache.has(key)) return Promise.resolve(whatIfCache.get(key));
-    if (typeof Worker === 'undefined' || typeof window === 'undefined') {
-      const r = Sim.runShiftSimulationCached(opt);
-      whatIfCache.set(key, r);
-      return Promise.resolve(r);
+    if (typeof Worker === 'undefined' || typeof window === 'undefined' || whatIfWorkerDisabled) {
+      return Promise.resolve(whatIfSyncResult(opt));
     }
     return new Promise((resolve, reject) => {
-      if (!whatIfWorker) {
-        whatIfWorker = new Worker('assets/js/sim-worker.js');
-        whatIfWorker.onmessage = (ev) => {
-          const { id, result, error } = ev.data;
-          const pending = pendingWhatIf.get(id);
-          if (!pending) return;
-          pendingWhatIf.delete(id);
-          if (error) pending.reject(new Error(error));
-          else {
-            whatIfCache.set(pending.key, result);
-            pending.resolve(result);
-          }
-        };
-        whatIfWorker.onerror = (err) => {
-          pendingWhatIf.forEach(p => p.reject(err));
-          pendingWhatIf.clear();
-        };
+      const worker = ensureWhatIfWorker();
+      if (!worker) {
+        try { resolve(whatIfSyncResult(opt)); } catch (e) { reject(e); }
+        return;
       }
       const id = ++whatIfSeq;
-      pendingWhatIf.set(id, { resolve, reject, key });
-      whatIfWorker.postMessage({ id, opt });
+      pendingWhatIf.set(id, { resolve, reject, key, opt });
+      try {
+        worker.postMessage({ id, opt });
+      } catch (e) {
+        pendingWhatIf.delete(id);
+        recoverWhatIfViaSync();
+        try { resolve(whatIfSyncResult(opt)); } catch (err) { reject(err); }
+      }
     });
   }
 
@@ -359,10 +414,17 @@
     const token = ++simRunToken;
     $('#vDemand').textContent = o.demand + '%'; $('#vShifts').textContent = o.shifts; $('#vSpeed').textContent = o.speed + '%';
     const baseOpt = whatIfRunOptions(Object.assign({}, o, { pdm: false, vision: false, energy: false }));
-    const [rShift, bShift] = await Promise.all([
-      runWhatIfShift(whatIfRunOptions(o)),
-      runWhatIfShift(baseOpt)
-    ]);
+    let rShift, bShift;
+    try {
+      [rShift, bShift] = await Promise.all([
+        runWhatIfShift(whatIfRunOptions(o)),
+        runWhatIfShift(baseOpt)
+      ]);
+    } catch (e) {
+      if (token !== simRunToken) return;
+      rShift = whatIfSyncResult(whatIfRunOptions(o));
+      bShift = whatIfSyncResult(baseOpt);
+    }
     if (token !== simRunToken) return;
     const r = modelFromRun(rShift, o);
     const b = modelFromRun(bShift, Object.assign({}, o, { pdm: false, vision: false, energy: false }));
