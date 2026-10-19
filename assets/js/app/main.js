@@ -101,6 +101,18 @@
 
   addEventListener('themechange', () => requestAnimationFrame(() => DF.refresh()));
 
+  const simSpeed = $('#simSpeed');
+  if (simSpeed) {
+    simSpeed.addEventListener('click', e => {
+      const b = e.target.closest('[data-simspeed]');
+      if (!b) return;
+      const sp = +b.dataset.simspeed;
+      Sim.setSpeed(sp);
+      simSpeed.querySelectorAll('[data-simspeed]').forEach(btn => btn.classList.toggle('on', +btn.dataset.simspeed === sp));
+    });
+    Sim.on(e => { if (e.type === 'speed') simSpeed.querySelectorAll('[data-simspeed]').forEach(btn => btn.classList.toggle('on', +btn.dataset.simspeed === e.speed)); });
+  }
+
   Sim.start();
   DF.renderInsights(); DF.renderWorkOrders(); DF.renderPareto(); DF.renderCrew(); DF.renderAlarmStrip(); DF.renderAudit();
   DF.route();
