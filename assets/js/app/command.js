@@ -9,32 +9,53 @@
     const snap = DF.replay != null ? S.history[DF.replay] : null;
     const oee = snap ? snap.oee : S.oee, fpy = snap ? snap.fpy : S.fpy;
     const kO = $('#kOee'); kO.textContent = pct(oee);
-    kO.style.color = oee >= 0.85 ? 'var(--success)' : oee >= 0.75 ? 'var(--warning)' : 'var(--danger)';
+    // ISA-101: a normal value stays in ink; colour only when it is not normal
+    kO.style.color = oee >= 0.85 ? '' : oee >= 0.75 ? 'var(--warning-text)' : 'var(--danger-text)';
     $('#kOeeS').textContent = oee >= 0.85 ? 'At benchmark (85%+)' : oee >= 0.75 ? 'Below 85% benchmark' : 'A line is stopped';
     const u = snap ? snap.units : Sim.unitsToday(), p = Sim.planToday();
     $('#kUnits').textContent = fmt(u);
     const d = (u / p - 1) * 100;
-    $('#kUnitsS').innerHTML = `Plan ${fmt(p)} · <span class="${d >= 0 ? 'ok-text' : 'danger-text'}">${d >= 0 ? '+' : ''}${d.toFixed(1)}%</span>`;
+    $('#kUnitsS').innerHTML = `Plan ${fmt(p)} · <span class="${d >= 0 ? '' : 'danger-text'}">${d >= 0 ? '+' : ''}${d.toFixed(1)}%</span>`;
     const f = Sim.forecast();
     const kF = $('#kFc'); kF.textContent = Math.round(f.prob * 100) + '%';
-    kF.style.color = f.prob >= 0.8 ? 'var(--success)' : f.prob >= 0.5 ? 'var(--warning)' : 'var(--danger)';
+    kF.style.color = f.prob >= 0.8 ? '' : f.prob >= 0.5 ? 'var(--warning-text)' : 'var(--danger-text)';
     $('#kFcS').textContent = `chance to hit plan · P50 ${fmt(f.p50)}`;
     $('#kFpy').textContent = pct(fpy);
-    $('#kFpy').style.color = fpy > 0.985 ? '' : 'var(--warning)';
+    $('#kFpy').style.color = fpy > 0.985 ? '' : 'var(--warning-text)';
     const open = S.alarms.filter(a => a.state !== 'cleared');
     const n = snap ? snap.alarms : open.length;
     $('#kAlarms').textContent = n;
-    $('#kAlarms').style.color = open.some(a => a.prio === 1) ? 'var(--danger)' : '';
+    $('#kAlarms').style.color = open.some(a => a.prio === 1) ? 'var(--danger-text)' : '';
     const inc = S.incidents.filter(i => i.open).length;
     $('#kAlarmsS').textContent = inc ? `${inc} incident${inc > 1 ? 's' : ''} · AI grouped` : `${open.filter(a => a.state === 'active').length} not acknowledged`;
     $('#kSaved').textContent = money(S.saved);
     const acts = S.agents.reduce((a, g) => a + g.actions, 0);
     $('#kSavedS').textContent = `${acts} action${acts === 1 ? '' : 's'} by agents`;
     $('#clock').textContent = snap ? snap.clock : Sim.clock();
+    DF.renderSay(snap, f, open);
     const nb = $('#navAlarms'); const unack = open.filter(a => a.state === 'active' && a.prio <= 2).length;
     nb.hidden = !unack; nb.textContent = unack;
     const wait = S.agents.filter(a => a.status === 'waiting').length;
     const na = $('#navAgents'); na.hidden = !wait; na.textContent = wait;
+  };
+
+  // the page head's live sentence: the one thing the plant needs from you now, then the shift outlook
+  DF.renderSay = function (snap, f, open) {
+    const S = Sim.state, el = $('#viewSay');
+    let lead;
+    if (snap) lead = `Replaying the plant at <b>${snap.clock}</b>.`;
+    else {
+      const inc = S.incidents.find(i => i.open);
+      const waiting = S.insights.filter(i => i.actions && i.actions.some(a => a.primary) && i.level !== 'ok');
+      const risk = waiting.reduce((a, i) => a + (i.risk || 0), 0);
+      const urgent = open.filter(a => a.state === 'active' && a.prio <= 2).length;
+      if (inc) lead = `<span class="bad">${inc.members.length + 1} alarms, one cause:</span> ${esc(inc.cause)}.`;
+      else if (waiting.length) lead = `<span class="warn">${waiting.length} decision${waiting.length > 1 ? 's wait' : ' waits'} for you</span>${risk ? `, <b>${money(risk)}</b> at stake` : ''}.`;
+      else if (urgent) lead = `<span class="warn">${urgent} urgent alarm${urgent > 1 ? 's' : ''}</span> not yet acknowledged.`;
+      else lead = 'All lines running inside their limits.';
+    }
+    const html = `${lead} Shift A is <b>${Math.round(f.prob * 100)}%</b> likely to hit plan.`;
+    if (el.innerHTML !== html) el.innerHTML = html;
   };
 
   DF.renderCrew = function () {
@@ -53,7 +74,7 @@
       <div class="it">${icon(i.icon || 'info')}<span>${esc(i.title)}</span><span class="conf">${esc(i.conf || '')}</span></div>
       <div class="ib">${esc(i.body)}</div>
       ${acts.length ? `<div class="ia">${acts.map(a => `<button type="button" class="btn btn-sm ${a.primary ? 'btn-primary' : 'btn-secondary'}" data-act="${a.key}" data-id="${i.id}">${esc(a.label)}</button>`).join('')}</div>` : ''}
-      <div class="im">${i.time} · ${ag ? esc(ag.name) : 'AI engine'}${i.risk && i.level !== 'ok' ? ' · ' + money(i.risk) + ' at stake' : ''}</div>
+      <div class="im">${i.time ? i.time + ' · ' : ''}${ag ? esc(ag.name) : 'AI engine'}${i.risk && i.level !== 'ok' ? ' · ' + money(i.risk) + ' at stake' : ''}</div>
     </div>`;
   };
   DF.renderInsights = function () {
@@ -70,7 +91,7 @@
     const open = S.alarms.filter(a => a.state !== 'cleared' && !a.shelved).sort((a, b) => a.prio - b.prio || b.real - a.real);
     const incs = S.incidents.filter(i => i.open);
     let html = '';
-    incs.slice(0, 1).forEach(i => { html += `<div class="al-row" style="background:var(--danger-soft)"><span class="prio p1">${icon('layers', 'icon-xs')}</span><span class="msg"><b>${esc(i.title)}</b><small>${i.members.length + 1} alarms grouped · cause: ${esc(i.cause)}</small></span><button type="button" class="btn btn-secondary btn-sm" data-go="alarms">Open</button></div>`; });
+    incs.slice(0, 1).forEach(i => { html += `<div class="al-row incident"><span class="prio p1">${icon('layers', 'icon-xs')}</span><span class="msg"><b>${esc(i.title)}</b><small>${i.members.length + 1} alarms grouped · cause: ${esc(i.cause)}</small></span><button type="button" class="btn btn-secondary btn-sm" data-go="alarms">Open</button></div>`; });
     html += open.filter(a => !a.incident).slice(0, 4).map(DF.alarmRow).join('');
     $('#alarmStrip').innerHTML = html || '<div class="empty-row">No active alarms.</div>';
   };

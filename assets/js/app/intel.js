@@ -10,7 +10,7 @@
     $('#agents').innerHTML = Sim.state.agents.map(a => {
       const [lbl, chip] = STATUS[a.status];
       return `<div class="card agent ${a.status}">
-        <div class="ah"><span class="kpi-icon">${icon(a.icon)}</span><div><b>${esc(a.name)}</b><small>${esc(a.scope)}</small></div><span class="chip ${chip}">${lbl}</span></div>
+        <div class="ah"><div><b>${esc(a.name)}</b><small>${esc(a.scope)}</small></div><span class="chip ${chip}">${lbl}</span></div>
         <div class="seg-tabs sm" role="group" aria-label="Autonomy for ${esc(a.name)}">${AUT.map(([k, l]) => `<button type="button" class="seg ${a.autonomy === k ? 'active' : ''}" aria-pressed="${a.autonomy === k}" data-aut="${k}" data-agent="${a.id}" ${a.locked && k !== 'auto' ? 'disabled title="Safety actions are always automatic"' : ''}>${l}</button>`).join('')}</div>
         <div class="thoughts" aria-label="What the agent is thinking">${a.log.map(l => `<div><time>${l.time}</time>${esc(l.text)}</div>`).join('')}</div>
         <div class="stats"><span>Actions today <b>${a.actions}</b></span><span>Value <b>${money(a.value)}</b></span>${a.locked ? '<span class="chip chip-neutral">Always on</span>' : ''}</div>
@@ -97,8 +97,8 @@
     hist.forEach(s => { const [hh, mm] = s.clock.split(':').map(Number); ctx.lineTo(X(hh + mm / 60), Y(s.units)); });
     ctx.lineTo(X(now), Y(f.units)); ctx.stroke();
     // cone
-    ctx.fillStyle = 'rgba(124, 92, 255, 0.22)';
-    ctx.beginPath(); ctx.moveTo(X(now), Y(f.units)); ctx.lineTo(X(14), Y(f.p90)); ctx.lineTo(X(14), Y(f.p10)); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = P.indigo; ctx.globalAlpha = 0.2;
+    ctx.beginPath(); ctx.moveTo(X(now), Y(f.units)); ctx.lineTo(X(14), Y(f.p90)); ctx.lineTo(X(14), Y(f.p10)); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
     ctx.strokeStyle = P.indigo; ctx.setLineDash([6, 5]); ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(X(now), Y(f.units)); ctx.lineTo(X(14), Y(f.p50)); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = P.brand2; ctx.beginPath(); ctx.arc(X(now), Y(f.units), 5, 0, 7); ctx.fill();
@@ -200,7 +200,7 @@
       const running = S.active[s.id] || (started[s.id] && S.real - started[s.id] < 15);
       const ag = Sim.agent(s.agent);
       return `<div class="card sc ${running ? 'running' : ''}">
-        <div class="sh"><span class="kpi-icon">${icon(s.icon)}</span><div><b>${esc(s.title)}</b><small>${esc(s.area)} · ${esc(ag.name)}</small></div></div>
+        <div class="sh"><div><b>${esc(s.title)}</b><small>${esc(s.area)} · ${esc(ag.name)}</small></div></div>
         <p><b>What happens:</b> ${esc(s.what)}</p>
         <p><b>What the AI does:</b> ${esc(s.ai)}</p>
         <button type="button" class="btn ${running ? 'btn-secondary' : 'btn-primary'} btn-sm" data-run="${s.id}" ${running ? 'disabled' : ''}>${icon(running ? 'clock' : 'play')}${running ? 'Running…' : 'Run scenario'}</button>

@@ -6,7 +6,7 @@
   <title>Digital Factory · Presentation</title>
   <meta name="description" content="Digital Factory: the case for a live digital twin and predictive AI, with a 12-week pilot plan. Prepared for Samsung Electronics Egypt.">
   <script>try{var t=localStorage.getItem('df-theme')}catch(e){}document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')</script>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%232189FF'/%3E%3Cstop offset='1' stop-color='%231428A0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3Crect x='8' y='8' width='5' height='15' rx='1' fill='%23fff'/%3E%3Crect x='16' y='13' width='5' height='10' rx='1' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231428A0'/%3E%3Crect x='8' y='8' width='5' height='15' rx='1' fill='%23fff'/%3E%3Crect x='16' y='13' width='5' height='10' rx='1' fill='%23fff'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="assets/kit/fonts.css">
   <link rel="stylesheet" href="assets/kit/samsung-ui.css">
   <link rel="stylesheet" href="assets/css/theme.css">
@@ -16,211 +16,218 @@
 <div class="viewport">
 <div class="stage" id="stage">
 
-  <!-- 1 · TITLE -->
+  <!-- 1 · TITLE: the name, the promise, the line drawn below -->
   <section class="slide title-slide" data-id="title">
     <h1 class="r d1">Digital Factory</h1>
-    <p class="lead r d2" style="font-size:30px;max-width:980px;color:var(--text)">See every line live. <span class="hl">Fix problems before they happen.</span></p>
-    <div class="meta r d3">
-      <div><b>For</b>Samsung Electronics Egypt, production leadership</div>
-      <div><b>Today</b>Vision, live demo, and a 12-week pilot plan</div>
-      <div><b>Duration</b>20 minutes</div>
-      <div><b>Decision requested</b>Approve one pilot line</div>
-    </div>
+    <p class="promise r d2">See every line live. <span class="hl">Fix problems before they happen.</span></p>
+    <dl class="meta r d3">
+      <div><dt>For</dt><dd>Samsung Electronics Egypt, production leadership</dd></div>
+      <div><dt>Today</dt><dd>Vision, live demo, and a 12-week pilot plan</dd></div>
+      <div><dt>Duration</dt><dd>20 minutes</dd></div>
+      <div><dt>Decision requested</dt><dd>Approve one pilot line</dd></div>
+    </dl>
     <figure class="title-twin r d2" aria-hidden="true"><canvas data-twin="full"></canvas></figure>
     <aside class="sn" hidden>Open with confidence: "We are not here to show ideas on paper. We will show you a smart factory running right now." Introduce yourself and the team in one sentence. Say the meeting has three parts: the vision, a live demo, and a 12-week pilot on one line. End by naming the decision you will ask for: approving one pilot line.</aside>
   </section>
 
-  <!-- 2 · EXECUTIVE SUMMARY -->
-  <section class="slide" data-id="summary">
+  <!-- 2 · EXECUTIVE SUMMARY: the whole meeting on a blue field -->
+  <section class="slide field tone-blue" data-id="summary">
     <h2 class="r d1">One line, twelve weeks, <span class="hl">a measured result.</span></h2>
-    <div class="grid g3 r d2" style="margin-top:44px">
-      <div class="card box"><div class="step-n2">1</div><h3>The opportunity</h3><p>Downtime, quality escapes and energy are the largest controllable costs on an electronics line. Most of the data needed to reduce them already exists on the floor.</p></div>
-      <div class="card box"><div class="step-n2">2</div><h3>The solution</h3><p>A live digital twin of the plant with AI that predicts failures, inspects every board, and recommends the next best action, built on top of existing systems.</p></div>
-      <div class="card box hl-box"><div class="step-n2">3</div><h3>The decision</h3><p>Approve a 12-week pilot on one SMT line. Success criteria are agreed up front and measured by your own team.</p></div>
+    <div class="cols c3 r d2">
+      <div><h3>The opportunity</h3><p>Downtime, quality escapes and energy are the largest controllable costs on an electronics line. Most of the data needed to reduce them already exists on the floor.</p></div>
+      <div><h3>The solution</h3><p>A live digital twin of the plant with AI that predicts failures, inspects every board, and recommends the next best action, built on top of existing systems.</p></div>
+      <div class="key"><h3>The decision</h3><p>Approve a 12-week pilot on one SMT line. Success criteria are agreed up front and measured by your own team.</p></div>
     </div>
     <aside class="sn" hidden>This slide is the whole meeting in one page. Read the three titles: opportunity, solution, decision. Then say: "The rest of the presentation supports these three points." Senior leaders like the answer first.</aside>
   </section>
 
-  <!-- 3 · SITUATION -->
-  <section class="slide" data-id="situation">
-    <h2 class="r d1">Every machine already produces data. <span class="hl">Most decisions still use yesterday's numbers.</span></h2>
-    <div class="grid g4 r d2" style="margin-top:40px">
-      <div class="card box kpi-red"><span class="kpi-icon" data-icon="clock"></span><h3>Unplanned stops</h3><p>One failure on an SMT line stops assembly, test and shipping behind it.</p></div>
-      <div class="card box kpi-amber"><span class="kpi-icon" data-icon="alert"></span><h3>Quality escapes</h3><p>A defect found in the market costs far more than one caught on the line.</p></div>
-      <div class="card box kpi-teal"><span class="kpi-icon" data-icon="chart"></span><h3>Energy costs</h3><p>Tariffs are rising, and export customers ask for CO₂ per unit.</p></div>
-      <div class="card box kpi-indigo"><span class="kpi-icon" data-icon="users"></span><h3>Know-how at risk</h3><p>Expert judgement lives in people's heads and leaves at shift end.</p></div>
+  <!-- 3 · SITUATION: four costs beside the operator -->
+  <section class="slide with-photo" data-id="situation">
+    <div class="lhs">
+      <h2 class="r d1">Every machine already produces data. <span class="hl">Most decisions still use yesterday's numbers.</span></h2>
+      <div class="cols c2 r d2">
+        <div><h3>Unplanned stops</h3><p>One failure on an SMT line stops assembly, test and shipping behind it.</p></div>
+        <div><h3>Quality escapes</h3><p>A defect found in the market costs far more than one caught on the line.</p></div>
+        <div><h3>Energy costs</h3><p>Tariffs are rising, and export customers ask for CO₂ per unit.</p></div>
+        <div><h3>Know-how at risk</h3><p>Expert judgement lives in people's heads and leaves at shift end.</p></div>
+      </div>
+      <p class="lead r d3">The world's leading factories, including the WEF Global Lighthouse Network, solved this the same way: <b>connect everything, see it live, let AI predict, and let people decide faster.</b></p>
     </div>
-    <p class="lead r d3" style="margin-top:40px">The world's leading factories, including the WEF Global Lighthouse Network, solved this the same way: <b>connect everything, see it live, let AI predict, and let people decide faster.</b></p>
+    <figure class="photo r d2"><img src="assets/img/operator.jpg" width="1600" height="1067" alt="An operator's gloved hand on a machine on a production line"></figure>
     <aside class="sn" hidden>This slide is about his problems, not our product. Ask one open question: "Which of these four costs you the most today?" Let him talk. Whatever he says, connect it to the demo later.</aside>
   </section>
 
-
-  <!-- 4 · THE 2030 DIRECTION -->
+  <!-- 4 · THE 2030 DIRECTION: the date on the horizon, the four pillars below -->
   <section class="slide" data-id="mandate">
     <h2 class="r d1">Samsung's goal: every factory AI-driven by 2030. <span class="hl">Beni Suef can be ready early.</span></h2>
-    <div class="grid g4 r d2" style="margin-top:36px">
-      <div class="card box kpi-blue"><span class="kpi-icon" data-icon="layers"></span><h3>Digital twin</h3><p>Simulation across the whole chain, from materials warehousing to production and shipping.</p><div class="have">In the demo: live twin, time machine, what-if</div></div>
-      <div class="card box kpi-indigo"><span class="kpi-icon" data-icon="sparkles"></span><h3>AI agents</h3><p>Agents for quality, production and logistics that plan and act toward goals.</p><div class="have">In the demo: six agents with an autonomy dial</div></div>
-      <div class="card box kpi-green"><span class="kpi-icon" data-icon="shield"></span><h3>Safety AI</h3><p>Early detection of hazards and automatic prevention across environment, health and safety.</p><div class="have">In the demo: safety agent, 0.4 s response</div></div>
-      <div class="card box kpi-amber"><span class="kpi-icon" data-icon="settings"></span><h3>Robotics</h3><p>Logistics, assembly and safety robots, with humanoids phased in over time.</p><div class="have">In the demo: AGVs dispatched by AI</div></div>
+    <ol class="road r d2">
+      <li><b>March 2026</b><span>Samsung announces AI-driven factories worldwide</span></li>
+      <li class="here"><b>This quarter</b><span>Pilot on one Beni Suef line (proposed)</span></li>
+      <li><b>2030</b><span>Every Samsung factory AI-driven</span></li>
+    </ol>
+    <div class="cols c4 r d3">
+      <div><h3>Digital twin</h3><p>Simulation across the whole chain, from materials warehousing to production and shipping.</p><p class="have">In the demo: live twin, time machine, what-if</p></div>
+      <div><h3>AI agents</h3><p>Agents for quality, production and logistics that plan and act toward goals.</p><p class="have">In the demo: six agents with an autonomy dial</p></div>
+      <div><h3>Safety AI</h3><p>Early detection of hazards and automatic prevention across environment, health and safety.</p><p class="have">In the demo: safety agent, 0.4 s response</p></div>
+      <div><h3>Robotics</h3><p>Logistics, assembly and safety robots, with humanoids phased in over time.</p><p class="have">In the demo: AGVs dispatched by AI</p></div>
     </div>
-    <p class="lead r d3" style="margin-top:32px"><b>Digital Factory is a local, fast way to put these pillars to work on one Beni Suef line, starting this quarter.</b></p>
-    <div class="src-note r d4">Source: Samsung Electronics announcement of 1 March 2026 on AI-driven factories by 2030, as reported by The Korea Times and Korea JoongAng Daily.</div>
+    <p class="lead r d4"><b>Digital Factory is a local, fast way to put these pillars to work on one Beni Suef line, starting this quarter.</b></p>
+    <p class="src-note r d4">Source: Samsung Electronics announcement of 1 March 2026 on AI-driven factories by 2030, as reported by The Korea Times and Korea JoongAng Daily.</p>
     <aside class="sn" hidden>Do not lecture him about his own company. Say: "As you know, headquarters announced in March that every Samsung factory will be AI-driven by 2030. Our proposal is a practical way for Beni Suef to get there early, on one line, with local engineers." Point at the green line under each card: everything is already working in the demo.</aside>
   </section>
 
-  <!-- 5 · WHAT THE BEST ACHIEVE -->
-  <section class="slide" data-id="lighthouses">
+  <!-- 5 · WHAT THE BEST ACHIEVE: four figures on the ink field -->
+  <section class="slide field tone-ink" data-id="lighthouses">
     <h2 class="r d1">The results are public. <span class="hl">The gap is in execution.</span></h2>
-    <div class="grid g4 r d2" style="margin-top:36px">
-      <div class="card box"><div class="big hl">−78%</div><h3>Lead time</h3><p>Siemens electronics plant, Nanjing. Named a WEF Lighthouse in 2026 with more than 50 AI applications and +14% productivity.</p></div>
-      <div class="card box"><div class="big hl">−40%</div><h3>Defect rate</h3><p>Haier water-purifier factory, Qingdao. Quality costs down 72% after 32 digital solutions (company-reported).</p></div>
-      <div class="card box"><div class="big hl">≈ 50%</div><h3>Faster factory setup</h3><p>Foxconn plans plants and trains robots in a digital twin before building them (company estimate).</p></div>
-      <div class="card box hl-box"><div class="big hl">238</div><h3>Lighthouse sites</h3><p>Generative AI already makes up 23% of the top solutions in the WEF network.</p></div>
+    <div class="cols c4 figs r d2">
+      <div><b class="fig">−78%</b><h3>Lead time</h3><p>Siemens electronics plant, Nanjing. Named a WEF Lighthouse in 2026 with more than 50 AI applications and +14% productivity.</p></div>
+      <div><b class="fig">−40%</b><h3>Defect rate</h3><p>Haier water-purifier factory, Qingdao. Quality costs down 72% after 32 digital solutions (company-reported).</p></div>
+      <div><b class="fig">≈ 50%</b><h3>Faster factory setup</h3><p>Foxconn plans plants and trains robots in a digital twin before building them (company estimate).</p></div>
+      <div><b class="fig">238</b><h3>Lighthouse sites</h3><p>Generative AI already makes up 23% of the top solutions in the WEF network.</p></div>
     </div>
-    <div class="src-note r d4">Sources: WEF Global Lighthouse Network (2025 report, 2026 releases); Siemens press release on Nanjing; Haier press release; NVIDIA and Foxconn case study. Results depend on the starting point.</div>
+    <p class="src-note r d4">Sources: WEF Global Lighthouse Network (2025 report, 2026 releases); Siemens press release on Nanjing; Haier press release; NVIDIA and Foxconn case study. Results depend on the starting point.</p>
     <aside class="sn" hidden>Keep this short: these are the world's references. The message: "The technology is proven. What wins is how fast and how well it is applied on the floor." That is our role.</aside>
   </section>
 
-  <!-- 4 · THE SHIFT -->
+  <!-- 6 · THE SHIFT: today on the left in grey, tomorrow on the right in ink -->
   <section class="slide" data-id="shift">
     <h2 class="r d1">From reacting to problems <span class="hl">to preventing them.</span></h2>
-    <div class="card vs r d2">
-      <div class="h">Today</div><div></div><div class="h hl">With Digital Factory</div>
-      <div class="c old">Machines are repaired after they fail</div><div class="arrow" data-icon="arrowRight"></div><div class="c new">Repairs are planned days before a failure</div>
-      <div class="c old">Inspection by sampling and human eyes</div><div class="arrow" data-icon="arrowRight"></div><div class="c new">Every unit inspected by AI at line speed</div>
-      <div class="c old">Yesterday's report in this morning's meeting</div><div class="arrow" data-icon="arrowRight"></div><div class="c new">A live view of every line, every second</div>
-      <div class="c old">Big decisions based on experience alone</div><div class="arrow" data-icon="arrowRight"></div><div class="c new">Every decision tested on the twin first</div>
-      <div class="c old">Answers depend on finding the right engineer</div><div class="arrow" data-icon="arrowRight"></div><div class="c new">Answers from the copilot in seconds</div>
+    <div class="vs r d2" role="table" aria-label="Today compared with Digital Factory">
+      <div class="vs-row vs-head" role="row"><span role="columnheader">Today</span><i aria-hidden="true"></i><span role="columnheader">With Digital Factory</span></div>
+      <div class="vs-row" role="row"><span role="cell" class="old">Machines are repaired after they fail</span><i data-icon="arrowRight" aria-hidden="true"></i><span role="cell">Repairs are planned days before a failure</span></div>
+      <div class="vs-row" role="row"><span role="cell" class="old">Inspection by sampling and human eyes</span><i data-icon="arrowRight" aria-hidden="true"></i><span role="cell">Every unit inspected by AI at line speed</span></div>
+      <div class="vs-row" role="row"><span role="cell" class="old">Yesterday's report in this morning's meeting</span><i data-icon="arrowRight" aria-hidden="true"></i><span role="cell">A live view of every line, every second</span></div>
+      <div class="vs-row" role="row"><span role="cell" class="old">Big decisions based on experience alone</span><i data-icon="arrowRight" aria-hidden="true"></i><span role="cell">Every decision tested on the twin first</span></div>
+      <div class="vs-row" role="row"><span role="cell" class="old">Answers depend on finding the right engineer</span><i data-icon="arrowRight" aria-hidden="true"></i><span role="cell">Answers from the copilot in seconds</span></div>
     </div>
     <aside class="sn" hidden>Read the rows quickly. Left is today, right is the goal. Do not explain details. Finish with: "Let me show you this instead of describing it."</aside>
   </section>
 
-  <!-- 5 · SOLUTION -->
+  <!-- 7 · SOLUTION: four layers, the connection in view -->
   <section class="slide" data-id="solution">
     <h2 class="r d1">Four layers. <span class="hl">One clear picture of the plant.</span></h2>
     <p class="lead r d2">Nothing is replaced. Digital Factory sits on top of the machines, MES and ERP you already run.</p>
-    <div class="layers-d r d3">
-      <div class="card layer-d kpi-green"><span class="kpi-icon" data-icon="link"></span><h3>Every signal</h3><ul><li>PLCs and SMT equipment</li><li>AOI, SPI and testers</li><li>Energy meters and AGVs</li><li>MES, ERP and CMMS</li></ul></div>
-      <div class="card layer-d kpi-blue"><span class="kpi-icon" data-icon="dashboard"></span><h3>Live digital twin</h3><ul><li>Every line, station and unit</li><li>OEE, yield and takt, live</li><li>Floor to boardroom</li><li>Screens and mobile</li></ul></div>
-      <div class="card layer-d kpi-indigo"><span class="kpi-icon" data-icon="sparkles"></span><h3>AI foresight</h3><ul><li>Remaining machine life</li><li>Vision defect detection</li><li>Root-cause analysis</li><li>Demand and energy forecasts</li></ul></div>
-      <div class="card layer-d kpi-amber"><span class="kpi-icon" data-icon="checkCircle"></span><h3>Clear decisions</h3><ul><li>Actions ranked by value</li><li>Automatic work orders</li><li>What-if simulation</li><li>Production copilot</li></ul></div>
+    <div class="cols c4 r d3">
+      <div><h3>Every signal</h3><ul><li>PLCs and SMT equipment</li><li>AOI, SPI and testers</li><li>Energy meters and AGVs</li><li>MES, ERP and CMMS</li></ul></div>
+      <div><h3>Live digital twin</h3><ul><li>Every line, station and unit</li><li>OEE, yield and takt, live</li><li>Floor to boardroom</li><li>Screens and mobile</li></ul></div>
+      <div><h3>AI foresight</h3><ul><li>Remaining machine life</li><li>Vision defect detection</li><li>Root-cause analysis</li><li>Demand and energy forecasts</li></ul></div>
+      <div><h3>Clear decisions</h3><ul><li>Actions ranked by value</li><li>Automatic work orders</li><li>What-if simulation</li><li>Production copilot</li></ul></div>
     </div>
+    <figure class="band r d4"><img src="assets/img/connectors.jpg" width="1600" height="1064" alt="A row of industrial air connectors on a machine"></figure>
     <aside class="sn" hidden>The key sentence: "We do not replace any machine or system you have." This removes the fear of risk. A simple way to explain the layers: nerves (Connect), eyes (See), brain (Predict), hands (Act).</aside>
   </section>
 
-  <!-- 6 · LIVE DEMO -->
-  <section class="slide" data-id="demo" style="padding-bottom:70px">
+  <!-- 8 · LIVE DEMO -->
+  <section class="slide demo-slide" data-id="demo">
     <div class="demo-head">
-      <div><h2 class="r d1" style="margin-bottom:0">The command room, running <span class="hl">right now.</span></h2></div>
+      <h2 class="r d1">The command room, running <span class="hl">right now.</span></h2>
       <a class="btn btn-primary btn-lg r d2" href="app.html" target="_blank" rel="noopener">Open full screen <span data-icon="maximize"></span></a>
     </div>
     <div class="demo-wrap r d2" id="demoWrap"><iframe id="demoFrame" title="Digital Factory live demo" data-src="app.html?embed=1"></iframe></div>
     <aside class="sn" hidden>The most important part. Open the demo full screen. (1) Show the command room and plant OEE. (2) Open Scenarios and run "Bearing wear on Mounter B". Wait for the alarm: "The AI saw this failure about 40 hours early." (3) Let him click "Schedule repair" himself. When "EGP 1.6M saved" appears, pause for two seconds. (4) Open the Leadership view. (5) Open the copilot and click "Summarize this shift".</aside>
   </section>
 
-
-  <!-- CAPABILITIES -->
+  <!-- CAPABILITIES: an index you can open -->
   <section class="slide" data-id="capabilities">
     <h2 class="r d1">Ten capabilities, working today. <span class="hl">Most plants have none of them.</span></h2>
-    <div class="caps r d2">
-      <div class="cap"><span data-icon="dashboard"></span><b>Command room</b><small>Every line and unit, live</small></div>
-      <div class="cap"><span data-icon="sparkles"></span><b>AI agent crew</b><small>Six agents, autonomy you control</small></div>
-      <div class="cap"><span data-icon="alert"></span><b>Alarm flood → one cause</b><small>Dozens of alarms become one incident</small></div>
-      <div class="cap"><span data-icon="chart"></span><b>Shift forecast</b><small>Chance to hit plan, every second</small></div>
-      <div class="cap"><span data-icon="layers"></span><b>Root-cause chains</b><small>From symptom to cause to cost</small></div>
-      <div class="cap"><span data-icon="history"></span><b>Time machine</b><small>Replay any minute of the shift</small></div>
-      <div class="cap"><span data-icon="play"></span><b>Scenario lab</b><small>Ten real-world drills on the twin</small></div>
-      <div class="cap"><span data-icon="settings"></span><b>Simulate before you act</b><small>See the result before any change</small></div>
-      <div class="cap"><span data-icon="trophy"></span><b>Leadership view</b><small>Decisions ranked by money at stake</small></div>
-      <div class="cap"><span data-icon="live"></span><b>Acoustic AI</b><small>Hears bearing wear before it shows</small></div>
-    </div>
+    <ul class="caplist r d2">
+      <li><a href="app.html#command" target="_blank" rel="noopener"><b>Command room</b><span>Every line and unit, live</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#agents" target="_blank" rel="noopener"><b>AI agent crew</b><span>Six agents, autonomy you control</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#alarms" target="_blank" rel="noopener"><b>Alarm flood → one cause</b><span>Dozens of alarms become one incident</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#predict" target="_blank" rel="noopener"><b>Shift forecast</b><span>Chance to hit plan, every second</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#rootcause" target="_blank" rel="noopener"><b>Root-cause chains</b><span>From symptom to cause to cost</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#command" target="_blank" rel="noopener"><b>Time machine</b><span>Replay any minute of the shift</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#scenarios" target="_blank" rel="noopener"><b>Scenario lab</b><span>Ten real-world drills on the twin</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#control" target="_blank" rel="noopener"><b>Simulate before you act</b><span>See the result before any change</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#leadership" target="_blank" rel="noopener"><b>Leadership view</b><span>Decisions ranked by money at stake</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#maintenance" target="_blank" rel="noopener"><b>Acoustic AI</b><span>Hears bearing wear before it shows</span><i data-icon="arrowRight"></i></a></li>
+    </ul>
     <aside class="sn" hidden>Recap of what he just saw, one breath per tile. If he only remembers one: the agent crew with the autonomy dial. It puts his team in control of how much the AI does.</aside>
   </section>
 
-  <!-- 7 · PREDICTIVE MAINTENANCE -->
+  <!-- PREDICTIVE MAINTENANCE: the two shifts drawn to scale -->
   <section class="slide" data-id="maintenance">
     <h2 class="r d1">Repair on our schedule, <span class="hl">not when the machine decides.</span></h2>
     <div class="uc">
       <div class="timeline-cmp r d2">
-        <div class="card tl">
-          <div class="lbl" style="color:var(--danger)">Without AI · reactive</div>
-          <div class="bar"><span style="width:62%;background:var(--success)">Running</span><span style="width:38%;background:var(--danger)">4.5 h unplanned stop</span></div>
-          <div class="cap">The bearing fails mid-shift. The line stops, parts are rushed in, and overtime is needed to recover.</div>
+        <div class="tl">
+          <p class="lbl">Without AI · reactive</p>
+          <div class="bar"><span style="width:62%;background:#0B7A43">Running</span><span style="width:38%;background:#C42B2E">4.5 h unplanned stop</span></div>
+          <p class="cap">The bearing fails mid-shift. The line stops, parts are rushed in, and overtime is needed to recover.</p>
         </div>
-        <div class="card tl tl-good">
-          <div class="lbl" style="color:var(--success)">With Digital Factory · predictive</div>
-          <div class="bar"><span style="width:28%;background:var(--success)">Running</span><span style="width:12%;background:var(--warning)">AI alert</span><span style="width:52%;background:var(--success)">Running · parts reserved</span><span style="width:8%;background:var(--indigo)">25 min</span></div>
-          <div class="cap">The AI warns about 40 hours ahead. The repair fits into the shift change. Output is protected.</div>
+        <div class="tl">
+          <p class="lbl">With Digital Factory · predictive</p>
+          <div class="bar"><span style="width:28%;background:#0B7A43">Running</span><span style="width:12%;background:#E08A00;color:#111">AI alert</span><span style="width:52%;background:#0B7A43">Running · parts reserved</span><span style="width:8%;background:#1428A0">25 min</span></div>
+          <p class="cap">The AI warns about 40 hours ahead. The repair fits into the shift change. Output is protected.</p>
         </div>
       </div>
-      <ul class="bullets r d3">
+      <ul class="ruled r d3">
         <li>Vibration, temperature and motor current on <b>every critical machine</b></li>
         <li>AI learns each machine's normal behaviour and forecasts its <b>remaining useful life</b></li>
         <li>The work order, spare part and technician are arranged automatically</li>
         <li>Published results: <b>30–50% less unplanned downtime</b> and 20–40% longer machine life</li>
       </ul>
     </div>
-    <div class="src-note r d4">Source: McKinsey &amp; Company research on predictive maintenance. Results vary with the starting point.</div>
+    <p class="src-note r d4">Source: McKinsey &amp; Company research on predictive maintenance. Results vary with the starting point.</p>
     <aside class="sn" hidden>Link this to what he just saw in the demo. Ask: "How many hours of unplanned downtime do your SMT lines have per month?" Remember the number; you will type it into the business case in a few slides.</aside>
   </section>
 
-  <!-- 8 · AI VISION -->
+  <!-- AI VISION: three figures -->
   <section class="slide" data-id="quality">
     <h2 class="r d1">Every board. Every component. <span class="hl">Every time.</span></h2>
-    <div class="grid g3 r d2" style="margin-top:40px">
-      <div class="card box hl-box"><div class="big hl">100%</div><h3>Inspection coverage</h3><p>Deep-learning models inspect every unit at line speed. No sampling, no fatigue, no night-shift dip.</p></div>
-      <div class="card box"><div class="big">≈ 12 ms</div><h3>Per decision</h3><p>Solder bridges, missing parts, tombstones, misalignment and scratches, each with a confidence score.</p></div>
-      <div class="card box"><div class="big" style="color:var(--success)">Root cause</div><h3>Not just detection</h3><p>Defects are linked to process data, for example "bridges up 4×, printer pressure drifted", and fixed at the source.</p></div>
+    <div class="cols c3 figs r d2">
+      <div><b class="fig">100%</b><h3>Inspection coverage</h3><p>Deep-learning models inspect every unit at line speed. No sampling, no fatigue, no night-shift dip.</p></div>
+      <div><b class="fig">≈ 12 ms</b><h3>Per decision</h3><p>Solder bridges, missing parts, tombstones, misalignment and scratches, each with a confidence score.</p></div>
+      <div><b class="fig">Root cause</b><h3>Not just detection</h3><p>Defects are linked to process data, for example "bridges up 4×, printer pressure drifted", and fixed at the source.</p></div>
     </div>
-    <ul class="bullets r d3" style="margin-top:36px">
+    <ul class="ruled two r d3">
       <li>Works <b>alongside existing AOI</b> to cut false calls, so operators review only what matters</li>
       <li>Published studies report AI visual inspection improving defect detection <b>by up to 90%</b> compared with manual inspection</li>
     </ul>
     <aside class="sn" hidden>Key point: we do not replace their AOI machines. We reduce false calls and find the root cause. Say: "We do not only catch the defect. We find where it came from and stop it."</aside>
   </section>
 
-  <!-- 9 · DECISIONS -->
+  <!-- DECISIONS: the questions themselves are the content -->
   <section class="slide" data-id="decisions">
     <h2 class="r d1">A copilot for every manager. <span class="hl">A twin for every decision.</span></h2>
-    <div class="grid g2 r d2" style="margin-top:40px">
-      <div class="card box kpi-indigo">
-        <span class="kpi-icon" data-icon="sparkles"></span><h3>Production copilot</h3>
-        <p style="margin-bottom:18px">Ask in plain language. Answers come from live plant data, with their sources.</p>
-        <div class="quotes"><span>“Why did Line 1 slow down?”</span><span>“What should we fix first this week?”</span><span>“Summarize this shift.”</span></div>
+    <div class="cols c2 r d2">
+      <div>
+        <h3>Production copilot</h3>
+        <p>Ask in plain language. Answers come from live plant data, with their sources.</p>
+        <ul class="asks"><li>“Why did Line 1 slow down?”</li><li>“What should we fix first this week?”</li><li>“Summarize this shift.”</li></ul>
       </div>
-      <div class="card box kpi-indigo">
-        <span class="kpi-icon" data-icon="layers"></span><h3>What-if simulation</h3>
-        <p style="margin-bottom:18px">Test a plan on the twin before committing people, overtime or capital.</p>
-        <div class="quotes"><span>Seasonal peak +35%: which line breaks first?</span><span>A third shift for the whole plant, or only the bottleneck?</span><span>A faster takt: what happens to yield?</span></div>
+      <div>
+        <h3>What-if simulation</h3>
+        <p>Test a plan on the twin before committing people, overtime or capital.</p>
+        <ul class="asks"><li>Seasonal peak +35%: which line breaks first?</li><li>A third shift for the whole plant, or only the bottleneck?</li><li>A faster takt: what happens to yield?</li></ul>
       </div>
     </div>
-    <p class="lead r d3" style="margin-top:36px">The result: <b>morning meetings that make decisions, instead of meetings that collect numbers.</b></p>
+    <p class="lead r d3">The result: <b>morning meetings that make decisions, instead of meetings that collect numbers.</b></p>
     <aside class="sn" hidden>This is about the manager himself, not only the engineers. If useful, open What-If in the demo and show "Seasonal peak +35%": the system names the bottleneck line and suggests a third shift on that line only, instead of the whole plant.</aside>
   </section>
 
-  <!-- 10 · ARCHITECTURE -->
+  <!-- ARCHITECTURE: the stack drawn as a section, floor at the bottom -->
   <section class="slide" data-id="architecture">
     <h2 class="r d1">Open standards. Industrial grade. <span class="hl">Your data stays in the plant.</span></h2>
     <div class="arch r d2">
       <div class="arch-stack">
-        <div class="tier"><div class="tn" style="color:var(--indigo)">Applications</div><div class="chips"><span>Command room</span><span>Leadership dashboard</span><span>Supervisor mobile app</span><span>Production copilot</span></div></div>
-        <div class="tier"><div class="tn" style="color:var(--brand-2)">AI and twin</div><div class="chips"><span>Digital twin engine</span><span>Anomaly and remaining-life models</span><span>Vision models on edge GPUs</span><span>Discrete-event simulation</span></div></div>
-        <div class="tier"><div class="tn" style="color:#14B8A6">Data platform</div><div class="chips"><span>Event streaming</span><span>Time-series store</span><span>Unified namespace</span><span>ISA-95 asset model</span></div></div>
-        <div class="tier"><div class="tn" style="color:var(--success)">Edge</div><div class="chips"><span>OPC UA</span><span>MQTT</span><span>IPC-CFX and SECS/GEM</span><span>Retrofit sensors</span><span>Edge compute</span></div></div>
-        <div class="tier"><div class="tn" style="color:var(--text-2)">Shop floor</div><div class="chips"><span>PLCs</span><span>Mounters, printers, reflow</span><span>AOI, SPI, ICT, FCT</span><span>Energy meters</span><span>AGVs</span><span>MES, SAP, CMMS</span></div></div>
+        <div class="tier"><b class="tn">Applications</b><span class="chips"><span>Command room</span><span>Leadership dashboard</span><span>Supervisor mobile app</span><span>Production copilot</span></span></div>
+        <div class="tier"><b class="tn">AI and twin</b><span class="chips"><span>Digital twin engine</span><span>Anomaly and remaining-life models</span><span>Vision models on edge GPUs</span><span>Discrete-event simulation</span></span></div>
+        <div class="tier"><b class="tn">Data platform</b><span class="chips"><span>Event streaming</span><span>Time-series store</span><span>Unified namespace</span><span>ISA-95 asset model</span></span></div>
+        <div class="tier"><b class="tn">Edge</b><span class="chips"><span>OPC UA</span><span>MQTT</span><span>IPC-CFX and SECS/GEM</span><span>Retrofit sensors</span><span>Edge compute</span></span></div>
+        <div class="tier floor"><b class="tn">Shop floor</b><span class="chips"><span>PLCs</span><span>Mounters, printers, reflow</span><span>AOI, SPI, ICT, FCT</span><span>Energy meters</span><span>AGVs</span><span>MES, SAP, CMMS</span></span></div>
       </div>
-      <div class="card side-box">
-        <h3><span data-icon="shield"></span>Security by design</h3>
+      <div class="side-box">
+        <h3>Security by design</h3>
         <ul><li>On-premise or hybrid, your choice</li><li>OT and IT networks kept separate</li><li>Read-only access first</li><li>IEC 62443 practices</li><li>Role-based access and full audit trail</li><li>No data leaves the plant without approval</li></ul>
-        <h3 style="margin-top:20px"><span data-icon="link"></span>Integrates with</h3>
+        <h3>Integrates with</h3>
         <ul><li>Existing MES and SAP</li><li>Global corporate systems</li><li>Current AOI and test vendors</li></ul>
       </div>
     </div>
     <aside class="sn" hidden>Do not go into technical detail unless asked. The sentence that matters: "Your data never leaves the plant, and in the first phase we only read data. We never control a machine." This reassures IT and security.</aside>
   </section>
 
-  <!-- 11 · BUSINESS CASE -->
+  <!-- BUSINESS CASE: his numbers in, the value out on blue -->
   <section class="slide" data-id="value">
     <h2 class="r d1">What is it worth <span class="hl">to your plant?</span></h2>
     <div class="roi r d2">
@@ -233,63 +240,63 @@
         <label>Programme investment (EGP) <input class="input" type="number" id="rInv" value="30000000" step="1000000"></label>
       </div>
       <div class="roi-out">
-        <div class="out"><div class="kpi-label">Less downtime (30%)</div><div class="big" id="oDown">—</div></div>
-        <div class="out"><div class="kpi-label">Less scrap and rework (20%)</div><div class="big" id="oScrap">—</div></div>
-        <div class="out"><div class="kpi-label">Energy savings (8%)</div><div class="big" id="oEnergy">—</div></div>
-        <div class="out"><div class="kpi-label">Payback</div><div class="big" style="color:var(--success)" id="oPay">—</div></div>
-        <div class="out total"><div class="kpi-label">Estimated annual value</div><div class="big" id="oTotal">—</div><p id="oNote"></p></div>
+        <div class="out"><p class="ol">Less downtime (30%)</p><b class="big" id="oDown">—</b></div>
+        <div class="out"><p class="ol">Less scrap and rework (20%)</p><b class="big" id="oScrap">—</b></div>
+        <div class="out"><p class="ol">Energy savings (8%)</p><b class="big" id="oEnergy">—</b></div>
+        <div class="out"><p class="ol">Payback</p><b class="big" id="oPay">—</b></div>
+        <div class="out total"><p class="ol">Estimated annual value</p><b class="big" id="oTotal">—</b><p id="oNote"></p></div>
       </div>
     </div>
     <aside class="sn" hidden>The strongest moment of the meeting. Ask him for his own numbers (downtime hours, cost per hour, scrap, energy bill) and type them in front of him. The result updates instantly. When the annual value comes from his numbers, the conclusion is his, not ours. The assumptions are deliberately conservative, at the low end of published ranges.</aside>
   </section>
 
-  <!-- 12 · PLAN -->
+  <!-- PLAN: the bar is the diagram; the first four widths follow the real weeks, Scale follows as an open block -->
   <section class="slide" data-id="plan">
     <h2 class="r d1">One line. Twelve weeks. <span class="hl">Proof on your own floor.</span></h2>
-    <div class="road r d2">
-      <div class="rail"></div>
-      <div class="phases">
-        <div class="ph"><div class="when">WEEKS 1–2</div><div class="dotp"></div><h3>Connect</h3><p>Site walk, choose the pilot SMT line, read-only connection to machines and MES, agree the baseline.</p></div>
-        <div class="ph"><div class="when">WEEKS 3–6</div><div class="dotp"></div><h3>See</h3><p>Live twin of the pilot line. OEE, yield and energy on screens and mobile.</p></div>
-        <div class="ph"><div class="when">WEEKS 7–10</div><div class="dotp"></div><h3>Predict</h3><p>Predictive maintenance on critical machines, vision AI on AOI, copilot for the line team.</p></div>
-        <div class="ph"><div class="when">WEEKS 11–12</div><div class="dotp"></div><h3>Prove</h3><p>Results measured against the baseline and signed off by your team, with a plan to scale.</p></div>
-        <div class="ph scale"><div class="when">MONTHS 4–12</div><div class="dotp"></div><h3>Scale</h3><p>All lines, energy, warehouse and AGVs, toward a lighthouse-class plant.</p></div>
-      </div>
-    </div>
-    <div class="kpi-grid kpi-4 r d3" style="margin-top:56px">
-      <div class="kpi kpi-green"><div class="kpi-icon" data-icon="clock"></div><div class="kpi-body"><div class="kpi-label">Pilot target</div><div class="kpi-value">−30%</div><div class="kpi-sub">unplanned downtime</div></div></div>
-      <div class="kpi kpi-blue"><div class="kpi-icon" data-icon="dashboard"></div><div class="kpi-body"><div class="kpi-label">Pilot target</div><div class="kpi-value">+5 pts</div><div class="kpi-sub">OEE on the pilot line</div></div></div>
-      <div class="kpi kpi-indigo"><div class="kpi-icon" data-icon="eye"></div><div class="kpi-body"><div class="kpi-label">Pilot target</div><div class="kpi-value">−20%</div><div class="kpi-sub">scrap and rework</div></div></div>
-      <div class="kpi kpi-slate"><div class="kpi-icon" data-icon="shield"></div><div class="kpi-body"><div class="kpi-label">Production impact</div><div class="kpi-value">0 h</div><div class="kpi-sub">no stop needed to install</div></div></div>
+    <ol class="plan r d2">
+      <li style="--w:2" class="s1"><b>Connect</b><em>Weeks 1–2</em><span>Site walk, choose the pilot SMT line, read-only connection to machines and MES, agree the baseline.</span></li>
+      <li style="--w:4" class="s2"><b>See</b><em>Weeks 3–6</em><span>Live twin of the pilot line. OEE, yield and energy on screens and mobile.</span></li>
+      <li style="--w:4" class="s3"><b>Predict</b><em>Weeks 7–10</em><span>Predictive maintenance on critical machines, vision AI on AOI, copilot for the line team.</span></li>
+      <li style="--w:2" class="s4"><b>Prove</b><em>Weeks 11–12</em><span>Results measured against the baseline and signed off by your team, with a plan to scale.</span></li>
+      <li style="--w:3" class="s5"><b>Scale</b><em>Months 4–12</em><span>All lines, energy, warehouse and AGVs, toward a lighthouse-class plant.</span></li>
+    </ol>
+    <div class="cols c4 targets r d3">
+      <div><b class="fig">−30%</b><p>Pilot target: unplanned downtime</p></div>
+      <div><b class="fig">+5 pts</b><p>Pilot target: OEE on the pilot line</p></div>
+      <div><b class="fig">−20%</b><p>Pilot target: scrap and rework</p></div>
+      <div><b class="fig">0 h</b><p>Production impact: no stop needed to install</p></div>
     </div>
     <aside class="sn" hidden>One message: "We are not asking you to bet the whole plant. One line, 12 weeks, and your team signs off the numbers." Mention that installation does not stop production for a single hour.</aside>
   </section>
 
-  <!-- 13 · WHY US -->
-  <section class="slide" data-id="team">
-    <h2 class="r d1">You did not see slides. <span class="hl">You saw working software.</span></h2>
-    <div class="grid g3 r d2" style="margin-top:40px">
-      <div class="card box kpi-blue"><span class="kpi-icon" data-icon="play"></span><h3>Speed</h3><p>We build fast and improve on your floor. The demo you just used shows how we work.</p></div>
-      <div class="card box kpi-indigo"><span class="kpi-icon" data-icon="layers"></span><h3>One complete team</h3><p>Industrial IoT, data engineering, AI and computer vision, simulation, web and mobile.</p></div>
-      <div class="card box kpi-green"><span class="kpi-icon" data-icon="users"></span><h3>Local and on site</h3><p>Egyptian engineers next to your team, in your time zone, from day one.</p></div>
-      <div class="card box kpi-teal"><span class="kpi-icon" data-icon="unlock"></span><h3>Open, no lock-in</h3><p>Open standards. Your data, your models and your IP stay yours.</p></div>
-      <div class="card box kpi-amber"><span class="kpi-icon" data-icon="listCheck"></span><h3>Paid for proof</h3><p>Pilot success criteria agreed up front and measured by your team.</p></div>
-      <div class="card box kpi-indigo hl-box"><span class="kpi-icon" data-icon="tv"></span><h3>Built for electronics</h3><p>SMT, final assembly, test and pack. The twin speaks your line's language from day one.</p></div>
+  <!-- WHY US: six reasons beside the team at work -->
+  <section class="slide with-photo" data-id="team">
+    <div class="lhs">
+      <h2 class="r d1">You did not see slides. <span class="hl">You saw working software.</span></h2>
+      <div class="cols c2 tight r d2">
+        <div><h3>Speed</h3><p>We build fast and improve on your floor. The demo you just used shows how we work.</p></div>
+        <div><h3>One complete team</h3><p>Industrial IoT, data engineering, AI and computer vision, simulation, web and mobile.</p></div>
+        <div><h3>Local and on site</h3><p>Egyptian engineers next to your team, in your time zone, from day one.</p></div>
+        <div><h3>Open, no lock-in</h3><p>Open standards. Your data, your models and your IP stay yours.</p></div>
+        <div><h3>Paid for proof</h3><p>Pilot success criteria agreed up front and measured by your team.</p></div>
+        <div><h3>Built for electronics</h3><p>SMT, final assembly, test and pack. The twin speaks your line's language from day one.</p></div>
+      </div>
     </div>
+    <figure class="photo r d2"><img src="assets/img/crew.jpg" width="1600" height="1067" alt="Two workers at a machine control panel"></figure>
     <aside class="sn" hidden>Talk about your team with confidence, and add real examples if you have them (past projects, team experience). The key sentence: "What you saw was built quickly. Imagine what we can do with real data from your line."</aside>
   </section>
 
-  <!-- 14 · DECISION -->
-  <section class="slide closing" data-id="next">
+  <!-- DECISION: the ask on the blue field, the last word is the action -->
+  <section class="slide field tone-blue closing" data-id="next">
     <h2 class="r d1">Approve one pilot line. <span class="hl">We will prove the rest on your floor.</span></h2>
-    <div class="nsteps r d2">
-      <div class="card nstep"><b>THIS WEEK</b>Choose the pilot line together</div>
-      <div class="card nstep"><b>WEEK 2</b>Site walk, NDA and read-only data access</div>
-      <div class="card nstep"><b>WEEK 3</b>Kick-off. The twin is live within 30 days</div>
-    </div>
-    <div class="r d3" style="margin-top:44px;display:flex;gap:14px;justify-content:center">
-      <a class="btn btn-primary btn-lg" href="app.html" target="_blank" rel="noopener">Open the live demo</a>
-      <a class="btn btn-secondary btn-lg" href="./" target="_blank" rel="noopener">Project website</a>
+    <ol class="cols c3 nsteps r d2">
+      <li><b>This week</b><span>Choose the pilot line together</span></li>
+      <li><b>Week 2</b><span>Site walk, NDA and read-only data access</span></li>
+      <li><b>Week 3</b><span>Kick-off. The twin is live within 30 days</span></li>
+    </ol>
+    <div class="ctas r d3">
+      <a class="btn btn-lg on-field" href="app.html" target="_blank" rel="noopener">Open the live demo <span data-icon="arrowRight"></span></a>
+      <a class="btn btn-lg on-field-2" href="./" target="_blank" rel="noopener">Project website</a>
     </div>
     <aside class="sn" hidden>Close with a clear, specific request, not "let's stay in touch". Say: "I need one thing from you: let's choose the pilot line together and set a date for a site visit next week." Then stop talking and wait for his answer.</aside>
   </section>
@@ -299,7 +306,7 @@
 </div>
 </div>
 
-<div class="counter" id="counter">1 / 14</div>
+<div class="counter" id="counter">1 / 17</div>
 <div class="controls">
   <button type="button" id="prev" aria-label="Previous slide"><span data-icon="chevronLeft"></span></button>
   <button type="button" id="next" aria-label="Next slide"><span data-icon="chevronRight"></span></button>

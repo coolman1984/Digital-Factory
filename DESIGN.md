@@ -25,3 +25,8 @@ Section rhythm `--section` clamp(96px, 12vw, 176px). One radius for media and fi
 
 ## Motion
 One curve `--ease-out` cubic-bezier(.22, 1, .36, 1). UI feedback `--dur-ui` 200ms; entrances `--dur-in` 700ms; the signature shutter 1100ms (hero twin only). Transform, opacity and clip-path only. Reduced motion shows the finished page.
+
+## One grammar on three surfaces
+The website sets the grammar; the presentation and the command room follow it.
+- **Presentation.** Ink headlines with a muted second clause (`--text-3`). Content in ruled columns (2px ink rule, heading, short text), never icon-tile cards. Colour-field slides (`.tone-blue`, `.tone-ink`) redefine the tokens locally, and the footer, rail and page ground follow the active field. Real photographs on the situation, solution and team slides. The 12-week plan is the website's proportional bar.
+- **Command room (ISA-101).** Flat panels on the ground, no shadows, no icon tiles. A page head per view: the view's name and one live sentence about what the plant needs now. KPIs are one readout strip split by 1px gaps, numbers in ink. The floor is drawn on the blueprint grid: rails, white stations, an andon light above each, the website's reticle on the selected station. Colour appears only for an abnormal state (warning, stopped, below benchmark, money at risk); a normal state is ink or a quiet square mark.

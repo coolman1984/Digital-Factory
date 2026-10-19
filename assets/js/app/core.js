@@ -20,7 +20,7 @@ window.DF = (function () {
       text: v('--text'), text2: v('--text-2'), text3: v('--text-3'), border: v('--border'), borderStrong: v('--border-strong'),
       surface: v('--surface'), surface2: v('--surface-2'), surface3: v('--surface-3'), bg: v('--bg'),
       brand: v('--brand'), brand2: v('--brand-2'), success: v('--success'), warning: v('--warning'), danger: v('--danger'),
-      indigo: v('--indigo'), lane: v('--lane'), dark: document.documentElement.dataset.theme === 'dark'
+      indigo: v('--indigo'), lane: v('--lane'), brandText: v('--brand-text'), warningText: v('--warning-text'), dangerText: v('--danger-text'), dark: document.documentElement.dataset.theme === 'dark'
     });
     P.state = { run: P.success, warn: P.warning, down: P.danger, maint: P.indigo };
   }
@@ -71,6 +71,7 @@ window.DF = (function () {
       $$('.view').forEach(v => { v.hidden = v.id !== 'view-' + h; });
       $$('.nav a[data-view]').forEach(a => a.classList.toggle('active', a.dataset.view === h));
       $('#crumbView').textContent = VIEW_NAMES[h];
+      $('#viewTitle').textContent = VIEW_NAMES[h];
       $('#side').classList.remove('open'); $('#sideShade').hidden = true;
       if (api._last !== h) scrollTo({ top: 0 }); api._last = h;
       if (hooks[h]) hooks[h](true);

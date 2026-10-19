@@ -6,7 +6,7 @@
   <title>Digital Factory · Command Room</title>
   <meta name="description" content="Digital Factory command room: live digital twin, AI agents, alarms, predictions, root cause, scenarios, control and leadership dashboard. Simulated electronics plant.">
   <script>try{var t=localStorage.getItem('df-theme')}catch(e){}document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')</script>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%232189FF'/%3E%3Cstop offset='1' stop-color='%231428A0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3Crect x='8' y='8' width='5' height='15' rx='1' fill='%23fff'/%3E%3Crect x='16' y='13' width='5' height='10' rx='1' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231428A0'/%3E%3Crect x='8' y='8' width='5' height='15' rx='1' fill='%23fff'/%3E%3Crect x='16' y='13' width='5' height='10' rx='1' fill='%23fff'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="assets/kit/fonts.css">
   <link rel="stylesheet" href="assets/kit/samsung-ui.css">
   <link rel="stylesheet" href="assets/css/theme.css">
@@ -17,7 +17,7 @@
 
   <!-- SIDEBAR -->
   <aside class="side" id="side">
-    <a class="logo side-logo" href="./"><span class="logo-mark" aria-hidden="true"></span><span><span class="logo-word">Digital Factory</span><span class="side-cap">Command room · Plant EG-01</span></span></a>
+    <a class="logo side-logo" href="./"><span class="logo-mark" aria-hidden="true"></span><span><span class="logo-word">Digital Factory</span><span class="side-cap">Plant EG-01 · Beni Suef</span></span></a>
     <nav class="nav" aria-label="Views">
       <div class="nav-label">Operate</div>
       <a href="#command" data-view="command"><span data-icon="dashboard"></span>Command room</a>
@@ -71,7 +71,9 @@
     </div>
 
     <main class="main">
-      <h1 class="sr-only">Digital Factory command room</h1>
+      <header class="page-head">
+        <div><h1 id="viewTitle">Command room</h1><p class="say" id="viewSay" aria-live="off">Reading the plant…</p></div>
+      </header>
       <h2 class="sr-only">Plant views</h2>
       <!-- KPI STRIP -->
       <section class="kpi-grid kpi-6 kpis" aria-label="Plant KPIs">
@@ -105,17 +107,19 @@
           </div>
         </div>
         <div class="cmd-bottom">
+          <div class="col">
           <div class="card">
             <div class="card-head"><h3>Top alarms</h3><a class="link-btn" href="#alarms">All alarms</a></div>
             <div class="alarm-strip" id="alarmStrip"></div>
           </div>
-          <div class="card station" id="stationCard">
-            <div class="card-head"><h3 id="stName">Station</h3><span id="stState" class="chip chip-neutral">—</span></div>
-            <div id="stBody" class="st-body"></div>
-          </div>
           <div class="card">
             <div class="card-head"><h3>Event stream</h3><span class="muted small">MES · PLC · AGV · AI</span></div>
             <div class="events" id="events"></div>
+          </div>
+          </div>
+          <div class="card station" id="stationCard">
+            <div class="card-head"><h3 id="stName">Station</h3><span id="stState" class="chip chip-neutral">—</span></div>
+            <div id="stBody" class="st-body"></div>
           </div>
         </div>
       </section>
@@ -164,7 +168,7 @@
 
       <!-- AI AGENTS -->
       <section class="view" id="view-agents" hidden>
-        <div class="notice notice-info"><span data-icon="info"></span><p>Six AI agents watch the plant around the clock. You decide how much each one may do on its own: <b>Advise</b> (suggest only), <b>Approve</b> (act after your approval) or <b>Auto</b> (act inside guardrails). Every action is written to the audit trail.</p></div>
+        <p class="lede">Six AI agents watch the plant around the clock. You decide how much each one may do on its own: <b>Advise</b> (suggest only), <b>Approve</b> (act after your approval) or <b>Auto</b> (act inside guardrails). Every action is written to the audit trail.</p>
         <div class="agents" id="agents"></div>
         <div class="card">
           <div class="card-head"><h3>Audit trail</h3><span class="muted small">Who did what, and when</span></div>
