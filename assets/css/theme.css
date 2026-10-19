@@ -1,0 +1,95 @@
+/* Digital Factory — page layer on top of the Samsung UI kit (assets/kit/samsung-ui.css).
+   Load order: kit/fonts.css → kit/samsung-ui.css → theme.css → page CSS.
+   Colours, type, radii and dark mode come from the kit; this file only adds aliases, shared page parts and motion. */
+
+:root {
+  /* aliases used by the pages and canvas code */
+  --panel: var(--surface);
+  --panel-2: var(--surface-2);
+  --line: var(--border);
+  --line-strong: var(--border-strong);
+  --accent: var(--brand-2);
+  --grad: var(--brand-grad);
+  --violet: #7C5CFF;
+  --text-3: #646B78;            /* kit #8A919E is below 4.5:1 on white; darkened for AA */
+  --lane: rgba(15, 17, 21, 0.025);
+  --camera: #0B0E14;
+  /* text versions of the kit colours: same hue, darker in light mode so small text meets WCAG AA (4.5:1) */
+  --brand-text: #1565D8;
+  --success-text: #0B7A43;
+  --warning-text: #9A5B00;
+  --danger-text: #C42B2E;
+}
+[data-theme="dark"] {
+  --violet: #A78BFA;
+  --text-3: #8B93A3;
+  --lane: rgba(255, 255, 255, 0.025);
+  --brand-text: #4DA3FF;
+  --success-text: #34C77B;
+  --warning-text: #FFB020;
+  --danger-text: #FF6B6F;
+}
+
+/* small text uses the AA-safe colours; fills, icons and large headings keep the kit colours */
+a, .link-btn { color: var(--brand-text); }
+.chip-info { color: var(--brand-text); }
+.chip-success { color: var(--success-text); }
+.chip-warning { color: var(--warning-text); }
+.chip-danger { color: var(--danger-text); }
+.ok-text { color: var(--success-text); }
+.danger-text { color: var(--danger-text); }
+
+html { -webkit-text-size-adjust: 100%; }
+body { font-size: 15px; height: auto; min-height: 100%; }
+:focus-visible { outline: 3px solid var(--brand-2); outline-offset: 3px; border-radius: 8px; }
+.toggle input:focus-visible + .toggle-track { outline: 3px solid var(--brand-2); outline-offset: 4px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* legacy button names → kit buttons */
+.btn:where(:not(.btn-primary, .btn-secondary, .btn-ghost, .btn-success, .btn-danger, .primary)) {
+  background: var(--surface); color: var(--text); border-color: var(--border-strong);
+}
+.btn:where(:not(.btn-primary, .btn-secondary, .btn-ghost, .btn-success, .btn-danger, .primary)):hover:not(:disabled) { background: var(--surface-3); }
+.btn.primary { background: var(--brand-grad); color: #fff; box-shadow: 0 4px 14px rgba(33, 137, 255, .28); }
+.btn.primary:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(33, 137, 255, .4); filter: brightness(1.05); }
+.btn.sm { height: 32px; padding: 0 13px; font-size: 13px; gap: 6px; }
+.btn .icon { width: 18px; height: 18px; }
+
+/* brand lockup (our own mark, not a third-party logo) */
+.logo { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; }
+.logo-word { font-size: 19px; font-weight: 800; letter-spacing: -0.8px; line-height: 1; }
+.logo-mark { width: 30px; height: 30px; border-radius: 9px; position: relative; flex: none; background: var(--brand-grad); }
+.logo-mark::before, .logo-mark::after { content: ""; position: absolute; background: #fff; border-radius: 2px; }
+.logo-mark::before { left: 8px; top: 8px; width: 5px; height: 14px; }
+.logo-mark::after { left: 16px; top: 13px; width: 5px; height: 9px; }
+
+/* kit-style headings */
+.eyebrow { color: var(--text-2); font-size: 12px; letter-spacing: 1.6px; font-weight: 650; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+.eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--brand-2); flex: none; }
+.two-tone > .hl, .hl { color: var(--brand-2); }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); display: inline-block; flex: none; }
+.status-dot.live { animation: pulse 1.6s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+/* theme switch button */
+.theme-btn { display: inline-flex; align-items: center; gap: 8px; }
+.theme-btn .icon { width: 17px; height: 17px; }
+
+/* toasts use the kit's #toast-root + .toast */
+#toast-root .toast { max-width: min(520px, calc(100vw - 44px)); }
+
+/* motion (after the Animation studio's web kit): rise from blur, words one by one */
+[data-reveal] { transition: opacity .9s var(--ease), transform .9s var(--ease), filter .9s var(--ease); }
+.js [data-reveal]:not(.in) { opacity: 0; transform: translateY(24px); filter: blur(6px); }
+[data-split] .w { display: inline-block; transition: opacity .7s var(--ease), transform .7s var(--ease), filter .7s var(--ease); transition-delay: calc(var(--i) * 60ms + var(--d, 0ms)); }
+.js [data-split]:not(.in) .w { opacity: 0; transform: translateY(.4em); filter: blur(8px); }
+.progress-top { position: fixed; inset-inline: 0; top: 0; height: 3px; background: var(--brand-grad); transform-origin: 0 50%; transform: scaleX(0); z-index: 200; }
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important; }
+  [data-reveal], [data-split] .w { opacity: 1 !important; transform: none !important; filter: none !important; }
+}

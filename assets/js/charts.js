@@ -35,8 +35,9 @@
     const Y = v => pad.t + (1 - (v - min) / (max - min)) * (h - pad.t - pad.b);
 
     if (opts.grid) {
-      ctx.strokeStyle = 'rgba(120,170,255,0.08)'; ctx.lineWidth = 1;
-      ctx.fillStyle = '#6a7fa6'; ctx.font = '10px ' + getComputedStyle(document.body).fontFamily;
+      const pal = (window.DF && DF.P) || {};
+      ctx.strokeStyle = opts.gridColor || pal.border || 'rgba(120,170,255,0.12)'; ctx.lineWidth = 1;
+      ctx.fillStyle = pal.text3 || '#6a7fa6'; ctx.font = '11px ' + getComputedStyle(document.body).fontFamily;
       for (let k = 0; k <= 4; k++) {
         const v = min + (max - min) * k / 4, y = Y(v);
         ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
@@ -53,7 +54,7 @@
       const y = Y(opts.threshold.v);
       ctx.strokeStyle = opts.threshold.color || '#f87171'; ctx.setLineDash([]); ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
-      if (opts.threshold.label) { ctx.fillStyle = opts.threshold.color || '#f87171'; ctx.font = '600 10px sans-serif'; ctx.fillText(opts.threshold.label, w - pad.r - ctx.measureText(opts.threshold.label).width - 2, y - 4); }
+      if (opts.threshold.label) { ctx.fillStyle = opts.threshold.color || '#f87171'; ctx.font = '600 11px ' + getComputedStyle(document.body).fontFamily; ctx.fillText(opts.threshold.label, w - pad.r - ctx.measureText(opts.threshold.label).width - 2, y - 4); }
     }
     for (const s of series) {
       if (!s.data.length) continue;
