@@ -1,4 +1,8 @@
 /* Digital Factory — shared design tokens & primitives */
+/* Fonts: Alexandria (Arabic + Latin) and JetBrains Mono, SIL OFL 1.1 — see assets/fonts/ */
+@font-face { font-family: "Alexandria"; src: url("../fonts/Alexandria-latin.woff2") format("woff2"); font-weight: 100 900; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2190-21FF, U+2212, U+2215; }
+@font-face { font-family: "Alexandria"; src: url("../fonts/Alexandria-arabic.woff2") format("woff2"); font-weight: 100 900; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F; }
+@font-face { font-family: "JetBrains Mono"; src: url("../fonts/JetBrainsMono-latin.woff2") format("woff2"); font-weight: 100 800; font-display: swap; }
 :root {
   --bg: #05080f;
   --bg-2: #0a1020;
@@ -9,7 +13,7 @@
   --line-strong: rgba(120, 170, 255, 0.3);
   --text: #e8f0ff;
   --text-2: #9fb2d4;
-  --text-3: #6a7fa6;
+  --text-3: #8797b8;
   --cyan: #22d3ee;
   --blue: #4f8cff;
   --violet: #a78bfa;
@@ -21,8 +25,9 @@
   --radius: 16px;
   --radius-sm: 10px;
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
-  --font: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font: "Alexandria", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
   --mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --ease: cubic-bezier(.2, .8, .2, 1);
 }
 
 * { box-sizing: border-box; }
@@ -75,7 +80,7 @@ button { font-family: inherit; }
   box-shadow: 0 8px 30px rgba(79, 140, 255, 0.35);
 }
 .btn.primary:hover { box-shadow: 0 10px 40px rgba(79, 140, 255, 0.55); }
-.btn.sm { padding: 7px 14px; font-size: 13px; }
+.btn.sm { padding: 8px 15px; font-size: 14px; }
 
 .pill {
   display: inline-flex; align-items: center; gap: 8px;
@@ -118,6 +123,15 @@ button { font-family: inherit; }
 ::-webkit-scrollbar-thumb { background: rgba(120, 170, 255, 0.2); border-radius: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
+/* Motion vocabulary (after the Animation studio's web kit): rise from blur, words one by one. Opt-in by data attributes. */
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 6px; }
+[data-reveal] { transition: opacity .9s var(--ease), transform .9s var(--ease), filter .9s var(--ease); }
+.js [data-reveal]:not(.in) { opacity: 0; transform: translateY(28px); filter: blur(8px); }
+[data-split] .w { display: inline-block; transition: opacity .7s var(--ease), transform .7s var(--ease), filter .7s var(--ease); transition-delay: calc(var(--i) * 70ms + var(--d, 0ms)); }
+.js [data-split]:not(.in) .w { opacity: 0; transform: translateY(.45em); filter: blur(10px); }
+.progress-top { position: fixed; inset-inline: 0; top: 0; height: 3px; background: var(--grad); transform-origin: 0 50%; transform: scaleX(0); z-index: 100; }
+
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; transition-delay: 0ms !important; }
+  [data-reveal], [data-split] .w { opacity: 1 !important; transform: none !important; filter: none !important; }
 }

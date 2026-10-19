@@ -19,13 +19,13 @@
       stations: ['Loader', 'Printer', 'SPI', 'Mounter C', 'Reflow', 'AOI', 'Unloader'] },
     { id: 'L3', name: 'Final Assembly A', sub: '55" TV', rate: 92, kw: 88, fpy: 0.993, inspect: 'Function test', material: 'Back covers',
       stations: ['Panel load', 'Board fit', 'Screw robot', 'Back cover', 'Function test'] },
-    { id: 'L4', name: 'Final Assembly B', sub: '27" Monitor', rate: 118, kw: 72, fpy: 0.994, inspect: 'Function test',
-      stations: ['Stand fit', 'Board fit', 'Screw robot', 'Calibration', 'Function test'] },
+    { id: 'L4', name: 'Final Assembly B', sub: 'Smartphones', rate: 150, kw: 72, fpy: 0.994, inspect: 'Function test',
+      stations: ['Housing fit', 'Board fit', 'Display bond', 'Screw robot', 'Function test'] },
     { id: 'L5', name: 'Test & Pack', sub: 'All products', rate: 205, kw: 124, fpy: 0.997, inspect: 'Final QC',
       stations: ['Burn-in', 'Final QC', 'Packing', 'Palletizer'] }
   ];
   const UTIL_KW = 245; // compressors, chillers, HVAC
-  const MACHINE_KINDS = ['Printer', 'Mounter', 'Reflow', 'Screw robot', 'Burn-in', 'Palletizer', 'Calibration', 'SPI', 'AOI'];
+  const MACHINE_KINDS = ['Printer', 'Mounter', 'Reflow', 'Screw robot', 'Burn-in', 'Palletizer', 'Display bond', 'SPI', 'AOI'];
 
   const listeners = [];
   const emit = e => listeners.forEach(fn => fn(e));

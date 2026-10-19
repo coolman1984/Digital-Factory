@@ -1,158 +1,262 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Digital Factory</title>
-  <meta name="description" content="Digital Factory — a live digital twin, predictive AI and a production copilot for electronics manufacturing.">
+  <meta name="description" content="Digital Factory — a live digital twin, predictive AI and a production copilot for electronics manufacturing. A vision prepared for Samsung Electronics Egypt.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Crect x='8' y='8' width='7' height='16' fill='%2305080f'/%3E%3Crect x='17' y='14' width='7' height='10' fill='%2305080f'/%3E%3C/svg%3E">
+  <link rel="preload" href="assets/fonts/Alexandria-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="assets/css/base.css">
   <style>
-    .nav { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between;
-      padding: 18px clamp(16px, 4vw, 48px); backdrop-filter: blur(12px); background: rgba(5, 8, 15, 0.6); border-bottom: 1px solid var(--line); }
+    html { scroll-behavior: smooth; overflow-x: clip; }
+    body { overflow-x: clip; }
+    .wrap { width: min(1200px, 100% - 2 * clamp(16px, 4vw, 48px)); margin-inline: auto; }
+    .nav { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(14px); background: rgba(5, 8, 15, 0.7); border-bottom: 1px solid var(--line); }
+    .nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 68px; }
+    .nav .logo { min-height: 44px; }
     .nav-links { display: flex; gap: 10px; }
-    .hero { position: relative; min-height: 92vh; display: grid; place-items: center; text-align: center; padding: 60px 16px; overflow: hidden; }
-    #net { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .7; }
-    .hero-inner { position: relative; max-width: 980px; }
-    .hero h1 { font-size: clamp(40px, 7.5vw, 92px); line-height: 1.02; letter-spacing: -.035em; margin: 22px 0 18px; font-weight: 800; }
-    .hero p.lead { font-size: clamp(17px, 2vw, 22px); color: var(--text-2); max-width: 760px; margin: 0 auto 34px; }
-    .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
-    .ticker { margin-top: 56px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; max-width: 900px; margin-left: auto; margin-right: auto; }
-    .tick { padding: 18px; text-align: left; }
-    .tick .v { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
-    .tick .l { font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; }
-    section.block { padding: 100px clamp(16px, 5vw, 64px); max-width: 1240px; margin: 0 auto; }
-    .eyebrow { color: var(--cyan); font-weight: 700; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
-    h2 { font-size: clamp(30px, 4.5vw, 52px); letter-spacing: -.025em; line-height: 1.08; margin: 12px 0 18px; }
-    .sub { color: var(--text-2); font-size: 18px; max-width: 720px; }
-    .layers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 48px; }
-    .layer { padding: 26px; position: relative; overflow: hidden; }
-    .layer .n { font-family: var(--mono); color: var(--text-3); font-size: 13px; }
-    .layer h3 { margin: 10px 0 8px; font-size: 22px; }
-    .layer p { margin: 0; color: var(--text-2); font-size: 15px; }
-    .layer::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--grad); opacity: .7; }
+    .nav-links .btn { min-height: 44px; }
+
+    .hero { position: relative; min-height: min(94svh, 980px); display: grid; align-items: center; overflow: clip; padding: 70px 0 60px; }
+    #net { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .45; }
+    .hero .wrap { position: relative; }
+    .for { display: inline-flex; align-items: center; gap: 12px; color: var(--text-2); font-size: 15px; letter-spacing: .02em; }
+    .for::before { content: ""; width: 28px; height: 1px; background: var(--cyan); }
+    .hero h1 { font-size: clamp(44px, 7.4vw, 104px); line-height: 1.02; letter-spacing: -.035em; margin: 22px 0 22px; font-weight: 700; max-width: 14ch; }
+    .hero .lead { font-size: clamp(18px, 1.5vw + 10px, 23px); color: var(--text-2); max-width: 680px; margin: 0 0 34px; font-weight: 300; line-height: 1.6; }
+    .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
+    .hero-cta .btn { min-height: 52px; padding: 0 26px; }
+    .ticker { margin-top: 64px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 1px solid var(--line); }
+    .tick { padding: 22px 22px 0 0; }
+    .tick + .tick { padding-left: 22px; border-left: 1px solid var(--line); }
+    .tick .v { font-size: clamp(30px, 3.4vw, 44px); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+    .tick .l { font-size: 14px; color: var(--text-2); margin-top: 4px; }
+    .tick sup { color: var(--text-3); font-size: 12px; }
+
+    section.block { padding: clamp(80px, 11vw, 150px) 0; border-top: 1px solid var(--line); position: relative; }
+    .eyebrow { color: var(--cyan); font-weight: 600; font-size: 14px; letter-spacing: .16em; text-transform: uppercase; }
+    h2 { font-size: clamp(32px, 4.4vw, 60px); letter-spacing: -.03em; line-height: 1.08; margin: 14px 0 18px; font-weight: 700; max-width: 20ch; }
+    .sub { color: var(--text-2); font-size: clamp(17px, 1vw + 10px, 20px); max-width: 680px; font-weight: 300; line-height: 1.65; }
+
+    /* the shift */
+    .shift { margin-top: 48px; display: grid; gap: 0; }
+    .shift .row { display: grid; grid-template-columns: 1fr 48px 1fr; align-items: center; border-bottom: 1px solid var(--line); padding: 20px 0; font-size: clamp(16px, 1vw + 9px, 20px); }
+    .shift .old { color: var(--text-3); }
+    .shift .new { color: var(--text); font-weight: 500; }
+    .shift .arr { color: var(--cyan); text-align: center; }
+
+    /* sticky steps */
+    .steps { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(30px, 6vw, 90px); margin-top: 30px; }
+    .pin { position: sticky; top: 16vh; align-self: start; aspect-ratio: 1; border-radius: 24px; border: 1px solid var(--line); background: radial-gradient(circle at 50% 40%, rgba(79,140,255,.14), transparent 70%), var(--panel-solid); display: grid; place-items: center; overflow: hidden; }
+    .pin svg { width: 86%; height: auto; }
+    .pin .ly { transition: opacity .6s var(--ease), transform .6s var(--ease); opacity: .22; transform-box: fill-box; transform-origin: center; }
+    .pin .ly text { font: 600 15px var(--font); letter-spacing: .14em; }
+    [data-active="0"] .pin .l0, [data-active="1"] .pin .l1, [data-active="2"] .pin .l2, [data-active="3"] .pin .l3 { opacity: 1; transform: scale(1.04); }
+    .pin .pulse { animation: travel 3.2s var(--ease) infinite; }
+    @keyframes travel { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(-300px); opacity: 0; } }
+    [data-step] { min-height: 64vh; display: flex; flex-direction: column; justify-content: center; opacity: .3; transition: opacity .5s var(--ease); }
+    [data-step].on { opacity: 1; }
+    [data-step] .n { font-family: var(--mono); color: var(--cyan); font-size: 14px; letter-spacing: .1em; }
+    [data-step] h3 { font-size: clamp(28px, 2.6vw, 40px); margin: 10px 0 12px; letter-spacing: -.02em; font-weight: 600; }
+    [data-step] p { color: var(--text-2); font-size: 18px; font-weight: 300; line-height: 1.7; margin: 0 0 14px; max-width: 46ch; }
+    [data-step] ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+    [data-step] li { font-size: 14px; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line-strong); color: var(--text-2); }
+
     .mods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 48px; }
-    .mod { padding: 26px; transition: transform .2s, border-color .2s; }
-    .mod:hover { transform: translateY(-3px); border-color: var(--line-strong); }
-    .mod .ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 22px;
-      background: rgba(79, 140, 255, 0.12); border: 1px solid var(--line-strong); }
-    .mod h3 { margin: 16px 0 6px; font-size: 19px; }
-    .mod p { margin: 0; color: var(--text-2); font-size: 14.5px; }
-    .mod .kpi { margin-top: 14px; font-size: 13px; color: var(--green); font-weight: 600; }
-    .cta { text-align: center; padding: 70px 24px; margin: 0 auto 100px; max-width: 1100px;
-      background: radial-gradient(600px 300px at 50% 0%, rgba(79, 140, 255, 0.25), transparent 70%), var(--panel); }
-    footer { text-align: center; color: var(--text-3); font-size: 13px; padding: 30px 16px 50px; border-top: 1px solid var(--line); }
+    .mod { padding: 28px; transition: transform .5s var(--ease), border-color .3s; display: block; color: var(--text); }
+    .mod:hover { transform: translateY(-4px); border-color: var(--line-strong); }
+    .mod .ic { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; background: rgba(79, 140, 255, 0.1); border: 1px solid var(--line-strong); }
+    .mod h3 { margin: 18px 0 8px; font-size: 20px; font-weight: 600; }
+    .mod p { margin: 0; color: var(--text-2); font-size: 15.5px; font-weight: 300; line-height: 1.6; }
+    .mod .go { margin-top: 16px; font-size: 14px; color: var(--cyan); font-weight: 500; }
+    .mods .mod:nth-child(3n+2) { transition-delay: .08s; } .mods .mod:nth-child(3n+3) { transition-delay: .16s; }
+
+    .plan { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 50px; border-top: 2px solid transparent; border-image: var(--grad) 1; }
+    .plan > div { padding: 26px 22px 0 0; }
+    .plan > div + div { padding-left: 22px; }
+    .plan .w { font-family: var(--mono); color: var(--cyan); font-size: 14px; }
+    .plan h3 { font-size: 21px; margin: 8px 0 6px; font-weight: 600; }
+    .plan p { color: var(--text-2); margin: 0; font-size: 15.5px; font-weight: 300; line-height: 1.6; }
+
+    .cta { text-align: center; }
+    .cta h2 { margin-inline: auto; }
+    .cta .sub { margin: 0 auto 32px; }
+    .cta .hero-cta { justify-content: center; }
+    footer { color: var(--text-2); font-size: 14px; padding: 36px 0 54px; border-top: 1px solid var(--line); line-height: 1.8; }
+    footer .wrap { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+
     @media (max-width: 900px) {
-      .layers, .mods { grid-template-columns: 1fr 1fr; }
-      .ticker { grid-template-columns: 1fr 1fr; }
+      .mods { grid-template-columns: 1fr 1fr; }
+      .ticker, .plan { grid-template-columns: 1fr 1fr; }
+      .tick:nth-child(3) { border-left: none; padding-left: 0; }
+      .plan > div:nth-child(3) { padding-left: 0; }
+      .steps { grid-template-columns: 1fr; }
+      .pin { display: none; }
+      [data-step] { min-height: auto; opacity: 1; padding: 22px 0; border-bottom: 1px solid var(--line); }
     }
     @media (max-width: 560px) {
-      .layers, .mods { grid-template-columns: 1fr; }
+      .mods, .plan { grid-template-columns: 1fr; }
+      .plan > div { padding-left: 0 !important; }
       .nav-links .btn:not(.primary) { display: none; }
+      .shift .row { grid-template-columns: 1fr; gap: 4px; }
+      .shift .arr { display: none; }
+      .shift .old::after { content: " →"; color: var(--cyan); }
     }
   </style>
 </head>
 <body>
   <div class="bg-grid"></div>
+  <div class="progress-top" aria-hidden="true"></div>
 
   <nav class="nav">
-    <a class="logo" href="./"><span class="logo-mark"></span> Digital Factory</a>
-    <div class="nav-links">
-      <a class="btn sm" href="deck.html">Presentation</a>
-      <a class="btn sm primary" href="app.html">Open live demo →</a>
+    <div class="wrap">
+      <a class="logo" href="./"><span class="logo-mark" aria-hidden="true"></span> Digital Factory</a>
+      <div class="nav-links">
+        <a class="btn sm" href="deck.html">Vision deck</a>
+        <a class="btn sm primary" href="app.html">Live demo →</a>
+      </div>
     </div>
   </nav>
 
   <header class="hero">
-    <canvas id="net"></canvas>
-    <div class="hero-inner">
-      <span class="pill"><span class="dot live"></span> Vision 2027 · Electronics manufacturing in Egypt</span>
-      <h1>The factory that <span class="grad-text">sees, predicts</span><br>and decides.</h1>
-      <p class="lead">A living digital twin of every line, machine and product — with AI that catches failures before they happen, finds defects humans miss, and tells managers exactly what to do next.</p>
-      <div class="hero-cta">
-        <a class="btn primary" href="app.html">▶ Launch the live Digital Twin</a>
-        <a class="btn" href="deck.html">View the vision deck</a>
+    <canvas id="net" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <div class="for" data-reveal>Prepared for Samsung Electronics Egypt · Production leadership</div>
+      <h1 data-split>The factory that <span class="grad-text">sees, predicts</span> and decides.</h1>
+      <p class="lead" data-reveal style="transition-delay:.35s">A living digital twin of every line, machine and unit — with AI that sees failures coming, catches defects at line speed, and tells each manager what to do next.</p>
+      <div class="hero-cta" data-reveal style="transition-delay:.5s">
+        <a class="btn primary" href="app.html" data-magnetic>▶ Launch the live Digital Twin</a>
+        <a class="btn" href="deck.html" data-magnetic>View the vision deck</a>
       </div>
-      <div class="ticker">
-        <div class="tick card"><div class="v grad-text" data-count="30" data-suffix="–50%">0</div><div class="l">Less unplanned downtime*</div></div>
-        <div class="tick card"><div class="v grad-text" data-count="90" data-prefix="up to " data-suffix="%">0</div><div class="l">Better defect detection*</div></div>
-        <div class="tick card"><div class="v grad-text" data-count="12" data-suffix=" wks">0</div><div class="l">From kickoff to pilot ROI</div></div>
-        <div class="tick card"><div class="v grad-text" data-count="100" data-suffix="%">0</div><div class="l">On-premise · your data stays home</div></div>
+      <div class="ticker" data-reveal style="transition-delay:.65s">
+        <div class="tick"><div class="v grad-text">30–50%</div><div class="l">less unplanned downtime <sup>1</sup></div></div>
+        <div class="tick"><div class="v grad-text" data-count="90" data-prefix="≤ " data-suffix="%">≤ 90%</div><div class="l">better defect detection <sup>2</sup></div></div>
+        <div class="tick"><div class="v grad-text" data-count="12" data-suffix=" weeks">12 weeks</div><div class="l">from kick-off to measured pilot ROI</div></div>
+        <div class="tick"><div class="v grad-text">On-prem</div><div class="l">your data never leaves the plant</div></div>
       </div>
     </div>
   </header>
 
   <section class="block">
-    <div class="eyebrow">The vision</div>
-    <h2>Four layers. One brain for the whole factory.</h2>
-    <p class="sub">We don't replace your machines, MES or ERP. We connect to them, and turn the data they already produce into foresight and action.</p>
-    <div class="layers">
-      <div class="layer card"><div class="n">01 · CONNECT</div><h3>Every signal</h3><p>PLCs, SMT mounters, AOI, testers, energy meters and MES — streamed in real time over OPC UA &amp; MQTT.</p></div>
-      <div class="layer card"><div class="n">02 · SEE</div><h3>Live digital twin</h3><p>A real-time mirror of every line, station and unit. One screen from the shop floor to the boardroom.</p></div>
-      <div class="layer card"><div class="n">03 · PREDICT</div><h3>AI foresight</h3><p>Machine-health models predict failures days ahead. Vision AI spots defects at line speed.</p></div>
-      <div class="layer card"><div class="n">04 · ACT</div><h3>Decisions, not dashboards</h3><p>A production copilot that explains <em>why</em>, recommends <em>what</em>, and simulates the outcome first.</p></div>
+    <div class="wrap">
+      <div class="eyebrow" data-reveal>The shift</div>
+      <h2 data-split>From reacting to predicting.</h2>
+      <div class="shift">
+        <div class="row" data-reveal><span class="old">Fix machines after they break</span><span class="arr" aria-hidden="true">→</span><span class="new">Fix them days before — on our schedule</span></div>
+        <div class="row" data-reveal><span class="old">Sample inspection, human fatigue</span><span class="arr" aria-hidden="true">→</span><span class="new">100% AI inspection at line speed</span></div>
+        <div class="row" data-reveal><span class="old">Yesterday's numbers in this morning's meeting</span><span class="arr" aria-hidden="true">→</span><span class="new">A live digital twin, updated every second</span></div>
+        <div class="row" data-reveal><span class="old">Big decisions on experience alone</span><span class="arr" aria-hidden="true">→</span><span class="new">Every decision simulated on the twin first</span></div>
+      </div>
     </div>
   </section>
 
-  <section class="block" style="padding-top:20px">
-    <div class="eyebrow">Built today — try it live</div>
-    <h2>Six modules, working in your browser right now.</h2>
-    <p class="sub">Everything below runs in the live demo with a simulated electronics plant. In production it plugs into your real equipment.</p>
-    <div class="mods">
-      <a class="mod card" href="app.html#twin"><div class="ic">🏭</div><h3>Live Digital Twin</h3><p>Animated plant floor: SMT, final assembly, test &amp; pack — every station's status, cycle time and health.</p><div class="kpi">● Real-time OEE, FPY, throughput</div></a>
-      <a class="mod card" href="app.html#maintenance"><div class="ic">🛠️</div><h3>Predictive Maintenance</h3><p>Vibration, temperature and current signatures turned into a remaining-useful-life forecast per machine.</p><div class="kpi">● Fix it on schedule, not on failure</div></a>
-      <a class="mod card" href="app.html#quality"><div class="ic">👁️</div><h3>AI Vision Quality</h3><p>Deep-learning inspection of every PCB: bridges, missing parts, tombstones, misalignment.</p><div class="kpi">● 100% inspection, zero fatigue</div></a>
-      <a class="mod card" href="app.html#simulator"><div class="ic">🧪</div><h3>What-If Simulator</h3><p>Test a demand spike, a third shift or a new line speed on the twin before touching the real line.</p><div class="kpi">● Decide with evidence</div></a>
-      <a class="mod card" href="app.html#energy"><div class="ic">⚡</div><h3>Energy &amp; Sustainability</h3><p>kWh and CO₂ per unit, per line, per hour — with AI peak-shaving recommendations.</p><div class="kpi">● Lower bills, greener exports</div></a>
-      <a class="mod card" href="app.html#copilot"><div class="ic">🤖</div><h3>Production Copilot</h3><p>Ask in plain language: "Why did Line 1 slow down?" — and get an answer grounded in live plant data.</p><div class="kpi">● Answers in seconds, not meetings</div></a>
+  <section class="block" data-steps>
+    <div class="wrap">
+      <div class="eyebrow" data-reveal>The vision</div>
+      <h2 data-split>Four layers. One brain for the whole plant.</h2>
+      <p class="sub" data-reveal>No rip-and-replace. We sit on top of the machines, MES and ERP the plant already owns.</p>
+      <div class="steps">
+        <div class="pin" aria-hidden="true">
+          <svg viewBox="0 0 400 400">
+            <defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".5" stop-color="#4f8cff"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs>
+            <g class="ly l3"><rect x="40" y="40" width="320" height="58" rx="14" fill="rgba(167,139,250,.12)" stroke="#a78bfa"/><text x="200" y="75" text-anchor="middle" fill="#e8f0ff">04 · ACT</text></g>
+            <g class="ly l2"><rect x="40" y="122" width="320" height="58" rx="14" fill="rgba(79,140,255,.12)" stroke="#4f8cff"/><text x="200" y="157" text-anchor="middle" fill="#e8f0ff">03 · PREDICT</text></g>
+            <g class="ly l1"><rect x="40" y="204" width="320" height="58" rx="14" fill="rgba(34,211,238,.12)" stroke="#22d3ee"/><text x="200" y="239" text-anchor="middle" fill="#e8f0ff">02 · SEE</text></g>
+            <g class="ly l0"><rect x="40" y="286" width="320" height="58" rx="14" fill="rgba(52,211,153,.12)" stroke="#34d399"/><text x="200" y="321" text-anchor="middle" fill="#e8f0ff">01 · CONNECT</text></g>
+            <g fill="url(#lg)"><rect class="pulse" x="96" y="352" width="10" height="10" rx="2"/><rect class="pulse" x="196" y="352" width="10" height="10" rx="2" style="animation-delay:1.1s"/><rect class="pulse" x="296" y="352" width="10" height="10" rx="2" style="animation-delay:2.1s"/></g>
+          </svg>
+        </div>
+        <div>
+          <div data-step="0"><div class="n">01 · CONNECT</div><h3>Every signal, in real time</h3><p>PLCs, SMT mounters, AOI and SPI, testers, energy meters, AGVs and the MES — streamed live over open industrial standards.</p><ul><li>OPC UA</li><li>MQTT</li><li>IPC-CFX</li><li>Read-only first</li></ul></div>
+          <div data-step="1"><div class="n">02 · SEE</div><h3>A live digital twin</h3><p>A real-time mirror of every line, station and unit. One shared picture from the shop floor to the boardroom.</p><ul><li>OEE · FPY · takt live</li><li>Web &amp; mobile</li><li>TV walls</li></ul></div>
+          <div data-step="2"><div class="n">03 · PREDICT</div><h3>AI that sees it coming</h3><p>Machine-health models forecast failures days ahead. Vision AI inspects every board. Root-cause models link defects to the process.</p><ul><li>Remaining useful life</li><li>Vision AI</li><li>Root cause</li></ul></div>
+          <div data-step="3"><div class="n">04 · ACT</div><h3>Decisions, not dashboards</h3><p>Actions ranked in EGP, work orders raised automatically, and a copilot that answers managers in Arabic or English.</p><ul><li>What-if simulation</li><li>Auto work orders</li><li>Copilot</li></ul></div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="cta card">
-    <div class="eyebrow">The proposal</div>
-    <h2>One line. Twelve weeks. Measurable ROI.</h2>
-    <p class="sub" style="margin:0 auto 28px">Start with a single pilot line, prove the numbers on your own floor, then scale plant-wide.</p>
-    <div class="hero-cta">
-      <a class="btn primary" href="app.html">Open the live demo</a>
-      <a class="btn" href="deck.html#roadmap">See the 12-week pilot plan</a>
+  <section class="block">
+    <div class="wrap">
+      <div class="eyebrow" data-reveal>Built today · try it live</div>
+      <h2 data-split>Six modules, working in your browser now.</h2>
+      <p class="sub" data-reveal>Each module runs in the live demo on a simulated electronics plant. In production it connects to the real equipment.</p>
+      <div class="mods">
+        <a class="mod card" href="app.html#twin" data-reveal><div class="ic" aria-hidden="true">🏭</div><h3>Live Digital Twin</h3><p>SMT, final assembly, test &amp; pack — every station's status, cycle time and health, live.</p><div class="go">Open →</div></a>
+        <a class="mod card" href="app.html#maintenance" data-reveal><div class="ic" aria-hidden="true">🛠️</div><h3>Predictive Maintenance</h3><p>Vibration, temperature and motor current turned into a remaining-useful-life forecast per machine.</p><div class="go">Open →</div></a>
+        <a class="mod card" href="app.html#quality" data-reveal><div class="ic" aria-hidden="true">👁️</div><h3>AI Vision Quality</h3><p>Every board inspected: bridges, missing parts, tombstones, misalignment — with the root cause.</p><div class="go">Open →</div></a>
+        <a class="mod card" href="app.html#simulator" data-reveal><div class="ic" aria-hidden="true">🧪</div><h3>What-If Simulator</h3><p>Test a demand peak, a third shift or a faster takt on the twin before touching the real line.</p><div class="go">Open →</div></a>
+        <a class="mod card" href="app.html#energy" data-reveal><div class="ic" aria-hidden="true">⚡</div><h3>Energy &amp; Sustainability</h3><p>kWh and CO₂ per unit, per line, per hour — with peak-tariff recommendations.</p><div class="go">Open →</div></a>
+        <a class="mod card" href="app.html#copilot" data-reveal><div class="ic" aria-hidden="true">🤖</div><h3>Production Copilot</h3><p>“Why did Line 1 slow down?” — answers from live plant data, in Arabic or English.</p><div class="go">Open →</div></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="eyebrow" data-reveal>The proposal</div>
+      <h2 data-split>One line. Twelve weeks. Proof on your floor.</h2>
+      <div class="plan" data-reveal>
+        <div><div class="w">Weeks 1–2</div><h3>Discover &amp; connect</h3><p>Choose the pilot line, read-only connection, baseline KPIs.</p></div>
+        <div><div class="w">Weeks 3–6</div><h3>Live twin</h3><p>The pilot line live on screens and mobile.</p></div>
+        <div><div class="w">Weeks 7–10</div><h3>AI on</h3><p>Predictive maintenance, vision AI and the copilot.</p></div>
+        <div><div class="w">Weeks 11–12</div><h3>Prove ROI</h3><p>Results measured and signed off by your team.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block cta">
+    <div class="wrap">
+      <h2 data-split>See it running, then decide.</h2>
+      <p class="sub" data-reveal>Open the command center, trigger a breakdown scenario and watch the AI respond.</p>
+      <div class="hero-cta" data-reveal>
+        <a class="btn primary" href="app.html" data-magnetic>Open the live demo</a>
+        <a class="btn" href="deck.html#roadmap" data-magnetic>See the 12-week pilot plan</a>
+      </div>
     </div>
   </section>
 
   <footer>
-    Digital Factory · Concept demo — all plant data shown is simulated for illustration.<br>
-    * Ranges from published industry studies (e.g. McKinsey, WEF Global Lighthouse Network); actual results depend on the baseline.
+    <div class="wrap">
+      <div>Digital Factory · concept demo. All plant data shown is simulated for illustration.</div>
+      <div><sup>1</sup> McKinsey &amp; Company research on predictive maintenance. <sup>2</sup> Published studies of AI visual inspection vs. manual inspection. Results depend on the baseline.</div>
+    </div>
   </footer>
 
+  <script src="assets/js/motion.js"></script>
   <script>
-    // Animated network background
+    // Hero network: signals moving between machines (pauses when hidden or with reduced motion)
     (function () {
       const c = document.getElementById('net'), ctx = c.getContext('2d');
-      let w, h, pts = [];
+      const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let w, h, pts = [], visible = true;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       function resize() {
         w = c.clientWidth; h = c.clientHeight; c.width = w * dpr; c.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        const n = Math.round(Math.min(90, w * h / 16000));
-        pts = Array.from({ length: n }, () => ({ x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - .5) * .35, vy: (Math.random() - .5) * .35 }));
+        const n = Math.round(Math.min(80, w * h / 18000));
+        pts = Array.from({ length: n }, () => ({ x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - .5) * .3, vy: (Math.random() - .5) * .3 }));
+        draw();
       }
-      function frame() {
+      function draw() {
         ctx.clearRect(0, 0, w, h);
-        for (const p of pts) { p.x += p.vx; p.y += p.vy; if (p.x < 0 || p.x > w) p.vx *= -1; if (p.y < 0 || p.y > h) p.vy *= -1; }
         for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
           const a = pts[i], b = pts[j], d = Math.hypot(a.x - b.x, a.y - b.y);
-          if (d < 140) { ctx.strokeStyle = `rgba(79,140,255,${(1 - d / 140) * .35})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+          if (d < 140) { ctx.strokeStyle = `rgba(79,140,255,${(1 - d / 140) * .32})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
         }
-        for (const p of pts) { ctx.fillStyle = 'rgba(34,211,238,.8)'; ctx.beginPath(); ctx.arc(p.x, p.y, 1.6, 0, 7); ctx.fill(); }
+        for (const p of pts) { ctx.fillStyle = 'rgba(34,211,238,.75)'; ctx.beginPath(); ctx.arc(p.x, p.y, 1.6, 0, 7); ctx.fill(); }
+      }
+      function frame() {
+        if (visible) {
+          for (const p of pts) { p.x += p.vx; p.y += p.vy; if (p.x < 0 || p.x > w) p.vx *= -1; if (p.y < 0 || p.y > h) p.vy *= -1; }
+          draw();
+        }
         requestAnimationFrame(frame);
       }
-      addEventListener('resize', resize); resize(); frame();
+      new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(c);
+      addEventListener('resize', resize); resize();
+      if (!still) frame();
     })();
-    // Count-up numbers
-    document.querySelectorAll('[data-count]').forEach(el => {
-      const end = +el.dataset.count, pre = el.dataset.prefix || '', suf = el.dataset.suffix || '';
-      const t0 = performance.now();
-      (function step(t) { const k = Math.min(1, (t - t0) / 1600), e = 1 - Math.pow(1 - k, 3);
-        el.textContent = pre + Math.round(end * e) + suf; if (k < 1) requestAnimationFrame(step); })(t0);
-    });
   </script>
 </body>
 </html>

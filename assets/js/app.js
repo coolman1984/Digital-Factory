@@ -191,7 +191,7 @@
   function shortName(name, bw, ctx) {
     if (ctx.measureText(name).width < bw - 8) return name;
     const map = { 'Mounter A': 'MNT-A', 'Mounter B': 'MNT-B', 'Mounter C': 'MNT-C', 'Function test': 'FCT', 'Screw robot': 'SCRW', 'Back cover': 'COVER',
-      'Panel load': 'PANEL', 'Board fit': 'BOARD', 'Stand fit': 'STAND', 'Calibration': 'CAL', 'Palletizer': 'PLTZ', 'Final QC': 'QC', 'Unloader': 'UNLD',
+      'Panel load': 'PANEL', 'Board fit': 'BOARD', 'Housing fit': 'HOUSE', 'Display bond': 'BOND', 'Palletizer': 'PLTZ', 'Final QC': 'QC', 'Unloader': 'UNLD',
       'Loader': 'LOAD', 'Printer': 'PRNT', 'Reflow': 'RFLW', 'Burn-in': 'BURN', 'Packing': 'PACK' };
     return map[name] || name.slice(0, 4);
   }
