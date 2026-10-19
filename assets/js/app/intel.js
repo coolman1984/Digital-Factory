@@ -99,12 +99,12 @@
     // cone
     ctx.fillStyle = 'rgba(124, 92, 255, 0.22)';
     ctx.beginPath(); ctx.moveTo(X(now), Y(f.units)); ctx.lineTo(X(14), Y(f.p90)); ctx.lineTo(X(14), Y(f.p10)); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = P.violet; ctx.setLineDash([6, 5]); ctx.lineWidth = 2;
+    ctx.strokeStyle = P.indigo; ctx.setLineDash([6, 5]); ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(X(now), Y(f.units)); ctx.lineTo(X(14), Y(f.p50)); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = P.brand2; ctx.beginPath(); ctx.arc(X(now), Y(f.units), 5, 0, 7); ctx.fill();
     ctx.fillStyle = P.text; ctx.font = '700 12px ' + getComputedStyle(document.body).fontFamily;
     ctx.fillText('Now', X(now) - 12, Y(f.units) - 10);
-    ctx.fillStyle = P.violet; const l50 = 'P50 ' + fmt(f.p50); ctx.fillText(l50, Math.min(w - pad.r - ctx.measureText(l50).width, X(14) - ctx.measureText(l50).width - 4), Y(f.p50) - 8);
+    ctx.fillStyle = P.indigo; const l50 = 'P50 ' + fmt(f.p50); ctx.fillText(l50, Math.min(w - pad.r - ctx.measureText(l50).width, X(14) - ctx.measureText(l50).width - 4), Y(f.p50) - 8);
     return f;
   };
   function chip(el, prob) {

@@ -10,7 +10,7 @@
     const oee = snap ? snap.oee : S.oee, fpy = snap ? snap.fpy : S.fpy;
     const kO = $('#kOee'); kO.textContent = pct(oee);
     kO.style.color = oee >= 0.85 ? 'var(--success)' : oee >= 0.75 ? 'var(--warning)' : 'var(--danger)';
-    $('#kOeeS').textContent = oee >= 0.85 ? 'World-class (85%+)' : oee >= 0.75 ? 'Below world-class 85%' : 'A line is stopped';
+    $('#kOeeS').textContent = oee >= 0.85 ? 'At benchmark (85%+)' : oee >= 0.75 ? 'Below 85% benchmark' : 'A line is stopped';
     const u = snap ? snap.units : Sim.unitsToday(), p = Sim.planToday();
     $('#kUnits').textContent = fmt(u);
     const d = (u / p - 1) * 100;
@@ -79,7 +79,7 @@
     const el = document.createElement('div');
     el.className = 'ev';
     const c = e.level === 'crit' ? 'danger-text' : e.level === 'warn' ? '' : '';
-    el.innerHTML = `<span class="tm2">${e.time}</span><span class="src ${c}" style="${e.src === 'AI' ? 'color:var(--violet)' : e.level === 'warn' ? 'color:var(--warning-text)' : e.level === 'crit' ? 'color:var(--danger-text)' : 'color:var(--brand-text)'}">${esc(e.src)}</span><span>${esc(e.msg)}</span>`;
+    el.innerHTML = `<span class="tm2">${e.time}</span><span class="src ${c}" style="${e.src === 'AI' ? 'color:var(--indigo)' : e.level === 'warn' ? 'color:var(--warning-text)' : e.level === 'crit' ? 'color:var(--danger-text)' : 'color:var(--brand-text)'}">${esc(e.src)}</span><span>${esc(e.msg)}</span>`;
     const list = $('#events'); list.prepend(el);
     while (list.children.length > 40) list.lastChild.remove();
   };

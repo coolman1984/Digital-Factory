@@ -26,6 +26,11 @@ All plant data is simulated. Samsung is named as the audience only; no Samsung a
 Suggested live moment: run *Bearing wear on Mounter B*, wait about 15 s for the prediction, and let the guest click
 **Schedule repair**. Then open **Leadership**.
 
+## Design
+
+Direction, tokens and the reasons behind them: `PRODUCT.md`, `DESIGN.md`, `docs/ALLOWANCES.md`. Design changes go through the
+reusable pipeline in `design-pipeline/` (installed into `.claude/skills/`).
+
 ## Run locally
 
 Open `index.html` in a browser, or serve the folder: `python3 -m http.server`.
@@ -39,8 +44,10 @@ Open `index.html` in a browser, or serve the folder: `python3 -m http.server`.
 
 ```
 assets/kit/       Samsung UI kit: samsung-ui.css, fonts.css (Inter, IBM Plex Sans Arabic), icons.js
-assets/css/       theme.css (aliases, theme, motion) · app.css · deck.css
+assets/css/       theme.css (tokens, theme, motion) · site.css · app.css · deck.css
 assets/js/        sim.js (plant engine: lines, alarms, agents, forecasts, scenarios, history) · charts.js · theme.js · motion.js · deck.js
+                  twin-hero.js (the live SMT line drawn on the website and title slide) · site.js
+assets/img/       open-licence factory photos, credits in assets/img/CREDITS.md
 assets/js/app/    core · floor · command · intel (agents, alarms, predictions, root cause, scenarios, control) · perf · copilot · main
 ```
 

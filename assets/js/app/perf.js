@@ -48,7 +48,7 @@
       $('#readiness').innerHTML = PILLARS.map(([n, now, pilot]) => `<div class="rd"><div class="row"><b>${esc(n)}</b><span class="muted">${now}% → <b class="hl">${pilot}%</b></span></div><div class="bar"><i class="pilot" style="width:${pilot}%"></i><i class="now" style="width:${now}%"></i></div></div>`).join('') +
         `<small>Grey: assumed starting point. Blue: target after the 12-week pilot. To be replaced by a joint assessment on site.</small>`;
     }
-    Charts.line($('#oeeTrend'), [{ data: S.oeeHist.map(v => v * 100), color: P.brand2, fill: true, dot: true }], { min: 50, max: 100, grid: true, yFmt: v => Math.round(v) + '%', threshold: { v: 85, color: P.success, label: 'World-class 85%' }, pad: { l: 36, r: 8, t: 12, b: 8 } });
+    Charts.line($('#oeeTrend'), [{ data: S.oeeHist.map(v => v * 100), color: P.brand2, fill: true, dot: true }], { min: 50, max: 100, grid: true, yFmt: v => Math.round(v) + '%', threshold: { v: 85, color: P.success, label: 'Benchmark 85%' }, pad: { l: 36, r: 8, t: 12, b: 8 } });
   };
 
   /* ---------------- maintenance ---------------- */
@@ -81,7 +81,7 @@
     const data = m.hist.vib.slice(-90), k = data.slice(-20);
     const slope = k.length > 1 ? (k[k.length - 1] - k[0]) / (k.length - 1) : 0, last = data[data.length - 1] || 0;
     const fc = [last]; for (let i = 1; i <= 30; i++) fc.push(Math.min(9.5, last + Math.max(slope, 0.002) * i * (m.degrade > 0 ? 1.3 : 1)));
-    Charts.line($('#vibChart'), [{ data, color: P.brand2, fill: true, dot: true }, { data: fc, color: P.violet, dash: [5, 5], offset: data.length - 1 }],
+    Charts.line($('#vibChart'), [{ data, color: P.brand2, fill: true, dot: true }, { data: fc, color: P.indigo, dash: [5, 5], offset: data.length - 1 }],
       { min: 0, max: 10, n: data.length + 30, threshold: { v: 7.1, color: P.danger, label: 'ISO 10816 alarm 7.1' }, grid: true, yFmt: v => v.toFixed(0), pad: { l: 22, r: 8, t: 12, b: 8 } });
   }
   // acoustic AI: a scrolling spectrogram of the selected machine's sound
@@ -243,7 +243,7 @@
     tg.className = 'chip ' + (S.tariff === 'Peak' ? 'chip-danger' : S.tariff.startsWith('Peak') ? 'chip-warning' : 'chip-success');
     const areas = S.lines.map(l => [l.name, l.kwNow]).concat([['Utilities (air, chillers, HVAC)', S.utilNow]]);
     const max = Math.max(...areas.map(a => a[1])) * 1.1;
-    $('#eBars').innerHTML = areas.map(([n, v]) => `<div class="cb"><span>${n}</span><div class="track"><div class="fill" style="width:${v / max * 100}%;background:${n.startsWith('Util') && (S.active.peak || S.active.heat) ? 'var(--danger)' : 'var(--brand-grad)'}"></div></div><span class="num">${fmt(v)} kW</span></div>`).join('');
+    $('#eBars').innerHTML = areas.map(([n, v]) => `<div class="cb"><span>${n}</span><div class="track"><div class="fill" style="width:${v / max * 100}%;background:${n.startsWith('Util') && (S.active.peak || S.active.heat) ? 'var(--danger)' : 'var(--brand)'}"></div></div><span class="num">${fmt(v)} kW</span></div>`).join('');
     const kwh = 21800 + S.energyKwh;
     $('#eKpis').innerHTML = [['Energy today', (kwh / 1000).toFixed(1) + ' MWh'], ['Per unit', (S.kw / Math.max(1, S.tph)).toFixed(2) + ' kWh'], ['CO₂ today', (kwh * 0.47 / 1000).toFixed(1) + ' t'], ['Cost today', money(kwh * 2.2)], ['Ambient', S.ambient + ' °C'], ['Peak demand', fmt(Math.max(...S.kwHist)) + ' kW']]
       .map(([l, v]) => `<div class="mk"><div class="kpi-label">${l}</div><div class="v">${v}</div></div>`).join('');
