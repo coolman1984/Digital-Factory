@@ -1,6 +1,6 @@
 # Design system: Digital Factory
 
-Built on the Samsung UI kit (`assets/kit/`). This file records the layer on top. Tokens live in `assets/css/theme.css`.
+Built on the brand UI kit (`assets/kit/`). This file records the layer on top. Tokens live in `assets/css/theme.css`.
 
 ## Colour roles
 | Role | Light | Dark | Use |

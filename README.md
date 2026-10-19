@@ -1,16 +1,16 @@
 # Digital Factory
 
-A live digital twin, AI agents and a production copilot for electronics manufacturing. Prepared for Samsung Electronics Egypt.
-Static web app: no install, no server, works offline. Light and dark themes, built on the Samsung UI kit (`assets/kit/`).
+A live digital twin, AI agents and a production copilot for electronics manufacturing. Prepared for Plant EG-01, a fictional electronics plant.
+Static web app: no install, no server, works offline. Light and dark themes, built on the brand UI kit (`assets/kit/`).
 
 | Page | What it is |
 |---|---|
-| `index.html` | Website: the vision, Samsung's 2030 direction, the capabilities and the 12-week pilot |
+| `index.html` | Website: the vision, the industry's 2030 direction, the capabilities and the 12-week pilot |
 | `app.html` | **Command room**: live plant floor, AI agent crew, alarms, control, predictions, root cause, scenarios, leadership, maintenance, quality, energy, what-if, copilot |
 | `deck.html` | **Presentation**: 17 slides with the live demo embedded, an editable business case and speaker notes |
 | `docs/RESEARCH.md` | Research brief on the world's best factories, with sources, and the ideas built from it |
 
-All plant data is simulated. Samsung is named as the audience only; no Samsung artwork is used.
+All plant data is simulated. Plant EG-01 is fictional; no real company or city is named for it.
 
 ## Presenting
 
@@ -43,7 +43,7 @@ Open `index.html` in a browser, or serve the folder: `python3 -m http.server`.
 ## Structure
 
 ```
-assets/kit/       Samsung UI kit: samsung-ui.css, fonts.css (Inter, IBM Plex Sans Arabic), icons.js
+assets/kit/       Brand UI kit: brand-ui.css, fonts.css (Inter, IBM Plex Sans Arabic), icons.js
 assets/css/       theme.css (tokens, theme, motion) · site.css · app.css · deck.css
 assets/js/        sim.js (plant engine: lines, alarms, agents, forecasts, scenarios, history) · charts.js · theme.js · motion.js · deck.js
                   twin-hero.js (the live SMT line drawn on the website and title slide) · site.js

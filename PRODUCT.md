@@ -1,6 +1,6 @@
 # Product: Digital Factory
 
-**One line.** A live digital twin, AI agent crew and production copilot for an electronics plant, shown to the head of production at Samsung Electronics Egypt (Beni Suef) as proof that the plant can be AI-driven ahead of Samsung's 2030 goal.
+**One line.** A live digital twin, AI agent crew and production copilot for an electronics plant, shown to the head of production at Plant EG-01 (a fictional large electronics plant) as proof that the plant can be AI-driven ahead of the industry's 2030 goal.
 
 **Audience.** One senior production leader and his managers. Engineers at heart, short on time, sceptical of slideware. They judge by: is it real, is it about *my* line, can I act on it.
 
@@ -11,7 +11,7 @@
 | Presentation | deck.html | Persuade / Read | Tell the case in the meeting, live demo inside |
 | Command room | app.html | Operate | Let him run the plant: alarms, agents, control, scenarios |
 
-**Pinned (brand).** Samsung UI kit in `assets/kit/`: Samsung blue, Inter, rounded One UI geometry, light and dark. No Samsung artwork or logos. All plant data simulated and labelled as such. Every number on the site is sourced or marked as sample.
+**Pinned (brand).** Brand UI kit in `assets/kit/`: brand blue, Inter, rounded geometry, light and dark. No third-party artwork or logos; no real company or city named for the plant. All plant data simulated and labelled as such. Every number on the site is sourced or marked as sample.
 
 **Tone.** Plain, confident, world-class English without the word "world-class". Short sentences. Verbs. Numbers with sources.
 

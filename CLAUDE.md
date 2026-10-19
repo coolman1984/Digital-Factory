@@ -1,8 +1,8 @@
 # Digital Factory
 
 Static site (no build): `index.html` (website), `app.html` (command room), `deck.html` (presentation). Plant data is simulated.
-Design is the Samsung UI kit in `assets/kit/` (pinned brand: Inter, Samsung blues, light and dark). Samsung is the audience only;
-never add Samsung artwork.
+Design is the brand UI kit in `assets/kit/` (pinned brand: Inter, brand blues, light and dark). The plant is fictional (Plant EG-01);
+never name a real company or city for it.
 
 ## Design work
 For any change to how a page looks, moves or reads, follow the `web-design-pipeline` skill in `.claude/skills/`
