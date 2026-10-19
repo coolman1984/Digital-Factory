@@ -220,9 +220,13 @@
 
   /* ---------------- control ---------------- */
   const draft = {};
-  let controlPreviewKey = '';
-  let controlDebounce;
   const linePreviewHtml = {};
+  const controlPreviewDebounce = Sim.createPerLineDebounce(lineId => DF.renderControl(false, false, lineId));
+  function invalidateLinePreview(lineId) {
+    Object.keys(linePreviewHtml).forEach(k => {
+      if (k.startsWith(lineId + ':')) delete linePreviewHtml[k];
+    });
+  }
   function previewHtml(l, speed) {
     const p = Sim.preview(l.id, speed);
     const d = (a, b, f, good) => { const diff = a - b; if (Math.abs(diff) < 1e-6) return ''; const ok = good === 'up' ? diff > 0 : diff < 0; return ` <small style="color:${ok ? 'var(--success)' : 'var(--danger)'}">${diff > 0 ? '+' : ''}${f(diff)}</small>`; };
@@ -230,14 +234,7 @@
   }
   DF.renderControl = function (rebuild, statusOnly, onlyLine) {
     const S = Sim.state;
-    const previewKey = statusOnly ? controlPreviewKey : S.lines.map(l => {
-      const sp = draft[l.id] !== undefined ? draft[l.id] : l.speed;
-      return l.id + ':' + sp.toFixed(3);
-    }).join('|');
-    const runPreview = !statusOnly && previewKey !== controlPreviewKey;
-    if (runPreview) controlPreviewKey = previewKey;
     if (rebuild || $('#controls').children.length !== S.lines.length) {
-      controlPreviewKey = '';
       $('#controls').innerHTML = S.lines.map(l => `<div class="card ctrl" data-line="${l.id}">
         <div class="ch"><div><b>${esc(l.name)}</b><small>${esc(l.sub)} · nominal ${l.rate} units/h</small></div><span class="chip" data-cst></span></div>
         <label class="sp"><span>Line speed <b data-cv></b></span><input type="range" min="80" max="115" step="1" data-cr aria-label="Speed for ${esc(l.name)}"></label>
@@ -251,8 +248,9 @@
       const r = card.querySelector('[data-cr]');
       if (document.activeElement !== r) r.value = Math.round(sp * 100);
       card.querySelector('[data-cv]').textContent = Math.round(sp * 100) + '%';
-      const cacheKey = l.id + ':' + sp.toFixed(3);
-      if (runPreview && (!onlyLine || onlyLine === l.id)) {
+      const cacheKey = Sim.controlPreviewCacheKey(l.id, sp, l.speed);
+      const wantPreview = !statusOnly && (!onlyLine || onlyLine === l.id);
+      if (wantPreview && !linePreviewHtml[cacheKey]) {
         linePreviewHtml[cacheKey] = previewHtml(l, sp);
       }
       const pvHtml = linePreviewHtml[cacheKey];
@@ -267,10 +265,9 @@
   };
   $('#controls').addEventListener('input', e => {
     const r = e.target.closest('[data-cr]'); if (!r) return;
-    draft[r.closest('.ctrl').dataset.line] = +r.value / 100;
-    clearTimeout(controlDebounce);
     const lineId = r.closest('.ctrl').dataset.line;
-    controlDebounce = setTimeout(() => DF.renderControl(false, false, lineId), 280);
+    draft[lineId] = +r.value / 100;
+    controlPreviewDebounce.schedule(lineId, 280);
   });
   $('#controls').addEventListener('click', async e => {
     const card = e.target.closest('.ctrl'); if (!card) return;
@@ -278,7 +275,12 @@
     if (e.target.closest('[data-apply]')) {
       const sp = draft[l.id];
       const ok = await DF.confirm({ title: `Change ${l.name} speed to ${Math.round(sp * 100)}%?`, html: `<p>The digital twin expects this result. The change will be written to the audit trail.</p><div class="pv">${previewHtml(l, sp)}</div>` });
-      if (ok) { Sim.control(l.id, { speed: sp }, 'You'); delete draft[l.id]; DF.toast(`${l.name} speed set to ${Math.round(sp * 100)}%`, 'success'); }
+      if (ok) {
+        Sim.control(l.id, { speed: sp }, 'You');
+        delete draft[l.id];
+        invalidateLinePreview(l.id);
+        DF.toast(`${l.name} speed set to ${Math.round(sp * 100)}%`, 'success');
+      }
       DF.renderControl();
     } else if (e.target.closest('[data-stop]')) {
       const stopping = !l.stopped;

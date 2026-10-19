@@ -16,12 +16,12 @@ function approx(a, b, eps) {
 }
 
 function ledgerStateSum(L) {
-  return L.run + L.plannedStop + L.starved + L.blocked + L.setup + L.minorStop + L.down.breakdown + L.down.other;
+  return L.run + L.plannedStop + L.starved + L.blocked + L.setup + L.down.breakdown + L.down.other;
 }
 
 function availWallTime(L) {
   const ls = L.losses;
-  return L.run + ls.breakdown + ls.setupAdjust + ls.minorStop + ls.starvation + ls.operatorStop;
+  return L.run + ls.breakdown + ls.setupAdjust + ls.starvation + ls.operatorStop;
 }
 
 function checkOeeLine(l) {
@@ -69,7 +69,28 @@ const minorRun = Sim.runShiftSimulation({
 const minorL1 = minorRun.lines.find(l => l.id === 'L1');
 assert(minorL1.ledger.losses.minorStop > 0, 'forced minor stop books loss time');
 assert(minorL1.good === 0 && minorL1.produced === 0, 'forced minor stop yields no production');
-assert(minorL1.ledger.run === 0, 'forced minor stop does not book run time');
+assert(minorL1.ledger.run >= minorL1.ledger.losses.minorStop, 'minor stop time stays in performance run clock');
+const minorOee = Sim.oeeFromLedger(minorL1.ledger);
+assert(minorOee.A > 0.5, 'minor stop reduces performance, not availability');
+
+const overlapSlices = Sim.lineStopSlices(2, [[0, 1]], [[0, 1]]);
+assert(overlapSlices.run === 1 && overlapSlices.breakdown === 1 && overlapSlices.minor === 0, 'overlapping down+minor union: one breakdown second, one run second');
+assert(Sim.intervalUnionLength([[0, 1], [0, 1]]) === 1, 'union of identical stop intervals');
+const overlapProd = 2 - Sim.intervalUnionLength([[0, 1], [0, 1]]);
+assert(overlapProd === 1, 'production window uses stop union not double subtract');
+
+assert(Sim.controlPreviewCacheKey('L1', 1.11, 1.1) !== Sim.controlPreviewCacheKey('L1', 1.11, 1.11), 'preview cache keys include baseline speed');
+
+const deb = Sim.createPerLineDebounce(() => {});
+deb.schedule('L1', 50);
+deb.schedule('L2', 50);
+assert(deb.pendingCount() === 2, 'per-line debounce keeps both line timers');
+
+const cacheOpt = { hours: 1, maxSteps: 200, seedSalt: 12345 };
+const c1 = Sim.runShiftSimulationCached(cacheOpt);
+const c2 = Sim.runShiftSimulationCached(cacheOpt);
+assert(c1.out === c2.out, 'shift simulation cache returns identical results');
+assert(Sim.shiftSimCacheKey(cacheOpt) === Sim.shiftSimCacheKey(Object.assign({}, cacheOpt)), 'shift cache key stable for same params');
 
 const l3Headless = Sim.runShiftSimulation({ hours: 15, seedSalt: 11, maxSteps: 4200 });
 const l3 = l3Headless.lines.find(l => l.id === 'L3');
