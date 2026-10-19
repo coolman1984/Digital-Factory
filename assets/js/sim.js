@@ -20,6 +20,44 @@
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const ema = (prev, v, k) => prev + (v - prev) * k;
 
+  function makeLedger(rate) {
+    return {
+      elapsed: 0, planned: 0, plannedStop: 0, run: 0,
+      down: { breakdown: 0, other: 0 },
+      starved: 0, blocked: 0, slow: 0, minorStop: 0,
+      total: 0, good: 0, idealCycle: 3600 / rate,
+      losses: { breakdown: 0, setupAdjust: 0, minorStop: 0, reducedSpeed: 0, startupRejects: 0, productionRejects: 0 }
+    };
+  }
+
+  function oeeFromLedger(L) {
+    const plannedProd = Math.max(0, L.planned - L.plannedStop);
+    const A = plannedProd > 0 ? clamp(L.run / plannedProd, 0, 1) : 0;
+    const P = L.run > 0 ? clamp((L.idealCycle * L.total) / L.run, 0, 1) : 0;
+    const Q = L.total > 0 ? clamp(L.good / L.total, 0, 1) : 1;
+    return { A, P, Q, oee: clamp(A * P * Q, 0, 1) };
+  }
+
+  function sampleWeibull(beta, eta) {
+    return eta * Math.pow(-Math.log(Math.max(1e-9, 1 - rng.float())), 1 / beta);
+  }
+
+  function sampleLognormal(mu, sigma) {
+    const u = rng.float(), v = rng.float();
+    const z = Math.sqrt(-2 * Math.log(Math.max(1e-9, u))) * Math.cos(2 * Math.PI * v);
+    return Math.exp(mu + sigma * z);
+  }
+
+  function initStoch(s, line) {
+    const eta = s.machine ? rnd(28000, 52000) : 0;
+    s.stoch = s.machine ? {
+      weibullBeta: rnd(1.8, 2.6), weibullEta: eta, ttf: sampleWeibull(2.2, eta),
+      repairMu: Math.log(rnd(8, 22)), repairSigma: 0.35,
+      minorRate: rnd(0.00004, 0.00012), minorLeft: 0,
+      cycleMu: 0, cycleSigma: 0.04
+    } : null;
+  }
+
   const LINE_DEFS = [
     { id: 'L1', name: 'SMT Line 1', sub: 'Main boards', rate: 180, kw: 210, fpy: 0.988, inspect: 'AOI',
       stations: ['Loader', 'Printer', 'SPI', 'Mounter A', 'Mounter B', 'Reflow', 'AOI', 'Unloader'] },
@@ -68,7 +106,8 @@
   ];
 
   const listeners = [];
-  const emit = e => listeners.forEach(fn => fn(e));
+  let headlessMode = false;
+  const emit = e => { if (!headlessMode) listeners.forEach(fn => fn(e)); };
 
   let S, seq = 0;
 
@@ -78,7 +117,8 @@
       x: 0.07 + 0.86 * (i / (n - 1)),
       state: 'run', machine: MACHINE_KINDS.some(k => name.startsWith(k)), health: rnd(84, 99),
       vibBase: rnd(1.1, 2.2), tempBase: name.startsWith('Reflow') ? rnd(238, 246) : rnd(36, 48),
-      vib: 0, temp: 0, cycle: 3600 / line.rate, degrade: 0, hist: { vib: [], temp: [], cycle: [] }
+      vib: 0, temp: 0, cycle: 3600 / line.rate, degrade: 0, hist: { vib: [], temp: [], cycle: [] },
+      downReason: 'breakdown', ledger: makeLedger(line.rate)
     };
   }
 
@@ -101,9 +141,11 @@
         const line = Object.assign({}, d, {
           units: [], spawnAcc: 0, produced: 0, good: 0, defectMult: 1, speed: 1, stopped: false, paused: false,
           oee: rnd(0.84, 0.9), perf: rnd(0.93, 0.97), availBase: rnd(0.9, 0.935), tph: d.rate * 0.88, fpyNow: d.fpy,
-          matName: d.material, material: d.material ? 78 : null, starved: false
+          matName: d.material, material: d.material ? 78 : null, starved: false,
+          ledger: makeLedger(d.rate)
         });
         line.stations = d.stations.map((n, i) => makeStation(line, n, i, d.stations.length));
+        line.stations.forEach(s => initStoch(s, line));
         return line;
       })
     };
@@ -242,9 +284,29 @@
     }
 
     let tphSum = 0, oeeW = 0, fpyW = 0, rateSum = 0, kw = 0;
+    const shiftWarmup = !warm && S.t - dts < START + 900;
     for (const l of S.lines) {
-      let blocked = false, slow = false;
+      const L = l.ledger;
+      let blocked = false, slow = false, maint = false, breakdown = false;
       for (const s of l.stations) {
+        const st = s.stoch;
+        if (!warm && st && !s.scripted) {
+          if (s.repairLeft > 0) {
+            s.repairLeft -= simDt;
+            if (s.repairLeft <= 0) { s.state = 'run'; s.repairLeft = 0; st.ttf = sampleWeibull(st.weibullBeta, st.weibullEta); }
+          } else if (st.minorLeft > 0) {
+            st.minorLeft -= simDt;
+            if (st.minorLeft <= 0 && s.state === 'warn' && !s.degrade) s.state = 'run';
+          } else if (s.state === 'run' && !s.degrade) {
+            st.ttf -= simDt;
+            if (st.ttf <= 0) {
+              s.state = 'down'; s.downReason = 'breakdown'; s.stochFail = true;
+              s.repairLeft = sampleLognormal(st.repairMu, st.repairSigma);
+            } else if (rng.chance(st.minorRate * simDt)) {
+              st.minorLeft = rnd(3, 22); s.state = 'warn';
+            }
+          }
+        }
         if (s.degrade > 0 && s.state !== 'down' && s.state !== 'maint') s.health = clamp(s.health - s.degrade * simDt, 0, 100);
         const wear = 100 - s.health;
         const idle = s.state === 'down' || s.state === 'maint' || l.stopped || l.paused;
@@ -252,8 +314,11 @@
         const heat = s.name === 'Reflow' && S.active.heat && !S.active.heat.fixed ? 3.2 : 0;
         s.temp = s.state === 'down' ? ema(s.temp || s.tempBase, s.tempBase * 0.7, 0.02) : s.tempBase + wear * 0.12 + heat + rnd(-0.6, 0.6);
         const busy = !idle && (s.state === 'run' || s.state === 'warn');
-        s.cycle = busy ? (3600 / (l.rate * l.speed)) * (1 + (s.state === 'warn' ? 0.16 : 0) + rnd(-0.03, 0.03)) : 0;
-        if (s.state === 'down' || s.state === 'maint') blocked = true;
+        const ideal = 3600 / (l.rate * l.speed);
+        const cycleNoise = busy ? sampleLognormal(0, st ? st.cycleSigma : 0.03) : 1;
+        s.cycle = busy ? ideal * (1 + (s.state === 'warn' ? 0.16 : 0)) * cycleNoise : 0;
+        if (s.state === 'down') { blocked = true; breakdown = true; }
+        if (s.state === 'maint') { blocked = true; maint = true; }
         if (s.state === 'warn') slow = true;
         if (!warm || rng.chance(0.6)) {
           s.hist.vib.push(+s.vib.toFixed(2)); s.hist.temp.push(+s.temp.toFixed(1)); s.hist.cycle.push(+s.cycle.toFixed(1));
@@ -267,15 +332,50 @@
       }
       const halted = blocked || l.starved || l.stopped || l.paused;
       const avail = halted ? 0 : 1;
-      const perf = slow ? 0.8 : l.perf + rnd(-0.01, 0.01);
+      const perf = slow ? 0.82 : l.perf + rnd(-0.01, 0.01);
       const over = Math.max(0, l.speed - 1);
       const defectRate = (1 - l.fpy) * l.defectMult * (1 + over * 6) * (S.active.heat && !S.active.heat.fixed && /L1|L2/.test(l.id) ? 1.8 : 1);
       const q = 1 - defectRate;
-      l.oee = ema(l.oee, avail * l.availBase * perf * q, warm ? 0.05 : Math.min(1, simDt * 0.18));
-      l.fpyNow = ema(l.fpyNow, q, Math.min(1, simDt * 0.3));
       const tph = l.rate * l.speed * avail * l.availBase * perf;
       l.tph = ema(l.tph, tph, Math.min(1, simDt * 0.4));
-      if (!warm) { const made = tph * dts / 3600; l.produced += made; l.good += made * q; }
+      l.fpyNow = ema(l.fpyNow, q, Math.min(1, simDt * 0.3));
+      if (!warm) {
+        const made = tph * dts / 3600;
+        const good = made * q;
+        l.produced += made; l.good += good;
+        L.total += made; L.good += good;
+        if (made > good) L.losses.productionRejects += made - good;
+        if (shiftWarmup && made > 0) L.losses.startupRejects += (made - good) * 0.35;
+        L.elapsed += simDt;
+        L.planned += simDt;
+        if (l.stopped || l.paused) {
+          L.down.other += simDt;
+          L.losses.breakdown += simDt * 0.5;
+        } else if (l.starved) {
+          L.starved += simDt;
+        } else if (maint) {
+          L.plannedStop += simDt;
+          L.losses.setupAdjust += simDt;
+        } else if (breakdown) {
+          L.down.breakdown += simDt;
+          L.losses.breakdown += simDt;
+        } else if (blocked && !breakdown) {
+          L.blocked += simDt;
+        } else if (halted) {
+          L.down.other += simDt;
+        } else {
+          L.run += simDt;
+          if (slow) { L.slow += simDt; L.losses.reducedSpeed += simDt; }
+          for (const s of l.stations) {
+            if (s.stoch && s.stoch.minorLeft > 0) { L.minorStop += simDt; L.losses.minorStop += simDt; break; }
+          }
+        }
+        const comp = oeeFromLedger(L);
+        l.oeeComponents = comp;
+        l.oee = comp.oee;
+      } else {
+        l.oee = ema(l.oee, avail * l.availBase * perf * q, 0.05);
+      }
       tphSum += l.tph; oeeW += l.oee * l.rate; fpyW += l.fpyNow * l.rate; rateSum += l.rate;
       l.kwNow = l.kw * (avail ? (0.85 + 0.15 * l.speed) : 0.42) * rnd(0.97, 1.03);
       kw += l.kwNow;
@@ -387,7 +487,7 @@
         log('AI', 'Mounter B anomaly score 0.93 · remaining-life model triggered', 'warn');
       }
       if (b.alerted && !b.scheduled && mb.health <= 30 && mb.state !== 'down') {
-        mb.state = 'down';
+        mb.state = 'down'; mb.scripted = true;
         if (b.ins) resolve(b.ins.id);
         clearAlarm('L1-MounterB.VIB');
         const inc = incident({ title: 'SMT Line 1 stopped · Mounter B bearing seized', area: 'L1', rootKey: 'L1-MounterB.STOP', confidence: 0.97, cause: 'Spindle bearing seized (predicted about 40 h earlier, warning not actioned)' });
@@ -405,7 +505,7 @@
         const wo = S.workOrders.find(w => w.mid === mb.id && w.status !== 'Completed');
         if (wo) { wo.status = 'Emergency repair'; wo.level = 'crit'; emit({ type: 'workorders' }); }
         later(22, () => {
-          mb.health = 98; mb.degrade = 0; mb.state = 'run'; delete S.active.bearing;
+          mb.health = 98; mb.degrade = 0; mb.state = 'run'; mb.scripted = false; delete S.active.bearing;
           closeIncident(inc, members);
           if (wo) { wo.status = 'Completed'; wo.level = 'ok'; emit({ type: 'workorders' }); }
           done('maint', 0);
@@ -497,7 +597,7 @@
     breakdown() {
       const sr = st('L4', 'Screw robot');
       if (sr.state !== 'run') return;
-      sr.state = 'down';
+      sr.state = 'down'; sr.scripted = true;
       const inc = incident({ title: 'Final Assembly B stopped · screw robot torque fault', area: 'L4', rootKey: 'L4-Screwrobot.TRQ', confidence: 0.88, cause: 'Torque sensor drift (same signature as 3 past events)' });
       raise('L4-Screwrobot.TRQ', { prio: 1, area: 'L4', tag: 'SCRW.TORQUE.FAULT', msg: 'Screw robot torque fault · cell stopped', incident: inc.id });
       const members = cascade(sr, inc);
@@ -513,7 +613,7 @@
       audit('Maintenance agent', 'Dispatched technician', 'Eng. Mahmoud · torque sensor kit A-14 · repair guide RG-207');
       toast('Robot fault on Line 4: technician dispatched automatically', 'error');
       later(14, () => {
-        sr.state = 'run'; closeIncident(inc, members); done('maint', 0);
+        sr.state = 'run'; sr.scripted = false; closeIncident(inc, members); done('maint', 0);
         log('MES', 'L4 screw robot back in production after 14 min');
         toast('Line 4 restored in 14 min (average for this fault: 55 min)', 'success');
       });
@@ -798,7 +898,7 @@
     start() { if (!S) reset(); running = true; last = 0; requestAnimationFrame(loop); },
     reset() { reset(); lastStoryT = -1; },
     trigger(name) { if (scenarios[name]) { audit('You', 'Started scenario', (SCENARIOS.find(s => s.id === name) || {}).title || name); scenarios[name](); } },
-    act, control, preview, clock, line, st, machines, allStations, rulHours, agent,
+    act, control, preview, clock, line, st, machines, allStations, rulHours, agent, oeeFromLedger,
     forecast, failureRisk, healthScore, unitsToday, planToday: () => planAt(S.t), planAt,
     setAutonomy(id, level) {
       const a = agent(id); if (!a || a.locked) return;
