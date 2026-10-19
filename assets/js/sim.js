@@ -28,7 +28,7 @@
       down: { breakdown: 0, other: 0 },
       starved: 0, blocked: 0, setup: 0, slow: 0, minorStop: 0,
       total: 0, good: 0, idealCycle: 3600 / rate,
-      losses: { breakdown: 0, setupAdjust: 0, minorStop: 0, reducedSpeed: 0, startupRejects: 0, productionRejects: 0 }
+      losses: { breakdown: 0, setupAdjust: 0, minorStop: 0, reducedSpeed: 0, startupRejects: 0, productionRejects: 0, starvation: 0, operatorStop: 0 }
     };
   }
 
@@ -61,6 +61,9 @@
       cycleMu: 0, cycleSigma: 0.04
     };
   }
+
+  const PLAN_DAY_HOURS = 22.5; // fixed daily demand basis (3 × 7.5 h), independent of what-if shift count
+  const LINE_REQ = { L1: 0.80, L2: 0.72, L3: 0.86, L4: 0.78, L5: 0.75 };
 
   const LINE_DEFS = [
     { id: 'L1', name: 'SMT Line 1', sub: 'Main boards', rate: 180, kw: 210, fpy: 0.988, inspect: 'AOI',
@@ -294,14 +297,18 @@
     for (const l of S.lines) {
       const L = l.ledger;
       let blocked = false, slow = false, maint = false, breakdown = false;
+      let lineDownSec = 0, lineMinorSec = 0;
       for (const s of l.stations) {
         const st = s.stoch;
         if (!warm && st && !s.scripted) {
           if (s.repairLeft > 0) {
+            const atStart = s.repairLeft;
+            s._downSec = Math.min(plantDt, atStart);
             s.repairLeft -= plantDt;
             if (s.repairLeft <= 0) { s.state = 'run'; s.repairLeft = 0; st.ttf = sampleWeibull(st.weibullBeta, st.weibullEta); }
           } else if (st.minorLeft > 0) {
-            s._minorAtStart = st.minorLeft;
+            const atStart = st.minorLeft;
+            s._minorSec = Math.min(plantDt, atStart);
             st.minorLeft -= plantDt;
             if (st.minorLeft <= 0 && s.state === 'warn' && !s.degrade) s.state = 'run';
           } else if (s.state === 'run' && !s.degrade) {
@@ -324,13 +331,20 @@
         const ideal = 3600 / (l.rate * l.speed);
         const cycleNoise = busy ? sampleLognormal(0, st ? st.cycleSigma : 0.03) : 1;
         s.cycle = busy ? ideal * (1 + (s.state === 'warn' ? 0.16 : 0)) * cycleNoise : 0;
-        if (s.state === 'down') { blocked = true; breakdown = true; }
+        if (s.state === 'down') {
+          blocked = true; breakdown = true;
+          if (!s._downSec) s._downSec = plantDt;
+        }
+        if (s._downSec) lineDownSec = Math.max(lineDownSec, s._downSec);
+        if (s._minorSec) lineMinorSec = Math.max(lineMinorSec, s._minorSec);
         if (s.state === 'maint') { blocked = true; maint = true; }
         if (s.state === 'warn') slow = true;
         if (!fast && (!warm || rng.chance(0.6))) {
           s.hist.vib.push(+s.vib.toFixed(2)); s.hist.temp.push(+s.temp.toFixed(1)); s.hist.cycle.push(+s.cycle.toFixed(1));
           for (const k in s.hist) if (s.hist[k].length > HIST) s.hist[k].shift();
         }
+        delete s._downSec;
+        delete s._minorSec;
       }
       if (l.material !== null) {
         l.material = clamp(l.material - demoDt * (S.active.material ? 1.6 : 0.25), 0, 100);
@@ -345,8 +359,12 @@
       const q = 1 - defectRate;
       const cycles = l.stations.map(s => s.cycle).filter(c => c > 0);
       const bottleneckCycle = cycles.length ? Math.max(...cycles) : L.idealCycle;
+      const stillMinor = lineMinorSec > 0 && l.stations.some(s => s.stoch && s.stoch.minorLeft > 0);
+      const minorBlockSec = lineMinorSec > 0 ? (stillMinor ? plantDt : lineMinorSec) : 0;
+      const prodSec = (!warm && avail && !l.stopped && !l.paused)
+        ? Math.max(0, plantDt - lineDownSec - minorBlockSec) : 0;
       let made = 0;
-      if (!warm && avail && !l.stopped && !l.paused) made = plantDt / bottleneckCycle;
+      if (prodSec > 0) made = prodSec / bottleneckCycle;
       const tph = plantDt > 0 ? made * 3600 / plantDt : 0;
       l.tph = ema(l.tph, tph, Math.min(1, demoDt * 0.4));
       l.fpyNow = ema(l.fpyNow, q, Math.min(1, demoDt * 0.3));
@@ -361,36 +379,44 @@
         L.losses.productionRejects += prodRej * L.idealCycle;
         L.elapsed += plantDt;
         L.planned += plantDt;
-        let minor = false;
-        let minorBooked = 0;
-        for (const s of l.stations) {
-          if (s._minorAtStart) {
-            minor = true;
-            minorBooked = Math.max(minorBooked, Math.min(plantDt, s._minorAtStart));
-          }
-          delete s._minorAtStart;
-        }
         if (l.stopped || l.paused) {
           L.down.other += plantDt;
+          L.losses.operatorStop += plantDt;
         } else if (l.starved) {
           L.starved += plantDt;
+          L.losses.starvation += plantDt;
         } else if (maint) {
           L.setup += plantDt;
           L.losses.setupAdjust += plantDt;
-        } else if (breakdown) {
-          let lossBooked = plantDt;
-          for (const s of l.stations) {
-            if (s.state === 'down' && s.repairLeft > 0) {
-              lossBooked = Math.min(lossBooked, Math.min(plantDt, s.repairLeft + plantDt));
+        } else if (breakdown && blocked) {
+          L.down.breakdown += plantDt;
+          L.losses.breakdown += plantDt;
+        } else if (lineMinorSec > 0) {
+          const minorBooked = stillMinor ? plantDt : lineMinorSec;
+          L.minorStop += minorBooked;
+          L.losses.minorStop += minorBooked;
+          L.slow += minorBooked;
+          const runSec = plantDt - minorBooked;
+          if (runSec > 0) {
+            L.run += runSec;
+            const perfGap = Math.max(0, runSec - L.idealCycle * made);
+            if (perfGap > 0) {
+              L.losses.reducedSpeed += perfGap;
+              L.slow += perfGap;
             }
           }
-          L.down.breakdown += plantDt;
-          L.losses.breakdown += lossBooked;
-        } else if (minor) {
-          const booked = minorBooked || plantDt;
-          L.minorStop += plantDt;
-          L.losses.minorStop += booked;
-          L.slow += booked;
+        } else if (lineDownSec > 0) {
+          L.down.breakdown += lineDownSec;
+          L.losses.breakdown += lineDownSec;
+          const runSec = plantDt - lineDownSec;
+          if (runSec > 0) {
+            L.run += runSec;
+            const perfGap = Math.max(0, runSec - L.idealCycle * made);
+            if (perfGap > 0) {
+              L.losses.reducedSpeed += perfGap;
+              L.slow += perfGap;
+            }
+          }
         } else {
           L.run += plantDt;
           const perfGap = Math.max(0, plantDt - L.idealCycle * made);
@@ -417,13 +443,11 @@
     S.kw = kw; S.tph = tphSum; S.oee = oeeW / rateSum; S.fpy = fpyW / rateSum;
     if (!warm) S.energyKwh += kw * plantDt / 3600;
 
-    if (!fast) {
-      for (const a of S.agvs) {
-        if (a.task) {
-          a.task.k = clamp(a.task.k + demoDt / a.task.dur, 0, 1);
-          if (a.task.k >= 1) { const fin = a.task.done; a.task = null; fin && fin(); }
-        } else a.p = (a.p + a.speed * demoDt) % 1;
-      }
+    for (const a of S.agvs) {
+      if (a.task) {
+        a.task.k = clamp(a.task.k + demoDt / a.task.dur, 0, 1);
+        if (a.task.k >= 1) { const fin = a.task.done; a.task = null; fin && fin(); }
+      } else if (!fast) a.p = (a.p + a.speed * demoDt) % 1;
     }
 
     if (!fast) {
@@ -837,9 +861,14 @@
     }
     emit({ type: 'control' });
   }
-  // what the twin expects if a change is applied (shown before "Apply")
+  const previewCache = new Map();
+  function previewCacheKey(lineId, speed, baseSpeed) {
+    return lineId + '|' + speed.toFixed(4) + '|' + baseSpeed.toFixed(4);
+  }
   function preview(lineId, speed) {
     const l = line(lineId);
+    const key = previewCacheKey(lineId, speed, l.speed);
+    if (previewCache.has(key)) return previewCache.get(key);
     const hours = 1.5;
     const base = runShiftSimulation({ hours, maxSteps: 1600, seedSalt: 0x707276, lineSpeeds: { [lineId]: l.speed } });
     const next = runShiftSimulation({ hours, maxSteps: 1600, seedSalt: 0x707276, lineSpeeds: { [lineId]: speed } });
@@ -847,10 +876,16 @@
     const n = next.lines.find(x => x.id === lineId);
     const tphNow = b.good / hours;
     const tph = n.good / hours;
-    return {
+    const out = {
       tph, tphNow, fpy: n.Q, fpyNow: b.Q,
       kw: l.kw * (0.85 + 0.15 * speed), kwNow: l.kw * (0.85 + 0.15 * l.speed)
     };
+    previewCache.set(key, out);
+    return out;
+  }
+  function dailyRequirement(lineId, demandPct) {
+    const d = LINE_DEFS.find(x => x.id === lineId);
+    return d.rate * PLAN_DAY_HOURS * LINE_REQ[lineId] * (demandPct / 100);
   }
 
   /* ---------------- forecasts ---------------- */
@@ -974,7 +1009,7 @@
   function runShiftSimulation(options) {
     const opt = Object.assign({
       seedSalt: 0, hours: 8, maxSteps: 4500, lineSpeed: null, lineSpeeds: null,
-      pdm: false, vision: false, energy: false, autoplay: false
+      pdm: false, vision: false, energy: false, autoplay: false, forceMinor: null
     }, options);
     const saved = { S, seq, running, autoplay, speedMult, simAccum, lastStoryT, headlessMode, rng };
     try {
@@ -988,6 +1023,14 @@
       S.runStartT = SHIFT_START_PLANT;
       S.real = 0;
       applyRunParams(opt);
+      if (opt.forceMinor) {
+        const fl = line(opt.forceMinor.lineId || 'L1');
+        const fs = fl.stations.find(s => s.machine && s.stoch);
+        if (fs) {
+          fs.state = 'warn';
+          fs.stoch.minorLeft = opt.forceMinor.plantSeconds || opt.forceMinor.seconds || 120;
+        }
+      }
       const totalPlant = opt.hours * 3600;
       const plantStep = Math.max(0.25, totalPlant / opt.maxSteps);
       const demoStep = plantStep / PLANT_CLOCK_RATIO;
@@ -1025,7 +1068,8 @@
     start() { if (!S) reset(); running = true; last = 0; requestAnimationFrame(loop); },
     reset() { reset(); lastStoryT = -1; },
     trigger(name) { if (scenarios[name]) { audit('You', 'Started scenario', (SCENARIOS.find(s => s.id === name) || {}).title || name); scenarios[name](); } },
-    act, control, preview, clock, line, st, machines, allStations, rulHours, agent, oeeFromLedger, runShiftSimulation,
+    act, control, preview, previewCacheKey, clock, line, st, machines, allStations, rulHours, agent, oeeFromLedger, runShiftSimulation,
+    PLAN_DAY_HOURS, LINE_REQ, dailyRequirement,
     forecast, failureRisk, healthScore, unitsToday, planToday: () => planAt(S.t), planAt,
     setAutonomy(id, level) {
       const a = agent(id); if (!a || a.locked) return;

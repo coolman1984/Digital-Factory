@@ -19,6 +19,11 @@ function ledgerStateSum(L) {
   return L.run + L.plannedStop + L.starved + L.blocked + L.setup + L.minorStop + L.down.breakdown + L.down.other;
 }
 
+function availWallTime(L) {
+  const ls = L.losses;
+  return L.run + ls.breakdown + ls.setupAdjust + ls.minorStop + ls.starvation + ls.operatorStop;
+}
+
 function checkOeeLine(l) {
   const L = l.ledger;
   const c = Sim.oeeFromLedger(L);
@@ -36,6 +41,8 @@ function checkOeeLine(l) {
 
   const plannedProd = Math.max(0, L.planned - L.plannedStop);
   approx(plannedProd * c.A, L.run, Math.max(1e-6, L.run * 1e-6));
+
+  approx(availWallTime(L), plannedProd, Math.max(1e-4, plannedProd * 1e-4));
 }
 
 const t0 = Date.now();
@@ -53,7 +60,34 @@ const pdm = Sim.runShiftSimulation({ hours: 15, seedSalt: 99, maxSteps: 4200, pd
 const base = Sim.runShiftSimulation({ hours: 15, seedSalt: 99, maxSteps: 4200, pdm: false, vision: false, energy: false });
 assert(pdm.oee > base.oee + 0.002, 'PdM should lift OEE meaningfully');
 
+const minorRun = Sim.runShiftSimulation({
+  hours: 180 / 3600,
+  seedSalt: 77,
+  maxSteps: 80,
+  forceMinor: { lineId: 'L1', plantSeconds: 200 }
+});
+const minorL1 = minorRun.lines.find(l => l.id === 'L1');
+assert(minorL1.ledger.losses.minorStop > 0, 'forced minor stop books loss time');
+assert(minorL1.good === 0 && minorL1.produced === 0, 'forced minor stop yields no production');
+assert(minorL1.ledger.run === 0, 'forced minor stop does not book run time');
+
+const l3Headless = Sim.runShiftSimulation({ hours: 15, seedSalt: 11, maxSteps: 4200 });
+const l3 = l3Headless.lines.find(l => l.id === 'L3');
+assert(l3.ledger.losses.starvation < 12000, 'headless run keeps L3 fed (AGV callbacks)');
+assert(l3.good > 800, 'headless L3 still produces');
+
+const reqA = Sim.dailyRequirement('L1', 100);
+const reqB = Sim.dailyRequirement('L1', 100);
+assert(reqA === reqB, 'daily requirement stable');
+approx(reqA, 180 * Sim.PLAN_DAY_HOURS * Sim.LINE_REQ.L1, 1e-6);
+const cap1 = Sim.runShiftSimulation({ hours: 7.5, seedSalt: 5, maxSteps: 2000 }).out;
+const cap3 = Sim.runShiftSimulation({ hours: 22.5, seedSalt: 5, maxSteps: 4200 }).out;
+assert(cap3 > cap1, 'more shift hours increases capacity');
+assert(reqA === Sim.dailyRequirement('L1', 100), 'demand independent of shift count');
+
+pdm.lines.forEach(checkOeeLine);
+
 const elapsed = Date.now() - t0;
-assert(elapsed < 8000, 'headless runs complete in reasonable time (' + elapsed + ' ms)');
+assert(elapsed < 12000, 'headless runs complete in reasonable time (' + elapsed + ' ms)');
 
 console.log('sim.test.js: all checks passed (' + elapsed + ' ms)');

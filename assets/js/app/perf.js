@@ -11,6 +11,8 @@
     ['setupAdjust', 'Setup / adjust'],
     ['minorStop', 'Minor stops'],
     ['reducedSpeed', 'Reduced speed'],
+    ['starvation', 'Waiting / starvation'],
+    ['operatorStop', 'Operator stops'],
     ['startupRejects', 'Startup rejects'],
     ['productionRejects', 'Production rejects']
   ];
@@ -279,7 +281,6 @@
   };
 
   /* ---------------- what-if ---------------- */
-  const REQ = { L1: 0.80, L2: 0.72, L3: 0.86, L4: 0.78, L5: 0.75 };
   function model(o) {
     const hours = o.shifts * 7.5;
     const common = { hours, maxSteps: 4200, lineSpeed: o.speed / 100 };
@@ -287,7 +288,7 @@
     const lines = r.lines.map(l => ({
       id: l.id, name: l.name,
       cap: l.good,
-      req: l.rate * hours * REQ[l.id] * (o.demand / 100)
+      req: Sim.dailyRequirement(l.id, o.demand)
     }));
     const req = lines.reduce((a, l) => a + l.req, 0);
     const out = lines.reduce((a, l) => a + Math.min(l.cap, l.req), 0);
