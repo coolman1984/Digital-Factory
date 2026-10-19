@@ -7,9 +7,11 @@
 
   let rng = (g.DFRng && g.DFRng.stream) ? g.DFRng.stream('sim') : { range: (a, b) => a + Math.random() * (b - a), chance: p => Math.random() < p, float: () => Math.random() };
 
-  const FIXED_DT = 0.1;              // fixed simulation step (sim seconds)
-  const SIM_SPEED_DEFAULT = 20;      // default sim seconds per real second (UI: 20×)
+  const FIXED_DT = 0.1;              // fixed demo-clock step (sim seconds at 1×)
+  const PLANT_CLOCK_RATIO = 20;      // plant S.t advances this many sim seconds per demo sim second
+  const SIM_SPEED_DEFAULT = 1;       // default demo sim seconds per real second (UI: 1×)
   const SPEED_OPTIONS = [1, 20, 100];
+  const HEADLESS_PLANT_SUBSTEP = 3;  // max plant-seconds per headless ledger slice
   const MAX_CATCHUP_REAL = 5;        // max real seconds to fast-forward after tab returns
   const START = 9 * 3600 + 12 * 60;  // 09:12, shift A runs 06:00–14:00
   const SHIFT_END = 14 * 3600;
@@ -24,7 +26,7 @@
     return {
       elapsed: 0, planned: 0, plannedStop: 0, run: 0,
       down: { breakdown: 0, other: 0 },
-      starved: 0, blocked: 0, slow: 0, minorStop: 0,
+      starved: 0, blocked: 0, setup: 0, slow: 0, minorStop: 0,
       total: 0, good: 0, idealCycle: 3600 / rate,
       losses: { breakdown: 0, setupAdjust: 0, minorStop: 0, reducedSpeed: 0, startupRejects: 0, productionRejects: 0 }
     };
@@ -50,12 +52,14 @@
 
   function initStoch(s, line) {
     const eta = s.machine ? rnd(28000, 52000) : 0;
-    s.stoch = s.machine ? {
-      weibullBeta: rnd(1.8, 2.6), weibullEta: eta, ttf: sampleWeibull(2.2, eta),
-      repairMu: Math.log(rnd(8, 22)), repairSigma: 0.35,
+    if (!s.machine) { s.stoch = null; return; }
+    const weibullBeta = rnd(1.8, 2.6);
+    s.stoch = {
+      weibullBeta, weibullEta: eta, ttf: sampleWeibull(weibullBeta, eta),
+      repairMu: Math.log(rnd(8 * 60, 22 * 60)), repairSigma: 0.35,
       minorRate: rnd(0.00004, 0.00012), minorLeft: 0,
       cycleMu: 0, cycleSigma: 0.04
-    } : null;
+    };
   }
 
   const LINE_DEFS = [
@@ -118,14 +122,14 @@
       state: 'run', machine: MACHINE_KINDS.some(k => name.startsWith(k)), health: rnd(84, 99),
       vibBase: rnd(1.1, 2.2), tempBase: name.startsWith('Reflow') ? rnd(238, 246) : rnd(36, 48),
       vib: 0, temp: 0, cycle: 3600 / line.rate, degrade: 0, hist: { vib: [], temp: [], cycle: [] },
-      downReason: 'breakdown', ledger: makeLedger(line.rate)
+      downReason: 'breakdown'
     };
   }
 
   function reset() {
     seq = 0;
     S = {
-      t: START, real: 0, saved: 0, energyKwh: 0, unitsBase: 2390,
+      t: START, real: 0, runStartT: START, saved: 0, energyKwh: 0, unitsBase: 2390,
       tariff: 'Standard', utilKw: UTIL_KW, utilExtra: 0, ambient: 31,
       oee: 0.864, tph: 0, fpy: 0.99, kw: 0, kwHist: [], oeeHist: [],
       active: {}, insights: [], workOrders: [], timers: [], audit: [], history: [],
@@ -272,10 +276,11 @@
   }
 
   /* ---------------- simulation step ---------------- */
-  function tick(simDt, warm) {
-    S.real += simDt;
-    const dts = simDt;
-    if (!warm) S.t += dts;
+  function tickStep(demoDt, warm) {
+    const plantDt = demoDt * PLANT_CLOCK_RATIO;
+    const fast = headlessMode && !warm;
+    S.real += demoDt;
+    if (!warm) S.t += plantDt;
 
     if (!warm) {
       const due = S.timers.filter(t => t.at <= S.real);
@@ -284,7 +289,8 @@
     }
 
     let tphSum = 0, oeeW = 0, fpyW = 0, rateSum = 0, kw = 0;
-    const shiftWarmup = !warm && S.t - dts < START + 900;
+    const runStart = S.runStartT != null ? S.runStartT : START;
+    const shiftWarmup = !warm && S.t - plantDt < runStart + 900;
     for (const l of S.lines) {
       const L = l.ledger;
       let blocked = false, slow = false, maint = false, breakdown = false;
@@ -292,22 +298,23 @@
         const st = s.stoch;
         if (!warm && st && !s.scripted) {
           if (s.repairLeft > 0) {
-            s.repairLeft -= simDt;
+            s.repairLeft -= plantDt;
             if (s.repairLeft <= 0) { s.state = 'run'; s.repairLeft = 0; st.ttf = sampleWeibull(st.weibullBeta, st.weibullEta); }
           } else if (st.minorLeft > 0) {
-            st.minorLeft -= simDt;
+            s._minorAtStart = st.minorLeft;
+            st.minorLeft -= plantDt;
             if (st.minorLeft <= 0 && s.state === 'warn' && !s.degrade) s.state = 'run';
           } else if (s.state === 'run' && !s.degrade) {
-            st.ttf -= simDt;
+            st.ttf -= plantDt;
             if (st.ttf <= 0) {
               s.state = 'down'; s.downReason = 'breakdown'; s.stochFail = true;
               s.repairLeft = sampleLognormal(st.repairMu, st.repairSigma);
-            } else if (rng.chance(st.minorRate * simDt)) {
-              st.minorLeft = rnd(3, 22); s.state = 'warn';
+            } else if (rng.chance(st.minorRate * plantDt)) {
+              st.minorLeft = rnd(3 * 60, 22 * 60); s.state = 'warn';
             }
           }
         }
-        if (s.degrade > 0 && s.state !== 'down' && s.state !== 'maint') s.health = clamp(s.health - s.degrade * simDt, 0, 100);
+        if (s.degrade > 0 && s.state !== 'down' && s.state !== 'maint') s.health = clamp(s.health - s.degrade * demoDt, 0, 100);
         const wear = 100 - s.health;
         const idle = s.state === 'down' || s.state === 'maint' || l.stopped || l.paused;
         s.vib = idle ? rnd(0.05, 0.2) : s.vibBase + wear * 0.065 + rnd(-0.18, 0.18) + (wear > 30 ? rnd(0, wear * 0.012) : 0);
@@ -320,13 +327,13 @@
         if (s.state === 'down') { blocked = true; breakdown = true; }
         if (s.state === 'maint') { blocked = true; maint = true; }
         if (s.state === 'warn') slow = true;
-        if (!warm || rng.chance(0.6)) {
+        if (!fast && (!warm || rng.chance(0.6))) {
           s.hist.vib.push(+s.vib.toFixed(2)); s.hist.temp.push(+s.temp.toFixed(1)); s.hist.cycle.push(+s.cycle.toFixed(1));
           for (const k in s.hist) if (s.hist[k].length > HIST) s.hist[k].shift();
         }
       }
       if (l.material !== null) {
-        l.material = clamp(l.material - simDt * (S.active.material ? 1.6 : 0.25), 0, 100);
+        l.material = clamp(l.material - demoDt * (S.active.material ? 1.6 : 0.25), 0, 100);
         if (l.material < 40 && !S.active.material && !l.restocking) routineRestock(l);
         l.starved = l.material <= 0;
       }
@@ -336,40 +343,61 @@
       const over = Math.max(0, l.speed - 1);
       const defectRate = (1 - l.fpy) * l.defectMult * (1 + over * 6) * (S.active.heat && !S.active.heat.fixed && /L1|L2/.test(l.id) ? 1.8 : 1);
       const q = 1 - defectRate;
-      const tph = l.rate * l.speed * avail * l.availBase * perf;
-      l.tph = ema(l.tph, tph, Math.min(1, simDt * 0.4));
-      l.fpyNow = ema(l.fpyNow, q, Math.min(1, simDt * 0.3));
+      const cycles = l.stations.map(s => s.cycle).filter(c => c > 0);
+      const bottleneckCycle = cycles.length ? Math.max(...cycles) : L.idealCycle;
+      let made = 0;
+      if (!warm && avail && !l.stopped && !l.paused) made = plantDt / bottleneckCycle;
+      const tph = plantDt > 0 ? made * 3600 / plantDt : 0;
+      l.tph = ema(l.tph, tph, Math.min(1, demoDt * 0.4));
+      l.fpyNow = ema(l.fpyNow, q, Math.min(1, demoDt * 0.3));
       if (!warm) {
-        const made = tph * dts / 3600;
         const good = made * q;
         l.produced += made; l.good += good;
         L.total += made; L.good += good;
-        if (made > good) L.losses.productionRejects += made - good;
-        if (shiftWarmup && made > 0) L.losses.startupRejects += (made - good) * 0.35;
-        L.elapsed += simDt;
-        L.planned += simDt;
+        const rejUnits = made - good;
+        const startupRej = shiftWarmup ? rejUnits * 0.35 : 0;
+        const prodRej = rejUnits - startupRej;
+        L.losses.startupRejects += startupRej * L.idealCycle;
+        L.losses.productionRejects += prodRej * L.idealCycle;
+        L.elapsed += plantDt;
+        L.planned += plantDt;
         let minor = false;
-        for (const s of l.stations) if (s.stoch && s.stoch.minorLeft > 0) { minor = true; break; }
+        let minorBooked = 0;
+        for (const s of l.stations) {
+          if (s._minorAtStart) {
+            minor = true;
+            minorBooked = Math.max(minorBooked, Math.min(plantDt, s._minorAtStart));
+          }
+          delete s._minorAtStart;
+        }
         if (l.stopped || l.paused) {
-          L.down.other += simDt;
-          L.losses.breakdown += simDt;
+          L.down.other += plantDt;
         } else if (l.starved) {
-          L.starved += simDt;
+          L.starved += plantDt;
         } else if (maint) {
-          L.plannedStop += simDt;
-          L.losses.setupAdjust += simDt;
+          L.setup += plantDt;
+          L.losses.setupAdjust += plantDt;
         } else if (breakdown) {
-          L.down.breakdown += simDt;
-          L.losses.breakdown += simDt;
-        } else if (blocked) {
-          L.blocked += simDt;
-        } else if (slow || minor) {
-          L.slow += simDt;
-          L.run += simDt;
-          if (slow) L.losses.reducedSpeed += simDt;
-          if (minor) L.losses.minorStop += simDt;
+          let lossBooked = plantDt;
+          for (const s of l.stations) {
+            if (s.state === 'down' && s.repairLeft > 0) {
+              lossBooked = Math.min(lossBooked, Math.min(plantDt, s.repairLeft + plantDt));
+            }
+          }
+          L.down.breakdown += plantDt;
+          L.losses.breakdown += lossBooked;
+        } else if (minor) {
+          const booked = minorBooked || plantDt;
+          L.minorStop += plantDt;
+          L.losses.minorStop += booked;
+          L.slow += booked;
         } else {
-          L.run += simDt;
+          L.run += plantDt;
+          const perfGap = Math.max(0, plantDt - L.idealCycle * made);
+          if (perfGap > 0) {
+            L.losses.reducedSpeed += perfGap;
+            L.slow += perfGap;
+          }
         }
         const comp = oeeFromLedger(L);
         l.oeeComponents = comp;
@@ -380,31 +408,48 @@
       tphSum += l.tph; oeeW += l.oee * l.rate; fpyW += l.fpyNow * l.rate; rateSum += l.rate;
       l.kwNow = l.kw * (avail ? (0.85 + 0.15 * l.speed) : 0.42) * rnd(0.97, 1.03);
       kw += l.kwNow;
-      flow(l, simDt, halted, defectRate);
+      if (!fast) flow(l, demoDt, halted, defectRate);
     }
     const heatLoad = S.active.heat ? (S.active.heat.fixed ? 60 : 150) : 0;
-    S.utilExtra = ema(S.utilExtra, (S.active.peak ? 230 : 0) + heatLoad, Math.min(1, simDt * 0.5));
+    S.utilExtra = ema(S.utilExtra, (S.active.peak ? 230 : 0) + heatLoad, Math.min(1, demoDt * 0.5));
     const utilNow = (S.utilKw + S.utilExtra) * rnd(0.98, 1.02);
     kw += utilNow; S.utilNow = utilNow;
     S.kw = kw; S.tph = tphSum; S.oee = oeeW / rateSum; S.fpy = fpyW / rateSum;
-    if (!warm) S.energyKwh += kw * dts / 3600;
+    if (!warm) S.energyKwh += kw * plantDt / 3600;
 
-    for (const a of S.agvs) {
-      if (a.task) {
-        a.task.k = clamp(a.task.k + simDt / a.task.dur, 0, 1);
-        if (a.task.k >= 1) { const fin = a.task.done; a.task = null; fin && fin(); }
-      } else a.p = (a.p + a.speed * simDt) % 1;
+    if (!fast) {
+      for (const a of S.agvs) {
+        if (a.task) {
+          a.task.k = clamp(a.task.k + demoDt / a.task.dur, 0, 1);
+          if (a.task.k >= 1) { const fin = a.task.done; a.task = null; fin && fin(); }
+        } else a.p = (a.p + a.speed * demoDt) % 1;
+      }
     }
 
-    S._histAcc = (S._histAcc || 0) + simDt;
-    if (S._histAcc >= 1 || warm) {
-      S._histAcc = 0;
-      S.kwHist.push(Math.round(kw)); S.oeeHist.push(S.oee);
-      if (S.kwHist.length > HIST) S.kwHist.shift();
-      if (S.oeeHist.length > HIST) S.oeeHist.shift();
-      if (!warm) snapshot();
+    if (!fast) {
+      S._histAcc = (S._histAcc || 0) + demoDt;
+      if (S._histAcc >= 1 || warm) {
+        S._histAcc = 0;
+        S.kwHist.push(Math.round(kw)); S.oeeHist.push(S.oee);
+        if (S.kwHist.length > HIST) S.kwHist.shift();
+        if (S.oeeHist.length > HIST) S.oeeHist.shift();
+        if (!warm) snapshot();
+      }
     }
-    if (!warm) { watchdogs(); housekeeping(); }
+    if (!fast && !warm) { watchdogs(); housekeeping(); }
+  }
+
+  function tick(demoDt, warm) {
+    if (headlessMode && !warm) {
+      const plantDt = demoDt * PLANT_CLOCK_RATIO;
+      if (plantDt > HEADLESS_PLANT_SUBSTEP) {
+        const n = Math.ceil(plantDt / HEADLESS_PLANT_SUBSTEP);
+        const sub = demoDt / n;
+        for (let i = 0; i < n; i++) tickStep(sub, warm);
+        return;
+      }
+    }
+    tickStep(demoDt, warm);
   }
 
   function snapshot() {
@@ -897,8 +942,15 @@
     for (const l of S.lines) {
       const sp = (opt.lineSpeeds && opt.lineSpeeds[l.id] != null) ? opt.lineSpeeds[l.id] : (opt.lineSpeed != null ? opt.lineSpeed : l.speed);
       l.speed = clamp(sp, 0.8, 1.15);
-      if (opt.vision) l.fpy = Math.min(0.9995, l.fpy + 0.003);
-      if (opt.pdm) l.stations.forEach(s => { if (s.stoch) { s.stoch.weibullEta *= 1.4; s.stoch.minorRate *= 0.55; } });
+      if (opt.vision) l.fpy = Math.min(0.9995, l.fpy + 0.012);
+      if (opt.pdm) l.stations.forEach(s => {
+        if (!s.stoch) return;
+        const oldEta = s.stoch.weibullEta;
+        s.stoch.weibullEta *= 1.4;
+        s.stoch.minorRate *= 0.55;
+        s.stoch.ttf *= s.stoch.weibullEta / oldEta;
+        if (s.stoch.ttf <= 0) s.stoch.ttf = sampleWeibull(s.stoch.weibullBeta, s.stoch.weibullEta);
+      });
       if (opt.energy) l.kw *= 0.96;
     }
   }
@@ -925,39 +977,43 @@
       pdm: false, vision: false, energy: false, autoplay: false
     }, options);
     const saved = { S, seq, running, autoplay, speedMult, simAccum, lastStoryT, headlessMode, rng };
-    if (g.DFRng) rng = g.DFRng.create((g.DFRng.seed ^ opt.seedSalt) >>> 0, 0x53696d);
-    headlessMode = true;
-    running = false;
-    autoplay = !!opt.autoplay;
-    reset();
-    lastStoryT = -1;
-    S.t = SHIFT_START_PLANT;
-    S.real = 0;
-    applyRunParams(opt);
-    const totalSim = opt.hours * 3600;
-    const dt = Math.max(0.25, totalSim / opt.maxSteps);
-    const end = SHIFT_START_PLANT + totalSim;
-    let steps = 0;
-    while (S.t < end && steps < opt.maxSteps + 5) {
-      tick(dt);
-      if (autoplay) story();
-      steps++;
+    try {
+      if (g.DFRng) rng = g.DFRng.create((g.DFRng.seed ^ opt.seedSalt) >>> 0, 0x53696d);
+      headlessMode = true;
+      running = false;
+      autoplay = !!opt.autoplay;
+      reset();
+      lastStoryT = -1;
+      S.t = SHIFT_START_PLANT;
+      S.runStartT = SHIFT_START_PLANT;
+      S.real = 0;
+      applyRunParams(opt);
+      const totalPlant = opt.hours * 3600;
+      const plantStep = Math.max(0.25, totalPlant / opt.maxSteps);
+      const demoStep = plantStep / PLANT_CLOCK_RATIO;
+      const end = SHIFT_START_PLANT + totalPlant;
+      let steps = 0;
+      while (S.t < end && steps < opt.maxSteps + 5) {
+        tick(demoStep);
+        if (autoplay) story();
+        steps++;
+      }
+      return summarizeShift();
+    } finally {
+      S = saved.S;
+      seq = saved.seq;
+      running = saved.running;
+      autoplay = saved.autoplay;
+      speedMult = saved.speedMult;
+      simAccum = saved.simAccum;
+      lastStoryT = saved.lastStoryT;
+      headlessMode = saved.headlessMode;
+      rng = saved.rng;
     }
-    const result = summarizeShift();
-    S = saved.S;
-    seq = saved.seq;
-    running = saved.running;
-    autoplay = saved.autoplay;
-    speedMult = saved.speedMult;
-    simAccum = saved.simAccum;
-    lastStoryT = saved.lastStoryT;
-    headlessMode = saved.headlessMode;
-    rng = saved.rng;
-    return result;
   }
 
   g.Sim = {
-    FIXED_DT, SIM_SPEED: SIM_SPEED_DEFAULT, SPEED_OPTIONS, SCENARIOS, SHIFT_END, get seed() { return g.DFRng ? g.DFRng.seed : 0 },
+    FIXED_DT, PLANT_CLOCK_RATIO, SIM_SPEED: SIM_SPEED_DEFAULT, SPEED_OPTIONS, SCENARIOS, SHIFT_END, get seed() { return g.DFRng ? g.DFRng.seed : 0 },
     get speed() { return speedMult; },
     setSpeed(mult) {
       if (!SPEED_OPTIONS.includes(mult)) return;
