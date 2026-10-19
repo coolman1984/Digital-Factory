@@ -27,7 +27,7 @@ Open `index.html` in a browser, or serve the folder: `python3 -m http.server`.
 
 ## Deploy
 
-`.github/workflows/pages.yml` publishes the repo to GitHub Pages on every push. In the repo settings, set **Pages → Source → GitHub Actions** once.
+`.github/workflows/pages.yml` copies the site to the `gh-pages` branch on every push to `main`; GitHub Pages serves that branch (Settings → Pages → Deploy from a branch → `gh-pages` / root).
 
 ## Craft & quality
 
