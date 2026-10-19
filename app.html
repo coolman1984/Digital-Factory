@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Digital Factory · Command Center</title>
+  <meta name="description" content="Live digital twin command center: real-time plant floor, predictive maintenance, AI vision quality, what-if simulation, energy and a production copilot.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Crect x='8' y='8' width='7' height='16' fill='%2305080f'/%3E%3Crect x='17' y='14' width='7' height='10' fill='%2305080f'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+  <div class="bg-grid"></div>
+
+  <header class="topbar">
+    <a class="logo" href="./"><span class="logo-mark"></span><span class="hide-sm">Digital Factory</span></a>
+    <div class="plant">
+      <span class="pill"><span class="dot live"></span> Live</span>
+      <div class="plant-meta">
+        <div class="plant-name">Plant EG-01 · Electronics Assembly</div>
+        <div class="faint small">Simulated data · <span id="clock" class="mono">--:--</span> · <span id="shift">Shift A</span></div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="btn sm" id="btnPresenter" title="Presenter controls (P)">🎬 <span class="hide-sm">Scenarios</span></button>
+      <button class="btn sm primary" id="btnCopilot" title="Production copilot (C)">🤖 <span class="hide-sm">Ask Copilot</span></button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidenav" id="sidenav">
+      <a href="#twin" data-view="twin"><span>🏭</span><b>Digital Twin</b></a>
+      <a href="#maintenance" data-view="maintenance"><span>🛠️</span><b>Maintenance</b><i class="badge" id="badgeMaint" hidden>1</i></a>
+      <a href="#quality" data-view="quality"><span>👁️</span><b>AI Quality</b></a>
+      <a href="#simulator" data-view="simulator"><span>🧪</span><b>What-If</b></a>
+      <a href="#energy" data-view="energy"><span>⚡</span><b>Energy</b></a>
+      <a href="deck.html" class="nav-deck"><span>🎞️</span><b>Vision deck</b></a>
+    </nav>
+
+    <main class="main">
+      <section class="kpis" id="kpis">
+        <div class="kpi card"><div class="k-l">Plant OEE</div><div class="k-v" id="kOee">--</div><div class="k-s" id="kOeeS">World-class ≥ 85%</div></div>
+        <div class="kpi card"><div class="k-l">Units today</div><div class="k-v" id="kUnits">--</div><div class="k-s" id="kUnitsS">Plan --</div></div>
+        <div class="kpi card"><div class="k-l">Throughput / hr</div><div class="k-v" id="kTph">--</div><div class="k-s faint">all lines</div></div>
+        <div class="kpi card"><div class="k-l">First-pass yield</div><div class="k-v" id="kFpy">--</div><div class="k-s faint">AI vision + test</div></div>
+        <div class="kpi card"><div class="k-l">Energy / unit</div><div class="k-v" id="kEnergy">--</div><div class="k-s" id="kKw">-- kW now</div></div>
+        <div class="kpi card"><div class="k-l">AI alerts</div><div class="k-v" id="kAlerts">0</div><div class="k-s" id="kSaved">EGP 0 saved today</div></div>
+      </section>
+
+      <!-- DIGITAL TWIN -->
+      <section class="view" id="view-twin">
+        <div class="twin-grid">
+          <div class="card floor-card">
+            <div class="card-h">
+              <div><h3>Live plant floor</h3><span class="faint small">Click any station for live telemetry</span></div>
+              <div class="legend">
+                <span><i style="background:var(--green)"></i>Running</span>
+                <span><i style="background:var(--amber)"></i>Warning</span>
+                <span><i style="background:var(--red)"></i>Down</span>
+                <span><i style="background:var(--violet)"></i>Maintenance</span>
+              </div>
+            </div>
+            <canvas id="floor"></canvas>
+          </div>
+          <div class="side-col">
+            <div class="card insights">
+              <div class="card-h"><h3>AI insights</h3><span class="pill sm-pill"><span class="dot live"></span> watching 31 machines</span></div>
+              <div id="insights" class="insight-list"></div>
+            </div>
+            <div class="card station" id="stationCard">
+              <div class="card-h"><h3 id="stName">Select a station</h3><span id="stState" class="state-tag">—</span></div>
+              <div class="st-body" id="stBody">
+                <p class="faint small">Tap a machine on the floor map to see its live health, vibration and cycle time.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card events">
+          <div class="card-h"><h3>Event stream</h3><span class="faint small">MES · PLC · AGV · AI</span></div>
+          <div id="events" class="event-list mono"></div>
+        </div>
+      </section>
+
+      <!-- MAINTENANCE -->
+      <section class="view" id="view-maintenance" hidden>
+        <div class="maint-grid">
+          <div class="card">
+            <div class="card-h"><div><h3>Machine health</h3><span class="faint small">Remaining useful life predicted from vibration, temperature &amp; motor current</span></div></div>
+            <div id="machines" class="machines"></div>
+          </div>
+          <div class="side-col">
+            <div class="card">
+              <div class="card-h"><div><h3 id="mSelName">Vibration signature</h3><span class="faint small" id="mSelSub">RMS velocity, mm/s</span></div><span id="mSelRul" class="state-tag">—</span></div>
+              <canvas id="vibChart" class="chart-lg"></canvas>
+              <div class="chart-legend small faint"><span><i class="sw" style="background:var(--cyan)"></i>Measured</span><span><i class="sw dash"></i>AI forecast</span><span><i class="sw" style="background:var(--red)"></i>Failure threshold</span></div>
+            </div>
+            <div class="card">
+              <div class="card-h"><h3>Work orders</h3><span class="faint small">auto-generated by AI</span></div>
+              <div id="workOrders" class="wo-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- QUALITY -->
+      <section class="view" id="view-quality" hidden>
+        <div class="q-grid">
+          <div class="card">
+            <div class="card-h"><div><h3>AOI camera · SMT Lines 1 &amp; 2</h3><span class="faint small">Deep-learning inspection at line speed</span></div><span class="pill sm-pill"><span class="dot live"></span> <span id="qFps">30</span> fps</span></div>
+            <canvas id="vision"></canvas>
+            <div class="q-stats">
+              <div><div class="k-l">Boards inspected</div><div class="q-v mono" id="qInspected">0</div></div>
+              <div><div class="k-l">Defects caught</div><div class="q-v mono c-red" id="qCaught">0</div></div>
+              <div><div class="k-l">Inference time</div><div class="q-v mono c-cyan" id="qMs">--</div></div>
+              <div><div class="k-l">Escapes to customer</div><div class="q-v mono c-green">0</div></div>
+            </div>
+          </div>
+          <div class="side-col">
+            <div class="card">
+              <div class="card-h"><h3>Defect Pareto · today</h3></div>
+              <div id="pareto" class="pareto"></div>
+            </div>
+            <div class="card">
+              <div class="card-h"><h3>Latest detections</h3></div>
+              <div id="detections" class="det-list mono small"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SIMULATOR -->
+      <section class="view" id="view-simulator" hidden>
+        <div class="sim-grid">
+          <div class="card sim-controls">
+            <div class="card-h"><div><h3>What-if scenario</h3><span class="faint small">Runs on the digital twin — the real line is untouched</span></div></div>
+            <label class="ctl"><span>Monthly demand <b id="vDemand"></b></span><input type="range" id="sDemand" min="80" max="150" value="100"><small class="faint">% of current plan</small></label>
+            <label class="ctl"><span>Shifts per day <b id="vShifts"></b></span><input type="range" id="sShifts" min="1" max="3" value="2" step="1"></label>
+            <label class="ctl"><span>Line speed <b id="vSpeed"></b></span><input type="range" id="sSpeed" min="85" max="115" value="100"><small class="faint">% of nominal takt</small></label>
+            <div class="toggles">
+              <label class="tg"><input type="checkbox" id="tPdm" checked><span></span>Predictive maintenance</label>
+              <label class="tg"><input type="checkbox" id="tVision" checked><span></span>AI vision inspection</label>
+              <label class="tg"><input type="checkbox" id="tEnergy" checked><span></span>AI energy optimisation</label>
+            </div>
+            <div class="presets">
+              <span class="faint small">Quick scenarios:</span>
+              <button class="btn sm" data-preset="ramadan">Pre-season peak +35%</button>
+              <button class="btn sm" data-preset="export">New export order +20%</button>
+              <button class="btn sm" data-preset="legacy">Without Digital Factory</button>
+            </div>
+          </div>
+          <div class="card sim-out">
+            <div class="card-h"><h3>Predicted outcome</h3><span id="simVerdict" class="state-tag">—</span></div>
+            <div class="sim-kpis" id="simKpis"></div>
+            <h4 class="faint small up">Line capacity vs. required (units / day)</h4>
+            <div id="capBars" class="cap-bars"></div>
+            <div id="simAdvice" class="advice"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ENERGY -->
+      <section class="view" id="view-energy" hidden>
+        <div class="e-grid">
+          <div class="card">
+            <div class="card-h"><div><h3>Plant power demand</h3><span class="faint small">kW · last 2 simulated hours</span></div><span class="state-tag" id="tariff">—</span></div>
+            <canvas id="kwChart" class="chart-lg"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>Power by area</h3><span class="faint small">kW now</span></div>
+            <div id="eBars" class="cap-bars"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>Sustainability today</h3></div>
+            <div class="sim-kpis" id="eKpis"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>AI recommendations</h3></div>
+            <div id="eRecs" class="insight-list"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- COPILOT DRAWER -->
+  <aside class="drawer" id="copilot" aria-hidden="true">
+    <div class="drawer-h">
+      <div class="logo"><span class="logo-mark"></span> Production Copilot</div>
+      <button class="btn sm" id="closeCopilot" aria-label="Close">✕</button>
+    </div>
+    <div class="chat" id="chat"></div>
+    <div class="chips" id="chips"></div>
+    <form class="chat-in" id="chatForm">
+      <input id="chatInput" autocomplete="off" placeholder="Ask about any line, machine, KPI…">
+      <button class="btn sm primary" type="submit">Send</button>
+    </form>
+  </aside>
+
+  <!-- PRESENTER MENU -->
+  <div class="presenter card" id="presenter" hidden>
+    <div class="card-h"><h3>Live scenarios</h3><button class="btn sm" id="closePresenter">✕</button></div>
+    <p class="faint small">Trigger a real-world event and watch the AI respond.</p>
+    <button class="btn sm sc" data-sc="bearing">⚙️ Bearing wear on Mounter B</button>
+    <button class="btn sm sc" data-sc="solder">🔬 Solder-paste drift → defects</button>
+    <button class="btn sm sc" data-sc="material">📦 Material running low on Line 3</button>
+    <button class="btn sm sc" data-sc="peak">⚡ Peak-tariff energy spike</button>
+    <button class="btn sm sc" data-sc="breakdown">💥 Sudden breakdown (no AI)</button>
+    <hr>
+    <label class="tg"><input type="checkbox" id="autoplay" checked><span></span>Auto-play story</label>
+    <button class="btn sm" id="resetSim">↺ Reset plant</button>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+
+  <script src="assets/js/charts.js"></script>
+  <script src="assets/js/sim.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

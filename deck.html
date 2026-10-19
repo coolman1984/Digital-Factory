@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Digital Factory · Vision Deck</title>
+  <meta name="description" content="Digital Factory vision deck: a live digital twin, predictive AI and a production copilot for electronics manufacturing in Egypt.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Crect x='8' y='8' width='7' height='16' fill='%2305080f'/%3E%3Crect x='17' y='14' width='7' height='10' fill='%2305080f'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/deck.css">
+</head>
+<body>
+<div class="viewport">
+<div class="stage" id="stage">
+
+  <!-- 1 · TITLE -->
+  <section class="slide title-slide" data-id="title">
+    <svg class="orb" viewBox="0 0 760 760" aria-hidden="true">
+      <defs>
+        <linearGradient id="og" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".5" stop-color="#4f8cff"/><stop offset="1" stop-color="#a78bfa"/></linearGradient>
+        <radialGradient id="glow"><stop offset="0" stop-color="#4f8cff" stop-opacity=".45"/><stop offset="1" stop-color="#4f8cff" stop-opacity="0"/></radialGradient>
+      </defs>
+      <circle cx="380" cy="380" r="360" fill="url(#glow)"/>
+      <g fill="none" stroke="url(#og)" stroke-width="1.5" opacity=".9">
+        <circle cx="380" cy="380" r="300" stroke-dasharray="4 10"><animateTransform attributeName="transform" type="rotate" from="0 380 380" to="360 380 380" dur="60s" repeatCount="indefinite"/></circle>
+        <circle cx="380" cy="380" r="230" stroke-dasharray="80 20" opacity=".6"><animateTransform attributeName="transform" type="rotate" from="360 380 380" to="0 380 380" dur="40s" repeatCount="indefinite"/></circle>
+        <circle cx="380" cy="380" r="160" stroke-dasharray="2 6"><animateTransform attributeName="transform" type="rotate" from="0 380 380" to="360 380 380" dur="25s" repeatCount="indefinite"/></circle>
+      </g>
+      <g>
+        <rect x="320" y="320" width="120" height="120" rx="28" fill="url(#og)"/>
+        <rect x="348" y="348" width="26" height="64" rx="4" fill="#05080f"/><rect x="386" y="372" width="26" height="40" rx="4" fill="#05080f"/>
+      </g>
+      <g fill="#22d3ee">
+        <circle r="6"><animateMotion dur="9s" repeatCount="indefinite" path="M380,80 a300,300 0 1,1 -0.1,0"/></circle>
+        <circle r="5" fill="#a78bfa"><animateMotion dur="6s" repeatCount="indefinite" path="M380,150 a230,230 0 1,0 0.1,0"/></circle>
+        <circle r="4" fill="#34d399"><animateMotion dur="4s" repeatCount="indefinite" path="M380,220 a160,160 0 1,1 -0.1,0"/></circle>
+      </g>
+    </svg>
+    <div class="kicker r" data-ar="رؤية 2027 · صناعة الإلكترونيات في مصر">Vision 2027 · Electronics manufacturing in Egypt</div>
+    <h1 class="r d1" data-ar="المصنع الرقمي">Digital Factory</h1>
+    <div class="lead r d2" style="font-size:34px;max-width:900px" data-ar="المصنع الذي <span class=&quot;grad-text&quot; style=&quot;font-weight:800&quot;>يرى ويتنبأ ويقرّر</span> — مبنيّ لخطوط الإنتاج التي تديرونها اليوم.">The factory that <span class="grad-text" style="font-weight:800">sees, predicts and decides</span> — built for the lines you run today.</div>
+    <div class="meta r d3">
+      <div data-ar="<b>أُعدّ خصيصًا لـ</b>سامسونج إلكترونيكس مصر · قيادة الإنتاج"><b>Prepared for</b>Samsung Electronics Egypt · Production leadership</div>
+      <div data-ar="<b>المحتوى</b>الرؤية · عرض حيّ · تجربة ميدانية لمدة 12 أسبوعًا"><b>Format</b>Vision · live demo · 12-week pilot</div>
+    </div>
+    <aside class="sn" hidden>ابدأ بثقة: "إحنا مش جايين نعرض أفكار على ورق — إحنا جايين نوريك مصنع ذكي شغّال قدامك دلوقتي." عرّف نفسك والفريق في جملة واحدة. قوله إن العرض ٢٠ دقيقة: الرؤية، ديمو حي، وخطة تجربة ١٢ أسبوع على خط واحد بس.</aside>
+  </section>
+
+  <!-- 2 · THE MOMENT -->
+  <section class="slide" data-id="moment">
+    <div class="kicker r" data-ar="اللحظة الراهنة">The moment</div>
+    <h2 class="r d1" data-ar="مصر تتحوّل إلى مركز تصنيع للتصدير.<br><span class=&quot;grad-text&quot;>والرابحون سيعملون بالبيانات.</span>">Egypt is becoming an export manufacturing hub.<br><span class="grad-text">The winners will run on data.</span></h2>
+    <div class="grid g4 r d2" style="margin-top:36px">
+      <div class="box" data-ar="<div class=&quot;ic&quot;>⏱️</div><h3>كل دقيقة لها ثمن</h3><p>توقّف واحد غير مخطّط على خط SMT ينعكس على التجميع والاختبار والشحن.</p>"><div class="ic">⏱️</div><h3>Every minute counts</h3><p>One unplanned stop on an SMT line ripples through assembly, test and shipping.</p></div>
+      <div class="box" data-ar="<div class=&quot;ic&quot;>🔍</div><h3>ضغط «صفر عيوب»</h3><p>عيب واحد يصل إلى السوق يكلّف أضعاف ما كان سيكلّفه على الخط.</p>"><div class="ic">🔍</div><h3>Zero-defect pressure</h3><p>One escaped defect costs far more in the market than it ever would on the line.</p></div>
+      <div class="box" data-ar="<div class=&quot;ic&quot;>⚡</div><h3>الطاقة قرار استراتيجي</h3><p>تعريفات متصاعدة، وعملاء تصدير يطلبون البصمة الكربونية لكل وحدة.</p>"><div class="ic">⚡</div><h3>Energy is strategic</h3><p>Rising tariffs and export customers asking for CO₂ per unit.</p></div>
+      <div class="box" data-ar="<div class=&quot;ic&quot;>🧠</div><h3>الخبرة في العقول</h3><p>خبرة أفضل المهندسين غير موثّقة — وتغادر المصنع مع نهاية الوردية.</p>"><div class="ic">🧠</div><h3>Know-how in heads</h3><p>The best engineers' experience isn't captured — it walks out at shift end.</p></div>
+    </div>
+    <p class="lead r d3" style="margin-top:40px" data-ar="المصانع الرائدة عالميًا — مصانع «المنارة» التابعة للمنتدى الاقتصادي العالمي — عالجت ذلك بالطريقة نفسها: <b style=&quot;color:var(--text)&quot;>ربط كل شيء، ورؤية كل شيء لحظيًا، وترك الذكاء الاصطناعي يتنبأ، وتمكين الإنسان من القرار الأسرع.</b>">The global leaders — the WEF “Lighthouse” factories — solved this the same way: <b style="color:var(--text)">connect everything, see everything live, let AI predict, and let people decide faster.</b></p>
+    <aside class="sn" hidden>هنا بنتكلم عن ألمه هو مش عن منتجنا. اسأله سؤال مفتوح: "إيه أكتر حاجة بتصحّيك بالليل في الإنتاج؟ الأعطال المفاجئة؟ الجودة؟ الطاقة؟" — وسيبه يتكلم. أي حاجة يقولها هنربطها بعدين بالديمو.</aside>
+  </section>
+
+  <!-- 3 · FROM → TO -->
+  <section class="slide" data-id="shift">
+    <div class="kicker r" data-ar="التحوّل">The shift</div>
+    <h2 class="r d1" data-ar="من ردّ الفعل إلى <span class=&quot;grad-text&quot;>التنبؤ</span>.">From reacting to <span class="grad-text">predicting</span>.</h2>
+    <div class="vs r d2">
+      <div class="h faint" data-ar="اليوم">Today</div><div></div><div class="h c-cyan" data-ar="مع المصنع الرقمي">With Digital Factory</div>
+      <div class="c old" data-ar="🔧 إصلاح الماكينات بعد أن تتعطل">🔧 Fix machines after they break</div><div class="arrow">→</div><div class="c new" data-ar="🔮 إصلاحها قبل العطل بأيام — وفق جدولنا نحن">🔮 Fix them days before — on our schedule</div>
+      <div class="c old" data-ar="👀 فحص بالعيّنات، وإرهاق بشري">👀 Sample inspection, human fatigue</div><div class="arrow">→</div><div class="c new" data-ar="🤖 فحص شامل 100% بالذكاء الاصطناعي بسرعة الخط">🤖 100% AI inspection at line speed</div>
+      <div class="c old" data-ar="📊 أرقام الأمس في اجتماع الصباح">📊 Yesterday's numbers in this morning's meeting</div><div class="arrow">→</div><div class="c new" data-ar="🏭 توأم رقمي حيّ يتحدّث كل ثانية">🏭 A live digital twin, updated every second</div>
+      <div class="c old" data-ar="🤔 قرارات كبرى بالخبرة والحدس">🤔 Big decisions on experience and gut feel</div><div class="arrow">→</div><div class="c new" data-ar="🧪 محاكاة القرار على التوأم الرقمي أولًا">🧪 Simulate the decision on the twin first</div>
+      <div class="c old" data-ar="📞 «اتصل بالمهندس، وابحث عن التقرير»">📞 “Call the engineer, find the report”</div><div class="arrow">→</div><div class="c new" data-ar="💬 اسأل المساعد الذكي — بالعربية أو الإنجليزية">💬 Ask the copilot — in English or Arabic</div>
+    </div>
+    <aside class="sn" hidden>اقرا السطور بسرعة ومن غير تفاصيل — الفكرة إن الشمال هو "الواقع اللي هو عايشه"، واليمين هو "الحلم". آخر سطر (الكوبايلوت بالعربي) ده الـ hook للديمو. قول: "خليني أوريك ده بعينك بدل ما أحكيلك."</aside>
+  </section>
+
+  <!-- 4 · VISION LAYERS -->
+  <section class="slide" data-id="vision">
+    <div class="kicker r" data-ar="الرؤية">The vision</div>
+    <h2 class="r d1" data-ar="أربع طبقات. عقل واحد للمصنع كله.">Four layers. One brain for the whole plant.</h2>
+    <p class="lead r d2" data-ar="دون استبدال أي شيء: نعمل فوق الماكينات وأنظمة MES وERP الموجودة لديكم بالفعل.">No rip-and-replace. We sit on top of the machines, MES and ERP you already own.</p>
+    <div class="layers-d r d3">
+      <div class="layer-d" data-ar="<div class=&quot;n&quot;>01 · الربط</div><h3>كل إشارة</h3><ul><li>وحدات PLC ومعدات SMT</li><li>AOI وSPI وأجهزة الاختبار</li><li>عدّادات الطاقة والمركبات الذاتية</li><li>MES · ERP · CMMS</li></ul>"><div class="n">01 · CONNECT</div><h3>Every signal</h3><ul><li>PLCs &amp; SMT equipment</li><li>AOI, SPI, testers</li><li>Energy meters, AGVs</li><li>MES · ERP · CMMS</li></ul></div>
+      <div class="layer-d" data-ar="<div class=&quot;n&quot;>02 · الرؤية</div><h3>توأم رقمي حيّ</h3><ul><li>كل خط ومحطة ووحدة</li><li>OEE · FPY · زمن الدورة لحظيًا</li><li>من أرض المصنع إلى مجلس الإدارة</li><li>الويب والهاتف</li></ul>"><div class="n">02 · SEE</div><h3>Live digital twin</h3><ul><li>Every line, station, unit</li><li>OEE · FPY · takt live</li><li>Shop floor → boardroom</li><li>Web &amp; mobile</li></ul></div>
+      <div class="layer-d" data-ar="<div class=&quot;n&quot;>03 · التنبؤ</div><h3>بصيرة الذكاء الاصطناعي</h3><ul><li>العمر المتبقي للماكينات</li><li>رصد العيوب بالرؤية الحاسوبية</li><li>تحليل الأسباب الجذرية</li><li>توقّع الطلب والطاقة</li></ul>"><div class="n">03 · PREDICT</div><h3>AI foresight</h3><ul><li>Remaining-useful-life</li><li>Vision defect detection</li><li>Root-cause correlation</li><li>Demand &amp; energy forecast</li></ul></div>
+      <div class="layer-d" data-ar="<div class=&quot;n&quot;>04 · التنفيذ</div><h3>القرارات</h3><ul><li>إجراءات مرتّبة بقيمتها بالجنيه</li><li>أوامر عمل ومركبات ذاتية تلقائيًا</li><li>محاكاة «ماذا لو؟»</li><li>مساعد بالعربية والإنجليزية</li></ul>"><div class="n">04 · ACT</div><h3>Decisions</h3><ul><li>Prioritised actions in EGP</li><li>Auto work orders &amp; AGVs</li><li>What-if simulation</li><li>Arabic/English copilot</li></ul></div>
+    </div>
+    <div class="flowbar r d4"></div>
+    <aside class="sn" hidden>النقطة الأهم هنا: "إحنا مش هنغيّر ولا ماكينة ولا نظام عندكم". ده بيشيل الخوف من المخاطرة. اشرح الأربع طبقات كأنها جسم إنسان: الأعصاب (Connect)، العينين (See)، المخ (Predict)، والإيدين (Act).</aside>
+  </section>
+
+  <!-- 5 · LIVE DEMO -->
+  <section class="slide" data-id="demo" style="padding-bottom:70px">
+    <div class="demo-head">
+      <div data-ar="<div class=&quot;kicker r&quot;>عرض حيّ · ليس نموذجًا ثابتًا</div><h2 class=&quot;r d1&quot; style=&quot;margin-bottom:0&quot;>المصنع ينبض — <span class=&quot;grad-text&quot;>الآن</span>.</h2>"><div class="kicker r">Live demo · not a mock-up</div><h2 class="r d1" style="margin-bottom:0">The plant, alive — <span class="grad-text">right now</span>.</h2></div>
+      <a class="btn primary r d2" href="app.html" target="_blank" rel="noopener" data-ar="فتح بملء الشاشة ↖">Open full screen ↗</a>
+    </div>
+    <div class="demo-wrap r d2" id="demoWrap"><iframe id="demoFrame" title="Digital Factory live demo" data-src="app.html?embed=1" loading="lazy"></iframe></div>
+    <aside class="sn" hidden>ده أهم جزء. افتح الديمو Full screen. (١) وريه الخطوط الشغّالة والـ OEE الحي. (٢) دوس "Scenarios" ← "Bearing wear on Mounter B" واستنى التنبيه الأصفر — قوله: "الـ AI شاف العطل قبل ما يحصل بـ ٤٠ ساعة". (٣) خليه هو بنفسه يدوس "Schedule repair" — ولما يظهر "EGP 1.6M saved" اسكت ثانيتين. (٤) افتح "Ask Copilot" ودوس "لخّصلي الوردية" — الرد بالعربي هيبهره. (٥) لو عنده وقت: What-If ← "Pre-season peak +35%".</aside>
+  </section>
+
+  <!-- 6 · PREDICTIVE MAINTENANCE -->
+  <section class="slide" data-id="pdm">
+    <div class="kicker r" data-ar="حالة الاستخدام 1 · الصيانة التنبؤية">Use case 1 · Predictive maintenance</div>
+    <h2 class="r d1" data-ar="نصلحها وفق <span class=&quot;grad-text&quot;>جدولنا</span> — لا حين تتعطّل.">Fix it on <span class="grad-text">our</span> schedule — not when it breaks.</h2>
+    <div class="uc">
+      <div class="timeline-cmp r d2">
+        <div class="tl">
+          <div class="lbl c-red" data-ar="بدون ذكاء اصطناعي · صيانة تفاعلية">Without AI · reactive</div>
+          <div class="bar" data-ar="<span style=&quot;width:62%;background:var(--green)&quot;>تشغيل</span><span style=&quot;width:38%;background:var(--red);color:#fff&quot;>💥 توقّف غير مخطّط 4.5 ساعة</span>"><span style="width:62%;background:var(--green)">Running</span><span style="width:38%;background:var(--red);color:#fff">💥 4.5 h unplanned stop</span></div>
+          <div class="cap" data-ar="يتعطّل الرولمان في منتصف الوردية: الخط متوقف، وقطع غيار عاجلة، وساعات إضافية للتعويض.">Bearing seizes mid-shift. Line down, parts expedited, overtime to recover.</div>
+        </div>
+        <div class="tl" style="border-color:rgba(52,211,153,.45)">
+          <div class="lbl c-green" data-ar="مع المصنع الرقمي · صيانة تنبؤية">With Digital Factory · predictive</div>
+          <div class="bar" data-ar="<span style=&quot;width:28%;background:var(--green)&quot;>تشغيل</span><span style=&quot;width:10%;background:var(--amber)&quot;>⚠ تنبيه</span><span style=&quot;width:54%;background:var(--green)&quot;>تشغيل · القطع محجوزة</span><span style=&quot;width:8%;background:var(--violet);color:#fff&quot;>25د</span>"><span style="width:28%;background:var(--green)">Running</span><span style="width:10%;background:var(--amber)">⚠ AI alert</span><span style="width:54%;background:var(--green)">Running · parts reserved</span><span style="width:8%;background:var(--violet);color:#fff">25m</span></div>
+          <div class="cap" data-ar="ينبّه الذكاء الاصطناعي قبل نحو 40 ساعة، ويُجدول الإصلاح في تبديل الوردية. لا أحد يلاحظ.">AI warns ≈ 40 h ahead. Repair slotted into the shift change. Nobody notices.</div>
+        </div>
+      </div>
+      <ul class="bullets r d3">
+        <li data-ar="الاهتزاز والحرارة وتيار المحرك <b>على كل ماكينة حرجة</b>">Vibration, temperature &amp; motor current <b>on every critical machine</b></li>
+        <li data-ar="يتعلّم الذكاء الاصطناعي البصمة الطبيعية لكل ماكينة ويتنبأ <b>بعمرها المتبقي</b>">AI learns each machine's normal signature and predicts <b>remaining useful life</b></li>
+        <li data-ar="يُنشئ أمر العمل تلقائيًا، ويحجز قطعة الغيار، ويكلّف الفنّي">Auto-creates the work order, reserves the spare, assigns the technician</li>
+        <li data-ar="الدراسات الصناعية: <b>انخفاض التوقف غير المخطط 30–50%</b>، وإطالة عمر الماكينات 20–40%">Industry studies: <b>30–50% less unplanned downtime</b>, 20–40% longer machine life</li>
+      </ul>
+    </div>
+    <div class="src-note r d4" data-ar="المصدر: أبحاث ماكنزي حول الصيانة التنبؤية؛ وتختلف النتائج بحسب نقطة البداية.">Benchmarks: McKinsey &amp; Company research on predictive maintenance; results vary with baseline.</div>
+    <aside class="sn" hidden>اربط ده باللي شافه في الديمو حالاً. اسأله: "عندكم كام ساعة توقف غير مخطط في الشهر على خطوط الـ SMT؟" الرقم اللي هيقوله هنحطه بنفسنا في حاسبة العائد بعد شوية.</aside>
+  </section>
+
+  <!-- 7 · AI VISION -->
+  <section class="slide" data-id="vision-ai">
+    <div class="kicker r" data-ar="حالة الاستخدام 2 · الجودة بالرؤية الحاسوبية">Use case 2 · AI vision quality</div>
+    <h2 class="r d1" data-ar="كل لوحة. كل مكوّن. <span class=&quot;grad-text&quot;>في كل مرة.</span>">Every board. Every component. <span class="grad-text">Every time.</span></h2>
+    <div class="grid g3 r d2" style="margin-top:30px">
+      <div class="box hl" data-ar="<div class=&quot;big grad-text&quot;>100%</div><h3>تغطية الفحص</h3><p>نماذج تعلّم عميق على معالجات طرفية تفحص كل وحدة بسرعة الخط — بلا عيّنات، ولا إرهاق، ولا تراجع في الوردية الليلية.</p>"><div class="big grad-text">100%</div><h3>Inspection coverage</h3><p>Deep-learning models on edge GPUs inspect every unit at line speed — no sampling, no fatigue, no night-shift dip.</p></div>
+      <div class="box" data-ar="<div class=&quot;big&quot;>≈ 12 ms</div><h3>لكل قرار</h3><p>جسور اللحام، والمكوّنات المفقودة، والانتصاب، وسوء المحاذاة، والخدوش — مصنّفة مع درجة الثقة.</p>"><div class="big">≈ 12 ms</div><h3>Per decision</h3><p>Bridges, missing parts, tombstones, misalignment, cosmetic scratches — classified with confidence scores.</p></div>
+      <div class="box" data-ar="<div class=&quot;big c-green&quot;>السبب الجذري</div><h3>لا الرصد فقط</h3><p>تُربط العيوب ببيانات العملية — مثل «جسور اللحام تضاعفت 4 مرات، وضغط الطابعة انحرف» — وتُعالج من المصدر.</p>"><div class="big c-green">Root cause</div><h3>Not just detection</h3><p>Defects are correlated with process data — e.g. “bridges up 4×, printer pressure drifted” — and fixed at the source.</p></div>
+    </div>
+    <ul class="bullets r d3" style="margin-top:34px">
+      <li data-ar="يعمل <b>جنبًا إلى جنب مع أنظمة AOI الحالية</b> لخفض الإنذارات الكاذبة — فلا يراجع المشغّل إلا ما يستحق">Works <b>alongside existing AOI</b> to cut false calls — operators review only what matters</li>
+      <li data-ar="تشير دراسات منشورة إلى أن الفحص البصري بالذكاء الاصطناعي يحسّن رصد العيوب <b>بنسبة تصل إلى 90%</b> مقارنة بالفحص اليدوي">Published studies report AI visual inspection improving defect detection <b>by up to 90%</b> vs. manual</li>
+    </ul>
+    <aside class="sn" hidden>نقطة قوية: إحنا مش بنستبدل الـ AOI بتاعهم — إحنا بنقلل الـ false calls وبنوصل للسبب الجذري. قوله: "العيب مش بس بنمسكه، إحنا بنعرف هو جه منين ونقفل الحنفية."</aside>
+  </section>
+
+  <!-- 8 · COPILOT + WHAT-IF -->
+  <section class="slide" data-id="copilot">
+    <div class="kicker r" data-ar="حالة الاستخدام 3 · القرارات">Use case 3 · Decisions</div>
+    <h2 class="r d1" data-ar="مساعد ذكي لكل مدير. <span class=&quot;grad-text&quot;>وتوأم رقمي لكل قرار.</span>">A copilot for every manager. <span class="grad-text">A twin for every decision.</span></h2>
+    <div class="grid g2 r d2" style="margin-top:30px">
+      <div class="box" data-ar="<div class=&quot;ic&quot;>💬</div><h3>مساعد الإنتاج الذكي</h3><p style=&quot;margin-bottom:16px&quot;>اسألوا بلغة طبيعية — بالعربية أو الإنجليزية. إجابات مستندة إلى بيانات المصنع الحيّة مع مصادرها.</p><div style=&quot;font-size:18px;line-height:1.9;color:var(--text-2)&quot;>‹ «لماذا تباطأ الخط الأول؟»<br>‹ «ما الذي يجب إصلاحه أولًا هذا الأسبوع؟»<br>‹ «لخّصلي الوردية»</div>">
+        <div class="ic">💬</div><h3>Production Copilot</h3>
+        <p style="margin-bottom:16px">Ask in plain language — Arabic or English. Answers grounded in live plant data, with sources.</p>
+        <div class="mono" style="font-size:16px;line-height:1.9;color:var(--text-2)">
+          › “Why did Line 1 slow down?”<br>› “What should we fix first this week?”<br>› <span dir="rtl">“لخّصلي الوردية”</span>
+        </div>
+      </div>
+      <div class="box" data-ar="<div class=&quot;ic&quot;>🧪</div><h3>«ماذا لو؟» على التوأم الرقمي</h3><p style=&quot;margin-bottom:16px&quot;>اختبروا القرار قبل الالتزام بأفراد أو ساعات إضافية أو استثمارات.</p><div style=&quot;font-size:18px;line-height:1.9;color:var(--text-2)&quot;>‹ ذروة موسمية +35% — أي خط يختنق أولًا؟<br>‹ وردية ثالثة للمصنع كله، أم لخط الاختناق فقط؟<br>‹ زمن دورة أسرع — ماذا يحدث للجودة؟</div>">
+        <div class="ic">🧪</div><h3>What-If on the twin</h3>
+        <p style="margin-bottom:16px">Test it before you commit people, overtime or capital.</p>
+        <div class="mono" style="font-size:16px;line-height:1.9;color:var(--text-2)">
+          › Pre-season peak +35% — which line breaks first?<br>› 3rd shift plant-wide, or only on the bottleneck?<br>› Faster takt — what happens to yield?
+        </div>
+      </div>
+    </div>
+    <p class="lead r d3" style="margin-top:30px" data-ar="النتيجة: <b style=&quot;color:var(--text)&quot;>اجتماعات صباحية تتخذ القرار، بدلًا من اجتماعات تجمع الأرقام.</b>">The result: <b style="color:var(--text)">morning meetings that decide, instead of meetings that collect numbers.</b></p>
+    <aside class="sn" hidden>هنا الفكرة إن المدير نفسه — مش بس المهندس — هيستفيد يومياً. لو حابب، افتح الـ What-If ووريله "Pre-season peak +35%" وازاي السيستم بيقول بالظبط أنهي خط هو الـ bottleneck وبيقترح وردية تالتة عليه بس بدل المصنع كله.</aside>
+  </section>
+
+  <!-- 9 · ARCHITECTURE -->
+  <section class="slide" data-id="arch">
+    <div class="kicker r" data-ar="كيف نبنيه">How it's built</div>
+    <h2 class="r d1" data-ar="بمستوى صناعي ومعايير مفتوحة، <span class=&quot;grad-text&quot;>وبياناتكم تبقى داخل المصنع</span>.">Industrial-grade, open standards, <span class="grad-text">your data stays home</span>.</h2>
+    <div class="arch r d2">
+      <div class="arch-stack">
+        <div class="tier"><div class="tn c-violet" data-ar="التطبيقات">Apps</div><div class="chips" data-ar="<span>مركز القيادة (ويب)</span><span>تطبيق المشرفين على الهاتف</span><span>مساعد بالعربية والإنجليزية</span><span>شاشات أندون وجدران العرض</span>"><span>Command center (web)</span><span>Mobile supervisor app</span><span>Arabic/English copilot</span><span>Andon &amp; TV walls</span></div></div>
+        <div class="tier"><div class="tn c-blue" data-ar="الذكاء الاصطناعي والتوأم">AI &amp; Twin</div><div class="chips" data-ar="<span>محرك التوأم الرقمي</span><span>نماذج الشذوذ والعمر المتبقي</span><span>نماذج رؤية (معالجات طرفية)</span><span>محاكاة الأحداث المتقطعة</span><span>خيار نموذج لغوي داخل المصنع</span>"><span>Digital twin engine</span><span>Anomaly &amp; RUL models</span><span>Vision models (edge GPU)</span><span>Discrete-event simulation</span><span>On-prem LLM option</span></div></div>
+        <div class="tier"><div class="tn c-cyan" data-ar="منصة البيانات">Data platform</div><div class="chips" data-ar="<span>تدفّق الأحداث</span><span>قاعدة بيانات زمنية</span><span>فضاء أسماء موحّد</span><span>نموذج أصول ISA-95</span>"><span>Event streaming</span><span>Time-series store</span><span>Unified namespace</span><span>ISA-95 asset model</span></div></div>
+        <div class="tier"><div class="tn c-green" data-ar="الحافة">Edge</div><div class="chips" data-ar="<span>OPC UA</span><span>MQTT</span><span>SECS/GEM · IPC-CFX لخطوط SMT</span><span>حسّاسات إضافية للماكينات القديمة</span><span>حوسبة طرفية</span>"><span>OPC UA</span><span>MQTT</span><span>SECS/GEM · IPC-CFX for SMT</span><span>Retrofit IoT sensors</span><span>Edge compute</span></div></div>
+        <div class="tier"><div class="tn faint" data-ar="أرض المصنع">Shop floor</div><div class="chips" data-ar="<span>وحدات PLC</span><span>ماكينات التركيب والطباعة واللحام</span><span>AOI / SPI / ICT / FCT</span><span>عدّادات الطاقة</span><span>المركبات الذاتية</span><span>MES · SAP · CMMS</span>"><span>PLCs</span><span>Mounters · printers · reflow</span><span>AOI / SPI / ICT / FCT</span><span>Energy meters</span><span>AGVs</span><span>MES · SAP · CMMS</span></div></div>
+      </div>
+      <div class="side-box" data-ar="<h4>🔒 الأمان من التصميم</h4><ul><li>داخل المصنع أو هجين — حسب اختياركم</li><li>فصل شبكات التشغيل عن تقنية المعلومات، والقراءة فقط أولًا</li><li>ممارسات IEC 62443</li><li>صلاحيات حسب الدور وسجل تدقيق كامل</li><li>لا تغادر أي بيانات المصنع دون موافقة</li></ul><h4 style=&quot;margin-top:22px&quot;>🔌 التكامل مع</h4><ul><li>أنظمة MES وSAP الحالية</li><li>الأنظمة المؤسسية العالمية</li><li>موردي AOI والاختبار الحاليين</li></ul>">
+        <h4>🔒 Security by design</h4>
+        <ul>
+          <li>On-premise or hybrid — your choice</li>
+          <li>OT/IT segmentation, read-only first</li>
+          <li>IEC 62443 practices</li>
+          <li>Role-based access, full audit trail</li>
+          <li>No data leaves the plant without approval</li>
+        </ul>
+        <h4 style="margin-top:22px">🔌 Integrates with</h4>
+        <ul><li>Existing MES &amp; SAP</li><li>Global corporate systems</li><li>Current AOI &amp; test vendors</li></ul>
+      </div>
+    </div>
+    <aside class="sn" hidden>متدخلش في تفاصيل تقنية إلا لو سألك. الجملة اللي لازم تقولها: "الداتا بتاعتكم مش هتخرج برّه المصنع، وأول مرحلة إحنا بنقرا بس — مش بنتحكم في أي ماكينة." دي بتطمّن الـ IT والأمن عندهم.</aside>
+  </section>
+
+  <!-- 10 · ROI -->
+  <section class="slide" data-id="roi">
+    <div class="kicker r" data-ar="الجدوى الاقتصادية · عدّلوا الأرقام مباشرة">The business case · edit live</div>
+    <h2 class="r d1" data-ar="ما قيمة ذلك <span class=&quot;grad-text&quot;>لمصنعكم</span>؟">What is it worth to <span class="grad-text">your</span> plant?</h2>
+    <div class="roi r d2">
+      <div class="roi-in" id="roiIn">
+        <label data-ar="عدد خطوط الإنتاج المشمولة <input type=&quot;number&quot; id=&quot;rLines&quot; value=&quot;5&quot; min=&quot;1&quot; dir=&quot;ltr&quot;>">Production lines in scope <input type="number" id="rLines" value="5" min="1"></label>
+        <label data-ar="التوقف غير المخطط (ساعة/خط/شهر) <input type=&quot;number&quot; id=&quot;rDown&quot; value=&quot;8&quot; min=&quot;0&quot; dir=&quot;ltr&quot;>">Unplanned downtime, h / line / month <input type="number" id="rDown" value="8" min="0"></label>
+        <label data-ar="تكلفة ساعة توقف الخط (جنيه) <input type=&quot;number&quot; id=&quot;rCost&quot; value=&quot;250000&quot; step=&quot;10000&quot; dir=&quot;ltr&quot;>">Cost of 1 h line downtime (EGP) <input type="number" id="rCost" value="250000" step="10000"></label>
+        <label data-ar="تكلفة الهالك وإعادة التشغيل شهريًا (جنيه) <input type=&quot;number&quot; id=&quot;rScrap&quot; value=&quot;2500000&quot; step=&quot;100000&quot; dir=&quot;ltr&quot;>">Scrap + rework cost / month (EGP) <input type="number" id="rScrap" value="2500000" step="100000"></label>
+        <label data-ar="فاتورة الطاقة شهريًا (جنيه) <input type=&quot;number&quot; id=&quot;rEnergy&quot; value=&quot;5000000&quot; step=&quot;100000&quot; dir=&quot;ltr&quot;>">Energy bill / month (EGP) <input type="number" id="rEnergy" value="5000000" step="100000"></label>
+        <label data-ar="قيمة الاستثمار في البرنامج (جنيه) <input type=&quot;number&quot; id=&quot;rInv&quot; value=&quot;30000000&quot; step=&quot;1000000&quot; dir=&quot;ltr&quot;>">Programme investment (EGP) <input type="number" id="rInv" value="30000000" step="1000000"></label>
+      </div>
+      <div class="roi-out">
+        <div class="box" data-ar="<div class=&quot;k-l&quot;>خفض التوقف بنسبة 30%</div><div class=&quot;big&quot; id=&quot;oDown&quot;>—</div>"><div class="k-l">Less downtime (−30%)</div><div class="big" id="oDown">—</div></div>
+        <div class="box" data-ar="<div class=&quot;k-l&quot;>خفض الهالك وإعادة التشغيل بنسبة 20%</div><div class=&quot;big&quot; id=&quot;oScrap&quot;>—</div>"><div class="k-l">Less scrap &amp; rework (−20%)</div><div class="big" id="oScrap">—</div></div>
+        <div class="box" data-ar="<div class=&quot;k-l&quot;>وفر الطاقة بنسبة 8%</div><div class=&quot;big&quot; id=&quot;oEnergy&quot;>—</div>"><div class="k-l">Energy savings (−8%)</div><div class="big" id="oEnergy">—</div></div>
+        <div class="box" data-ar="<div class=&quot;k-l&quot;>فترة الاسترداد</div><div class=&quot;big c-green&quot; id=&quot;oPay&quot;>—</div>"><div class="k-l">Payback</div><div class="big c-green" id="oPay">—</div></div>
+        <div class="box hl total" data-ar="<div class=&quot;k-l&quot;>القيمة السنوية التقديرية</div><div class=&quot;big grad-text&quot; id=&quot;oTotal&quot;>—</div><p id=&quot;oNote&quot; style=&quot;margin-top:8px&quot;></p>"><div class="k-l">Estimated annual value</div><div class="big grad-text" id="oTotal">—</div><p id="oNote" style="margin-top:8px">Conservative assumptions, lower end of published ranges.</p></div>
+      </div>
+    </div>
+    <aside class="sn" hidden>دي أقوى لحظة في الاجتماع: اطلب منه هو يقولك أرقامه (ساعات التوقف، تكلفة الساعة، الهالك، فاتورة الكهربا) واكتبها قدامه في الخانات — الأرقام بتتحسب لوحدها. لما يشوف الرقم السنوي من أرقامه هو، الإقناع بيبقى منه مش مننا. الافتراضات متحفظة عمداً (أقل من المنشور عالمياً).</aside>
+  </section>
+
+  <!-- 11 · ROADMAP -->
+  <section class="slide" data-id="roadmap">
+    <div class="kicker r" data-ar="الخطة">The plan</div>
+    <h2 class="r d1" data-ar="خط واحد. اثنا عشر أسبوعًا. <span class=&quot;grad-text&quot;>والدليل على أرض مصنعكم.</span>">One line. Twelve weeks. <span class="grad-text">Proof on your floor.</span></h2>
+    <div class="road r d2">
+      <div class="rail"></div>
+      <div class="phases">
+        <div class="ph" data-ar="<div class=&quot;when&quot;>الأسبوعان 1–2</div><div class=&quot;dotp&quot;></div><h3>الاستكشاف والربط</h3><p>جولة ميدانية، واختيار خط SMT التجريبي، وربط للقراءة فقط بالماكينات وMES، وقياس مؤشرات الأساس.</p>"><div class="when">Weeks 1–2</div><div class="dotp"></div><h3>Discover &amp; connect</h3><p>Site walk, pick the pilot SMT line, read-only connection to machines &amp; MES, baseline KPIs.</p></div>
+        <div class="ph" data-ar="<div class=&quot;when&quot;>الأسابيع 3–6</div><div class=&quot;dotp&quot;></div><h3>التوأم الحيّ</h3><p>توأم رقمي لحظي للخط التجريبي، وOEE وFPY والطاقة على الشاشات والهاتف.</p>"><div class="when">Weeks 3–6</div><div class="dotp"></div><h3>Live twin</h3><p>Real-time twin of the pilot line. OEE, FPY &amp; energy live on screens and mobile.</p></div>
+        <div class="ph" data-ar="<div class=&quot;when&quot;>الأسابيع 7–10</div><div class=&quot;dotp&quot;></div><h3>تشغيل الذكاء الاصطناعي</h3><p>صيانة تنبؤية للماكينات الحرجة، ورؤية حاسوبية على AOI، ومساعد ذكي لفريق الخط.</p>"><div class="when">Weeks 7–10</div><div class="dotp"></div><h3>AI on</h3><p>Predictive maintenance on critical machines, vision AI on AOI, copilot for the line team.</p></div>
+        <div class="ph" data-ar="<div class=&quot;when&quot;>الأسبوعان 11–12</div><div class=&quot;dotp&quot;></div><h3>إثبات العائد</h3><p>نتائج مُقاسة مقابل خط الأساس يعتمدها فريقكم، مع خطة التوسّع ودراسة الجدوى.</p>"><div class="when">Weeks 11–12</div><div class="dotp"></div><h3>Prove ROI</h3><p>Measured results vs. baseline, signed off by your team. Scale plan &amp; business case.</p></div>
+        <div class="ph scale" data-ar="<div class=&quot;when&quot;>الأشهر 4–12</div><div class=&quot;dotp&quot;></div><h3>التوسّع في المصنع</h3><p>جميع الخطوط والطاقة والمخازن والمركبات الذاتية — نحو مصنع بمستوى «المنارة».</p>"><div class="when">Months 4–12</div><div class="dotp"></div><h3>Scale plant-wide</h3><p>All lines, energy, warehouse &amp; AGVs. Towards a lighthouse-class factory.</p></div>
+      </div>
+    </div>
+    <div class="kpi-row r d3" style="margin-top:56px">
+      <div class="box" data-ar="<div class=&quot;k-l&quot;>هدف التجربة</div><div class=&quot;big c-green&quot;>−30%</div><p>التوقف غير المخطط</p>"><div class="k-l">Pilot target</div><div class="big c-green">−30%</div><p>unplanned downtime</p></div>
+      <div class="box" data-ar="<div class=&quot;k-l&quot;>هدف التجربة</div><div class=&quot;big c-cyan&quot;>+5 نقاط</div><p>OEE على الخط التجريبي</p>"><div class="k-l">Pilot target</div><div class="big c-cyan">+5 pts</div><p>OEE on the pilot line</p></div>
+      <div class="box" data-ar="<div class=&quot;k-l&quot;>هدف التجربة</div><div class=&quot;big c-violet&quot;>−20%</div><p>الهالك وإعادة التشغيل</p>"><div class="k-l">Pilot target</div><div class="big c-violet">−20%</div><p>scrap &amp; rework</p></div>
+      <div class="box" data-ar="<div class=&quot;k-l&quot;>تعطيل الإنتاج</div><div class=&quot;big&quot;>0 ساعة</div><p>توقف إنتاج بسبب التركيب</p>"><div class="k-l">Disruption</div><div class="big">0 h</div><p>production stopped for the install</p></div>
+    </div>
+    <aside class="sn" hidden>رسالة واحدة: "مش بنطلب منكم تراهنوا على المصنع كله — خط واحد، ١٢ أسبوع، والأرقام فريقكم هو اللي يوقّع عليها." اذكر إن التركيب مش هيوقف الإنتاج ولا ساعة.</aside>
+  </section>
+
+  <!-- 12 · WHY US -->
+  <section class="slide" data-id="why">
+    <div class="kicker r" data-ar="لماذا نحن">Why us</div>
+    <h2 class="r d1" data-ar="لم تشاهدوا شرائح عرض. <span class=&quot;grad-text&quot;>بل برنامجًا يعمل.</span>">You didn't see slides. <span class="grad-text">You saw working software.</span></h2>
+    <div class="grid g3 r d2" style="margin-top:30px">
+      <div class="box" data-ar="<div class=&quot;ic&quot;>⚡</div><h3>السرعة</h3><p>نبني بسرعة ونطوّر على أرض مصنعكم — والعرض الذي جرّبتموه دليل على طريقتنا في العمل.</p>"><div class="ic">⚡</div><h3>Speed</h3><p>We build fast and iterate on your floor — the demo you just used is proof of how we work.</p></div>
+      <div class="box" data-ar="<div class=&quot;ic&quot;>🧩</div><h3>فريق واحد متكامل</h3><p>إنترنت الأشياء الصناعي، وهندسة البيانات، والذكاء الاصطناعي والرؤية الحاسوبية، والمحاكاة، وتطبيقات الويب والهاتف.</p>"><div class="ic">🧩</div><h3>Full stack, one team</h3><p>Industrial IoT, data engineering, AI &amp; computer vision, simulation, and modern web &amp; mobile apps.</p></div>
+      <div class="box" data-ar="<div class=&quot;ic&quot;>🇪🇬</div><h3>محليّون وفي الموقع</h3><p>مهندسون مصريون إلى جانب فريقكم، وأدوات عربية أولًا، ودعم في توقيتكم.</p>"><div class="ic">🇪🇬</div><h3>Local &amp; on-site</h3><p>Egyptian engineers next to your team, Arabic-first tools, support in your time zone.</p></div>
+      <div class="box" data-ar="<div class=&quot;ic&quot;>🔓</div><h3>منفتحون، بلا احتكار</h3><p>معايير مفتوحة (OPC UA وMQTT وISA-95). بياناتكم ونماذجكم وملكيتكم الفكرية لكم.</p>"><div class="ic">🔓</div><h3>Open, no lock-in</h3><p>Open standards (OPC UA, MQTT, ISA-95). Your data, your models, your IP.</p></div>
+      <div class="box" data-ar="<div class=&quot;ic&quot;>📏</div><h3>الدفع مقابل الإثبات</h3><p>معايير نجاح التجربة متفق عليها مسبقًا ويقيسها فريقكم بنفسه.</p>"><div class="ic">📏</div><h3>Pay for proof</h3><p>Pilot success criteria agreed up front and measured by your own team.</p></div>
+      <div class="box hl" data-ar="<div class=&quot;ic&quot;>🎯</div><h3>مصمَّم للإلكترونيات</h3><p>SMT والتجميع النهائي والاختبار والتغليف — التوأم يتحدث لغة خطّكم من اليوم الأول.</p>"><div class="ic">🎯</div><h3>Built for electronics</h3><p>SMT, final assembly, test &amp; pack — the twin speaks your line's language from day one.</p></div>
+    </div>
+    <aside class="sn" hidden>هنا اتكلم عن فريقكم بثقة وبأمثلة حقيقية لو عندك (مشاريع سابقة، خبرات الفريق). أهم جملة: "اللي شفته من شوية اتبنى بسرعة — تخيّل نقدر نعمل إيه لما يبقى عندنا داتا حقيقية من خطكم."</aside>
+  </section>
+
+  <!-- 13 · CLOSING -->
+  <section class="slide closing" data-id="close">
+    <div class="kicker r" data-ar="الخطوات التالية">Next steps</div>
+    <h2 class="r d1" data-ar="لنبنِ معًا <span class=&quot;grad-text&quot;>مصنع المنارة القادم</span> في مصر.">Let's build Egypt's next <span class="grad-text">lighthouse-class factory</span> — together.</h2>
+    <div class="steps r d2">
+      <div class="step" data-ar="<b>الخطوة 1 · هذا الأسبوع</b>نختار الخط التجريبي معًا"><b>STEP 1 · THIS WEEK</b>Choose the pilot line together</div>
+      <div class="step" data-ar="<b>الخطوة 2 · الأسبوع الثاني</b>جولة ميدانية واتفاقية سرية وصلاحية قراءة البيانات"><b>STEP 2 · WEEK 2</b>Site walk + NDA &amp; read-only data access</div>
+      <div class="step" data-ar="<b>الخطوة 3 · الأسبوع الثالث</b>الانطلاق — التوأم يعمل خلال 30 يومًا"><b>STEP 3 · WEEK 3</b>Kick-off — twin live in 30 days</div>
+    </div>
+    <div class="r d3" style="margin-top:46px;display:flex;gap:14px;justify-content:center">
+      <a class="btn primary" href="app.html" target="_blank" rel="noopener" data-ar="▶ فتح العرض الحيّ">▶ Open the live demo</a>
+      <a class="btn" href="./" target="_blank" rel="noopener" data-ar="موقع المشروع">Project site</a>
+    </div>
+    <aside class="sn" hidden>اختم بطلب واضح ومحدد، مش "نتواصل بعدين". قول: "أنا محتاج منك حاجة واحدة بس: نختار مع بعض الخط اللي هنبدأ بيه، ونحدد ميعاد زيارة الأسبوع الجاي." وبعدين اسكت واستنى رده.</aside>
+  </section>
+
+  <div class="footer" data-ar="<span class=&quot;logo&quot;><span class=&quot;logo-mark&quot;></span>المصنع الرقمي</span><span>عرض توضيحي · بيانات المصنع محاكاة</span>"><span class="logo"><span class="logo-mark"></span>Digital Factory</span><span>Concept demo · plant data simulated</span></div>
+  <div class="prail" id="prail" aria-hidden="true"><div class="prail-line"><i id="railFill"></i></div><div class="prail-st" id="railStations"></div><div class="piece" id="piece"></div></div>
+</div>
+</div>
+
+<div class="counter" id="counter">1 / 13</div>
+<div class="controls">
+  <button id="prev" title="Previous (←)">‹</button>
+  <button id="next" title="Next (→)">›</button>
+  <button id="langBtn" title="العربية / English (L)" lang="ar">ع</button>
+  <button id="notesBtn" title="Speaker notes (N)">🗒</button>
+  <button id="fs" title="Full screen (F)">⛶</button>
+  <a href="./" title="Home">⌂</a>
+</div>
+<div class="notes" id="notes"><h4 id="notesTitle">SPEAKER NOTES</h4><div id="notesBody"></div></div>
+<div class="help" id="help">← → navigate · L العربية / English · F full screen · N speaker notes</div>
+
+<script src="assets/js/motion.js"></script>
+<script src="assets/js/deck.js"></script>
+</body>
+</html>
