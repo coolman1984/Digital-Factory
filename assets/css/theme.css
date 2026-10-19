@@ -1,4 +1,4 @@
-/* Digital Factory — page layer on top of the the client UI kit (assets/kit/brand-ui.css).
+/* Digital Factory — page layer on top of the brand UI kit (assets/kit/brand-ui.css).
    Load order: kit/fonts.css → kit/brand-ui.css → theme.css → page CSS.
    Colours, type, radii and dark mode come from the kit; this file only adds aliases, shared page parts and motion. */
 
@@ -10,7 +10,7 @@
   --line-strong: var(--border-strong);
   --accent: var(--brand-2);
   --grad: var(--brand);
-  --indigo: #3B4CCA;             /* second blue from the the client family, for charts */
+  --indigo: #3B4CCA;             /* second blue from the brand family, for charts */
   --action: #1428A0;             /* primary button fill; white text 10:1 */
   /* type scale (ratio ≥ 1.25) */
   --t-sm: 13px; --t-body: 17px; --t-lg: 22px;

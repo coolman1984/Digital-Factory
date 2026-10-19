@@ -1,8 +1,8 @@
 # Digital Factory
 
 Static site (no build): `index.html` (website), `app.html` (command room), `deck.html` (presentation). Plant data is simulated.
-Design is the the client UI kit in `assets/kit/` (pinned brand: Inter, the client blues, light and dark). the client is the audience only;
-never add the client artwork.
+Design is the brand UI kit in `assets/kit/` (pinned brand: Inter, brand blues, light and dark). The plant is fictional (Plant EG-01);
+never name a real company or city for it.
 
 ## Design work
 For any change to how a page looks, moves or reads, follow the `web-design-pipeline` skill in `.claude/skills/`

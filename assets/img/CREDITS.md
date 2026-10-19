@@ -1,6 +1,6 @@
 # Photo credits
 
-All photographs by **Shixart1985**, licensed **CC BY 2.0** (https://creativecommons.org/licenses/by/2.0/), via Wikimedia Commons. Cropped and resized. They show real factories in general, not the client or its plants.
+All photographs by **Shixart1985**, licensed **CC BY 2.0** (https://creativecommons.org/licenses/by/2.0/), via Wikimedia Commons. Cropped and resized. They show real factories in general, not Plant EG-01 (a fictional plant).
 
 | File | Original |
 |---|---|
