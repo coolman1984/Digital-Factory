@@ -55,6 +55,9 @@ body { overflow-x: hidden; }
 .live-chip .status-dot { background: currentColor; }
 .live-chip.replay { background: var(--warning-soft); color: var(--warning); }
 .topbar .btn-sm { height: 40px; padding: 0 16px; }
+.sim-speed { display: inline-flex; align-items: center; gap: 4px; padding: 3px; border-radius: 10px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.sim-speed .btn-sm { min-width: 44px; padding: 0 10px; height: 34px; font-variant-numeric: tabular-nums; box-shadow: none; }
+.sim-speed .btn-sm.on { background: var(--brand-soft); color: var(--brand-2); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-2) 35%, var(--border)); font-weight: 650; }
 
 .tm { position: sticky; top: 64px; z-index: 45; display: flex; align-items: center; gap: 12px; padding: 10px 24px; background: var(--warning-soft); border-bottom: 1px solid var(--border); font-size: 13.5px; color: var(--text); }
 .tm .icon { color: var(--warning); }

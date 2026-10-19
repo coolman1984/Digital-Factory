@@ -7,7 +7,10 @@
 
   const rng = (g.DFRng && g.DFRng.stream) ? g.DFRng.stream('sim') : { range: (a, b) => a + Math.random() * (b - a), chance: p => Math.random() < p, float: () => Math.random() };
 
-  const SIM_SPEED = 20;              // simulated seconds per real second
+  const FIXED_DT = 0.1;              // fixed simulation step (sim seconds)
+  const SIM_SPEED_DEFAULT = 20;      // default sim seconds per real second (UI: 20×)
+  const SPEED_OPTIONS = [1, 20, 100];
+  const MAX_CATCHUP_REAL = 5;        // max real seconds to fast-forward after tab returns
   const START = 9 * 3600 + 12 * 60;  // 09:12, shift A runs 06:00–14:00
   const SHIFT_END = 14 * 3600;
   const HIST = 120;                  // telemetry points per series
@@ -227,9 +230,9 @@
   }
 
   /* ---------------- simulation step ---------------- */
-  function tick(dt, warm) {
-    S.real += dt;
-    const dts = dt * SIM_SPEED;
+  function tick(simDt, warm) {
+    S.real += simDt;
+    const dts = simDt;
     if (!warm) S.t += dts;
 
     if (!warm) {
@@ -242,7 +245,7 @@
     for (const l of S.lines) {
       let blocked = false, slow = false;
       for (const s of l.stations) {
-        if (s.degrade > 0 && s.state !== 'down' && s.state !== 'maint') s.health = clamp(s.health - s.degrade * dt, 0, 100);
+        if (s.degrade > 0 && s.state !== 'down' && s.state !== 'maint') s.health = clamp(s.health - s.degrade * simDt, 0, 100);
         const wear = 100 - s.health;
         const idle = s.state === 'down' || s.state === 'maint' || l.stopped || l.paused;
         s.vib = idle ? rnd(0.05, 0.2) : s.vibBase + wear * 0.065 + rnd(-0.18, 0.18) + (wear > 30 ? rnd(0, wear * 0.012) : 0);
@@ -258,7 +261,7 @@
         }
       }
       if (l.material !== null) {
-        l.material = clamp(l.material - dt * (S.active.material ? 1.6 : 0.25), 0, 100);
+        l.material = clamp(l.material - simDt * (S.active.material ? 1.6 : 0.25), 0, 100);
         if (l.material < 40 && !S.active.material && !l.restocking) routineRestock(l);
         l.starved = l.material <= 0;
       }
@@ -268,18 +271,18 @@
       const over = Math.max(0, l.speed - 1);
       const defectRate = (1 - l.fpy) * l.defectMult * (1 + over * 6) * (S.active.heat && !S.active.heat.fixed && /L1|L2/.test(l.id) ? 1.8 : 1);
       const q = 1 - defectRate;
-      l.oee = ema(l.oee, avail * l.availBase * perf * q, warm ? 0.05 : Math.min(1, dt * 0.18));
-      l.fpyNow = ema(l.fpyNow, q, Math.min(1, dt * 0.3));
+      l.oee = ema(l.oee, avail * l.availBase * perf * q, warm ? 0.05 : Math.min(1, simDt * 0.18));
+      l.fpyNow = ema(l.fpyNow, q, Math.min(1, simDt * 0.3));
       const tph = l.rate * l.speed * avail * l.availBase * perf;
-      l.tph = ema(l.tph, tph, Math.min(1, dt * 0.4));
+      l.tph = ema(l.tph, tph, Math.min(1, simDt * 0.4));
       if (!warm) { const made = tph * dts / 3600; l.produced += made; l.good += made * q; }
       tphSum += l.tph; oeeW += l.oee * l.rate; fpyW += l.fpyNow * l.rate; rateSum += l.rate;
       l.kwNow = l.kw * (avail ? (0.85 + 0.15 * l.speed) : 0.42) * rnd(0.97, 1.03);
       kw += l.kwNow;
-      flow(l, dt, halted, defectRate);
+      flow(l, simDt, halted, defectRate);
     }
     const heatLoad = S.active.heat ? (S.active.heat.fixed ? 60 : 150) : 0;
-    S.utilExtra = ema(S.utilExtra, (S.active.peak ? 230 : 0) + heatLoad, Math.min(1, dt * 0.5));
+    S.utilExtra = ema(S.utilExtra, (S.active.peak ? 230 : 0) + heatLoad, Math.min(1, simDt * 0.5));
     const utilNow = (S.utilKw + S.utilExtra) * rnd(0.98, 1.02);
     kw += utilNow; S.utilNow = utilNow;
     S.kw = kw; S.tph = tphSum; S.oee = oeeW / rateSum; S.fpy = fpyW / rateSum;
@@ -287,12 +290,12 @@
 
     for (const a of S.agvs) {
       if (a.task) {
-        a.task.k = clamp(a.task.k + dt / a.task.dur, 0, 1);
+        a.task.k = clamp(a.task.k + simDt / a.task.dur, 0, 1);
         if (a.task.k >= 1) { const fin = a.task.done; a.task = null; fin && fin(); }
-      } else a.p = (a.p + a.speed * dt) % 1;
+      } else a.p = (a.p + a.speed * simDt) % 1;
     }
 
-    S._histAcc = (S._histAcc || 0) + dt;
+    S._histAcc = (S._histAcc || 0) + simDt;
     if (S._histAcc >= 1 || warm) {
       S._histAcc = 0;
       S.kwHist.push(Math.round(kw)); S.oeeHist.push(S.oee);
@@ -740,20 +743,56 @@
     }
   }
 
-  /* ---------------- loop ---------------- */
-  let last = 0, running = false;
+  /* ---------------- loop (fixed timestep + accumulator) ---------------- */
+  let last = 0, running = false, simAccum = 0, speedMult = SIM_SPEED_DEFAULT, paused = false, hiddenSince = 0;
+  const MAX_STEPS_PER_FRAME = 300;
+
+  function stepFixed() {
+    tick(FIXED_DT);
+    story();
+  }
+
   function loop(ts) {
     if (!running) return;
-    const dt = last ? Math.min(0.1, (ts - last) / 1000) : 0.016;
+    const realDt = last ? Math.min(0.1, (ts - last) / 1000) : 0.016;
     last = ts;
-    tick(dt);
-    story();
-    emit({ type: 'tick', dt });
+    if (!paused) simAccum += realDt * speedMult;
+    let steps = 0;
+    while (simAccum >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
+      simAccum -= FIXED_DT;
+      stepFixed();
+      steps++;
+    }
+    emit({ type: 'tick', dt: realDt, simDt: steps * FIXED_DT });
     requestAnimationFrame(loop);
   }
 
+  function bindVisibility() {
+    if (typeof document === 'undefined') return;
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        hiddenSince = performance.now();
+        paused = true;
+      } else {
+        if (hiddenSince) {
+          const gap = (performance.now() - hiddenSince) / 1000;
+          simAccum += Math.min(MAX_CATCHUP_REAL, gap) * speedMult;
+        }
+        hiddenSince = 0;
+        paused = false;
+      }
+    });
+  }
+  bindVisibility();
+
   g.Sim = {
-    SIM_SPEED, SCENARIOS, SHIFT_END, get seed() { return g.DFRng ? g.DFRng.seed : 0 },
+    FIXED_DT, SIM_SPEED: SIM_SPEED_DEFAULT, SPEED_OPTIONS, SCENARIOS, SHIFT_END, get seed() { return g.DFRng ? g.DFRng.seed : 0 },
+    get speed() { return speedMult; },
+    setSpeed(mult) {
+      if (!SPEED_OPTIONS.includes(mult)) return;
+      speedMult = mult;
+      emit({ type: 'speed', speed: mult });
+    },
     get state() { return S; },
     on(fn) { listeners.push(fn); },
     start() { if (!S) reset(); running = true; last = 0; requestAnimationFrame(loop); },
