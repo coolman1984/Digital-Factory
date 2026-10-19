@@ -111,4 +111,86 @@ pdm.lines.forEach(checkOeeLine);
 const elapsed = Date.now() - t0;
 assert(elapsed < 12000, 'headless runs complete in reasonable time (' + elapsed + ' ms)');
 
-console.log('sim.test.js: all checks passed (' + elapsed + ' ms)');
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+
+function loadWhatIfHarness(Worker) {
+  const perf = fs.readFileSync(path.join(__dirname, '../assets/js/app/perf.js'), 'utf8');
+  const slice = perf.slice(perf.indexOf('  const whatIfCache'), perf.indexOf('  function modelFromRun'));
+  const code = slice + '\nglobalThis.__runWhatIfShift = runWhatIfShift;\nglobalThis.__whatIfWorkerUrl = whatIfWorkerUrl;';
+  let syncCalls = 0;
+  const ctx = {
+    console, Promise, Map, setTimeout, clearTimeout,
+    window: {},
+    Sim: {
+      get seed() { return global.DFRng.seed; },
+      shiftSimCacheKey: Sim.shiftSimCacheKey,
+      runShiftSimulationCached(opt) {
+        syncCalls++;
+        return Sim.runShiftSimulationCached(opt);
+      }
+    }
+  };
+  ctx.globalThis = ctx;
+  if (Worker) ctx.Worker = Worker;
+  vm.createContext(ctx);
+  vm.runInContext(code, ctx);
+  return {
+    run: ctx.__runWhatIfShift,
+    workerUrl: ctx.__whatIfWorkerUrl,
+    syncCalls: () => syncCalls
+  };
+}
+
+(async function whatIfWorkerTests() {
+  const opt = { hours: 7.5, maxSteps: 2000, seedSalt: 0x77686174, pdm: false, vision: false, energy: false };
+  const expected = Sim.runShiftSimulationCached(opt);
+
+  const urlHarness = loadWhatIfHarness(class { constructor() {} });
+  const url = urlHarness.workerUrl();
+  assert(url.includes('seed=' + (Sim.seed >>> 0)), 'worker URL propagates Sim.seed');
+
+  const blocked = loadWhatIfHarness(class { constructor() { throw new Error('worker blocked'); } });
+  const blockedResult = await blocked.run(opt);
+  assert(blockedResult.out === expected.out, 'failed Worker construction falls back to sync result');
+  assert(blocked.syncCalls() >= 1, 'sync path invoked after constructor failure');
+
+  let workerInst;
+  const flaky = loadWhatIfHarness(class {
+    constructor(url) {
+      workerInst = this;
+      assert(url === urlHarness.workerUrl(), 'worker created with seeded URL');
+    }
+    postMessage(msg) { this._msg = msg; }
+    terminate() {}
+  });
+  const pending = flaky.run(opt);
+  workerInst.onerror({});
+  const recovered = await pending;
+  assert(recovered.out === expected.out, 'worker onerror recovers pending request via sync');
+  const afterFail = await flaky.run(Object.assign({}, opt, { seedSalt: 0x77686175 }));
+  assert(afterFail.out === Sim.runShiftSimulationCached(Object.assign({}, opt, { seedSalt: 0x77686175 })).out,
+    'requests after fatal worker failure use sync fallback');
+
+  let seededWorker;
+  const seeded = loadWhatIfHarness(class {
+    constructor(url) {
+      seededWorker = this;
+      const m = url.match(/[?&]seed=(\d+)/);
+      assert(m && (parseInt(m[1], 10) >>> 0) === (Sim.seed >>> 0), 'seed in worker URL matches page');
+    }
+    postMessage({ id, opt: o }) {
+      const result = Sim.runShiftSimulation(o);
+      this.onmessage({ data: { id, result } });
+    }
+    terminate() {}
+  });
+  const workerResult = await seeded.run(opt);
+  assert(workerResult.out === expected.out, 'seeded worker path matches synchronous simulation');
+})().then(() => {
+  console.log('sim.test.js: all checks passed (' + elapsed + ' ms)');
+}).catch(err => {
+  console.error(err);
+  process.exit(1);
+});
