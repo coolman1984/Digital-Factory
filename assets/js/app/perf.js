@@ -6,6 +6,24 @@
   const visionRng = DFRng.stream('vision');
 
   /* ---------------- leadership ---------------- */
+  const SIX_LOSSES = [
+    ['breakdown', 'Breakdowns'],
+    ['setupAdjust', 'Setup / adjust'],
+    ['minorStop', 'Minor stops'],
+    ['reducedSpeed', 'Reduced speed'],
+    ['startupRejects', 'Startup rejects'],
+    ['productionRejects', 'Production rejects']
+  ];
+  function renderLineLosses(lines) {
+    const box = $('#lineLosses');
+    if (!box) return;
+    box.innerHTML = lines.map(l => {
+      const ls = l.ledger.losses;
+      const tot = Object.values(ls).reduce((a, b) => a + b, 0) || 1;
+      const c = l.oeeComponents || { A: 0, P: 0, Q: 0 };
+      return `<div class="loss-line"><div class="row"><b>${esc(l.name)}</b><span class="muted small">A ${pct(c.A, 0)} · P ${pct(c.P, 0)} · Q ${pct(c.Q, 0)}</span></div><div class="loss-bars">${SIX_LOSSES.map(([k, label]) => `<div class="pb"><div class="row"><span>${label}</span><span class="muted">${fmt(ls[k])} s</span></div><div class="bar"><i style="width:${Math.min(100, ls[k] / tot * 100)}%"></i></div></div>`).join('')}</div></div>`;
+    }).join('');
+  }
   const PILLARS = [
     ['Connected machines and data foundation', 35, 80],
     ['Digital twin from warehouse to shipping', 15, 45],
@@ -48,6 +66,7 @@
       const warn = l.stations.some(s => s.state === 'warn' || s.state === 'maint');
       return `<tr><td><b>${esc(l.name)}</b><div class="small muted">${esc(l.sub)}</div></td><td><span class="chip ${halted ? 'chip-danger' : warn ? 'chip-warning' : 'chip-success'}">${halted ? 'Interrupted' : warn ? 'Attention' : 'Running'}</span></td><td class="num"><div style="display:flex;gap:8px;align-items:center">${pct(l.oee, 0)}<div class="mini-bar"><i style="width:${l.oee * 100}%"></i></div></div></td><td class="num">${pct(l.fpyNow)}</td><td class="num">${fmt(l.tph)}</td></tr>`;
     }).join('');
+    renderLineLosses(S.lines);
     if (rebuild || !$('#readiness').children.length) {
       $('#readiness').innerHTML = PILLARS.map(([n, now, pilot]) => `<div class="rd"><div class="row"><b>${esc(n)}</b><span class="muted">${now}% → <b class="hl">${pilot}%</b></span></div><div class="bar"><i class="pilot" style="width:${pilot}%"></i><i class="now" style="width:${now}%"></i></div></div>`).join('') +
         `<small>Grey: assumed starting point. Blue: target after the 12-week pilot. To be replaced by a joint assessment on site.</small>`;
