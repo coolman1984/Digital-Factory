@@ -1,4 +1,4 @@
-/* Digital Factory — Command room layout. Components, colours, type and dark mode come from the Samsung UI kit.
+/* Digital Factory — Command room layout. Components, colours, type and dark mode come from the brand UI kit.
    Same grammar as the website, run under ISA-101 discipline: a neutral, flat plant on the page ground with hairlines,
    bare readouts instead of icon tiles, and colour only where a machine, alarm or forecast is not normal. */
 :root { --side-w: 248px; --gap: 16px; }
