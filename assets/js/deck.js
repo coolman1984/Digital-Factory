@@ -13,13 +13,26 @@
     fitDemo();
   }
   function fitDemo() {
-    const wrap = $('#demoWrap'), f = $('#demoFrame');
+    const wrap = $('#demoWrap');
     if (!wrap) return;
     const k = Math.min(wrap.clientWidth / 1600, wrap.clientHeight / 900);
-    f.style.width = wrap.clientWidth / k + 'px';
-    f.style.height = wrap.clientHeight / k + 'px';
-    f.style.transform = `scale(${k})`;
+    for (const f of [$('#demoFrame'), $('#plantFrame')]) {
+      if (!f) continue;
+      f.style.width = wrap.clientWidth / k + 'px';
+      f.style.height = wrap.clientHeight / k + 'px';
+      f.style.transform = `scale(${k})`;
+    }
   }
+  // the demo slide shows the command room or the 3D live plant; both stay loaded once opened
+  document.querySelectorAll('[data-demo]').forEach(b => b.addEventListener('click', () => {
+    const plant = b.dataset.demo === 'plant';
+    document.querySelectorAll('[data-demo]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    const pf = $('#plantFrame');
+    if (plant && !pf.src) pf.src = pf.dataset.src;
+    pf.hidden = !plant; $('#demoFrame').hidden = plant;
+    $('#demoOpen').href = plant ? 'plant.html' : 'app.html';
+    requestAnimationFrame(fitDemo);
+  }));
 
   /* ---------- headlines enter word by word ---------- */
   slides.forEach(s => s.querySelectorAll('h1, h2').forEach(h => {
@@ -71,8 +84,7 @@
 
   /* ---------- theme: keep the embedded demo in step ---------- */
   addEventListener('themechange', e => {
-    const f = $('#demoFrame');
-    if (f && f.contentWindow && f.src) f.contentWindow.postMessage({ dfTheme: e.detail }, location.origin);
+    for (const f of [$('#demoFrame'), $('#plantFrame')]) if (f && f.contentWindow && f.src) f.contentWindow.postMessage({ dfTheme: e.detail }, location.origin);
   });
 
   /* ---------- ROI calculator ---------- */

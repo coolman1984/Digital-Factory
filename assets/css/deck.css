@@ -105,6 +105,10 @@ body { background: var(--bg); }
 .demo-slide { padding-bottom: 104px; }
 .demo-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
 .demo-head h2 { max-width: none; }
+.demo-acts { display: flex; align-items: center; gap: 12px; flex: none; }
+.demo-pick { display: inline-flex; padding: 4px; gap: 2px; border-radius: 14px; border: 1px solid var(--border-strong); background: var(--surface); }
+.demo-pick button { height: 48px; padding: 0 18px; border: 0; border-radius: 10px; background: transparent; font: inherit; font-size: 17px; font-weight: 650; color: var(--text-2); cursor: pointer; }
+.demo-pick button[aria-pressed="true"] { background: var(--text); color: var(--bg); }
 .demo-wrap { flex: 1; margin-top: 28px; border-radius: var(--r); overflow: hidden; border: 1px solid var(--border-strong); position: relative; background: var(--surface); } /* taste-skill-ignore: the frame of the embedded app */
 .demo-wrap iframe { position: absolute; left: 0; top: 0; width: 1600px; height: 900px; border: 0; transform-origin: 0 0; }
 

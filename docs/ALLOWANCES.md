@@ -15,3 +15,7 @@ Findings from the design checks that stay on purpose, with the reason. Everythin
 | Cramped padding on the cover | guide | False positive: the cover's text sits in the page wrap, 16–56px from each edge. |
 | Aphoristic cadence | guide | Short definitional sentences are the register of a glossary and a reference book. |
 | Long-page probe timeout | guide | The QA probe walks every element of a 290 KB book; run it with a longer CDP timeout (0 FAIL at 390 / 820 / 1440, light and dark). |
+| 13px secondary labels | live plant: readout sub-lines, value stream, 3D labels | The same operator-screen density as the command room; every primary number is 18–28px and every control is 44px on touch. |
+| Page weight about 1.2 MB | live plant | three.js (548 KB, bundled once, works offline) and the brand fonts; the 3D view needs it. Gzip on GitHub Pages brings the transfer to about a third. |
+| Em dashes in readouts | live plant | Used only as the "no value yet" placeholder in readouts, not in prose. |
+
