@@ -12,3 +12,6 @@ Findings from the design checks that stay on purpose, with the reason. Everythin
 | Gradient scrim on the photo band | website | Only to keep white text legible over the photograph, not decoration. |
 | 1px rules on table rows | deck: from/to table, architecture tiers, business-case inputs | Real tables and form rows; lists elsewhere are separated by space only. |
 | Backdrop blur on the top bar | command room | One sticky bar, as on the website. |
+| Cramped padding on the cover | guide | False positive: the cover's text sits in the page wrap, 16–56px from each edge. |
+| Aphoristic cadence | guide | Short definitional sentences are the register of a glossary and a reference book. |
+| Long-page probe timeout | guide | The QA probe walks every element of a 290 KB book; run it with a longer CDP timeout (0 FAIL at 390 / 820 / 1440, light and dark). |

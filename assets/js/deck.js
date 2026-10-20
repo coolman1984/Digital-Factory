@@ -55,17 +55,19 @@
     rail(n);
     $('#counter').textContent = `${n + 1} / ${slides.length}`;
     const s = slides[n];
-    if (s.dataset.id === 'demo') {
-      const f = $('#demoFrame');
-      if (!f.src) { f.src = f.dataset.src; f.addEventListener('load', () => window.focus()); }
-      requestAnimationFrame(fitDemo);
-    }
+    if (s.dataset.id === 'demo') { loadDemo(); requestAnimationFrame(fitDemo); }
     const note = s.querySelector('.sn');
     $('#notesTitle').textContent = `Speaker notes · ${n + 1}/${slides.length}`;
     $('#notesBody').textContent = note ? note.textContent.trim() : '';
     if (!fromHash && ready) history.replaceState(null, '', '#' + s.dataset.id);
   }
   const next = () => go(i + 1), prev = () => go(i - 1);
+  // the embedded command room; the live briefing also starts it in the background to read the plant
+  function loadDemo() {
+    const f = $('#demoFrame');
+    if (!f.src) { f.src = f.dataset.src; f.addEventListener('load', () => { if (slides[i].dataset.id === 'demo') window.focus(); }); }
+    return f;
+  }
 
   /* ---------- theme: keep the embedded demo in step ---------- */
   addEventListener('themechange', e => {
@@ -100,6 +102,7 @@
     else if (k === 'ArrowLeft' || k === 'PageUp') prev();
     else if (k === 'f' || k === 'F') toggleFs();
     else if (k === 'n' || k === 'N') $('#notes').classList.toggle('open');
+    else if ((k === 'b' || k === 'B') && window.Brief) Brief.toggle();
     window.focus();
   });
   addEventListener('keydown', e => {
@@ -111,6 +114,7 @@
     else if (e.key === 'f' || e.key === 'F') toggleFs();
     else if (e.key === 'n' || e.key === 'N') $('#notes').classList.toggle('open');
     else if ((e.key === 't' || e.key === 'T') && window.Theme) Theme.toggle();
+    else if ((e.key === 'b' || e.key === 'B') && window.Brief) Brief.toggle();
   });
   $('#next').onclick = next; $('#prev').onclick = prev;
   $('#notesBtn').onclick = () => $('#notes').classList.toggle('open');
@@ -134,6 +138,7 @@
     const k = slides.findIndex(s => s.dataset.id === id);
     go(k >= 0 ? k : (/^\d+$/.test(id) ? +id - 1 : 0), true);
   }
+  window.Deck = { go: n => go(typeof n === 'string' ? slides.findIndex(s => s.dataset.id === n) : n), refresh: () => go(i, true), loadDemo, current: () => slides[i].dataset.id };
   scale(); fromHash(); ready = true;
   setTimeout(() => { $('#help').style.opacity = 0; }, 4500);
 })();

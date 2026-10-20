@@ -88,7 +88,7 @@
   addEventListener('keydown', e => {
     if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
     // inside the presentation, slide keys belong to the deck
-    if (document.body.classList.contains('embed') && ['ArrowRight', 'ArrowLeft', 'PageDown', 'PageUp', 'f', 'F', 'n', 'N'].includes(e.key) && parent !== window) {
+    if (document.body.classList.contains('embed') && ['ArrowRight', 'ArrowLeft', 'PageDown', 'PageUp', 'f', 'F', 'n', 'N', 'b', 'B'].includes(e.key) && parent !== window) {
       e.preventDefault(); parent.postMessage({ dfDeckKey: e.key }, location.origin); return;
     }
     const k = e.key.toLowerCase();
