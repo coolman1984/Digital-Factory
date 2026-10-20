@@ -139,7 +139,7 @@
       agvs: [], tuggers: [], forklifts: [], people: [], techs: [], inbound: [], trucks: [], pallets: [], fgSlots: [], orders: [],
       events: [], alarms: [], recs: [], preds: [], audit: [], kpi: {}, hist: { t: [], kw: [], tph: [], oee: [], wip: [] },
       scen: {}, energy: { kwh: 0 }, made: { tv: 0, byModel: { M43: 0, M55: 0, M65: 0, M75: 0 } },
-      base: { M43: 320, M55: 950, M65: 610, M75: 210 },     // TVs packed between 06:00 and the model start
+      base: { M43: 260, M55: 830, M65: 490, M75: 150 },     // TVs packed between 06:00 and the model start
       rejects: { rework: [], smtRepair: [] }, saved: 0, leads: [], nodes: [], edges: [], layout: {}, sw: {}, holds: new Set(), svc: { orders: [], shipped: 0 }
     };
 
@@ -364,13 +364,13 @@
       for (const n of P.stations.filter(x => x.line === ML.id)) n.needs = n.needs.map(q => Object.assign(q, { b: ML.ls[q.k] }));
       const LC = P.lines['LCM' + i];
       LC.ls = {
-        OC: lsBuf(`LCM${i}:OC`, P.byId[`LCM${i}-Opencellload`], 'OC-' + s, { cap: 90, rop: 36, batch: 60, src: 'IMP:OC-' + s, feed: 'T4' }),
-        BLU: lsBuf(`LCM${i}:BLU`, P.byId[`LCM${i}-BLUassembly`], 'BLU-' + s, { cap: 90, rop: 36, batch: 60, src: 'IMP:BLU-' + s, feed: 'T4' })
+        OC: lsBuf(`LCM${i}:OC`, P.byId[`LCM${i}-Opencellload`], 'OC-' + s, { cap: 120, rop: 50, batch: 80, src: 'IMP:OC-' + s, feed: 'T4' }),
+        BLU: lsBuf(`LCM${i}:BLU`, P.byId[`LCM${i}-BLUassembly`], 'BLU-' + s, { cap: 120, rop: 50, batch: 80, src: 'IMP:BLU-' + s, feed: 'T4' })
       };
       P.byId[`LCM${i}-Opencellload`].needs = [{ k: 'OC', as: 'oc', b: LC.ls.OC }];
       P.byId[`LCM${i}-BLUassembly`].needs = [{ k: 'BLU', as: 'blu', b: LC.ls.BLU }];
       const SM = P.lines['SMD' + i], ss = SIZE(SM.model);
-      SM.ls = { PCB: lsBuf(`SMD${i}:PCB`, P.byId[`SMD${i}-Loader`], 'PCB-' + ss, { cap: 160, rop: 60, batch: 100, src: 'LOC:PCB-' + ss, feed: 'T5' }) };
+      SM.ls = { PCB: lsBuf(`SMD${i}:PCB`, P.byId[`SMD${i}-Loader`], 'PCB-' + ss, { cap: 220, rop: 80, batch: 140, src: 'LOC:PCB-' + ss, feed: 'T5' }) };
       P.byId[`SMD${i}-Loader`].needs = [{ k: 'PCB', as: 'pcb', b: SM.ls.PCB }];
     }
     // opening line-side stock from the stores
@@ -1400,6 +1400,15 @@
     function moveItems(from, to, n) { const it = from.items.splice(0, n); it.forEach(u => { u.loc = { k: 'ls', b: to }; }); to.items.push(...it); }
     P.t = START - 50 * 60;
     for (const s of P.stations) if (s.kind === 'cushion') s.procs = [];
+    // the aging racks are full when the model starts: TVs assembled earlier this shift, ageing in arrival order
+    for (const s of P.stations) if (s.kind === 'aging') {
+      const L = P.lines[s.line]; s.rack = [];
+      for (let i = 0; i < s.slots - 4; i++) {
+        const u = unit('tv', { model: L.model, line: L.id, born: P.t - 3000 + i * 10 });
+        u.steps.push({ st: L.stations[0].id, name: 'Assembly', line: L.id, t0: u.born, t1: u.born + 1500, ok: true, note: 'Assembled before the model started' });
+        u.agedFrom = P.t - AGE + 30 + i * (AGE / s.slots); u.loc = { k: 'aging', st: s }; stepRec(u, s); s.rack.push(u);
+      }
+    }
     // the coating ovens run around the clock: each starts the morning full of chassis parts
     for (const s of P.stations) if (s.kind === 'oven') for (let i = 0; i < s.slots; i++) s.procs.push({ left: (i + 1) * s.base, lot: `${s.line}-CT-${pad(Math.floor((START - 3600) / 1200), 3)}`, cure: 199 });
     while (P.t < START) step(0.5);

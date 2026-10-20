@@ -79,7 +79,7 @@
     const X = {
       DEPTS, SYSTEMS, CUSTOMERS, msgs: [], msgSeq: 0, po: [], pp: [], iqc: [], ecn: [], blocked: [], svc: { orders: [], shipped: 0, backorders: 0 },
       fin: { revenue: 0, cogs: 0, shipments: 0, units: 0, poValue: 0, scrap: 0, rework: 0, overtime: 0, expedite: 0 },
-      flows: {}, sop: null, mps: null, mrp: null, decisions: [], stats: { perMin: 0 }, block: {}, dec: new Map()
+      t0: P.t, flows: {}, sop: null, mps: null, mrp: null, decisions: [], stats: { perMin: 0 }, block: {}, dec: new Map()
     };
     let soSeq = 5002810, poSeq = 4500918200, ppSeq = 1000452, dlvSeq = 80061400, invSeq = 90044100, svcSeq = 6100340, iqcSeq = 30012800, inSeq = 7310;
 
@@ -671,14 +671,14 @@
     }
 
     /* ----- clock ----- */
-    let lastMin = Math.floor(P.t / 60), lastSvc = P.t, lastRate = P.t, rateBase = X.msgSeq;
+    let lastMin = Math.floor(P.t / 60), lastSvc = P.t;
     function second() {
       const mn = Math.floor(P.t / 60);
       if (mn !== lastMin) {
         lastMin = mn;
         flush(mn % 5 === 0); replenish(); orderBook(); svcReplenish(); decisions();
         if (P.t - lastSvc > rnd(420, 900)) { lastSvc = P.t; svcOrder(); }
-        if (P.t - lastRate >= 300) { X.stats.perMin = (X.msgSeq - rateBase) / ((P.t - lastRate) / 60); lastRate = P.t; rateBase = X.msgSeq; }
+        { let n = 0; for (const m of X.msgs) { if (P.t - m.t > 600) break; n++; } X.stats.perMin = n / Math.max(1, Math.min(10, (P.t - X.t0) / 60)); }
         if (mn % 15 === 0) mrpRun();
         E.emit('erp');
       }
