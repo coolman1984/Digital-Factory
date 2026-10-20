@@ -30,6 +30,41 @@
     <aside class="sn" hidden>Open with confidence: "We are not here to show ideas on paper. We will show you a smart factory running right now." Introduce yourself and the team in one sentence. Say the meeting has three parts: the vision, a live demo, and a 12-week pilot on one line. End by naming the decision you will ask for: approving one pilot line.</aside>
   </section>
 
+  <!-- LIVE BRIEFING 1: the plant at the pinned moment, built from command-room data (assets/js/briefing.js) -->
+  <section class="slide brief" data-id="briefing">
+    <div class="brief-empty" data-b-empty>
+      <h2 class="r d1">The plant, at the moment you choose.</h2>
+      <p class="lead r d2">No moment has been captured yet. Press <b>Read the plant now</b> to start the plant and capture this second, or press <b>Send to deck</b> in the command room at the moment you want to show.</p>
+      <div class="ctas r d3"><button type="button" class="btn btn-primary btn-lg" data-b-read>Read the plant now <span data-icon="live"></span></button><button type="button" class="btn btn-secondary btn-lg" data-b-open>Choose a moment</button></div>
+    </div>
+    <div class="brief-full" data-b-full hidden>
+      <p class="stamp" data-b="stamp"></p>
+      <h2 data-b="headline"></h2>
+      <p class="lead" data-b="lead"></p>
+      <div class="readouts" data-b="readouts"></div>
+      <div class="brief-lines" data-b="lines"></div>
+    </div>
+    <aside class="sn" hidden>The briefing agent writes this slide from the moment you pinned. Read the headline first: it is the one thing the plant needs from leadership now. Then the six readouts, left to right. If a line shows an amber or red mark, name it and say what the agents are already doing about it. The numbers stay fixed until you pin another moment.</aside>
+  </section>
+
+  <!-- LIVE BRIEFING 2: what needs a decision at that moment -->
+  <section class="slide brief" data-id="briefing-actions">
+    <div class="brief-empty" data-b-empty>
+      <h2 class="r d1">What needs a decision, <span class="hl">at the moment you choose.</span></h2>
+      <p class="lead r d2">This slide lists the decisions waiting, the open incidents and the machines at risk, with the money at stake. Capture a moment first.</p>
+    </div>
+    <div class="brief-full" data-b-full hidden>
+      <p class="stamp" data-b="stamp"></p>
+      <h2 data-b="ask"></h2>
+      <div class="cols c3 brief-cols">
+        <div><h3>Decisions waiting</h3><ul class="blist" data-b="decisions"></ul></div>
+        <div><h3>Incidents and machine risk</h3><ul class="blist" data-b="risks"></ul></div>
+        <div class="key"><h3>Briefing agent recommends</h3><p class="rec" data-b="rec"></p><p class="note" data-b="done"></p></div>
+      </div>
+    </div>
+    <aside class="sn" hidden>Lead with the recommendation in the right column, then show the evidence: the decisions ranked by money at stake and the risks behind them. If nothing is waiting, say so plainly: the agents are handling routine work, and that is the point.</aside>
+  </section>
+
   <!-- 2 · EXECUTIVE SUMMARY: the whole meeting on a blue field -->
   <section class="slide field tone-blue" data-id="summary">
     <h2 class="r d1">One line, twelve weeks, <span class="hl">a measured result.</span></h2>
@@ -73,7 +108,7 @@
     </div>
     <p class="lead r d4"><b>Digital Factory is a local, fast way to put these pillars to work on one Plant EG-01 line, starting this quarter.</b></p>
     <p class="src-note r d4">Source: public 2026 announcements by leading global electronics manufacturers on AI-driven factories by 2030.</p>
-    <aside class="sn" hidden>Keep it short. Say: "Leading electronics makers have set 2030 as the year their factories become AI-driven. Our proposal is a practical way for this plant to get there early, on one line, with local engineers." Point at the green line under each card: everything is already working in the demo.</aside>
+    <aside class="sn" hidden>Keep it short. Say: "Leading electronics makers have set 2030 as the year their factories become AI-driven. Our proposal is a practical way for this plant to get there early, on one line, with local engineers." Point at the blue line under each pillar: everything is already working in the demo.</aside>
   </section>
 
   <!-- 5 · WHAT THE BEST ACHIEVE: four figures on the ink field -->
@@ -306,22 +341,37 @@
 </div>
 </div>
 
-<div class="counter" id="counter">1 / 17</div>
+<div class="counter" id="counter">1 / 19</div>
 <div class="controls">
   <button type="button" id="prev" aria-label="Previous slide"><span data-icon="chevronLeft"></span></button>
   <button type="button" id="next" aria-label="Next slide"><span data-icon="chevronRight"></span></button>
   <button type="button" data-theme-toggle title="Light / dark (T)"><span class="ti"></span><span class="tl sr-only">Light</span></button>
+  <button type="button" id="briefBtn" aria-label="Live briefing (B)" aria-expanded="false" aria-controls="bpanel"><span data-icon="live"></span></button>
   <button type="button" id="notesBtn" aria-label="Speaker notes (N)"><span data-icon="clipboard"></span></button>
   <button type="button" id="fs" aria-label="Full screen (F)"><span data-icon="maximize"></span></button>
   <a href="./" aria-label="Home"><span data-icon="dashboard"></span></a>
 </div>
+<div class="bpanel" id="bpanel" role="dialog" aria-modal="false" aria-labelledby="bpTitle" hidden>
+  <div class="bp-head"><h2 id="bpTitle">Live briefing</h2><button type="button" class="bp-x" id="bpClose" aria-label="Close live briefing"><span data-icon="x"></span></button></div>
+  <p class="bp-sub">The briefing slides are built from one moment of the command room. Follow it live, or pin the moment you want and the numbers stay fixed.</p>
+  <div class="bp-mode" role="radiogroup" aria-label="Briefing mode">
+    <label><input type="radio" name="bpMode" value="pinned" checked> Pinned moment</label>
+    <label><input type="radio" name="bpMode" value="live"> Follow live</label>
+  </div>
+  <div class="bp-row"><div><b>Command room now</b><span id="bpLive">Not running</span></div><button type="button" class="btn btn-primary btn-sm" id="bpPinLive">Pin this moment</button></div>
+  <label class="bp-pick"><span>Or choose a stored moment</span><select class="input" id="bpMoments" aria-label="Stored moments"></select></label>
+  <div class="bp-row"><div><b>Pinned</b><span id="bpPinned">Nothing pinned yet</span></div><button type="button" class="btn btn-secondary btn-sm" id="bpClear">Clear</button></div>
+  <div class="bp-acts"><button type="button" class="btn btn-secondary btn-sm" id="bpRead">Read the plant now</button><button type="button" class="btn btn-secondary btn-sm" id="bpGo">Show the briefing</button></div>
+  <p class="bp-note">Plant data is simulated. Moments are kept in this browser only.</p>
+</div>
 <div class="notes" id="notes"><p class="nt" id="notesTitle">Speaker notes</p><div id="notesBody"></div></div>
-<div class="help" id="help">← → navigate · T light / dark · F full screen · N speaker notes</div>
+<div class="help" id="help">← → navigate · T light / dark · F full screen · N speaker notes · B live briefing</div>
 
 <script src="assets/kit/icons.js"></script>
 <script src="assets/js/theme.js"></script>
 <script src="assets/js/motion.js"></script>
 <script src="assets/js/twin-hero.js"></script>
 <script src="assets/js/deck.js"></script>
+<script src="assets/js/briefing.js"></script>
 </body>
 </html>
