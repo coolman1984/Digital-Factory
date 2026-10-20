@@ -31,6 +31,14 @@ The website sets the grammar; the presentation and the command room follow it.
 - **Presentation.** Ink headlines with a muted second clause (`--text-3`). Content in ruled columns (2px ink rule, heading, short text), never icon-tile cards. Colour-field slides (`.tone-blue`, `.tone-ink`) redefine the tokens locally, and the footer, rail and page ground follow the active field. Real photographs on the situation, solution and team slides. The 12-week plan is the website's proportional bar.
 - **Command room (ISA-101).** Flat panels on the ground, no shadows, no icon tiles. A page head per view: the view's name and one live sentence about what the plant needs now. KPIs are one readout strip split by 1px gaps, numbers in ink. The floor is drawn on the blueprint grid: rails, white stations, an andon light above each, the website's reticle on the selected station. Colour appears only for an abnormal state (warning, stopped, below benchmark, money at risk); a normal state is ink or a quiet square mark.
 
+## The live plant (plant.html)
+The command room's grammar in three dimensions: a white architectural model with ink edges on the blueprint grid (dark: graphite model, light edges).
+Machines, racks and vehicles are neutral; colour appears only for an abnormal state: an amber or red frame on the floor under a machine or a
+line-side stock, the andon light, and an amber or red tag above it. Brand blue marks the selected object (corner reticle) and the Flow arrows.
+Products keep their real colours at small scale (green boards, kraft cartons, lit test patterns on burn-in) so the plant reads as real.
+Readouts on top as one hairline strip, the detail panel on the right, the value stream as a hairline strip at the bottom. One ease-out curve for
+camera moves (1.1–1.3 s). Phones: shadows off, lower pixel ratio, readouts and views as horizontal scrollers.
+
 ## The guide (guide.html)
 A book in the same grammar: a blue cover field, ink chapter rules, ruled tables, one blue. Arabic is the default and reads right to left in
 IBM Plex Sans Arabic with zero tracking and 1.9–2.0 leading; English in Inter. `data-lang` on `<html>` shows Arabic, English or both side by side.

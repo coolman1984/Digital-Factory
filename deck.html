@@ -156,10 +156,16 @@
   <section class="slide demo-slide" data-id="demo">
     <div class="demo-head">
       <h2 class="r d1">The command room, running <span class="hl">right now.</span></h2>
-      <a class="btn btn-primary btn-lg r d2" href="app.html" target="_blank" rel="noopener">Open full screen <span data-icon="maximize"></span></a>
+      <div class="demo-acts r d2">
+        <div class="demo-pick" role="group" aria-label="Which live view">
+          <button type="button" data-demo="room" aria-pressed="true">Command room</button>
+          <button type="button" data-demo="plant" aria-pressed="false">Live plant 3D</button>
+        </div>
+        <a class="btn btn-primary btn-lg" id="demoOpen" href="app.html" target="_blank" rel="noopener">Open full screen <span data-icon="maximize"></span></a>
+      </div>
     </div>
-    <div class="demo-wrap r d2" id="demoWrap"><iframe id="demoFrame" title="Digital Factory live demo" data-src="app.html?embed=1"></iframe></div>
-    <aside class="sn" hidden>The most important part. Open the demo full screen. (1) Show the command room and plant OEE. (2) Open Scenarios and run "Bearing wear on Mounter B". Wait for the alarm: "The AI saw this failure about 40 hours early." (3) Let him click "Schedule repair" himself. When "EGP 1.6M saved" appears, pause for two seconds. (4) Open the Leadership view. (5) Open the copilot and click "Summarize this shift".</aside>
+    <div class="demo-wrap r d2" id="demoWrap"><iframe id="demoFrame" title="Digital Factory live demo" data-src="app.html?embed=1"></iframe><iframe id="plantFrame" title="Plant EG-01 live in 3D" data-src="plant.html?embed=1" hidden></iframe></div>
+    <aside class="sn" hidden>The most important part. Open the demo full screen. (1) Show the command room and plant OEE. (2) Open Scenarios and run "Bearing wear on Mounter B". Wait for the alarm: "The AI saw this failure about 40 hours early." (3) Let him click "Schedule repair" himself. When "EGP 1.6M saved" appears, pause for two seconds. (4) Open the Leadership view. (5) Open the copilot and click "Summarize this shift". (6) Switch to "Live plant 3D": the same kind of plant as a moving 3D model. Click any TV to show its passport, then run a drill and let him watch the cause travel down the line.</aside>
   </section>
 
   <!-- CAPABILITIES: an index you can open -->
