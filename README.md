@@ -6,6 +6,7 @@ Static web app: no install, no server, works offline. Light and dark themes, bui
 | Page | What it is |
 |---|---|
 | `index.html` | Website: the vision, the industry's 2030 direction, the capabilities and the 12-week pilot |
+| `plant.html` | **Live plant in 3D**: the whole plant as a moving, unit-level twin: warehouses, SMT, supermarket, assembly, burn-in, QC, packing, finished goods, docks, AGVs, forklifts, trucks and people; select anything; every unit has a passport; eight drills with AI recommendations that act on the plant |
 | `app.html` | **Command room**: live plant floor, AI agent crew, alarms, control, predictions, root cause, scenarios, leadership, maintenance, quality, energy, what-if, copilot |
 | `deck.html` | **Presentation**: 19 slides with the live demo embedded, a live briefing built from a pinned plant moment, an editable business case and speaker notes |
 | `guide.html` | **Reference guide**, Arabic and English: the idea, how it works, every screen, decision and scenario, the live briefing, full translations of the website and the presentation, and a searchable glossary of every term |
@@ -20,6 +21,10 @@ All plant data is simulated. Plant EG-01 is fictional; no real company or city i
 **Live briefing**: in the command room press **Send to deck** (`P`), or ask the copilot "Prepare the briefing", at the moment you want to show;
 slides 2 and 3 of the presentation are then written from that moment and stay fixed. In the presentation, `B` opens the panel to
 follow the plant live, pick a stored moment, or *Read the plant now*. Moments live in this browser's storage only.
+
+**Live plant** (`plant.html`): `Space` pause · `1` `2` `3` speed 1× / 4× / 16× · `G` guided tour · `/` find a serial · `Esc` clear.
+Start the guided tour, then let the guest select a TV and press *Follow in 3D*; *Run a drill* shows a cause travelling through the plant.
+Deep links: `plant.html#st:L1-MounterB`, `#unit:<serial>`, `#drill:bearing`, `#tour`.
 
 **Command room** (`app.html`):
 - `Scenarios` (or `7`): run one of ten real-world drills, or leave *Auto-play story* on.
@@ -54,6 +59,8 @@ assets/js/        sim.js (plant engine: lines, alarms, agents, forecasts, scenar
                   twin-hero.js (the live SMT line drawn on the website and title slide) · site.js
                   briefing.js (the deck's live briefing) · guide.js · guide-terms.js (glossary and icon list for the guide)
 assets/img/       open-licence factory photos, credits in assets/img/CREDITS.md
+assets/js/plant/  engine (unit-level plant model, AI layer) · scene (three.js view) · ui (panels, drills, tour)
+assets/vendor/    three.js r170, bundled once (see assets/vendor/three/README.md)
 assets/js/app/    core · floor · command · intel (agents, alarms, predictions, root cause, scenarios, control) · perf · copilot · briefing · main
 ```
 
