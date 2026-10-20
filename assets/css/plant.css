@@ -256,3 +256,13 @@ body.embed .pl-find, body.embed .pl-actions a { display: none; }
   .pl .lnk { min-height: 44px; display: inline-flex; align-items: center; }
   .back { height: 44px; }
 }
+
+/* start-up and sync */
+.pl-boot { position: fixed; inset: 0; z-index: 90; display: grid; place-content: center; justify-items: center; gap: 14px; background: var(--bg); transition: opacity .5s var(--ease-out); }
+.pl-boot.done { opacity: 0; pointer-events: none; }
+.pl-boot .logo-mark { width: 40px; height: 40px; }
+.pl-boot p { margin: 0; color: var(--text-2); font-size: 15px; font-weight: 600; }
+.pl-sync { position: absolute; left: 50%; top: 14px; translate: -50% 0; z-index: 5; margin: 0; padding: 8px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); font-size: 13px; font-weight: 650; color: var(--text-2); }
+.menu-q { align-items: center; }
+.menu-q span { font-size: 13px; color: var(--text-2); font-weight: 600; margin-right: 4px; }
+.menu-q .btn[aria-pressed="true"] { background: var(--surface-3); color: var(--text); }

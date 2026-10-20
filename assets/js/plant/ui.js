@@ -1,6 +1,6 @@
-/* Digital Factory — Live plant page: wires the engine and the 3D view to the readouts, the detail panel, the value
-   stream, drills, the guided tour and the serial search. All plant data is simulated. */
-(function () {
+/* Digital Factory — Live plant page: wires the plant hub (the shared twin), the agent crew and the 3D view to the readouts,
+   the detail panel, the value stream, drills, the guided tour and the serial search. All plant data is simulated. */
+(async function () {
   'use strict';
   const $ = s => document.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -10,11 +10,19 @@
   const pct = (v, d = 1) => (v * 100).toFixed(d) + '%';
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const E = PlantEngine.create();
+  const T = window.Twin;
+  const boot = $('#boot');
+  await T.start();
+  const E = T.E;
   const P = E.P;
+  let booted = false;
+  T.on(t => { if (t === 'world' && booted) location.reload(); });   // re-synced from another tab: rebuild the view on the new world
+  window.Agents.start();
   const narrow = matchMedia('(max-width: 900px)').matches;
-  const V = PlantScene.create($('#gl'), E, { lowPower: narrow });
+  const qm = location.search.match(/[?&]q=(low|medium|high)/);
+  const V = PlantScene.create($('#gl'), E, { lowPower: narrow || (qm && qm[1] === 'low'), quality: qm ? qm[1] : undefined, tick: () => T.frame() });
   const { mins, clock, clockS } = E;
+  const A = window.Agents;
   const line = id => P.lines[id];
 
   /* ---------------- words for states and kinds ---------------- */
@@ -49,7 +57,11 @@
     const kill = () => { node.classList.remove('show'); setTimeout(() => node.remove(), 300); };
     node.querySelector('.toast-x').onclick = kill; setTimeout(kill, 5200);
   }
-  E.on((t, d) => { if (t === 'toast') toast(d.msg, d.level); if (t === 'focus') focusRef(d); });
+  A.on((t, c) => {
+    if (t === 'awaiting') toast(`${CaseUI.agentName(c.agent)} needs you: ${c.title}`, 'warning');
+    if (t === 'acted' && c.autonomy === 'auto') toast(`${CaseUI.agentName(c.agent)} acted on its own: ${c.decision.label}`, 'info');
+    if (t === 'closed' && c.decision && c.outcome && c.outcome.ok) toast(`${c.id} verified: ${c.outcome.verdict}`, 'success');
+  });
 
   /* ---------------- refs: what a link points at ---------------- */
   function focusRef(arg) {
@@ -79,15 +91,23 @@
 
   /* ---------------- selection and the detail panel ---------------- */
   let sel = null, kpiView = null;
+  let chainCase = null;
+  function showCase(c) {
+    chainCase = c ? c.id : null;
+    const pts = c && c.chain && c.chain.length ? V.showChain(c.chain, c.state === 'closed' ? null : undefined) : V.showChain(null);
+    if (c && c.chain && c.chain[0]) { const info = V.refInfo(c.chain[0]); if (info) V.flyTo(Object.assign({}, info, { r: Math.max(10, (pts && pts.length > 2 ? 9 : 5)) })); }
+  }
   function select(ref, o = {}) {
     if (ref && ref.startsWith('kpi:')) { kpiView = ref.slice(4); sel = null; V.select(null, { fly: false }); render(true); return; }
+    if (ref && ref.startsWith('case:')) { kpiView = null; sel = ref; V.select(null, { fly: false }); showCase(A.caseById(ref.slice(5))); render(true); if (narrow) $('#insp').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); return; }
     kpiView = null; sel = ref;
+    if (chainCase && ref) { const c = A.caseById(chainCase); if (!c || !(c.chain || []).includes(ref)) showCase(null); }
     V.select(ref, o);
     render(true);
     if (o.focusPanel && narrow) $('#insp').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
   }
   V.on((t, d) => {
-    if (t === 'select') { if (d !== sel) { sel = d; kpiView = null; render(true); } }
+    if (t === 'select') { if (d !== sel && !(sel && sel.startsWith('case:') && !d)) { sel = d; kpiView = null; render(true); } }
     if (t === 'hover') hover(d);
   });
 
@@ -107,9 +127,9 @@
   insp.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.dataset.ref) return select(b.dataset.ref, { fly: true });
-    if (b.dataset.act) { E.apply(b.dataset.act); render(true); return; }
-    if (b.dataset.dismiss) { E.dismiss(b.dataset.dismiss); render(true); return; }
-    if (b.dataset.back !== undefined) { select(null); V.select(null, { fly: false }); return; }
+    if (b.dataset.openCase) return select('case:' + b.dataset.openCase);
+    if (b.dataset.chain) { const c = A.caseById(b.dataset.chain); if (c) showCase(c); return; }
+    if (b.dataset.back !== undefined) { showCase(null); select(null); V.select(null, { fly: false }); return; }
     if (b.dataset.follow !== undefined) { V.setFollow(!V.follow); if (V.follow && sel) V.select(sel, { follow: true }); render(true); return; }
     if (b.dataset.kpi) return select('kpi:' + b.dataset.kpi);
   });
@@ -118,12 +138,8 @@
   const kv = rows => `<dl class="kv">${rows.filter(Boolean).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
   const sect = (title, body, note = '') => body ? `<section class="is"><h3>${esc(title)}${note ? `<span>${note}</span>` : ''}</h3>${body}</section>` : '';
   const evRows = list => list.length ? `<ol class="ev">${list.map(e => `<li class="${e.level}"><time>${e.time}</time><span><b>${esc(e.src)}</b> ${esc(e.msg)}</span></li>`).join('')}</ol>` : '<p class="quiet">Nothing logged yet.</p>';
-  function recCards(list) {
-    if (!list.length) return '';
-    return list.map(r => `<article class="rec ${r.level}"><p class="rec-who">${esc(r.agent)} agent · ${r.time}</p><h4>${esc(r.title)}</h4><p>${esc(r.body)}</p>
-      <div class="rec-act">${(r.actions || []).map((a, i) => `<button type="button" class="btn btn-sm ${i === 0 && !a.id.startsWith('focus') ? 'btn-primary' : 'btn-secondary'}" data-key="${esc(a.id)}" ${a.id.startsWith('focus') ? `data-ref="${esc(refFromFocus(a.id.slice(6)))}"` : `data-act="${esc(a.id)}"`}>${esc(a.label)}</button>`).join('')}
-      <button type="button" class="btn btn-sm btn-ghost" data-dismiss="${esc(r.key)}" data-key="x-${esc(r.key)}">Dismiss</button></div></article>`).join('');
-  }
+  const caseCards = (list, o = {}) => list.map(c => CaseUI.card(c, o)).join('');
+  const casesFor = ref => A.S.cases.filter(c => c.state !== 'closed' && (c.ref === ref || (c.chain || [])[0] === ref));
   function refFromFocus(a) {
     if (a.startsWith('ORD:')) return 'order:' + a.slice(4);
     if (a.startsWith('SM:') || a.startsWith('RM:') || a.startsWith('LS:')) return 'buf:' + a;
@@ -135,13 +151,14 @@
   /* plant now: what needs a decision, what happens next, orders, live events */
   function summary() {
     const down = P.stations.filter(s => s.state === 'down');
-    const crit = P.recs.filter(r => r.level === 'crit');
+    const wait = A.waiting(), work = A.open().filter(c => c.state !== 'awaiting' && c.state !== 'advise');
     const parts = [];
     if (down.length) parts.push(`<b class="bad">${down.map(s => `${esc(s.name)} (${esc(line(s.line) ? line(s.line).name : '')})`).join(', ')} stopped.</b>`);
-    if (P.preds[0] && P.preds[0].eta < 1800 && !P.preds[0].covered) parts.push(`${esc(P.preds[0].text)} in <b>${mins(P.preds[0].eta)}</b>.`);
+    if (P.preds[0] && P.preds[0].eta < 1800) parts.push(`${esc(P.preds[0].text)} in <b>${mins(P.preds[0].eta)}</b>.`);
     if (!parts.length) parts.push(`All five lines running. <b>${fmt(P.kpi.units)}</b> units packed today against a plan of ${fmt(P.kpi.plan)}.`);
-    if (P.recs.length) parts.push(`${P.recs.length} ${P.recs.length === 1 ? 'decision is' : 'decisions are'} waiting${crit.length ? `, ${crit.length} urgent` : ''}.`);
-    else parts.push('No decision waiting: the agents are watching 1,120 signals.');
+    if (wait.length) parts.push(`${wait.length} ${wait.length === 1 ? 'decision waits' : 'decisions wait'} for you${wait.some(c => c.sev === 'crit') ? ', urgent' : ''}.`);
+    if (work.length) parts.push(`The agents are working on ${work.length} ${work.length === 1 ? 'case' : 'cases'}.`);
+    if (!wait.length && !work.length) parts.push('No decision waiting: six agents are watching the plant.');
     return parts.join(' ');
   }
   function ordersTable(list = P.orders) {
@@ -152,10 +169,14 @@
     }).join('')}</tbody></table>`;
   }
   function plantNow() {
-    const preds = P.preds.slice(0, 6).map(p => `<li class="${p.covered ? '' : p.late || p.eta < 600 ? 'bad' : p.eta < 1800 ? 'warn' : ''}"><button type="button" class="lnk" data-ref="${esc(refFromFocus(p.ref))}">${esc(p.text)}</button><small>${esc(p.sub)}${p.covered ? ' · covered' : ''}</small><b>${p.late ? '+' + mins(p.delay) : 'in ' + mins(p.eta)}</b></li>`).join('');
+    const preds = P.preds.slice(0, 6).map(p => `<li class="${p.late || p.eta < 600 ? 'bad' : p.eta < 1800 ? 'warn' : ''}"><button type="button" class="lnk" data-ref="${esc(p.ref)}">${esc(p.text)}</button><small>${esc(p.sub)}</small><b>in ${mins(p.eta)}</b></li>`).join('');
+    const wait = A.waiting(), work = A.open().filter(c => c.state !== 'awaiting' && c.state !== 'advise');
+    const done = A.S.cases.filter(c => c.state === 'closed').slice(0, 3);
     return `<header class="ih home"><h2>Plant now</h2><p class="say">${summary()}</p></header>
-      ${sect('Needs a decision', recCards(P.recs) || '<p class="quiet">Nothing to decide. Start a drill to see the AI at work.</p>')}
-      ${sect('What happens next', preds ? `<ol class="next">${preds}</ol>` : '<p class="quiet">No stock-out, failure or late order expected. Every line-side stock has its next AGV delivery planned.</p>', 'if nobody acts')}
+      ${sect('Needs you', wait.length ? caseCards(wait, { decide: true, noLast: true }) : '<p class="quiet">Nothing to decide. Start a drill, or wait: the agents also find real problems on their own.</p>')}
+      ${work.length ? sect('Agents at work', caseCards(work), `${work.length} open`) : ''}
+      ${sect('What happens next', preds ? `<ol class="next">${preds}</ol>` : '<p class="quiet">No stock-out or late order expected. Every line-side stock has its next AGV delivery planned.</p>', 'if nobody acts')}
+      ${done.length ? sect('Recently closed', caseCards(done)) : ''}
       ${sect('Orders today', ordersTable())}
       ${sect('Live events', evRows(P.events.slice(0, 9)))}`;
   }
@@ -201,15 +222,16 @@
     const prev = L && L.stations[L.stations.indexOf(s) - 1], next = L && L.stations[L.stations.indexOf(s) + 1];
     const feeds = s.needs.map(n => { const b = n.b; const lv = E.level(b); const m = b.mission; return `<li>${link('buf:' + b.id, b.label)}<span>${n.frac ? Math.round(lv) + '%' : fmt(lv)} ${n.frac ? 'reel left' : 'on hand'} · ${b.rate > 1e-4 ? 'lasts ' + mins((n.frac ? lv : lv) / b.rate) : 'not used now'}${m ? ` · ${m.agv ? `${m.agv.id} bringing ${m.qty}` : 'AGV requested'}` : ''}</span></li>`; }).join('');
     const now = s.kind === 'burnin' ? '' : s.procs.map(p => `<li>${unitLink(p.u)}<span>${p.done ? 'done, waiting to move on' : `${Math.max(0, p.left).toFixed(0)} s left`}</span></li>`).join('');
-    const recs = P.recs.filter(r => r.ref === s.id);
+    const recs = casesFor('st:' + s.id);
     const evs = P.events.filter(e => e.ref === s.id).slice(0, 6);
-    const rul = s.state === 'down' ? `<b class="bad">failed${s.fault ? ' at ' + clock(s.fault.at) : ''}</b> · ${s.tech ? (s.tech.state === 'repairing' ? `repair ${mins(Math.max(0, s.repair))} left` : 'technician on the way') : 'waiting for a technician'}` : s.state === 'maint' ? `planned work · ${mins(Math.max(0, s.repair))} left` : s.degrade > 0 ? `<b class="bad">${mins((s.health - 22) / s.degrade)}</b>` : s.health < 60 ? '<b class="warn">service soon</b>' : 'no failure expected this shift';
+    const wear = A.S.cases.find(c => c.kind === 'wear' && c.station === s.id && c.state !== 'closed' && c.diagnosis && c.diagnosis.rul);
+    const rul = s.state === 'down' ? `<b class="bad">failed${s.fault ? ' at ' + clock(s.fault.at) : ''}</b> · ${s.tech ? (s.tech.state === 'repairing' ? `repair ${mins(Math.max(0, s.repair))} left` : 'technician on the way') : 'waiting for a technician'}` : s.state === 'maint' ? `planned work · ${mins(Math.max(0, s.repair))} left` : wear ? `<b class="warn">about ${mins(wear.diagnosis.rul.p50 * 60)}</b> <small>P10 ${mins(wear.diagnosis.rul.p10 * 60)} · Maintenance agent</small>` : 'no failure predicted by the Maintenance agent';
     const who = [s.operator ? `${esc(s.operator.name)} · ${esc(s.operator.role || 'Operator')}` : '', s.tech ? `${esc(s.tech.name)} · ${s.tech.state === 'walking' ? 'on the way' : 'repairing'}` : ''].filter(Boolean).join('<br>');
     const cyc = s.kind === 'burnin' ? '18 min TV · 10 min phone' : s.kind === 'reflow' ? `${s.base} s per board (${s.slots} in the oven)` : `${s.base} s nominal${L && L.speed !== 1 ? ` · line at ${Math.round(L.speed * 100)}%` : ''}`;
     return head(s.name, `${esc(L ? L.name : 'Support')} · ${esc(KINDN[s.kind] || s.kind)}`, `<p class="ih-st">${chip(s.state === 'idle' && L && L.tripped ? 'tripped' : s.state, s.why)} <small>for ${mins(P.t - s.since)}</small></p>`)
-      + (recs.length ? sect('Needs a decision', recCards(recs)) : '')
+      + (recs.length ? sect('Agent cases', caseCards(recs, { decide: true })) : '')
       + sect('Live signals', sensorsBlock(s))
-      + sect('Condition', kv([['Health', `${s.health.toFixed(0)}%`], ['Failure forecast', rul], ['Short stops this shift', fmt(s.stops || 0)], ['Repairs this shift', fmt(s.repairs || 0)]]))
+      + sect('Condition', kv([['Condition index', `${s.health.toFixed(0)}%`], ['Failure forecast', rul], ['Short stops this shift', fmt(s.stops || 0)], ['Repairs this shift', fmt(s.repairs || 0)]]))
       + sect('Output', kv([['Cycle', cyc], ['Units done', fmt(s.counters.made)], ['Rejected here', fmt(s.counters.bad)], ['Line OEE', L ? `${pct(L.oee)} = ${pct(L.avail, 0)} × ${pct(L.perf, 0)} × ${pct(L.qual, 1)}` : '—']]) + timeSplit(s), 'since 08:17')
       + (now ? sect('Now inside', `<ul class="li">${now}</ul>`) : '')
       + (feeds ? sect('Fed by', `<ul class="li">${feeds}</ul>`) : '')
@@ -271,9 +293,9 @@
   function orderDetail(id) {
     const o = P.orders.find(o => o.id === id); if (!o) return plantNow();
     const pals = P.pallets.filter(p => p.truck && p.truck.order === o).length;
-    const recs = P.recs.filter(r => r.ref === 'ORD:' + o.id);
+    const recs = casesFor('order:' + o.id);
     return head(`Order ${o.id}`, `${esc(o.customer)} · ${fmt(o.qty)} ${o.product === 'tv' ? 'TVs (TV-55 UHD)' : 'phones (Phone X6)'}`)
-      + (recs.length ? sect('Needs a decision', recCards(recs)) : '')
+      + (recs.length ? sect('Agent cases', caseCards(recs, { decide: true })) : '')
       + sect('Delivery', kv([['Due', clock(o.due)], ['Ready (forecast)', o.eta ? clock(o.eta) : '—'], ['Status', esc(o.state === 'open' ? (o.risk > 120 ? `late by about ${mins(o.risk)}` : 'on track') : o.state)], ['Shipped', fmt(o.shipped)], ['Truck', o.truck ? link('truck:' + o.truck.id, `${o.truck.id} at ${o.truck.dock.id}`) : `arrives ${clock(o.due - 75 * 60)}`], ['Pallets loaded', fmt(pals)]]));
   }
   function truckDetail(t) {
@@ -286,8 +308,13 @@
       + sect('Where', kv([['Now', p.where === 'build' ? 'Being built at the palletizer' : p.where === 'pickup' ? 'Wrapped, waiting for a forklift' : p.where === 'fork' ? 'On a forklift' : p.where === 'fg' ? 'Finished-goods bay' : p.where === 'truck' ? `On ${p.truck ? p.truck.id : 'a truck'}` : p.where], ['Completed', p.built ? clock(p.built) : '—'], p.truck && ['Order', link('order:' + p.truck.order.id, p.truck.order.id)]]))
       + sect('Units on it', `<p class="sns">${p.units.slice(0, 12).map(unitLink).join(' ')}${p.units.length > 12 ? ` +${p.units.length - 12}` : ''}</p>`);
   }
+  function caseDetail(id) {
+    const c = A.caseById(id); if (!c) return plantNow();
+    return head(c.title, `${esc(CaseUI.agentName(c.agent))} · case ${esc(c.id)}`, c.chain && c.chain.length > 1 ? `<div class="ia"><button type="button" class="btn btn-secondary btn-sm" data-chain="${esc(c.id)}" data-key="chain">${icon('layers')}Show the cause path in 3D</button></div>` : '') + CaseUI.detail(c, { noTitle: true });
+  }
   function detail(ref) {
     const [k, id] = ref.split(/:(.+)/);
+    if (k === 'case') return caseDetail(id);
     if (k === 'st') { const s = P.byId[id]; return s ? stationDetail(s) : plantNow(); }
     if (k === 'buf') return bufferDetail(id);
     if (k === 'agv') { const a = P.agvs.find(a => a.id === id); return a ? agvDetail(a) : plantNow(); }
@@ -370,7 +397,7 @@
     $('#kAl').textContent = fmt(P.alarms.length);
     const p1 = P.alarms.filter(a => a.prio === 1).length, p2 = P.alarms.filter(a => a.prio === 2).length;
     $('#kAl').className = p1 ? 'bad' : p2 ? 'warn' : '';
-    $('#kAlS').textContent = `${p1} P1 · ${p2} P2 · ${P.recs.length} decisions`;
+    $('#kAlS').textContent = `${p1} P1 · ${p2} P2 · ${A.waiting().length} decisions`;
     const h = Math.floor(P.t / 3600) % 24;
     $('#shift').textContent = h >= 6 && h < 14 ? 'Shift A · 06–14' : h >= 14 && h < 22 ? 'Shift B · 14–22' : 'Shift C · 22–06';
   }
@@ -431,9 +458,16 @@
     for (const id in lineLabels) { const L = line(id); lineLabels[id].textContent = `${L.name} · ${fmt(L.tph)}/h${L.state !== 'run' ? ' · ' + (STATE[L.state] || L.state).toLowerCase() : ''}`; lineLabels[id].className = 'lb lb-line ' + SCLS(L.state); }
     for (const s of P.stations) {
       const pill = pills.get(s.id), long = P.t - s.since;
-      const show = s.state === 'down' || s.state === 'maint' || s.state === 'changeover' || (s.state === 'starved' && long > 45) || (s.state === 'micro' && long > 60) || (s.degrade > 0);
+      // what the agents know, not the model's hidden truth: a wear case shows its own remaining-life estimate
+      const wc = A.S.cases.find(c => c.kind === 'wear' && c.station === s.id && c.state !== 'closed');
+      const vib = s.sens.vib && s.sens.vib > 4.5;
+      const show = s.state === 'down' || s.state === 'maint' || s.state === 'changeover' || (s.state === 'starved' && long > 45) || (s.state === 'micro' && long > 60) || !!wc || vib;
       pill.hidden = !show;
-      if (show) { const st = s.degrade > 0 && s.state !== 'down' ? 'warn' : s.state; pill.textContent = `${s.name} · ${s.degrade > 0 && s.state !== 'down' ? 'failure in ' + mins((s.health - 22) / s.degrade) : (STATE[s.state] || s.state).toLowerCase()}`; pill.className = 'lb lb-pill ' + SCLS(st === 'warn' ? 'warn' : st); }
+      if (show) {
+        const early = (wc || vib) && s.state !== 'down' && s.state !== 'maint';
+        pill.textContent = `${s.name} · ${early ? (wc && wc.diagnosis && wc.diagnosis.rul ? 'failure in about ' + mins(wc.diagnosis.rul.p50 * 60) : 'vibration ' + (s.sens.vib || 0).toFixed(1) + ' mm/s') : (STATE[s.state] || s.state).toLowerCase()}`;
+        pill.className = 'lb lb-pill ' + SCLS(early ? 'warn' : s.state);
+      }
     }
     for (const a of P.agvs) agvPills.get(a.id).hidden = !a.fault;
     for (const b of Object.values(E.LS)) {
@@ -486,30 +520,34 @@
   }
   $$('.pl-overlay [data-overlay]').forEach(b => b.addEventListener('click', () => setOverlay(b.dataset.overlay)));
   setOverlay('status');
-  function setSpeed(v) {
-    E.setSpeed(v);
-    $$('.pl-speed [data-speed]').forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.speed === v)));
-  }
+  function setSpeed(v) { T.setSpeed(v); }
+  const speedUi = v => $$('.pl-speed [data-speed]').forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.speed === v)));
+  T.on((t, d) => { if (t === 'speed') speedUi(d); if (t === 'catching') { $('#sync').hidden = !d; } });
+  speedUi(T.speed);
   $$('.pl-speed [data-speed]').forEach(b => b.addEventListener('click', () => setSpeed(+b.dataset.speed)));
   addEventListener('themechange', e => V.setTheme(e.detail));
 
   /* ---------------- drills ---------------- */
   const drills = $('#drills'), drillBtn = $('#drillBtn');
-  drills.innerHTML = `<p class="menu-h">Start a real-world drill. Watch the cause travel through the plant and the AI respond.</p>` + E.SCENARIOS.map(s => `<button type="button" class="drill" data-drill="${s.id}"><b>${esc(s.title)}</b><span>${esc(s.what)}</span><small>${esc(s.chain)}</small></button>`).join('')
-    + `<div class="menu-f"><button type="button" class="btn btn-secondary btn-sm" data-ff="600">Fast-forward 10 min</button><button type="button" class="btn btn-secondary btn-sm" data-ff="1800">30 min</button></div>`;
+  drills.innerHTML = `<p class="menu-h">Start a real-world drill. The agents are not told: they find it in the plant's data, simulate the options and come to you.</p>` + E.SCENARIOS.map(s => `<button type="button" class="drill" data-drill="${s.id}"><b>${esc(s.title)}</b><span>${esc(s.what)}</span><small>${esc(s.chain)}</small></button>`).join('')
+    + `<div class="menu-f"><button type="button" class="btn btn-secondary btn-sm" data-ff="600">Fast-forward 10 min</button><button type="button" class="btn btn-secondary btn-sm" data-ff="1800">30 min</button><button type="button" class="btn btn-ghost btn-sm" data-reset>New shift (reset)</button></div>
+      <div class="menu-f menu-q" role="group" aria-label="Graphics"><span>Graphics</span>${['high', 'medium', 'low'].map(q => `<button type="button" class="btn btn-ghost btn-sm" data-q="${q}" aria-pressed="${V.quality === q}">${q === 'high' ? 'Best' : q === 'medium' ? 'Balanced' : 'Fast'}</button>`).join('')}<button type="button" class="btn btn-ghost btn-sm" data-cine aria-pressed="false">Cinematic</button></div>`;
   const openMenu = v => { drills.hidden = !v; drillBtn.setAttribute('aria-expanded', String(v)); if (v) drills.querySelector('button').focus(); };
   drillBtn.addEventListener('click', () => openMenu(drills.hidden));
   drills.addEventListener('click', e => {
-    const d = e.target.closest('[data-drill]'), ff = e.target.closest('[data-ff]');
+    const d = e.target.closest('[data-drill]'), ff = e.target.closest('[data-ff]'), qb = e.target.closest('[data-q]');
     if (d) {
-      E.trigger(d.dataset.drill); openMenu(false);
+      T.trigger(d.dataset.drill); openMenu(false);
       const sc = E.SCENARIOS.find(s => s.id === d.dataset.drill);
-      toast(`Drill started: ${sc.title}`, 'info');
-      const target = { bearing: 'st:L1-MounterB', agv: null, lot: 'st:L3-Panelload', reflow: 'st:L2-Reflow', inbound: 'buf:RM:panel', power: 'util:UTIL-TX', rush: null, absent: 'st:L3-Backcover' }[sc.id];
-      if (sc.id === 'agv') { const a = P.agvs.find(a => a.fault); select(a ? 'agv:' + a.id : null); }
+      toast(`Drill started: ${sc.title}. Watch the agents pick it up.`, 'info');
+      const target = { bearing: 'st:L1-MounterB', agv: null, lot: 'st:L3-Panelload', reflow: 'st:L2-Reflow', robot: 'st:L4-Screwrobot', inbound: 'buf:RM:panel', power: 'util:UTIL-TX', peak: 'util:UTIL-CH2', heat: 'util:UTIL-CH1', safety: 'st:L4-Screwrobot', rush: null, absent: 'st:L3-Backcover' }[sc.id];
+      if (sc.id === 'agv') setTimeout(() => { const a = P.agvs.find(x => x.fault); select(a ? 'agv:' + a.id : null); }, 400);
       else if (target) select(target, { focusPanel: true }); else select(null);
     }
-    if (ff) { E.fastForward(+ff.dataset.ff); openMenu(false); toast(`Moved ${+ff.dataset.ff / 60} minutes ahead`, 'info'); render(true); }
+    if (ff) { T.fastForward(+ff.dataset.ff); openMenu(false); toast(`Moving ${+ff.dataset.ff / 60} minutes ahead`, 'info'); }
+    if (e.target.closest('[data-reset]')) T.reset();
+    if (qb) { V.setQuality(qb.dataset.q); $$('[data-q]', drills).forEach(x => x.setAttribute('aria-pressed', String(x === qb))); }
+    if (e.target.closest('[data-cine]')) { const b = e.target.closest('[data-cine]'); V.setCinematic(!V.cinematic); b.setAttribute('aria-pressed', String(V.cinematic)); }
   });
   document.addEventListener('click', e => { if (!drills.hidden && !e.target.closest('.pl-drill')) openMenu(false); });
 
@@ -532,7 +570,7 @@
     { go: () => { const u = [...P.units].find(u => u.type === 'tv' && u.loc && u.loc.k === 'seg' && u.loc.seg.from && u.loc.seg.from.line === 'L3'); if (u) select('unit:' + u.sn, { follow: true }); else V.view(P.layout.ZONES[2].view); }, t: 'Follow one TV', s: 'Its passport records every station, operator, part serial and test result, from the panel lot to the truck.' },
     { go: () => { V.setFollow(false); V.view(P.layout.ZONES[3].view); }, t: 'Burn-in and final QC', s: 'Every TV shows a test pattern for 18 minutes, every phone runs a battery cycle for 10, then a camera checks the screen.' },
     { go: () => V.view(P.layout.ZONES[4].view), t: 'Finished goods and docks', s: 'Forklifts store pallets and load the truck for each order. The AI forecasts when every order will be ready.' },
-    { go: () => { E.trigger('bearing'); select('st:L1-MounterB'); }, t: 'Now a problem', s: 'Mounter B’s spindle bearing starts to wear. The AI predicts the failure and shows what happens to both assembly lines if nobody acts. Your decision is in the panel.', last: true }
+    { go: () => { T.trigger('bearing'); select('st:L1-MounterB'); }, t: 'Now a problem', s: 'Mounter B’s spindle bearing starts to wear. Nobody tells the agents: the Maintenance agent finds the vibration trend, plays three options forward on copies of this plant and brings you its recommendation.', last: true }
   ];
   function tourStep(i) {
     if (!tour) return;
@@ -554,7 +592,7 @@
   addEventListener('keydown', e => {
     if (e.target.closest('input, textarea')) { if (e.key === 'Escape') e.target.blur(); return; }
     if (embed && ['ArrowRight', 'ArrowLeft', 'PageDown', 'PageUp', 'f', 'F', 'n', 'N', 'b', 'B'].includes(e.key)) { e.preventDefault(); parent.postMessage({ dfDeckKey: e.key }, location.origin); return; }
-    if (e.key === ' ' && !e.target.closest('button')) { e.preventDefault(); setSpeed(P.paused ? 1 : 0); }
+    if (e.key === ' ' && !e.target.closest('button')) { e.preventDefault(); setSpeed(T.paused ? 1 : 0); }
     else if (e.key === '1') setSpeed(1); else if (e.key === '2') setSpeed(4); else if (e.key === '3') setSpeed(16);
     else if (e.key === 't' || e.key === 'T') window.Theme && Theme.toggle();
     else if (e.key === 'g' || e.key === 'G') tour ? stopTour() : startTour();
@@ -566,9 +604,9 @@
   function fromHash() {
     const h = decodeURIComponent(location.hash.slice(1));
     if (!h) return;
-    if (h.startsWith('drill:')) { E.trigger(h.slice(6)); return; }
+    if (h.startsWith('drill:')) { T.trigger(h.slice(6)); return; }
     if (h === 'tour') return startTour();
-    if (/^(st|buf|agv|unit|order|zone|util):/.test(h)) setTimeout(() => select(h), 600);
+    if (/^(st|buf|agv|unit|order|zone|util|case):/.test(h)) setTimeout(() => select(h), 600);
   }
 
   /* ---------------- loop ---------------- */
@@ -579,8 +617,14 @@
     if (acc > 0.5) { acc = 0; kpis(); vstream(); labelsTick(); }
     if (accR > 0.9) { accR = 0; render(); }
   });
+  A.on(t => { if (t === 'change' || t === 'step' || t === 'awaiting' || t === 'closed') { if (sel && sel.startsWith('case:')) render(); } });
+  CaseUI.bind(insp, () => setTimeout(() => render(true), 60));
   kpis(); vstream(); labelsTick(); render(true);
   fromHash();
   addEventListener('hashchange', fromHash);
-  window.Plant = { E, V, select };   // for the console and the presentation
+  booted = true;
+  if (boot) { boot.classList.add('done'); setTimeout(() => boot.remove(), 600); }
+  if (T.restored === 'tab') toast('Joined the plant already running in another tab', 'info');
+  else if (T.restored === 'saved') toast(`Continuing the plant from your last visit (${clock(P.t)}). Drills menu → New shift to start over.`, 'info');
+  window.Plant = { E, V, select, T, A };   // for the console and the presentation
 })();

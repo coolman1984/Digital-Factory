@@ -11,9 +11,11 @@
   <link rel="stylesheet" href="assets/kit/brand-ui.css">
   <link rel="stylesheet" href="assets/css/theme.css">
   <link rel="stylesheet" href="assets/css/plant.css">
+  <link rel="stylesheet" href="assets/css/agents.css">
 </head>
 <body class="pl">
   <div id="toast-root" aria-live="polite"></div>
+  <div class="pl-boot" id="boot" aria-hidden="true"><span class="logo-mark"></span><p>Starting the twin of Plant EG-01…</p></div>
 
   <header class="pl-top">
     <a class="logo" href="./" aria-label="Digital Factory home"><span class="logo-mark" aria-hidden="true"></span><span class="logo-word">Digital Factory</span></a>
@@ -59,6 +61,7 @@
       <div class="pl-labels" id="labels" aria-hidden="true"></div>
       <div class="pl-tip" id="tip" role="tooltip" hidden></div>
       <div class="pl-caption" id="caption" aria-live="polite" hidden></div>
+      <p class="pl-sync" id="sync" role="status" hidden>Catching up with the plant…</p>
 
       <nav class="pl-views" aria-label="Plant views">
         <button type="button" data-view="overview" aria-pressed="true">Whole plant</button>
@@ -100,6 +103,10 @@
   <script src="assets/js/theme.js"></script>
   <script src="assets/vendor/three/three.iife.min.js"></script>
   <script src="assets/js/plant/engine.js"></script>
+  <script src="assets/js/plant/whatif.js"></script>
+  <script src="assets/js/plant/hub.js"></script>
+  <script src="assets/js/agents/agents.js"></script>
+  <script src="assets/js/agents/cases-ui.js"></script>
   <script src="assets/js/plant/scene.js"></script>
   <script src="assets/js/plant/ui.js"></script>
 </body>
