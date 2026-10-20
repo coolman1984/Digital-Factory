@@ -19,3 +19,6 @@ Findings from the design checks that stay on purpose, with the reason. Everythin
 | Page weight about 1.2 MB | live plant | three.js (548 KB, bundled once, works offline) and the brand fonts; the 3D view needs it. Gzip on GitHub Pages brings the transfer to about a third. |
 | Em dashes in readouts | live plant | Used only as the "no value yet" placeholder in readouts, not in prose. |
 
+| Footnote numbers under 14px | website: superscript source markers | Superscripts are footnote markers; the sources they point to are 14px. |
+| Small text on the theme label | deck: "Light" / "Dark" on the theme button | False positive: the label is screen-reader only (`sr-only`); nothing is drawn. |
+| Inline glossary links under 44px | guide: term links inside sentences and lists | Links inside running text, the inline exception of WCAG 2.5.8; every control, chip, contents link and footer link is 44px on touch. |

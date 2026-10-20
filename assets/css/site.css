@@ -19,7 +19,7 @@ body { overflow-x: clip; background: var(--bg); color: var(--text); font-size: v
 .display { font-size: var(--t-display); line-height: .98; font-weight: 800; letter-spacing: -0.045em; }
 .h2 { font-size: var(--t-h2); line-height: 1.02; font-weight: 800; letter-spacing: -0.04em; max-width: 16ch; }
 .sub { color: var(--text-2); font-size: var(--t-body); line-height: 1.7; max-width: 58ch; margin-top: 24px; }
-.src { color: var(--text-3); font-size: var(--t-sm); line-height: 1.6; margin-top: 40px; max-width: 110ch; }
+.src { color: var(--text-3); font-size: 14px; line-height: 1.6; margin-top: 40px; max-width: 110ch; }
 sup { font-size: .7em; }
 
 /* hero */
@@ -47,8 +47,8 @@ sup { font-size: .7em; }
 .r-oee { left: 3%; bottom: 4%; }
 .r-units { left: calc(3% + 160px); bottom: 4%; }
 .r-clock { right: 3%; bottom: 4%; text-align: right; }
-.twin figcaption { color: var(--text-3); font-size: var(--t-sm); padding-top: 14px; }
-.twin figcaption a { display: inline-block; padding: 12px 0; }
+.twin figcaption { color: var(--text-3); font-size: 14px; padding-top: 14px; }
+.twin figcaption a { display: inline-block; min-height: 44px; padding: 12px 0; }
 
 /* sections */
 .block { padding: var(--section) 0 0; }
@@ -146,9 +146,10 @@ sup { font-size: .7em; }
 .word:hover .icon { transform: translateX(.08em); }
 .after { color: var(--text-2); margin-top: 28px; font-size: var(--t-body); }
 
-footer { color: var(--text-2); font-size: var(--t-sm); padding: 32px 0 48px; line-height: 1.8; border-top: 1px solid var(--border); }
+footer { color: var(--text-2); font-size: 14px; padding: 32px 0 48px; line-height: 1.8; border-top: 1px solid var(--border); }
 footer .wrap { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
 footer .wrap > div { max-width: 62ch; }
+footer a { display: inline-block; min-height: 44px; padding: 10px 0; line-height: 24px; }
 
 @media (max-width: 980px) {
   .links { display: none; }
