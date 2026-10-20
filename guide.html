@@ -264,7 +264,7 @@
             <li><b>المسار:</b> اسم المصنع ثم اسم الشاشة الحالية.</li>
             <li><b>شارة <span class="ui">Live</span>:</b> تعني أن ما تراه هو المصنع الآن، وتتحول إلى <span class="ui">Replay</span> باللون الكهرماني أثناء استخدام آلة الزمن.</li>
             <li><b>الساعة:</b> وقت المصنع المحاكى في الوردية A.</li>
-            <li><span class="ui"><span data-icon="tv"></span>Send to deck</span>: يثبّت هذه اللحظة في إحاطة العرض التقديمي (الفصل 9).</li>
+            <li><span class="ui"><span data-icon="tv"></span>Send to deck</span>: يثبّت هذه اللحظة في إحاطة العرض التقديمي (الفصل 10).</li>
             <li><span class="ui"><span data-icon="history"></span>Time machine</span>: يفتح شريط إعادة العرض.</li>
             <li><b>الوضع الفاتح أو الداكن</b>، ثم <span class="ui primary">Ask copilot</span> لفتح المساعد الذكي.</li>
           </ul>
@@ -406,7 +406,7 @@
         <div class="en" lang="en" dir="ltr">
           <h3>3 · Control</h3>
           <p>The screen opens with a notice: every change is simulated on the twin first, needs confirmation and is written to the audit trail; in a real plant the panel follows the plant's control and safety rules (read-only during the pilot). Then one card per line: name and nominal speed, state (Running, Interrupted or Stopped), a speed slider from 80% to 115%, and a preview of three numbers: units per hour, <a class="t" data-term="fpy">yield</a> and power in kW, with the difference from now in green if better and red if worse.</p>
-          <p>Chapter 7 explains the mechanics and rules of this screen in detail. The <b>Change log</b> is at the bottom.</p>
+          <p>Chapter 8 explains the mechanics and rules of this screen in detail. The <b>Change log</b> is at the bottom.</p>
         </div>
       </div></div>
 
@@ -417,7 +417,7 @@
         </div>
         <div class="en" lang="en" dir="ltr">
           <h3>4 · AI agents</h3>
-          <p>An introductory paragraph, then a card for each of the six agents: name, scope and status; the three-position <a class="t" data-term="autonomy">autonomy</a> control (Advise, Approve, Auto); the reasoning log showing the agent's conclusions in time order; and its actions and value today. The card frame turns amber while the agent waits for approval and blue while it acts. Then the <b>Audit trail</b>: time, who (you or an agent), action and detail. Chapter 5 covers the agents in depth.</p>
+          <p>An introductory paragraph, then a card for each of the six agents: name, scope and status; the three-position <a class="t" data-term="autonomy">autonomy</a> control (Advise, Approve, Auto); the reasoning log showing the agent's conclusions in time order; and its actions and value today. The card frame turns amber while the agent waits for approval and blue while it acts. Then the <b>Audit trail</b>: time, who (you or an agent), action and detail. Chapter 6 covers the agents in depth.</p>
         </div>
       </div></div>
 
@@ -482,7 +482,7 @@
         <div class="en" lang="en" dir="ltr">
           <h3>7 · Scenarios</h3>
           <p>A lab of ten real-world events run on the twin, never touching the real plant. Each has a card: title, area, responsible agent, What happens, What the AI does, and a <span class="ui primary">Run scenario</span> button. Running one takes you to the command room to watch it; the button reads Running….</p>
-          <p>At the top: the <b>Auto-play story</b> switch, which runs seven scenarios in sequence every four real minutes, and <span class="ui">Reset plant</span> to return the plant to its start. Chapter 6 covers each scenario in detail.</p>
+          <p>At the top: the <b>Auto-play story</b> switch, which runs seven scenarios in sequence every four real minutes, and <span class="ui">Reset plant</span> to return the plant to its start. Chapter 7 covers each scenario in detail.</p>
         </div>
       </div></div>
 
@@ -635,11 +635,256 @@
       </div></div>
     </section>
 
-    <!-- 5 · THE AI AGENT CREW -->
+    <!-- 5 · THE LIVE PLANT IN 3D -->
+    <section class="ch" id="ch-plant">
+      <div class="ch-head bi">
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 5</p><h2>المصنع الحي ثلاثي الأبعاد</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 5</p><h2>The live plant in 3D</h2></div>
+      </div>
+      <div class="bi">
+        <div class="ar" lang="ar" dir="rtl">
+          <p class="lede">يعرض المصنع الحي المصنع EG-01 بالكامل نموذجًا ثلاثي الأبعاد متحركًا: خطَّي <a class="t" data-term="smt">SMT</a>، وخطَّي تجميع، والتعتيق، والفحص النهائي، والتغليف، والمخازن، وست <a class="t" data-term="agv">مركبات موجّهة آليًا</a>، ورافعتين شوكيتين، والشاحنات، وثلاثة عشر شخصًا. وخلافًا لغرفة التحكم، يحاكي هذا <a class="t" data-term="twin">التوأم الرقمي</a> كل وحدة على حدة: فكل لوحة وتلفزيون وهاتف كيان له رقم تسلسلي، يتحرك وينتظر ويُستهلك ويُختبر ويُغلَّف ويُشحن. لا شيء هنا فيديو أو حركة مكررة؛ فما تراه هو نموذج المصنع وهو يعمل.</p>
+          <p>يُفتح من قائمة الموقع <span class="ui">Live plant 3D</span>، أو من الشريط الجانبي لغرفة التحكم <span class="ui"><span data-icon="layers"></span>Live plant · 3D</span>، أو داخل شريحة العرض الحي في العرض التقديمي عبر المفتاح <span class="ui">Live plant 3D</span>. وتسير ساعته بالزمن الحقيقي افتراضيًا (1×).</p>
+        </div>
+        <div class="en" lang="en" dir="ltr">
+          <p class="lede">The live plant shows the whole of Plant EG-01 as a moving 3D model: two <a class="t" data-term="smt">SMT</a> lines, two assembly lines, burn-in, final QC, packing, the warehouses, six <a class="t" data-term="agv">AGVs</a>, two forklifts, the trucks and thirteen people. Unlike the command room, this <a class="t" data-term="twin">digital twin</a> models every unit: each board, TV and phone is an object with a serial number that moves, waits, is consumed, tested, packed and shipped. Nothing is a video or a loop; what you see is the plant model running.</p>
+          <p>Open it from the website menu <span class="ui">Live plant 3D</span>, from the command room sidebar <span class="ui"><span data-icon="layers"></span>Live plant · 3D</span>, or inside the presentation's live-demo slide with the <span class="ui">Live plant 3D</span> switch. Its clock runs in real time by default (1×).</p>
+        </div>
+      </div>
+
+      <div class="sub" id="s-p3d-zones"><div class="bi">
+        <div class="ar" lang="ar" dir="rtl">
+          <h3>أرض المصنع: سبع مناطق</h3>
+          <div class="tbl-wrap"><table class="tbl">
+            <tr><th>المنطقة</th><th>ما يحدث فيها</th><th>ما يستحق المتابعة</th></tr>
+            <tr><td>مخزن المواد الخام</td><td>رفوف شاشات التلفزيون مصنفة حسب <a class="t" data-term="lot">دفعة</a> المورد، واللوحات الخام، وبكرات المكونات، والأغطية الخلفية، وهياكل الهواتف وشاشاتها، والكراتين. وبابا استلام في الجدار الغربي.</td><td>عدد الخانات الممتلئة يتبع المخزون الفعلي، وتتراجع شاحنة الوارد إلى بابها طوال مدة التفريغ.</td></tr>
+            <tr><td>صالة SMT</td><td>خطان يطبعان معجون اللحام ويفحصانه، ثم يركّبان المكونات، ويلحمانها في <a class="t" data-term="reflow">فرن إعادة الصهر</a> ذي المناطق الثماني، ثم يفحصانها بـ<a class="t" data-term="aoi">AOI</a>. الخط 1 ينتج اللوحات الرئيسية، والخط 2 لوحات القدرة.</td><td>تتحرك رؤوس <a class="t" data-term="mounter">ماكينات التركيب</a> أثناء التشغيل، وتسير اللوحات على القضبان، ويضيء مصباح الحالة فوق كل ماكينة.</td></tr>
+            <tr><td><a class="t" data-term="supermarket">سوبرماركت اللوحات</a></td><td>رفّان لمجلات اللوحات بين SMT والتجميع، يُسحب منهما بترتيب الوارد أولًا يُصرف أولًا.</td><td>مجلة واحدة لكل عشر لوحات. وعندما يبلغ مخزون أحد الخطوط <a class="t" data-term="rop">نقطة إعادة الطلب</a>، تنقل مركبة الدفعة التالية.</td></tr>
+            <tr><td>صالة التجميع</td><td>خط التجميع A ينتج أجهزة التلفزيون (تحميل الشاشة، وتركيب اللوحات، وروبوت المسامير، والغطاء الخلفي، و<a class="t" data-term="fct">الاختبار الوظيفي</a>)، وخط التجميع B ينتج الهواتف.</td><td>أذرع الروبوتات، والعاملون، وأجهزة التلفزيون على حواملها، والمخزون المجاور لكل محطة.</td></tr>
+            <tr><td>الاختبار والتغليف</td><td>رفوف <a class="t" data-term="burnin">التعتيق</a> (36 تلفزيونًا و48 هاتفًا)، ثم الفحص النهائي بالكاميرا، ثم التغليف، ثم التحميل على المنصات.</td><td>كل تلفزيون في التعتيق يعرض نمط اختبار، وطاولة إعادة التشغيل، والمنصات وهي تُبنى.</td></tr>
+            <tr><td>المنتج التام والأرصفة</td><td>المنصات في خانات أرضية، وثلاثة أرصفة شحن جنوبًا.</td><td>تخزّن الرافعات الشوكية المنصات وتحمّل شاحنة كل طلب، وتصل الشاحنات قبل موعد التسليم بنحو 75 دقيقة.</td></tr>
+            <tr><td>المرافق وورشة الصيانة</td><td>المحول، وضاغطا هواء، ومبردان، وفنيا صيانة جاهزان.</td><td>يمشي الفني إلى الماكينة المتوقفة، وتظهر قدرة المرافق في عرض الطاقة.</td></tr>
+          </table></div>
+        </div>
+        <div class="en" lang="en" dir="ltr">
+          <h3>The plant floor: seven zones</h3>
+          <div class="tbl-wrap"><table class="tbl">
+            <tr><th>Zone</th><th>What happens there</th><th>What to watch</th></tr>
+            <tr><td>Raw-material warehouse</td><td>Racks of TV panels by supplier <a class="t" data-term="lot">lot</a>, bare boards, component reels, back covers, phone housings and displays, cartons. Two receiving doors on the west wall.</td><td>The number of filled bays follows the real stock; an inbound truck backs into its door while it unloads.</td></tr>
+            <tr><td>SMT hall</td><td>Two lines print solder paste, inspect it, place components, solder them in an eight-zone <a class="t" data-term="reflow">reflow oven</a> and inspect with <a class="t" data-term="aoi">AOI</a>. Line 1 makes main boards, Line 2 power boards.</td><td><a class="t" data-term="mounter">Mounter</a> gantries move while running, boards travel the rails, and the andon light above each machine shows its state.</td></tr>
+            <tr><td><a class="t" data-term="supermarket">Board supermarket</a></td><td>Two racks of board magazines between SMT and assembly, first in, first out.</td><td>One magazine per ten boards. When a line-side stock reaches its <a class="t" data-term="rop">reorder point</a>, an AGV takes the next batch.</td></tr>
+            <tr><td>Assembly hall</td><td>Final Assembly A builds TVs (panel load, board fit, screw robot, back cover, <a class="t" data-term="fct">function test</a>); Final Assembly B builds phones.</td><td>Robot arms, operators, TVs on their carriers, and the stock beside each station.</td></tr>
+            <tr><td>Test &amp; pack</td><td><a class="t" data-term="burnin">Burn-in</a> racks (36 TVs, 48 phones), final camera QC, packing and palletizing.</td><td>Every TV on burn-in shows a test pattern; the rework bench; pallets being built.</td></tr>
+            <tr><td>Finished goods and docks</td><td>Pallets in floor bays; three shipping docks to the south.</td><td>Forklifts store pallets and load the truck for each order; trucks arrive about 75 minutes before the due time.</td></tr>
+            <tr><td>Utilities and maintenance shop</td><td>Transformer, two compressors, two chillers; two technicians on call.</td><td>A technician walks to a stopped machine; utilities show their power in the Energy view.</td></tr>
+          </table></div>
+        </div>
+      </div></div>
+
+      <div class="sub" id="s-p3d-screen"><div class="bi">
+        <div class="ar" lang="ar" dir="rtl">
+          <h3>الشاشة</h3>
+          <h4>الشريط العلوي</h4>
+          <p>ساعة المصنع، ثم السرعة: <span class="ui"><span data-icon="pause"></span></span> للإيقاف المؤقت، و<span class="ui">1×</span> للزمن الحقيقي، و<span class="ui">4×</span> و<span class="ui">16×</span> للتسريع. ثم خانة <span class="ui"><span data-icon="search"></span>Find a serial</span> للبحث برقم تسلسلي، و<span class="ui"><span data-icon="play"></span>Guided tour</span> للجولة الموجهة، والوضع الفاتح أو الداكن، والانتقال إلى غرفة التحكم.</p>
+          <h4>شريط القراءات</h4>
+          <div class="tbl-wrap"><table class="tbl">
+            <tr><th>القراءة</th><th>المعنى</th></tr>
+            <tr><td>Packed today</td><td>الوحدات المغلفة منذ 06:00، والفارق عن الخطة، وعدد أجهزة التلفزيون والهواتف.</td></tr>
+            <tr><td>Shift forecast</td><td>الإنتاج المتوقع عند 14:00، وفرصة تحقيق الخطة.</td></tr>
+            <tr><td>Plant OEE</td><td><a class="t" data-term="oee">الفعالية الكلية</a> لآخر 30 دقيقة، مرجّحة بمعدل كل خط. واضغطها لترى الإتاحة والأداء والجودة لكل خط.</td></tr>
+            <tr><td>First-pass yield</td><td><a class="t" data-term="fpy">العائد من المرة الأولى</a> في الاختبار الوظيفي والفحص النهائي.</td></tr>
+            <tr><td>Units in process</td><td><a class="t" data-term="wip">الإنتاج تحت التشغيل</a> بين تحميل الشاشة والتغليف، و<a class="t" data-term="lead-time">زمن الدورة الكلي</a>، واللوحات في المخزون.</td></tr>
+            <tr><td>Power now</td><td>قدرة المصنع الآن بالكيلوواط، والطاقة المستهلكة منذ 09:12.</td></tr>
+            <tr><td>Orders on time</td><td>نسبة الطلبات المشحونة في موعدها، وعدد الطلبات المعرضة للتأخير.</td></tr>
+            <tr><td>Active alarms</td><td>الإنذارات المفتوحة حسب الأولوية، والقرارات التي تنتظرك.</td></tr>
+          </table></div>
+          <p>كل قراءة قابلة للضغط وتفتح تفاصيلها في اللوحة الجانبية، وتتبع الألوان قاعدة <a class="t" data-term="isa101">ISA-101</a> نفسها المتبعة في غرفة التحكم.</p>
+          <h4>العرض ثلاثي الأبعاد</h4>
+          <ul>
+            <li>اسحب للتدوير، واسحب بالزر الأيمن أو بإصبعين للتحريك، واستخدم عجلة الفأرة أو القرص بإصبعين للتكبير. واضغط أي شيء لاختياره، ويُظهر المرور فوقه اسمه وحالته.</li>
+            <li>قائمة المناطق في أعلى اليسار تنقل الكاميرا إلى المصنع كله أو إلى منطقة بعينها.</li>
+            <li>تظهر أسماء المناطق دائمًا، وأسماء الخطوط ومعدلاتها، وأسماء المحطات عند الاقتراب. وتظهر بطاقة كهرمانية أو حمراء فوق أي ماكينة أو مخزون يحتاج انتباهًا، والضغط عليها يفتح تفاصيله.</li>
+          </ul>
+          <h4>ما تعرضه الألوان</h4>
+          <div class="tbl-wrap"><table class="tbl">
+            <tr><th>العرض</th><th>المعنى</th></tr>
+            <tr><td><span class="ui">Status</span></td><td>مصباح الحالة فوق كل ماكينة، وإطار ملون على الأرض تحتها: كهرماني للبطء أو <a class="t" data-term="microstop">التوقف القصير</a> أو الانتظار أو <a class="t" data-term="changeover">تغيير الطراز</a>، وأحمر للتوقف، ونيلي للصيانة المخططة. ويظهر الإطار أيضًا حول مخزون خط منخفض لا مركبة في طريقها إليه، أو فارغ.</td></tr>
+            <tr><td><span class="ui">Flow</span></td><td>أسهم متحركة على السيور التي تحمل وحدات، وعلى مسارات المركبات والرافعات النشطة.</td></tr>
+            <tr><td><span class="ui">Energy</span></td><td>لون كل ماكينة من الفاتح إلى الأزرق الداكن حسب قدرتها الآن.</td></tr>
+            <tr><td><span class="ui">Quality</span></td><td>تلوين محطات الفحص حسب نسبة الرفض.</td></tr>
+            <tr><td><span class="ui">People</span></td><td>اسم كل شخص فوقه، والفنيون باللون الأزرق.</td></tr>
+          </table></div>
+          <h4>اللوحة الجانبية وشريط تدفق القيمة</h4>
+          <p>عندما لا يكون شيء مختارًا، تعرض اللوحة <b>Plant now</b>: جملة حية تلخص حال المصنع، ثم <span class="ui">Needs a decision</span> (توصيات الوكلاء مع أزرارها)، ثم <span class="ui">What happens next</span> (ما سيحدث إن لم يتصرف أحد، مع الوقت المتبقي)، ثم طلبات اليوم، ثم الأحداث الحية. وفي أسفل الصفحة شريط <a class="t" data-term="value-stream">تدفق القيمة</a> بعشر خطوات من المواد الخام إلى الشحن، لكل منها رقمها الأهم، ويتلون الشريط عند موضع المشكلة، والضغط على أي خطوة ينقلك إليها.</p>
+        </div>
+        <div class="en" lang="en" dir="ltr">
+          <h3>The screen</h3>
+          <h4>Top bar</h4>
+          <p>The plant clock, then the speed: <span class="ui"><span data-icon="pause"></span></span> pauses, <span class="ui">1×</span> is real time, <span class="ui">4×</span> and <span class="ui">16×</span> speed it up. Then <span class="ui"><span data-icon="search"></span>Find a serial</span>, <span class="ui"><span data-icon="play"></span>Guided tour</span>, light or dark, and the command room.</p>
+          <h4>Readouts</h4>
+          <div class="tbl-wrap"><table class="tbl">
+            <tr><th>Readout</th><th>Meaning</th></tr>
+            <tr><td>Packed today</td><td>Units packed since 06:00, the gap to plan, and TVs and phones.</td></tr>
+            <tr><td>Shift forecast</td><td>Output expected at 14:00 and the chance to hit plan.</td></tr>
+            <tr><td>Plant OEE</td><td><a class="t" data-term="oee">OEE</a> over the last 30 minutes, weighted by each line's rate. Select it for availability, performance and quality by line.</td></tr>
+            <tr><td>First-pass yield</td><td><a class="t" data-term="fpy">First-pass yield</a> at function test and final QC.</td></tr>
+            <tr><td>Units in process</td><td><a class="t" data-term="wip">Work in process</a> between panel load and packing, the <a class="t" data-term="lead-time">lead time</a>, and boards in stock.</td></tr>
+            <tr><td>Power now</td><td>Plant demand in kW and energy used since 09:12.</td></tr>
+            <tr><td>Orders on time</td><td>Share of shipped orders that left on time, and orders at risk.</td></tr>
+            <tr><td>Active alarms</td><td>Open alarms by priority, and decisions waiting.</td></tr>
+          </table></div>
+          <p>Every readout can be selected to open its detail in the panel. Colours follow the same <a class="t" data-term="isa101">ISA-101</a> rule as the command room.</p>
+          <h4>The 3D view</h4>
+          <ul>
+            <li>Drag to rotate, right-drag or two fingers to pan, wheel or pinch to zoom. Select anything; hovering shows its name and state.</li>
+            <li>The list of views at the top left flies the camera to the whole plant or to one zone.</li>
+            <li>Zone names are always shown, line names with their rate, and station names when you come close. An amber or red tag appears above any machine or stock that needs attention; select the tag to open it.</li>
+          </ul>
+          <h4>What the colours show</h4>
+          <div class="tbl-wrap"><table class="tbl">
+            <tr><th>View</th><th>Meaning</th></tr>
+            <tr><td><span class="ui">Status</span></td><td>The andon light above each machine and a coloured frame on the floor under it: amber for slow, a <a class="t" data-term="microstop">short stop</a>, starved or a <a class="t" data-term="changeover">changeover</a>; red for stopped; indigo for planned work. The frame also marks line-side stock that is low with no AGV coming, or empty.</td></tr>
+            <tr><td><span class="ui">Flow</span></td><td>Moving arrows on the conveyors that carry units and on the active AGV and forklift routes.</td></tr>
+            <tr><td><span class="ui">Energy</span></td><td>Each machine coloured from light to deep blue by its power now.</td></tr>
+            <tr><td><span class="ui">Quality</span></td><td>Inspection stations tinted by their reject rate.</td></tr>
+            <tr><td><span class="ui">People</span></td><td>Everyone's name above them; technicians in blue.</td></tr>
+          </table></div>
+          <h4>The panel and the value stream</h4>
+          <p>With nothing selected the panel shows <b>Plant now</b>: a live sentence on the state of the plant, then <span class="ui">Needs a decision</span> (agent recommendations with their buttons), <span class="ui">What happens next</span> (what follows if nobody acts, with the time left), today's orders and the live events. Along the bottom, the <a class="t" data-term="value-stream">value stream</a> shows ten steps from raw material to shipping, each with its key number; the step that is the problem turns amber or red, and selecting a step takes you there.</p>
+        </div>
+      </div></div>
+
+      <div class="sub" id="s-p3d-select"><div class="bi">
+        <div class="ar" lang="ar" dir="rtl">
+          <h3>اختر أي شيء</h3>
+          <div class="tbl-wrap"><table class="tbl">
+            <tr><th>ما تختاره</th><th>ما تعرضه اللوحة</th></tr>
+            <tr><td>ماكينة</td><td>حالتها وسببها ومدتها؛ والإشارات الحية حسب نوعها (اهتزاز عمود الدوران، وتفريغ الفوهات، والتركيبات في الساعة، والصحة؛ أو منحنى مناطق الفرن ودرجة الذروة؛ أو ضغط المعجون؛ أو نسبة الرفض؛ أو عزم الربط)؛ وحالتها مع توقع العطل؛ وإنتاجها مع توزيع الوقت؛ والوحدات داخلها الآن؛ والمخزون الذي يغذيها ومدة كفايته والمركبة في طريقها؛ والمحطة السابقة واللاحقة؛ والأشخاص؛ والأحداث.</td></tr>
+            <tr><td>مخزون خط</td><td>الكمية، ومدة كفايتها، ونقطة إعادة الطلب وحجم الدفعة، ومصدرها، ومهمة التوصيل ومركبتها، ودفعات الشاشات، وأرقام اللوحات.</td></tr>
+            <tr><td>سوبرماركت اللوحات</td><td>اللوحات في المخزون وعند الخطوط، ومدة الكفاية، والخطوط التي تغذيه وتسحب منه، وأحدث الأرقام التسلسلية، والمهام الخارجة منه.</td></tr>
+            <tr><td>رف في المخزن</td><td>المخزون، والمستهلك اليوم، والدفعات مع مورديها، وشاحنات الوارد.</td></tr>
+            <tr><td>مركبة موجّهة آليًا</td><td>المهمة (ماذا، ومن أين، وإلى أين، ولماذا، وموعد الوصول)، والبطارية، والسرعة، والمسافة المقطوعة اليوم، والحمولة، وزر <span class="ui"><span data-icon="eye"></span>Follow in 3D</span>.</td></tr>
+            <tr><td>رافعة، شاحنة، منصة، شخص، مرفق، طلب</td><td>المهمة الحالية، والتحميل، والوحدات على المنصة، وما يفعله الشخص، والقدرة، وموعد الطلب وجاهزيته المتوقعة.</td></tr>
+            <tr><td>وحدة (لوحة أو تلفزيون أو هاتف)</td><td>جواز الوحدة، وهو موضوع القسم التالي.</td></tr>
+          </table></div>
+        </div>
+        <div class="en" lang="en" dir="ltr">
+          <h3>Select anything</h3>
+          <div class="tbl-wrap"><table class="tbl">
+            <tr><th>What you select</th><th>What the panel shows</th></tr>
+            <tr><td>A machine</td><td>Its state, why and for how long; live signals for its type (spindle vibration, nozzle vacuum, placements an hour and health; or the oven zone profile and peak; paste pressure; reject rate; screw torque); its condition with a failure forecast; its output with a time split; the units inside it now; the stock that feeds it, how long it lasts and the AGV on its way; upstream and downstream; people; events.</td></tr>
+            <tr><td>Line-side stock</td><td>Quantity, how long it lasts, reorder point and batch, where it comes from, the delivery mission and its AGV, panel lots, board serials.</td></tr>
+            <tr><td>Board supermarket</td><td>Boards in stock and at the lines, cover time, the lines that feed it and use it, the newest serials, missions leaving it.</td></tr>
+            <tr><td>A warehouse rack</td><td>Stock, used today, lots with their supplier, inbound trucks.</td></tr>
+            <tr><td>An AGV</td><td>Its mission (what, from, to, why, arrival), battery, speed, distance today, load, and <span class="ui"><span data-icon="eye"></span>Follow in 3D</span>.</td></tr>
+            <tr><td>Forklift, truck, pallet, person, utility, order</td><td>The current job, the load, the units on a pallet, what a person is doing, power, an order's due and expected ready time.</td></tr>
+            <tr><td>A unit (board, TV or phone)</td><td>Its passport, described next.</td></tr>
+          </table></div>
+        </div>
+      </div></div>
+
+      <div class="sub" id="s-p3d-passport"><div class="bi">
+        <div class="ar" lang="ar" dir="rtl">
+          <h3>جواز الوحدة وسجل نسبها</h3>
+          <p>اختر أي تلفزيون أو هاتف أو لوحة، أو اكتب رقمه في <span class="ui">Find a serial</span>، ليُفتح <a class="t" data-term="genealogy">جواز الوحدة</a>. يسرد الجواز كل خطوة مع وقتها ومدتها والعامل ونتيجتها: دفعة الشاشة التي حُمّلت، وأرقام اللوحات التي رُكّبت، وعزم ربط المسامير، والاختبار الوظيفي، و18 دقيقة من التعتيق، والفحص بالكاميرا، والتغليف، والمنصة، والطلب، والشاحنة. ولكل لوحة فيه تاريخها الخاص: حرارة المعجون عند الطابعة، وذروة حرارة الفرن، ونتيجة AOI، وأي إصلاح. ويُبقي زر <span class="ui"><span data-icon="eye"></span>Follow in 3D</span> الكاميرا على الوحدة وهي تعبر المصنع.</p>
+          <div class="note"><b>لماذا يهم ذلك</b><p>عندما يبلّغ عميل عن عطل، يجيب الجواز في ثوانٍ: أي دفعة، وأي خط، وأي إعدادات، وما الوحدات الأخرى التي تشترك في السبب نفسه.</p></div>
+        </div>
+        <div class="en" lang="en" dir="ltr">
+          <h3>The unit passport and its genealogy</h3>
+          <p>Select any TV, phone or board, or type its serial in <span class="ui">Find a serial</span>, to open its <a class="t" data-term="genealogy">passport</a>. It lists every step with the time, the duration, the operator and the result: the panel lot loaded, the serials of the boards fitted, the screw torque, the function test, 18 minutes of burn-in, the camera check, the packing, the pallet, the order and the truck. Each board in it has its own history: paste temperature at the printer, oven peak temperature, the AOI result and any repair. <span class="ui"><span data-icon="eye"></span>Follow in 3D</span> keeps the camera on the unit as it crosses the plant.</p>
+          <div class="note"><b>Why it matters</b><p>When a customer reports a fault, the passport answers in seconds: which lot, which line, which settings, and which other units share the same cause.</p></div>
+        </div>
+      </div></div>
+
+      <div class="sub" id="s-p3d-links"><div class="bi">
+        <div class="ar" lang="ar" dir="rtl">
+          <h3>كيف يرتبط كل شيء</h3>
+          <ol>
+            <li><b>المواد الخام:</b> تملأ شاحنات الوارد المخزن، وتُتتبع الشاشات بدفعاتها.</li>
+            <li><b><a class="t" data-term="kanban">كانبان</a>:</b> تحتفظ كل محطة بمخزون صغير بجوارها. وعند نقطة إعادة الطلب تُنشأ مهمة توصيل، ويسندها نظام الإمداد إلى أقرب مركبة متاحة بشحن كافٍ، حسب درجة الإلحاح.</li>
+            <li><b>خطوط SMT</b> تملأ السوبرماركت، وتتوقف مؤقتًا عندما يمتلئ. وعندما يتوقف أحدها يفرغ السوبرماركت تدريجيًا.</li>
+            <li><b>التجميع</b> يستهلك لوحة رئيسية لكل تلفزيون ولكل هاتف، ولوحة قدرة لكل تلفزيون؛ ولذلك تغذي ماكينة واحدة في الخط 1 خطَّي التجميع معًا.</li>
+            <li><b>التعتيق ثم الفحص ثم التغليف ثم التحميل على المنصات:</b> منصة التلفزيون تحمل 8 أجهزة، ومنصة الهواتف 40 هاتفًا.</li>
+            <li><b>الشحن:</b> تخزن الرافعات الشوكية المنصات، وتصل شاحنة كل طلب قبل موعده بنحو 75 دقيقة، وتغادر عندما تمتلئ أو بعد الموعد بعشرين دقيقة.</li>
+          </ol>
+          <div class="note"><b>المثال الأوضح</b><p>لهذا يمكن لمحمل واحد أن يؤخر طلب تصدير: ماكينة التركيب B ← خط SMT رقم 1 ← سوبرماركت اللوحات الرئيسية ← خطا التجميع ← التغليف ← الشاحنة.</p></div>
+        </div>
+        <div class="en" lang="en" dir="ltr">
+          <h3>How everything is linked</h3>
+          <ol>
+            <li><b>Raw material:</b> inbound trucks fill the warehouse; panels are tracked by lot.</li>
+            <li><b><a class="t" data-term="kanban">Kanban</a>:</b> each station keeps a small stock beside it. At the reorder point a delivery mission is created, and the logistics dispatcher gives it to the nearest free AGV with enough battery, by urgency.</li>
+            <li><b>The SMT lines</b> fill the supermarket and pause when it is full. When one stops, the supermarket drains.</li>
+            <li><b>Assembly</b> uses one main board per TV and per phone, and one power board per TV, so one machine on SMT Line 1 feeds both assembly lines.</li>
+            <li><b>Burn-in, QC, packing, palletizing:</b> a TV pallet holds 8 TVs, a phone pallet 40 phones.</li>
+            <li><b>Shipping:</b> forklifts store pallets; each order's truck arrives about 75 minutes before its due time and leaves when full, or 20 minutes after it.</li>
+          </ol>
+          <div class="note"><b>The clearest example</b><p>That is how one bearing can delay an export order: Mounter B → SMT Line 1 → main-board supermarket → both assembly lines → packing → the truck.</p></div>
+        </div>
+      </div></div>
+
+      <div class="sub" id="s-p3d-drills"><div class="bi">
+        <div class="ar" lang="ar" dir="rtl">
+          <h3>التمارين الثمانية</h3>
+          <p>يفتح زر <span class="ui primary"><span data-icon="wand"></span>Run a drill</span> قائمة التمارين، ويمكن بعدها تقديم الزمن 10 أو 30 دقيقة لرؤية العواقب.</p>
+          <div class="tbl-wrap"><table class="tbl">
+            <tr><th>التمرين</th><th>ما يحدث</th><th>توصية الذكاء الاصطناعي</th><th>ما يفعله الزر</th></tr>
+            <tr><td>تآكل المحمل في ماكينة التركيب B</td><td>يرتفع الاهتزاز؛ وبلا تدخل يتعطل المحمل بعد نحو 28 دقيقة، ويتوقف خط SMT رقم 1 نحو 35 دقيقة، ويفرغ السوبرماركت، ويتوقف خطا التجميع لنقص اللوحات.</td><td>وكيل الصيانة يحدد وقت العطل ويوصي بـ<span class="ui">Plan repair now</span>. وإذا وقع العطل يوصي وكيل التخطيط بـ<span class="ui">Switch Line 2 to main boards</span>.</td><td>يمشي فني إلى الماكينة، وتوقف مخطط 8 دقائق يغطيه السوبرماركت، ونحو 1.6 مليون جنيه محمية؛ أو تغيير طراز 4 دقائق ثم ينتج الخط 2 نحو 100 لوحة رئيسية في الساعة.</td></tr>
+            <tr><td>تعطل مركبة أثناء مسارها</td><td>تتوقف أول مركبة محمّلة بعطل في المحرك، وتنتظر مهمتها.</td><td>وكيل الإمداد، عندما ينفد مخزون المحطة قبل وصول المساعدة: <span class="ui">Deliver now</span>.</td><td>تجلب مركبة أخرى دفعة جديدة، وتعود الحمولة العالقة إلى المخزون بعد استعادة المركبة (7 دقائق).</td></tr>
+            <tr><td>دفعة شاشات معيبة</td><td>تصل دفعة من المورد بعيوب في البكسل إلى محطة تحميل الشاشة، وتفشل أجهزة في اختبار الشاشة.</td><td>وكيل الجودة يربط كل الأعطال بدفعة واحدة: <span class="ui">Quarantine lot</span>.</td><td>تُسحب الدفعة من الخط والمخزن، وتُسجل مطالبة للمورد، وتحصل الأجهزة المرفوضة على شاشة من دفعة سليمة في إعادة التشغيل.</td></tr>
+            <tr><td>انحراف حرارة الفرن</td><td>ترتفع المنطقة 5 في فرن الخط 2 حتى 9 درجات، وتزيد جسور اللحام عند AOI.</td><td>وكيل الجودة يحدد السبب (ارتباط 0.93): <span class="ui">Correct zone 5 setpoint</span>.</td><td>يعود الفرن إلى منحناه دون توقف، وتنخفض المرفوضات.</td></tr>
+            <tr><td>تأخر شاحنة الشاشات 3 ساعات</td><td>تُحتجز شاحنة الشاشات الواردة، وتظهر مدة كفاية المخزون بالساعات.</td><td>وكيل التخطيط: <span class="ui">Book alternative carrier</span> (70 دقيقة، و18 ألف جنيه إضافية مقابل نحو 420 ألف جنيه من إنتاج ضائع).</td><td>تصل الشاشات خلال 70 دقيقة.</td></tr>
+            <tr><td>انخفاض جهد الشبكة</td><td>يتوقف خطا SMT والفرنان، وتُحجز اللوحات التي كانت في الفرن لإعادة الفحص.</td><td>وكيل الطاقة يعيد تشغيل الخط 1 ثم الخط 2 بعد 60 ثانية، تلقائيًا.</td><td>يعود الخطان خلال نحو دقيقتين ونصف دون ذروة تيار.</td></tr>
+            <tr><td>طلب عاجل: 240 هاتفًا إضافيًا</td><td>ينضم طلب جديد إلى قائمة الانتظار.</td><td>وكيل التخطيط يحدد مقدار التأخير ويوصي بـ<span class="ui">Run Final Assembly B at 110%</span>، ويذكر هل يكفي ذلك أم تلزم شحنة مجزأة.</td><td>يعمل الخط أسرع بنسبة 10%، ويتحدث التوقع.</td></tr>
+            <tr><td>استدعاء عامل إلى مهمة أخرى</td><td>تتباطأ محطة الغطاء الخلفي في خط التلفزيون إلى نحو 56 ثانية مقابل <a class="t" data-term="takt">زمن إيقاع</a> 37 ثانية.</td><td>وكيل التخطيط: <span class="ui">Move Laila to Back cover</span> (معتمدة على المحطة، من طاولة إعادة التشغيل).</td><td>يعود الخط إلى إيقاعه.</td></tr>
+          </table></div>
+        </div>
+        <div class="en" lang="en" dir="ltr">
+          <h3>The eight drills</h3>
+          <p><span class="ui primary"><span data-icon="wand"></span>Run a drill</span> opens the list; afterwards you can fast-forward 10 or 30 minutes to see the consequences.</p>
+          <div class="tbl-wrap"><table class="tbl">
+            <tr><th>Drill</th><th>What happens</th><th>What the AI recommends</th><th>What the button does</th></tr>
+            <tr><td>Bearing wear on Mounter B</td><td>Vibration rises; without action the bearing seizes after about 28 minutes, SMT Line 1 stops for about 35 minutes, the supermarket drains and both assembly lines starve.</td><td>The maintenance agent gives the failure time and recommends <span class="ui">Plan repair now</span>. If it has already failed, the planning agent recommends <span class="ui">Switch Line 2 to main boards</span>.</td><td>A technician walks to the machine; an 8-minute planned stop the supermarket covers; about EGP 1.6M protected. Or a 4-minute changeover, then Line 2 makes about 100 main boards an hour.</td></tr>
+            <tr><td>AGV breaks down mid-route</td><td>The next loaded AGV stops with a drive fault; its mission waits.</td><td>The logistics agent, when the station will run out before help arrives: <span class="ui">Deliver now</span>.</td><td>Another AGV brings a fresh batch; the stuck load returns to stock once the AGV is recovered (7 minutes).</td></tr>
+            <tr><td>Bad panel lot reaches the TV line</td><td>A supplier lot with pixel defects reaches Panel load; TVs fail the screen test.</td><td>The quality agent traces every failure to one lot: <span class="ui">Quarantine lot</span>.</td><td>The lot is pulled from the line and the warehouse, a supplier claim is logged, and failed TVs get a panel from a good lot in rework.</td></tr>
+            <tr><td>Reflow oven drifts hot</td><td>Zone 5 on the Line 2 oven drifts up to +9 °C; solder bridges rise at AOI.</td><td>The quality agent names the cause (correlation 0.93): <span class="ui">Correct zone 5 setpoint</span>.</td><td>The oven returns to its profile without stopping; rejects fall.</td></tr>
+            <tr><td>Panel truck delayed 3 hours</td><td>The inbound panel truck is held; panel cover is shown in hours.</td><td>The planning agent: <span class="ui">Book alternative carrier</span> (70 minutes, EGP 18k extra against about EGP 420k of lost output).</td><td>The panels arrive within 70 minutes.</td></tr>
+            <tr><td>Grid voltage dip</td><td>Both SMT lines and ovens trip; boards that were in the ovens are held for re-inspection.</td><td>The energy agent restarts Line 1, then Line 2 after 60 s, on its own.</td><td>Both lines run again in about two and a half minutes, without an inrush peak.</td></tr>
+            <tr><td>Rush order: +240 phones</td><td>A new order joins the queue.</td><td>The planning agent says how late it will be and recommends <span class="ui">Run Final Assembly B at 110%</span>, stating whether that is enough or a split delivery is needed.</td><td>The line runs 10% faster; the forecast updates.</td></tr>
+            <tr><td>Operator called away</td><td>Back cover on the TV line slows to about 56 s against a 37 s <a class="t" data-term="takt">takt</a>.</td><td>The planning agent: <span class="ui">Move Laila to Back cover</span> (certified on the station, from rework).</td><td>The line returns to takt.</td></tr>
+          </table></div>
+        </div>
+      </div></div>
+
+      <div class="sub" id="s-p3d-present"><div class="bi">
+        <div class="ar" lang="ar" dir="rtl">
+          <h3>عرضه أمام الضيف</h3>
+          <ol>
+            <li>ابدأ <span class="ui"><span data-icon="play"></span>Guided tour</span> (المفتاح <kbd>G</kbd>): ثماني محطات بسرعة 4× في نحو سبعين ثانية، تنتهي بتمرين المحمل والقرار في اللوحة.</li>
+            <li>دع الضيف يضغط بنفسه: تلفزيونًا ليقرأ جوازه، ثم <span class="ui">Follow in 3D</span>.</li>
+            <li>شغّل تمرينًا، ثم استخدم 4× أو 16× أو <span class="ui">Fast-forward 10 min</span> ليرى السبب وهو ينتقل عبر المصنع.</li>
+            <li>اترك له زر القرار، ثم اعرض النتيجة في القراءات وشريط تدفق القيمة.</li>
+          </ol>
+          <div class="note"><b>ملاحظة أمانة</b><p>المصنع وأرقامه وأشخاصه محاكاة وافتراضيون. ويسير الوقت بالزمن الحقيقي (1×) ما لم تسرّعه. ويحتاج العرض ثلاثي الأبعاد إلى متصفح يدعم WebGL، وهو ما تدعمه جميع المتصفحات الحالية، وعلى الهاتف تُخفَّض التفاصيل تلقائيًا.</p></div>
+        </div>
+        <div class="en" lang="en" dir="ltr">
+          <h3>Presenting it</h3>
+          <ol>
+            <li>Start the <span class="ui"><span data-icon="play"></span>Guided tour</span> (key <kbd>G</kbd>): eight stops at 4× in about seventy seconds, ending with the bearing drill and the decision in the panel.</li>
+            <li>Let the guest select things: a TV to read its passport, then <span class="ui">Follow in 3D</span>.</li>
+            <li>Run a drill, then use 4×, 16× or <span class="ui">Fast-forward 10 min</span> so the guest sees the cause travel through the plant.</li>
+            <li>Leave the decision button to the guest, then show the result in the readouts and the value stream.</li>
+          </ol>
+          <div class="note"><b>Honesty note</b><p>The plant, its numbers and its people are simulated and fictional. Time runs in real time (1×) unless you speed it up. The 3D view needs WebGL, which every current browser supports; on a phone it lowers its detail automatically.</p></div>
+        </div>
+      </div></div>
+    </section>
+
+    <!-- 6 · THE AI AGENT CREW -->
     <section class="ch" id="ch-agents">
       <div class="ch-head bi">
-        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 5</p><h2>طاقم وكلاء الذكاء الاصطناعي ومستوى الاستقلالية</h2></div>
-        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 5</p><h2>The AI agent crew and autonomy</h2></div>
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 6</p><h2>طاقم وكلاء الذكاء الاصطناعي ومستوى الاستقلالية</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 6</p><h2>The AI agent crew and autonomy</h2></div>
       </div>
       <div class="bi">
         <div class="ar" lang="ar" dir="rtl">
@@ -725,11 +970,11 @@
       </div></div>
     </section>
 
-    <!-- 6 · THE TEN SCENARIOS -->
+    <!-- 7 · THE TEN SCENARIOS -->
     <section class="ch" id="ch-scenarios">
       <div class="ch-head bi">
-        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 6</p><h2>السيناريوهات العشرة بالتفصيل</h2></div>
-        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 6</p><h2>The ten scenarios in detail</h2></div>
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 7</p><h2>السيناريوهات العشرة بالتفصيل</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 7</p><h2>The ten scenarios in detail</h2></div>
       </div>
       <div class="bi">
         <div class="ar" lang="ar" dir="rtl">
@@ -968,11 +1213,11 @@
       </div></div>
     </section>
 
-    <!-- 7 · CONTROL -->
+    <!-- 8 · CONTROL -->
     <section class="ch" id="ch-control">
       <div class="ch-head bi">
-        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 7</p><h2>التحكم في المصنع بأمان</h2></div>
-        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 7</p><h2>Controlling the plant safely</h2></div>
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 8</p><h2>التحكم في المصنع بأمان</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 8</p><h2>Controlling the plant safely</h2></div>
       </div>
       <div class="bi">
         <div class="ar" lang="ar" dir="rtl">
@@ -1018,11 +1263,11 @@
       </div>
     </section>
 
-    <!-- 8 · EVERY DECISION AND WHAT FOLLOWS -->
+    <!-- 9 · EVERY DECISION AND WHAT FOLLOWS -->
     <section class="ch" id="ch-decisions">
       <div class="ch-head bi">
-        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 8</p><h2>كل قرار وما يترتب عليه</h2></div>
-        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 8</p><h2>Every decision and what follows</h2></div>
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 9</p><h2>كل قرار وما يترتب عليه</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 9</p><h2>Every decision and what follows</h2></div>
       </div>
       <div class="bi">
         <div class="ar" lang="ar" dir="rtl">
@@ -1068,11 +1313,11 @@
       </div>
     </section>
 
-    <!-- 9 · THE LIVE BRIEFING -->
+    <!-- 10 · THE LIVE BRIEFING -->
     <section class="ch" id="ch-briefing">
       <div class="ch-head bi">
-        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 9</p><h2>الإحاطة الحية للاجتماعات العاجلة</h2></div>
-        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 9</p><h2>The live briefing for urgent meetings</h2></div>
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 10</p><h2>الإحاطة الحية للاجتماعات العاجلة</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 10</p><h2>The live briefing for urgent meetings</h2></div>
       </div>
       <div class="bi">
         <div class="ar" lang="ar" dir="rtl">
@@ -1132,11 +1377,11 @@
       </div>
     </section>
 
-    <!-- 10 · A PLAYBOOK FOR LEADERSHIP -->
+    <!-- 11 · A PLAYBOOK FOR LEADERSHIP -->
     <section class="ch" id="ch-playbook">
       <div class="ch-head bi">
-        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 10</p><h2>دليل القراءة واتخاذ القرار للإدارة العليا</h2></div>
-        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 10</p><h2>Reading and deciding: a playbook for leadership</h2></div>
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 11</p><h2>دليل القراءة واتخاذ القرار للإدارة العليا</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 11</p><h2>Reading and deciding: a playbook for leadership</h2></div>
       </div>
 
       <div class="sub" id="s-60s"><div class="bi">
@@ -1270,11 +1515,11 @@
       </div></div>
     </section>
 
-    <!-- 11 · TRY IT YOURSELF -->
+    <!-- 12 · TRY IT YOURSELF -->
     <section class="ch" id="ch-practice">
       <div class="ch-head bi">
-        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 11</p><h2>جرّب بنفسك: تمارين موجهة</h2></div>
-        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 11</p><h2>Try it yourself: guided exercises</h2></div>
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 12</p><h2>جرّب بنفسك: تمارين موجهة</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 12</p><h2>Try it yourself: guided exercises</h2></div>
       </div>
       <div class="bi">
         <div class="ar" lang="ar" dir="rtl">
@@ -1318,11 +1563,11 @@
       </div>
     </section>
 
-    <!-- 12 · THE WEBSITE, SECTION BY SECTION -->
+    <!-- 13 · THE WEBSITE, SECTION BY SECTION -->
     <section class="ch" id="ch-website">
       <div class="ch-head bi">
-        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 12</p><h2>الموقع قسمًا قسمًا، مع الترجمة الكاملة</h2></div>
-        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 12</p><h2>The website, section by section</h2></div>
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 13</p><h2>الموقع قسمًا قسمًا، مع الترجمة الكاملة</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 13</p><h2>The website, section by section</h2></div>
       </div>
       <div class="bi">
         <div class="ar" lang="ar" dir="rtl">
@@ -1349,12 +1594,12 @@
       <div class="sub" id="w-hero"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
           <h3>الواجهة: الخط داخل الجملة</h3>
-          <div class="quote"><p class="q-h">الترجمة</p><p><b>شاهِد الخط قبل أن يتوقف.</b></p><p>توأم رقمي حي لمصنعك، مع ذكاء اصطناعي يتصرف قبل أن يتوقف الخط.</p><p>ماكينة التركيب B · تآكل المحمل · خطر العطل 72% خلال نحو 40 ساعة<br>86.4% الفعالية الكلية للخط · 12,480 وحدة في هذه الوردية · ساعة الوردية</p><p>محاكاة جارية لخط تركيب سطحي واحد. بيانات المصنع في هذا الموقع محاكاة. افتح غرفة التحكم كاملة.</p></div>
+          <div class="quote"><p class="q-h">الترجمة</p><p><b>شاهِد الخط قبل أن يتوقف.</b></p><p>توأم رقمي حي لمصنعك، مع ذكاء اصطناعي يتصرف قبل أن يتوقف الخط.</p><p>ماكينة التركيب B · تآكل المحمل · خطر العطل 72% خلال نحو 40 ساعة<br>86.4% الفعالية الكلية للخط · 12,480 وحدة في هذه الوردية · ساعة الوردية</p><p>محاكاة جارية لخط تركيب سطحي واحد. بيانات المصنع في هذا الموقع محاكاة. افتح غرفة التحكم كاملة، أو تجوّل في المصنع كله بالأبعاد الثلاثية.</p></div>
           <p><b>الغرض.</b> في العنوان يحل رسم صغير لخط إنتاج متحرك محل كلمة «الخط»، ثم ينفتح الخط بعرض الصفحة كرسم هندسي حي لخط تركيب سطحي من ست محطات، وتظهر عليه قراءات حية، ويُحاط فيه محطة ماكينة التركيب B بعلامات التحديد مع تنبيه تآكل المحمل. والرسالة: هذا ليس عرضًا ثابتًا، بل مصنع يعمل الآن.</p>
         </div>
         <div class="en" lang="en" dir="ltr">
           <h3>Hero: the line inside the sentence</h3>
-          <div class="quote"><p class="q-h">Original</p><p><b>See the line before it stops.</b></p><p>A live digital twin of your plant, with AI that acts before the line does.</p><p>Mounter B · Bearing wear · failure risk 72% in about 40 h<br>86.4% Line OEE · 12,480 Units this shift · Shift clock</p><p>A running simulation of one SMT line. Plant data on this site is simulated. Open the full command room.</p></div>
+          <div class="quote"><p class="q-h">Original</p><p><b>See the line before it stops.</b></p><p>A live digital twin of your plant, with AI that acts before the line does.</p><p>Mounter B · Bearing wear · failure risk 72% in about 40 h<br>86.4% Line OEE · 12,480 Units this shift · Shift clock</p><p>A running simulation of one SMT line. Plant data on this site is simulated. Open the full command room or walk the whole plant in 3D.</p></div>
           <p><b>Purpose.</b> In the headline a small moving production line takes the place of the word “line”; then the line opens full width as a live engineering drawing of a six-station SMT line, with live readouts, and Mounter B framed by the reticle with its bearing-wear callout. The message: this is not a static picture; it is a plant running now.</p>
         </div>
       </div></div>
@@ -1413,13 +1658,13 @@
 
       <div class="sub" id="w-caps"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>تسع قدرات يمكن فتحها الآن</h3>
-          <div class="quote"><p class="q-h">الترجمة</p><p><b>تسع قدرات يمكنك فتحها الآن.</b> تعمل كل منها على مصنع إلكترونيات محاكى، وفي التشغيل الفعلي تتصل كل منها بالمعدات الحقيقية.</p><ul><li><b>غرفة التحكم:</b> كل خط ومحطة ووحدة لحظيًا، مع الإنذارات والقرارات وطاقم الوكلاء في شاشة واحدة.</li><li><b>طاقم وكلاء الذكاء الاصطناعي:</b> ستة وكلاء للصيانة والجودة والإمداد والطاقة والتخطيط والسلامة، وأنت تحدد ما يُسمح لكل منهم بفعله وحده.</li><li><b>من فيضان الإنذارات إلى سبب واحد:</b> عشرات الإنذارات تصبح حادثة واحدة بسببها الجذري.</li><li><b>توقع الوردية:</b> فرصة تحقيق خطة اليوم، تُحدَّث كل ثانية، مع خطر تعطل كل ماكينة.</li><li><b>سلاسل السبب الجذري:</b> من العَرَض إلى السبب إلى التكلفة في صورة واحدة، مع الأدلة.</li><li><b>آلة الزمن:</b> أعد المصنع إلى الخلف وأعد عرض أي دقيقة من الوردية.</li><li><b>مختبر السيناريوهات:</b> عشرة تمارين من الواقع: أعطال، وموجات حر، وهبوط في الكهرباء، وتأخر موردين، وأحداث سلامة.</li><li><b>حاكِ قبل أن تتصرف:</b> الإنتاج والعائد والطاقة المتوقعة قبل أي تغيير، مع سجل تدقيق كامل.</li><li><b>شاشة القيادة:</b> مؤشر صحة المصنع، والقيمة الموفرة، والقرارات مرتبة حسب المال المعرّض للخطر.</li></ul></div>
+          <h3>عشر قدرات يمكن فتحها الآن</h3>
+          <div class="quote"><p class="q-h">الترجمة</p><p><b>عشر قدرات يمكنك فتحها الآن.</b> تعمل كل منها على مصنع إلكترونيات محاكى، وفي التشغيل الفعلي تتصل كل منها بالمعدات الحقيقية.</p><ul><li><b>المصنع الحي ثلاثي الأبعاد:</b> المصنع كله يتحرك: الماكينات والسيور والمركبات الموجهة آليًا والرافعات الشوكية والشاحنات والأشخاص. اختر أي وحدة لتقرأ جوازها.</li><li><b>غرفة التحكم:</b> كل خط ومحطة ووحدة لحظيًا، مع الإنذارات والقرارات وطاقم الوكلاء في شاشة واحدة.</li><li><b>طاقم وكلاء الذكاء الاصطناعي:</b> ستة وكلاء للصيانة والجودة والإمداد والطاقة والتخطيط والسلامة، وأنت تحدد ما يُسمح لكل منهم بفعله وحده.</li><li><b>من فيضان الإنذارات إلى سبب واحد:</b> عشرات الإنذارات تصبح حادثة واحدة بسببها الجذري.</li><li><b>توقع الوردية:</b> فرصة تحقيق خطة اليوم، تُحدَّث كل ثانية، مع خطر تعطل كل ماكينة.</li><li><b>سلاسل السبب الجذري:</b> من العَرَض إلى السبب إلى التكلفة في صورة واحدة، مع الأدلة.</li><li><b>آلة الزمن:</b> أعد المصنع إلى الخلف وأعد عرض أي دقيقة من الوردية.</li><li><b>مختبر السيناريوهات:</b> عشرة تمارين من الواقع: أعطال، وموجات حر، وهبوط في الكهرباء، وتأخر موردين، وأحداث سلامة.</li><li><b>حاكِ قبل أن تتصرف:</b> الإنتاج والعائد والطاقة المتوقعة قبل أي تغيير، مع سجل تدقيق كامل.</li><li><b>شاشة القيادة:</b> مؤشر صحة المصنع، والقيمة الموفرة، والقرارات مرتبة حسب المال المعرّض للخطر.</li></ul></div>
           <p><b>الغرض.</b> فهرس قابل للنقر؛ كل سطر يفتح الشاشة المقابلة في غرفة التحكم مباشرة.</p>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Nine capabilities you can open now</h3>
-          <div class="quote"><p class="q-h">Original</p><p><b>Nine capabilities you can open now.</b> Each runs on a simulated electronics plant. In production, each connects to the real equipment.</p><ul><li><b>Command room:</b> Every line, station and unit live, with alarms, decisions and the agent crew on one screen.</li><li><b>AI agent crew:</b> Six agents for maintenance, quality, logistics, energy, planning and safety. You set how much each may do alone.</li><li><b>Alarm flood to one cause:</b> Dozens of alarms become one incident with its root cause.</li><li><b>Shift forecast:</b> The chance of hitting today's plan, updated every second, with failure risk for every machine.</li><li><b>Root-cause chains:</b> From symptom to cause to cost in one picture, with the evidence behind it.</li><li><b>Time machine:</b> Rewind the plant and replay any minute of the shift.</li><li><b>Scenario lab:</b> Ten real-world drills: breakdowns, heat waves, power dips, supplier delays, safety events.</li><li><b>Simulate before you act:</b> Expected output, yield and power before any change, with a full audit trail.</li><li><b>Leadership view:</b> Plant health score, value saved, and decisions ranked by money at stake.</li></ul></div>
+          <h3>Ten capabilities you can open now</h3>
+          <div class="quote"><p class="q-h">Original</p><p><b>Ten capabilities you can open now.</b> Each runs on a simulated electronics plant. In production, each connects to the real equipment.</p><ul><li><b>Live plant in 3D:</b> The whole plant moving: machines, conveyors, AGVs, forklifts, trucks and people. Select any unit to read its passport.</li><li><b>Command room:</b> Every line, station and unit live, with alarms, decisions and the agent crew on one screen.</li><li><b>AI agent crew:</b> Six agents for maintenance, quality, logistics, energy, planning and safety. You set how much each may do alone.</li><li><b>Alarm flood to one cause:</b> Dozens of alarms become one incident with its root cause.</li><li><b>Shift forecast:</b> The chance of hitting today's plan, updated every second, with failure risk for every machine.</li><li><b>Root-cause chains:</b> From symptom to cause to cost in one picture, with the evidence behind it.</li><li><b>Time machine:</b> Rewind the plant and replay any minute of the shift.</li><li><b>Scenario lab:</b> Ten real-world drills: breakdowns, heat waves, power dips, supplier delays, safety events.</li><li><b>Simulate before you act:</b> Expected output, yield and power before any change, with a full audit trail.</li><li><b>Leadership view:</b> Plant health score, value saved, and decisions ranked by money at stake.</li></ul></div>
           <p><b>Purpose.</b> A clickable index: each row opens the matching screen of the command room directly.</p>
         </div>
       </div></div>
@@ -1438,11 +1683,11 @@
       </div></div>
     </section>
 
-    <!-- 13 · THE PRESENTATION, SLIDE BY SLIDE -->
+    <!-- 14 · THE PRESENTATION, SLIDE BY SLIDE -->
     <section class="ch" id="ch-deck">
       <div class="ch-head bi">
-        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 13</p><h2>العرض التقديمي شريحة بشريحة، مع الترجمة وملاحظات المتحدث</h2></div>
-        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 13</p><h2>The presentation, slide by slide, with speaker notes</h2></div>
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 14</p><h2>العرض التقديمي شريحة بشريحة، مع الترجمة وملاحظات المتحدث</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 14</p><h2>The presentation, slide by slide, with speaker notes</h2></div>
       </div>
       <div class="bi">
         <div class="ar" lang="ar" dir="rtl">
@@ -1482,7 +1727,7 @@
         <div class="en" lang="en" dir="ltr">
           <h3>Slides 2 and 3 · Live briefing</h3>
           <div class="quote"><p class="q-h">Original (before any moment is captured)</p><p><b>The plant, at the moment you choose.</b> No moment has been captured yet. Press Read the plant now to start the plant and capture this second, or press Send to deck in the command room at the moment you want to show. [Read the plant now] [Choose a moment]</p><p><b>What needs a decision, at the moment you choose.</b> This slide lists the decisions waiting, the open incidents and the machines at risk, with the money at stake. Capture a moment first.</p></div>
-          <p><b>Purpose.</b> To turn the presentation into an executive briefing with the numbers of the chosen moment, written automatically by the briefing agent. Chapter 9 explains the content and its use. With a moment pinned, the text above is replaced by the time-and-source line, the headline, the summary, six readouts and the five lines; slide 3 then shows decisions, risks and the recommendation.</p>
+          <p><b>Purpose.</b> To turn the presentation into an executive briefing with the numbers of the chosen moment, written automatically by the briefing agent. Chapter 10 explains the content and its use. With a moment pinned, the text above is replaced by the time-and-source line, the headline, the summary, six readouts and the five lines; slide 3 then shows decisions, risks and the recommendation.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>Slide 2: The briefing agent writes this slide from the moment you pinned. Read the headline first: it is the one thing the plant needs from leadership now. Then the six readouts, left to right. If a line shows an amber or red mark, name it and say what the agents are already doing about it. The numbers stay fixed until you pin another moment.</p><p>Slide 3: Lead with the recommendation in the right column, then show the evidence: the decisions ranked by money at stake and the risks behind them. If nothing is waiting, say so plainly: the agents are handling routine work, and that is the point.</p><p>These notes are replaced automatically by a script written from the pinned moment.</p></div>
         </div>
       </div></div>
@@ -1580,15 +1825,15 @@
       <div class="sub" id="d-10"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
           <h3>الشريحة 10 · العرض الحي</h3>
-          <div class="quote"><p class="q-h">الترجمة</p><p><b>غرفة التحكم تعمل الآن.</b> [افتح بملء الشاشة]</p></div>
-          <p><b>الغرض.</b> أهم لحظة في الاجتماع: غرفة التحكم كاملة داخل الشريحة، تعمل وتستجيب. والتنقل بالأسهم داخلها ينقل الشرائح، والمفتاح P داخلها يثبت لحظة للإحاطة.</p>
-          <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>أهم جزء. افتح العرض بملء الشاشة. (1) اعرض غرفة التحكم وفعالية المصنع. (2) افتح السيناريوهات وشغّل «تآكل المحمل في ماكينة التركيب B»، وانتظر الإنذار وقل: «رأى الذكاء الاصطناعي هذا العطل قبل نحو 40 ساعة». (3) دعه يضغط «جدولة الإصلاح» بنفسه. وعندما يظهر «توفير 1.6 مليون جنيه» توقف ثانيتين. (4) افتح شاشة القيادة. (5) افتح المساعد واضغط «لخّص هذه الوردية».</p></div>
+          <div class="quote"><p class="q-h">الترجمة</p><p><b>غرفة التحكم تعمل الآن.</b> [غرفة التحكم | المصنع الحي ثلاثي الأبعاد] [افتح بملء الشاشة]</p></div>
+          <p><b>الغرض.</b> أهم لحظة في الاجتماع: غرفة التحكم كاملة داخل الشريحة، تعمل وتستجيب. والتنقل بالأسهم داخلها ينقل الشرائح، والمفتاح P داخلها يثبت لحظة للإحاطة. ويبدّل المفتاح أعلى الشريحة بين غرفة التحكم والمصنع الحي ثلاثي الأبعاد (الفصل 5)، ويفتح زر ملء الشاشة العرض المختار.</p>
+          <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>أهم جزء. افتح العرض بملء الشاشة. (1) اعرض غرفة التحكم وفعالية المصنع. (2) افتح السيناريوهات وشغّل «تآكل المحمل في ماكينة التركيب B»، وانتظر الإنذار وقل: «رأى الذكاء الاصطناعي هذا العطل قبل نحو 40 ساعة». (3) دعه يضغط «جدولة الإصلاح» بنفسه. وعندما يظهر «توفير 1.6 مليون جنيه» توقف ثانيتين. (4) افتح شاشة القيادة. (5) افتح المساعد واضغط «لخّص هذه الوردية». (6) انتقل إلى «المصنع الحي ثلاثي الأبعاد»: نموذج متحرك لمصنع من النوع نفسه. اضغط أي تلفزيون لتعرض جوازه، ثم شغّل تمرينًا ودعه يشاهد السبب وهو ينتقل عبر الخط.</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
           <h3>Slide 10 · Live demo</h3>
-          <div class="quote"><p class="q-h">Original</p><p><b>The command room, running right now.</b> [Open full screen]</p></div>
-          <p><b>Purpose.</b> The most important moment of the meeting: the whole command room inside the slide, running and responding. Arrow keys inside it move the slides; P inside it pins a moment for the briefing.</p>
-          <div class="quote"><p class="q-h">Speaker notes</p><p>The most important part. Open the demo full screen. (1) Show the command room and plant OEE. (2) Open Scenarios and run “Bearing wear on Mounter B”. Wait for the alarm: “The AI saw this failure about 40 hours early.” (3) Let him click “Schedule repair” himself. When “EGP 1.6M saved” appears, pause for two seconds. (4) Open the Leadership view. (5) Open the copilot and click “Summarize this shift”.</p></div>
+          <div class="quote"><p class="q-h">Original</p><p><b>The command room, running right now.</b> [Command room | Live plant 3D] [Open full screen]</p></div>
+          <p><b>Purpose.</b> The most important moment of the meeting: the whole command room inside the slide, running and responding. Arrow keys inside it move the slides; P inside it pins a moment for the briefing. The switch above the slide changes between the command room and the live plant in 3D (Chapter 5); Open full screen opens the one shown.</p>
+          <div class="quote"><p class="q-h">Speaker notes</p><p>The most important part. Open the demo full screen. (1) Show the command room and plant OEE. (2) Open Scenarios and run “Bearing wear on Mounter B”. Wait for the alarm: “The AI saw this failure about 40 hours early.” (3) Let him click “Schedule repair” himself. When “EGP 1.6M saved” appears, pause for two seconds. (4) Open the Leadership view. (5) Open the copilot and click “Summarize this shift”. (6) Switch to “Live plant 3D”: the same kind of plant as a moving 3D model. Click any TV to show its passport, then run a drill and let him watch the cause travel down the line.</p></div>
         </div>
       </div></div>
 
@@ -1677,7 +1922,7 @@
         <div class="en" lang="en" dir="ltr">
           <h3>Slide 16 · Business case</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>What is it worth to your plant?</b></p><p>Inputs: Production lines in scope · Unplanned downtime, hours per line per month · Cost of one hour of line downtime (EGP) · Scrap and rework cost per month (EGP) · Energy bill per month (EGP) · Programme investment (EGP).</p><p>Results: Less downtime (30%) · Less scrap and rework (20%) · Energy savings (8%) · Payback · <b>Estimated annual value</b>, and about three times that over three years, with conservative assumptions at the low end of published ranges.</p></div>
-          <p><b>Purpose.</b> A live calculator whose results change as soon as any number changes. Chapter 10 explains the arithmetic.</p>
+          <p><b>Purpose.</b> A live calculator whose results change as soon as any number changes. Chapter 11 explains the arithmetic.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>The strongest moment of the meeting. Ask him for his own numbers (downtime hours, cost per hour, scrap, energy bill) and type them in front of him. The result updates instantly. When the annual value comes from his numbers, the conclusion is his, not ours. The assumptions are deliberately conservative, at the low end of published ranges.</p></div>
         </div>
       </div></div>
@@ -1728,11 +1973,11 @@
       </div></div>
     </section>
 
-    <!-- 14 · ICONS, COLOURS AND SHORTCUTS -->
+    <!-- 15 · ICONS, COLOURS AND SHORTCUTS -->
     <section class="ch" id="ch-icons">
       <div class="ch-head bi">
-        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 14</p><h2>الأيقونات والألوان واختصارات لوحة المفاتيح</h2></div>
-        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 14</p><h2>Icons, colours and keyboard shortcuts</h2></div>
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 15</p><h2>الأيقونات والألوان واختصارات لوحة المفاتيح</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 15</p><h2>Icons, colours and keyboard shortcuts</h2></div>
       </div>
       <div class="sub" id="s-icons"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
@@ -1789,6 +2034,8 @@
             <tr><td>غرفة التحكم</td><td><kbd>Esc</kbd></td><td>إغلاق المساعد.</td></tr>
             <tr><td>العرض التقديمي</td><td><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd> <kbd>Enter</kbd></td><td>الشريحة السابقة والتالية.</td></tr>
             <tr><td>العرض التقديمي</td><td><kbd>F</kbd> <kbd>N</kbd> <kbd>B</kbd></td><td>ملء الشاشة، وملاحظات المتحدث، والإحاطة الحية.</td></tr>
+            <tr><td>المصنع الحي</td><td><kbd>Space</kbd> <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>إيقاف مؤقت أو استئناف، ثم السرعة 1× و4× و16×.</td></tr>
+            <tr><td>المصنع الحي</td><td><kbd>G</kbd> <kbd>/</kbd> <kbd>Esc</kbd></td><td>الجولة الموجهة، والبحث برقم تسلسلي، وإغلاق القائمة أو الجولة أو إلغاء الاختيار.</td></tr>
             <tr><td>هذا الدليل</td><td><kbd>/</kbd> <kbd>Esc</kbd></td><td>فتح لوحة المصطلحات وإغلاقها.</td></tr>
           </table></div>
         </div>
@@ -1804,17 +2051,19 @@
             <tr><td>Command room</td><td><kbd>Esc</kbd></td><td>Close the copilot.</td></tr>
             <tr><td>Presentation</td><td><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd> <kbd>Enter</kbd></td><td>Previous and next slide.</td></tr>
             <tr><td>Presentation</td><td><kbd>F</kbd> <kbd>N</kbd> <kbd>B</kbd></td><td>Full screen, speaker notes, live briefing.</td></tr>
+            <tr><td>Live plant</td><td><kbd>Space</kbd> <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>Pause or resume, then speed 1×, 4× and 16×.</td></tr>
+            <tr><td>Live plant</td><td><kbd>G</kbd> <kbd>/</kbd> <kbd>Esc</kbd></td><td>Guided tour, find a serial, and close the menu or tour or clear the selection.</td></tr>
             <tr><td>This guide</td><td><kbd>/</kbd> <kbd>Esc</kbd></td><td>Open and close the terms panel.</td></tr>
           </table></div>
         </div>
       </div></div>
     </section>
 
-    <!-- 15 · GLOSSARY -->
+    <!-- 16 · GLOSSARY -->
     <section class="ch" id="ch-glossary">
       <div class="ch-head bi">
-        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 15</p><h2>المصطلحات والاختصارات</h2></div>
-        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 15</p><h2>Terms and abbreviations</h2></div>
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 16</p><h2>المصطلحات والاختصارات</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 16</p><h2>Terms and abbreviations</h2></div>
       </div>
       <div class="bi">
         <div class="ar" lang="ar" dir="rtl"><p class="lede">كل مصطلح واختصار ورد في الموقع وغرفة التحكم والعرض التقديمي: معنى كل حرف، والتعريف، واستخدامه في الصناعة، وموضعه في هذا المشروع. ويمكن تصفية القائمة حسب المجال، أو البحث فيها من لوحة المصطلحات الجانبية.</p></div>
@@ -1824,11 +2073,11 @@
       <div id="glossaryFull"></div>
     </section>
 
-    <!-- 16 · QUESTIONS AND WHAT COMES NEXT -->
+    <!-- 17 · QUESTIONS AND WHAT COMES NEXT -->
     <section class="ch" id="ch-faq">
       <div class="ch-head bi">
-        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 16</p><h2>أسئلة متوقعة، وملاحظات الأمانة، والخطوات القادمة</h2></div>
-        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 16</p><h2>Questions, honesty notes and what comes next</h2></div>
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 17</p><h2>أسئلة متوقعة، وملاحظات الأمانة، والخطوات القادمة</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 17</p><h2>Questions, honesty notes and what comes next</h2></div>
       </div>
       <div class="sub" id="s-faq"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
@@ -1872,7 +2121,7 @@
           <h3>ملاحظات الأمانة</h3>
           <ul>
             <li>المصنع EG-01 افتراضي، ولا يُنسب إلى أي شركة أو مدينة حقيقية.</li>
-            <li>جميع بيانات المصنع محاكاة، والوقت فيها أسرع من الواقع بعشرين مرة.</li>
+            <li>جميع بيانات المصنع محاكاة. والوقت في غرفة التحكم أسرع من الواقع بعشرين مرة، أما المصنع الحي ثلاثي الأبعاد فيسير بالزمن الحقيقي ما لم تسرّعه.</li>
             <li>سلوك الذكاء الاصطناعي في العرض مكتوب بقواعد محددة، ووكيل الإحاطة والمساعد الذكي قائمان على قواعد.</li>
             <li>الصور لمصانع عامة برخصة مفتوحة (Shixart1985، CC BY 2.0، عبر ويكيميديا كومنز)، ولا تُظهر المصنع EG-01.</li>
             <li>تقييم الجاهزية لعام 2030 في شاشة القيادة توضيحي، ويُستبدل بتقييم مشترك في الموقع.</li>
@@ -1882,7 +2131,7 @@
           <h3>Honesty notes</h3>
           <ul>
             <li>Plant EG-01 is fictional and not tied to any real company or city.</li>
-            <li>All plant data is simulated, and its time runs twenty times faster than real time.</li>
+            <li>All plant data is simulated. Time in the command room runs twenty times faster than real time; the live plant in 3D runs in real time unless you speed it up.</li>
             <li>AI behaviour in the demo is written as fixed rules; the briefing agent and the copilot are rule-based.</li>
             <li>Photos show factories in general under an open licence (Shixart1985, CC BY 2.0, via Wikimedia Commons), not Plant EG-01.</li>
             <li>The 2030 readiness assessment in Leadership is illustrative, to be replaced by a joint assessment on site.</li>
