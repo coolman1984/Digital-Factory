@@ -4,7 +4,7 @@
   const { $, fmt, pct, money, esc, STATE_LABEL } = DF;
   const copilotRng = DFRng.stream('copilot');
   const chat = $('#chat');
-  const CHIPS = ['Summarize this shift', 'Will we hit the plan?', 'What should I decide now?', 'Why is OEE not higher?', 'What are the alarms about?', 'Write the shift handover'];
+  const CHIPS = ['Summarize this shift', 'Will we hit the plan?', 'What should I decide now?', 'Why is OEE not higher?', 'What are the alarms about?', 'Write the shift handover', 'Prepare the briefing'];
   $('#chips').innerHTML = CHIPS.map(c => `<button type="button" class="chip-btn">${c}</button>`).join('');
   $('#chips').addEventListener('click', e => { const c = e.target.closest('.chip-btn'); if (c) ask(c.textContent); });
   $('#chatForm').addEventListener('submit', e => { e.preventDefault(); const v = $('#chatInput').value.trim(); if (v) { ask(v); $('#chatInput').value = ''; } });
@@ -58,6 +58,11 @@
     if (stn) {
       const l = Sim.line(stn.line), r = Sim.rulHours(stn);
       return { src: `${l.id} PLC · vibration sensor · remaining-life model`, html: `<b>${stn.name} (${l.name})</b> is <b>${STATE_LABEL[stn.state].toLowerCase()}</b>. Health ${Math.round(stn.health)}/100, vibration ${stn.vib.toFixed(2)} mm/s (alarm at 7.1), temperature ${stn.temp.toFixed(1)} °C.${stn.machine ? `<br>Remaining useful life: <b>${stn.state === 'down' ? '0 h, failed' : fmt(r) + ' h'}</b>. Failure risk in the next 24 h: <b>${Math.round(Sim.failureRisk(stn) * 100)}%</b>.` : ''}${stn.degrade > 0 ? '<br>The vibration trend is accelerating. I recommend approving the planned repair.' : ''}` };
+    }
+    if (/briefing|presentation|\bdeck\b|\bpin\b/.test(s)) {
+      const snap = DF.pinMoment && DF.pinMoment();
+      if (!snap) return { src: 'briefing', html: 'I could not pin this moment. Go back to live and try again.' };
+      return { src: 'Briefing · all plant systems', html: `<b>Briefing ready · plant at ${snap.clock}</b><br>I pinned this moment for the presentation: OEE ${pct(snap.oee)}, ${fmt(snap.units)} units against a plan of ${fmt(snap.plan)}, ${snap.decisions.length} decision${snap.decisions.length === 1 ? '' : 's'} waiting${snap.atRisk ? `, ${money(snap.atRisk)} at stake` : ''}.<br>The briefing slides now use these numbers. <a href="deck.html#briefing" target="_blank" rel="noopener">Open the briefing</a>` };
     }
     if (/handover|hand over|hand-over/.test(s)) {
       const done = S.audit.slice(0, 5);

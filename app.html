@@ -23,6 +23,7 @@
       <a href="#command" data-view="command"><span data-icon="dashboard"></span>Command room</a>
       <a href="#alarms" data-view="alarms"><span data-icon="alert"></span>Alarms<i class="nav-badge" id="navAlarms" hidden>0</i></a>
       <a href="#control" data-view="control"><span data-icon="settings"></span>Control</a>
+      <a href="plant.html" id="navPlant"><span data-icon="layers"></span>Live plant · 3D</a>
       <div class="nav-label">Intelligence</div>
       <a href="#agents" data-view="agents"><span data-icon="sparkles"></span>AI agents<i class="nav-badge info" id="navAgents" hidden>0</i></a>
       <a href="#predict" data-view="predict"><span data-icon="chart"></span>Predictions</a>
@@ -34,6 +35,9 @@
       <a href="#quality" data-view="quality"><span data-icon="eye"></span>Quality</a>
       <a href="#energy" data-view="energy"><span data-icon="live"></span>Energy</a>
       <a href="#simulator" data-view="simulator"><span data-icon="wand"></span>What-if</a>
+      <div class="nav-label">Learn · <span lang="ar">تعلّم</span></div>
+      <a href="guide.html" id="navGuide"><span data-icon="layers"></span><span>Reference guide · <span lang="ar" dir="rtl">الدليل المرجعي</span></span></a>
+      <a href="deck.html" id="navDeck"><span data-icon="tv"></span><span>Live presentation · <span lang="ar" dir="rtl">العرض التقديمي</span></span></a>
     </nav>
     <div class="side-note">
       <span data-icon="shield"></span>
@@ -60,6 +64,7 @@
           <button type="button" class="btn btn-secondary btn-sm" data-simspeed="20" title="20× fast-forward" aria-pressed="false">20×</button>
           <button type="button" class="btn btn-secondary btn-sm" data-simspeed="100" title="100× fast-forward" aria-pressed="false">100×</button>
         </div>
+        <button type="button" class="btn btn-secondary btn-sm hide-sm" id="pinBtn" title="Send this moment to the presentation (P)"><span data-icon="tv"></span><span class="hide-md">Send to deck</span></button>
         <button type="button" class="btn btn-secondary btn-sm" id="tmBtn" title="Time machine (M)"><span data-icon="history"></span><span class="hide-md">Time machine</span></button>
         <button type="button" class="btn btn-secondary btn-sm theme-btn" data-theme-toggle title="Light / dark (T)"><span class="ti"></span><span class="tl hide-md">Light</span></button>
         <button type="button" class="btn btn-primary btn-sm" id="btnCopilot" title="Copilot (C)"><span data-icon="sparkles"></span><span class="hide-sm">Ask copilot</span></button>
@@ -393,6 +398,7 @@
   <script src="assets/js/app/intel.js"></script>
   <script src="assets/js/app/perf.js"></script>
   <script src="assets/js/app/copilot.js"></script>
+  <script src="assets/js/app/briefing.js"></script>
   <script src="assets/js/app/main.js"></script>
 </body>
 </html>
