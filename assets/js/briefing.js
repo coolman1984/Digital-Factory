@@ -1,5 +1,5 @@
 /* Digital Factory — live briefing, presentation side.
-   Builds the two briefing slides from one moment of the command room (written by assets/js/app/briefing.js):
+   Builds the two briefing slides from one moment of the command room (written by assets/js/room/briefing.js):
    follow the plant live, or pin a moment so every number stays fixed for the meeting.
    The "briefing agent" is rule-based: it ranks what needs leadership attention and writes the sentences. Simulated data. */
 (function () {

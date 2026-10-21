@@ -9,7 +9,7 @@
 |---|---|---|---|
 | Website | index.html | Persuade | Make the vision feel inevitable and already built |
 | Presentation | deck.html | Persuade / Read | Tell the case in the meeting, live demo inside |
-| Command room | app.html | Operate | Let him run the plant: alarms, agents, control, scenarios |
+| Command room | app.html | Operate | Let him run the plant on the shared twin: decide agent cases with their simulated futures, alarms, control previewed on the twin, what-if, time machine |
 | Live plant | plant.html | Operate / Experience | Let him walk a whole TV plant in 3D, follow one TV, see SAP, GMES, S&OP, MRP and every department on the same numbers, and take the decision when a cause travels to an order |
 
 **Pinned (brand).** Brand UI kit in `assets/kit/`: brand blue, Inter, rounded geometry, light and dark. No third-party artwork or logos; no real company or city named for the plant. All plant data simulated and labelled as such. Every number on the site is sourced or marked as sample.
