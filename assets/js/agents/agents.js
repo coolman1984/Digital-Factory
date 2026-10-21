@@ -126,6 +126,8 @@
     return scored[0];
   };
 
+  const caseOfAlarm = key => { const c = S.cases.find(x => x.state !== 'closed' && (x.alarms || []).includes(key)); return c ? c.id : null; };
+
   /* ---------------- tools (also used by the copilot) ---------------- */
   const SPARES = { 'Spindle bearing 6204-2RS': { qty: 2, bin: 'B-14' }, 'Servo drive SD-400': { qty: 1, bin: 'C-03' }, 'Torque sensor kit': { qty: 3, bin: 'C-07' }, 'Thermocouple type K': { qty: 6, bin: 'A-22' }, 'AGV drive motor': { qty: 1, bin: 'D-02' }, 'Vacuum pump seal kit': { qty: 4, bin: 'B-09' } };
   const TOOLS = {
@@ -159,7 +161,7 @@
     },
     alarms() {
       const p = P();
-      return { rate10min: p.alarmStats.rate10, flood: p.alarmStats.flood, active: p.alarms.slice(0, 30).map(a => ({ key: a.key, prio: a.prio, msg: a.msg, area: a.area, time: a.time, state: a.state, case: a.case || null })) };
+      return { rate10min: p.alarmStats.rate10, flood: p.alarmStats.flood, active: p.alarms.slice(0, 30).map(a => ({ key: a.key, prio: a.prio, msg: a.msg, area: a.area, time: a.time, state: a.state, case: caseOfAlarm(a.key) })) };
     },
     cases() { return S.cases.slice(0, 20).map(c => ({ id: c.id, agent: agent(c.agent).short, title: c.title, state: c.state, recommended: c.recommended ? (c.options.find(o => o.id === c.recommended) || {}).label : null, value: c.value ? Math.round(c.value) : null })); },
     orders() {
@@ -540,7 +542,7 @@
       async run(c, x) {
         const s = P().byId[c.station];
         const group = P().alarms.filter(a => (a.ref === s.id || (a.area === lineName(s.line) && Math.abs(a.t - s.fault.at) < 180)) && Math.abs(a.t - s.fault.at) < 240);
-        group.forEach(a => { a.case = c.id; });
+        c.alarms = group.map(a => a.key);          // the case remembers its alarms; the plant's own data stays untouched
         await x.observe(`${s.name} stopped at ${clockOf(s.fault.at)}: ${s.fault.why}`, group.length > 3 ? `${group.length} alarms in ${Math.max(1, Math.round((Math.max(...group.map(a => a.t)) - Math.min(...group.map(a => a.t))) / 60))} min grouped into this one incident. First-out alarm: ${s.name} ${s.fault.why.toLowerCase()}; the rest follow from it (ISA-18.2 flood suppression).` : `Raised by the PLC; CMMS dispatched a technician.`);
         const st = await x.tool('station', { id: s.id }, r => `State ${r.state}, cycle ${r.cycleS} s, ${r.made} made today`);
         void st;
@@ -868,7 +870,7 @@
   }
 
   window.Agents = {
-    S, DEFS, POLICY, TOOLS, MEMORY, agent, caseById, linreg,
+    S, DEFS, POLICY, TOOLS, MEMORY, agent, caseById, caseOfAlarm, linreg,
     on(fn) { listeners.push(fn); return () => { const i = listeners.indexOf(fn); if (i >= 0) listeners.splice(i, 1); }; },
     start: startAgents, approve, reject, setAutonomy,
     get host() { return S.host; },

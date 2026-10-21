@@ -279,9 +279,10 @@
     const out = [];
     for (const f of first) {
       if (used.has(f)) continue;
-      const members = alive.filter(a => a !== f && !used.has(a) && (a.case && a.case === f.case || (a.area === f.area && a.t >= f.t - 20 && a.t - f.t < 240)));
+      const fc = window.Agents.caseOfAlarm(f.key);
+      const members = alive.filter(a => a !== f && !used.has(a) && ((fc && window.Agents.caseOfAlarm(a.key) === fc) || (a.area === f.area && a.t >= f.t - 20 && a.t - f.t < 240)));
       members.forEach(m => used.add(m)); used.add(f);
-      const c = window.Agents.S.cases.find(x => x.state !== 'closed' && (x.ref === toRef(f.ref) || (f.case && x.id === f.case)));
+      const c = window.Agents.S.cases.find(x => x.state !== 'closed' && (x.ref === toRef(f.ref) || x.id === fc));
       out.push({ open: true, first: f, members, case: c, title: f.msg, area: f.area });
     }
     const rest = alive.filter(a => !used.has(a));
