@@ -24,7 +24,7 @@
         <button type="button" class="ar-l" data-lang="both" aria-pressed="false"><span lang="ar">معًا</span> · Both</button>
       </div>
       <button type="button" class="btn btn-secondary terms-btn" id="termsBtn" aria-expanded="false" aria-controls="drawer"><span data-icon="search"></span><span class="tl"><span class="ar" lang="ar">المصطلحات</span><span class="en" lang="en">Terms</span></span></button>
-      <button type="button" class="btn btn-secondary theme-btn hide-sm" data-theme-toggle><span class="ti" aria-hidden="true"></span><span class="tl">Light</span></button>
+      <button type="button" class="btn btn-secondary theme-btn" aria-label="Switch light or dark" data-theme-toggle><span class="ti" aria-hidden="true"></span><span class="tl">Light</span></button>
     </div>
   </header>
 
@@ -708,6 +708,16 @@
             <li>قائمة الأجزاء في أعلى اليسار تنقل الكاميرا إلى المصنع كله، أو مخزن الاستيراد، أو سوبرماركت الموردين، أو صالة SMD، أو الحقن، أو خطوط LCM، أو الخطوط الرئيسية، أو الكبس والدهان، أو الشحن، أو المكاتب وSAP، أو قطع الغيار، أو المرافق.</li>
             <li>أسماء الخطوط مع طرازها ومعدلها، وأسماء غرف الأقسام مع عدد قراراتها، وأسماء المحطات عند الاقتراب. وتظهر بطاقة كهرمانية أو حمراء فوق أي ماكينة متوقفة أو مخزون فارغ.</li>
             <li>أزرار التنقل فوق العرض: <span class="ui"><span data-icon="user"></span>Walk</span> للمشي على أرض المصنع بالأسهم أو WASD أو عصا اللمس دون اختراق الماكينات، و<span class="ui"><span data-icon="sparkles"></span>Fly-through</span> لجولة طيران متصلة، و<span class="ui"><span data-icon="eye"></span>Cameras</span> لأربع كاميرات مراقبة عليها <a class="t" data-term="vision">رؤية آلية</a> (القسم التالي)، و<span class="ui"><span data-icon="layers"></span>X-ray</span> لرؤية ما داخل الماكينات والجدران. وخريطة المصنع في الركن تُظهر المركبات والإنذارات وموضع الكاميرا، والنقر عليها ينقلك إلى المكان.</li>
+            <li><b>المشي على أرض المصنع</b> بزاوية رؤية بعرض نظر الإنسان، وفيه:
+              <ul>
+                <li>سطر في الأعلى يحدد مكانك (المنطقة وأقرب ماكينة) واتجاهك، مع بوصلة.</li>
+                <li>علامة في وسط الشاشة؛ وعندما تنظر إلى ماكينة أو مركبة أو شخص على بعد 18 مترًا أو أقل تظهر بطاقة بحالته الحية، مثل «Blocked · Outfeed full · health 89%». واضغط <kbd>F</kbd> أو <kbd>Enter</kbd> أو انقر لفتح تفاصيله.</li>
+                <li><span class="ui primary">Walk me to …</span> (المفتاح <kbd>G</kbd>): يرسم مسارًا أزرق على الأرضية إلى ما اخترته (من البحث أو الخريطة أو اللوحة) ويمشي بك عليه حتى تقف أمامه، ويحسب المسار حول الماكينات والسيور. وأي مفتاح مشي يعيد التحكم إليك.</li>
+                <li><span class="ui">Ride …</span> (المفتاح <kbd>R</kbd>): تركب مع سائق رافعة شوكية أو قطار إمداد، أو فوق مركبة ذاتية، وترى من مقعده وهو يعمل، وتنظر حولك بحرية. والمشي أو <kbd>R</kbd> ينزلك بجانبها.</li>
+                <li>المركبات تتوقف لك أو تتجاوزك، ولا يمكنك المرور خلالها. وعندما تتجه نحوك مركبة يظهر تحذير أحمر، مثل «FL-03 · 3 m · coming toward you».</li>
+                <li>يتوقف المشي عند الانتقال إلى أي شاشة ثنائية الأبعاد، ويخرجك منه <span class="ui">Leave walk</span> أو <kbd>Esc</kbd> مرتين.</li>
+              </ul>
+            </li>
           </ul>
           <div class="tbl-wrap"><table class="tbl">
             <tr><th>العرض</th><th>المعنى</th></tr>
@@ -743,6 +753,16 @@
             <li>The list at the top left flies to the whole plant, the import warehouse, the local supermarket, SMD and PBA, injection, the LCM lines, the main lines, press and coating, shipping, the offices and SAP, service parts or utilities.</li>
             <li>Line names show their model and rate, department rooms the number of decisions waiting, station names appear up close. An amber or red tag appears above any stopped machine or empty stock.</li>
             <li>The navigation buttons over the view: <span class="ui"><span data-icon="user"></span>Walk</span> to walk the floor with the arrows, WASD or the touch pad without passing through machines, <span class="ui"><span data-icon="sparkles"></span>Fly-through</span> for a continuous flight, <span class="ui"><span data-icon="eye"></span>Cameras</span> for four CCTV feeds with <a class="t" data-term="vision">AI vision</a> (next section), and <span class="ui"><span data-icon="layers"></span>X-ray</span> to see inside machines and walls. The plant map in the corner shows vehicles, alarms and where the camera is; select a spot on it to go there.</li>
+            <li><b>Walking the floor</b> at a human field of view, with:
+              <ul>
+                <li>a line at the top that says where you are (the area and the nearest machine) and which way you face, with a compass;</li>
+                <li>a crosshair in the middle; when you look at a machine, vehicle or person within 18 m a card shows its live state, such as “Blocked · Outfeed full · health 89%”. Press <kbd>F</kbd> or <kbd>Enter</kbd>, or click, to open its details;</li>
+                <li><span class="ui primary">Walk me to …</span> (key <kbd>G</kbd>): draws a blue route on the floor to what you selected (from the search, the map or the panel) and walks you along it until you stand in front of it, around machines and conveyors. Any walking key gives you back control;</li>
+                <li><span class="ui">Ride …</span> (key <kbd>R</kbd>): ride along with a forklift or milk-run driver, or on top of an AGV, and see from the seat while it works, looking around freely. Walking or <kbd>R</kbd> puts you down beside it;</li>
+                <li>vehicles stop for you or pass you, and you cannot walk through them. When one heads toward you a red warning shows, such as “FL-03 · 3 m · coming toward you”;</li>
+                <li>walking ends when you switch to a 2D view; <span class="ui">Leave walk</span> or <kbd>Esc</kbd> twice leaves it.</li>
+              </ul>
+            </li>
           </ul>
           <div class="tbl-wrap"><table class="tbl">
             <tr><th>View</th><th>Meaning</th></tr>

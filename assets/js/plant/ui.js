@@ -43,6 +43,8 @@
   const tabs = $$('.modes [data-mode]');
   function setMode(m, o = {}) {
     if (m === '3d' && !V) m = 'gmes';
+    if (!tabs.some(t => t.dataset.mode === m)) m = V ? '3d' : 'gmes';   // an unknown mode (a typo in a link) falls back
+    if (m !== '3d' && V && V.walking) V.setWalk(false);   // walking ends when the 3D view is left
     mode = m;
     tabs.forEach(t => { const on = t.dataset.mode === m; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
     $('#view3d').hidden = m !== '3d';
@@ -54,8 +56,8 @@
   }
   tabs.forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
   $('.modes').addEventListener('keydown', e => {
-    const i = tabs.findIndex(t => t.dataset.mode === mode);
-    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; setMode(n.dataset.mode); n.focus(); }
+    const on = tabs.filter(t => !t.disabled), i = on.findIndex(t => t.dataset.mode === mode);
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const n = on[(i + (e.key === 'ArrowRight' ? 1 : on.length - 1)) % on.length]; setMode(n.dataset.mode); n.focus(); }
   });
   $('#view2d').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
@@ -82,6 +84,7 @@
   /* ---------------- selection and the detail panel ---------------- */
   let sel = null, kpiView = null;
   function select(ref, o = {}) {
+    if (ref && ref.startsWith('svc:')) ref = 'dept:svc';   // a service order opens the service-parts department, which lists them
     if (ref && ref.startsWith('kpi:')) { kpiView = ref.slice(4); sel = null; if (V) V.select(null, { fly: false }); render(true); return; }
     if (ref === 'sop') { setMode('sop'); ref = null; }
     if (ref && ref.startsWith('mrp:')) { views.showMrp(ref.slice(4)); if (mode !== 'mrp') setMode('mrp'); else views.render(true); }
@@ -214,7 +217,7 @@
     if (cmd === 'start') c.push(['No lockout on the machine', !s.loto], ['No fault waiting for repair', s.state !== 'down'], ['No quality hold on its output', !hold], ['Line supply on (no trip)', !(L && L.tripped)]);
     if (cmd === 'loto') c.push(['Machine stopped from the HMI', !!s.hold], ['No unit left inside (drain it first)', !(s.procs && s.procs.length)], ['Isolation points: main breaker, air valve', true], ['Permit to work by the area supervisor', true]);
     if (cmd === 'unloto') c.push(['Technician out of the guarded area', !(s.tech && s.tech.state === 'repairing')], ['Guards closed and interlocked', true], ['Lock removed by the person who applied it', true]);
-    if (cmd === 'faster') c.push(['Health above 70%', s.health > 70], ['Vibration below 3 mm/s', !(S.vib > 3)], ['Line first-pass quality above 97%', !L || (L.qual || 1) > 0.97], ['Below 120% of rated speed', (s.speedMul || 1) > 0.93]);
+    if (cmd === 'faster') c.push(['Health above 70%', s.health > 70], ['Vibration below 3 mm/s', !(S.vib > 3)], ['Line first-pass quality above 97%', !L || (L.qual || 1) > 0.97], ['Below 108% of rated speed (the machine maximum)', (s.speedMul || 1) > 0.93]);
     if (cmd === 'stop') c.push(['A stop is always allowed (safety first)', true]);
     if (cmd === 'slower') c.push(['Slowing down is always allowed', true]);
     return c;
@@ -584,6 +587,7 @@
     if (k === 'buf') return P.bufs[id] ? (P.bufs[id].label || id) : id;
     if (k === 'dept') { const d = X.DEPTS.find(x => x.id === id); return d ? d.name : id; }
     if (k === 'line') return line(id) ? line(id).name : id;
+    if (k === 'person') { const p = P.people.find(x => x.id === id); return p ? p.name : id; }
     return id;
   }
 
@@ -646,15 +650,83 @@
     if (n === 'xray') V.setXray(!V.xray);
     syncNav();
   }));
-  const walkHint = $('#walkHint'), joy = $('#joy');
+  const walkHint = $('#walkHint'), joy = $('#joy'), hud = $('#hud');
+  let hintT = null, look = null, warn = null, actsSig = '';
   if (V) V.on((t, d) => {
     if (t === 'walk') {
       syncNav();
-      walkHint.hidden = !d; joy.hidden = !d || !coarse;
-      walkHint.textContent = coarse ? 'Drag the view to look around · use the pad to walk · select Walk again to leave' : 'Click the view to look with the mouse · W A S D or arrows to walk · Shift to run · Esc twice to leave';
-      if (d) toast('Walking the floor at eye height. Machines and conveyors block the way, as on the real floor.', 'info');
+      hud.hidden = !d; joy.hidden = !d || !coarse; walkHint.hidden = !d; clearTimeout(hintT);
+      walkHint.textContent = coarse ? 'Drag the view to look around · use the pad to walk · tap a machine for details' : 'Click the view to look with the mouse · W A S D or arrows to walk · Shift to run · F details · G walk to the selection · R ride a vehicle · Esc twice to leave';
+      if (d) { hintT = setTimeout(() => { walkHint.hidden = true; }, 9000); toast('Walking the floor at eye height. Machines, conveyors and vehicles block the way, and vehicles stop for you.', 'info'); }
+      look = warn = null; actsSig = ''; hudTick(true);
     }
+    if (t === 'look') { look = d; hudTick(true); }
+    if (t === 'walkwarn') { warn = d; hudTick(true); }
+    if (t === 'ride') { if (d) toast(`Riding with ${labelFor(d)}. Move to get off, or press R.`, 'info'); actsSig = ''; hudTick(true); }
+    if (t === 'guide' && d && !d.manual) { toast(`Route to ${labelFor(d.ref)}: ${Math.round(d.m)} m, about ${Math.max(1, Math.round(d.m / 2.2 / 60 * 2) / 2)} min on foot. Any walking key takes over.`, 'info'); actsSig = ''; }
+    if (t === 'arrive') { toast(`You are at ${labelFor(d)}.`, 'success'); actsSig = ''; select(d, { fly: false }); }
     if (t === 'cinematic' || t === 'cctv') syncNav();
+  });
+  // one live line about what you look at, from the same numbers as the detail panel
+  function brief(ref) {
+    const [k, id] = ref.split(/:(.+)/);
+    if (k === 'st' && P.byId[id]) { const s = P.byId[id]; return `${STATE[s.state] || s.state}${s.why ? ' · ' + s.why : ''} · health ${Math.round(s.health)}%${s.degrade > 0 && s.state !== 'down' ? ' · failure in ' + mins((s.health - 22) / s.degrade) : ''}`; }
+    if (k === 'line' && line(id)) { const L = line(id); return `${STATE[L.state] || L.state} · OEE ${pct(L.oee, 0)} · ${fmt(L.tph)} an hour`; }
+    if (k === 'agv' || k === 'fl' || k === 'tug') {
+      const a = P.agvs.concat(P.tuggers, P.forklifts).find(x => x.id === id); if (!a) return '';
+      const doing = a.fault ? 'Fault' : a.kind === 'tugger' ? (a.path ? (a.phase === 'picking' ? 'Picking' : a.phase === 'delivering' ? 'Delivering' : 'Returning') + ' · ' + a.routeName : 'Waiting for its timetable') : a.kind === 'forklift' ? (a.load ? 'Carrying a pallet' : a.path ? 'Driving' : 'Parked') : a.mission ? `Bringing ${a.mission.buf.code}` : a.state === 'charging' ? 'Charging' : 'Parked';
+      return `${doing}${a.kind === 'agv' ? ` · battery ${Math.round(a.battery)}%` : ''}${a.blockBy === 'You' ? ' · stopped for you' : ''}`;
+    }
+    if (k === 'buf' && P.bufs[id]) { const b = P.bufs[id]; return `${fmt(E.level(b))} of ${fmt(b.cap)}${b.unit ? ' ' + b.unit : ''} in stock`; }
+    if (k === 'person') { const p = P.people.find(x => x.id === id); return p ? `${p.role}${p.state ? ' · ' + p.state : ''}` : ''; }
+    if (k === 'unit') { const u = E.findUnit(id); return u ? where(u) : ''; }
+    if (k === 'pal') { const p = P.pallets.find(x => x.id === id); return p ? `${p.units.length} TVs · ${p.model}` : ''; }
+    return 'Select for its details';
+  }
+  const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  $('#hudCompass div').innerHTML = Array.from({ length: 24 }, (_, i) => `<b${i % 2 ? '' : ' class="c"'}>${DIRS[i % 8]}</b>`).join('');
+  function hudTick(now) {
+    if (!V || !V.walking || hud.hidden) return;
+    const w = V.walkPos, st = V.walkState, deg = ((w.yaw * 180 / Math.PI) % 360 + 360) % 360;
+    $('#hudCompass div').style.transform = `translateX(${(120 - ((deg + 360) / 45 * 40 + 20)).toFixed(1)}px)`;
+    if (now === true || (frameN % 15 === 0)) {
+      const z = P.layout.ZONES.find(q => w.x >= q.x0 && w.x <= q.x1 && w.z >= q.z0 && w.z <= q.z1);
+      let near = null, nd = 9;
+      for (const s2 of P.stations) { const d2 = Math.hypot(s2.x - w.x, s2.z - w.z); if (d2 < nd) { nd = d2; near = s2; } }
+      $('#hudWhere').innerHTML = `${esc(st.ride ? 'Riding ' + labelFor(st.ride) : z ? z.name : 'Aisle')}${near ? ` <span>· by ${esc(near.name)}${line(near.line) ? ', ' + esc(line(near.line).name) : ''}</span>` : ''} <span>· facing ${DIRS[Math.round(deg / 45) % 8]}</span>`;
+      $('#hudCross').classList.toggle('on', !!look);
+      const lk = $('#hudLook'); lk.hidden = !look;
+      if (look) {
+        const veh = /^(agv|fl|tug):/.test(look.ref);
+        lk.querySelector('b').textContent = look.name; lk.querySelector('span').textContent = brief(look.ref);
+        lk.querySelector('em').textContent = `${coarse ? 'Tap' : 'F or click'} for details${veh && !coarse ? ' · R to ride along' : ''}`;
+      }
+      const wn = $('#hudWarn'); wn.hidden = !warn;
+      if (warn) wn.textContent = `${warn.name} · ${Math.max(0, warn.d).toFixed(0)} m · coming toward you`;
+      // actions follow the state: walk to the selection, ride along, leave
+      const vehRef = [look && look.ref, sel].find(r => /^(agv|fl|tug):/.test(r || ''));
+      const goRef = sel && !/^(kpi|mrp|po|order):/.test(sel) && V.refInfo(sel) ? sel : null;
+      const sig = [st.ride, st.guide, st.auto, goRef, vehRef].join('|');
+      if (sig !== actsSig) {
+        actsSig = sig;
+        const btn = (act, label, key, primary) => `<button type="button" class="btn ${primary ? 'btn-primary' : 'btn-secondary'} btn-sm" data-walk="${act}">${esc(label)}${key ? ` <kbd>${key}</kbd>` : ''}</button>`;
+        $('#hudActs').innerHTML = [
+          st.guide ? btn('stop', st.auto ? 'Stop guiding' : 'Clear the route', '') : goRef && !st.ride ? btn('go', `Walk me to ${labelFor(goRef)}`, 'G', true) : '',
+          st.ride ? btn('off', `Get off ${labelFor(st.ride)}`, 'R', true) : vehRef ? btn('ride', `Ride ${labelFor(vehRef)}`, 'R') : '',
+          btn('leave', 'Leave walk', 'Esc')
+        ].join('');
+      }
+    }
+  }
+  $('#hudActs').addEventListener('click', e => {
+    const b = e.target.closest('[data-walk]'); if (!b || !V) return;
+    const act = b.dataset.walk, st = V.walkState;
+    if (act === 'go' && !V.walkGuide(sel)) toast('There is no way through to it from here on foot.', 'warning');
+    if (act === 'stop') V.clearGuide();
+    if (act === 'ride') { const r = [look && look.ref, sel].find(x => /^(agv|fl|tug):/.test(x || '')); if (r) V.rideOn(r); }
+    if (act === 'off' && st.ride) V.leaveRide();
+    if (act === 'leave') { V.setWalk(false); syncNav(); }
+    actsSig = ''; hudTick(true);
   });
   // touch pad for walking on phones and tablets
   { let id = null; const knob = joy.querySelector('i');
@@ -812,7 +884,7 @@
     clearTimeout(tour.timer);
     if (!st.last) tour.timer = setTimeout(() => tourStep(i + 1), 10000);
   }
-  function startTour() { tour = { i: 0 }; setSpeed(4); tourStep(0); }
+  function startTour() { stopTour(); tour = { i: 0 }; setSpeed(4); tourStep(0); }
   function stopTour() { if (tour) clearTimeout(tour.timer); tour = null; cap.hidden = true; document.body.classList.remove('touring'); if (V) V.setFollow(false); }
   $('#tourBtn').addEventListener('click', () => (tour ? stopTour() : startTour()));
   cap.addEventListener('click', e => { const b = e.target.closest('[data-tour]'); if (!b) return; if (b.dataset.tour === 'next' && tour) tourStep(Math.min(TOUR.length - 1, tour.i + 1)); else stopTour(); });
@@ -838,7 +910,7 @@
 
   /* ---------------- deep links: #st:ML1-Packing, #unit:TV26…, #drill:container, #mode:mrp, #tour ---------------- */
   function fromHash() {
-    const h = decodeURIComponent(location.hash.slice(1));
+    let h; try { h = decodeURIComponent(location.hash.slice(1)); } catch (err) { return; }   // a malformed link is ignored
     if (!h) return;
     if (h.startsWith('drill:')) { setTimeout(() => runDrill(h.slice(6)), 300); return; }
     if (h.startsWith('mode:')) { setMode(h.slice(5)); return; }
@@ -855,6 +927,7 @@
     acc += dt; accR += dt;
     if (acc > 0.5) { acc = 0; kpis(); vstream(); labelsTick(); cctvTick(); }
     if (mode === '3d' && (frameN++ % 6 === 0)) miniTick();
+    if (mode === '3d') hudTick();
     if (frameN % 2 === 0) visionTick();
     if (accR > 1) { accR = 0; render(); if (mode !== '3d') views.render(); }
     requestAnimationFrame(frame);

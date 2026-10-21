@@ -128,9 +128,10 @@
     const v = { canvas, size, draw: () => (kind === 'slot' ? drawSlot : drawFull)(), on: true };
     size();
     new ResizeObserver(() => { size(); v.draw(); }).observe(canvas);
-    new IntersectionObserver(es => { v.on = es[0].isIntersecting; }).observe(canvas);
+    new IntersectionObserver(es => { v.on = es[es.length - 1].isIntersecting; if (v.on && wake) wake(); }).observe(canvas);
     return v;
   }
+  let wake = null;
   const views = [...document.querySelectorAll('canvas[data-twin]')].map(view);
   views.forEach(v => v.draw());
 
@@ -142,17 +143,22 @@
   addEventListener('twin:unit', () => { units++; set('units', units.toLocaleString('en-US')); });
   set('units', units.toLocaleString('en-US')); clock();
   if (!reduce) setInterval(() => {
+    if (!views.some(v => v.on)) return;   // nothing on screen to update
     clock();
     oee = Math.min(87.2, Math.max(85.6, oee + (heroRng.range(0, 1) - .5) * .3)); set('oee', oee.toFixed(1) + '%');
     risk = Math.min(76, Math.max(70, risk + (heroRng.range(0, 1) - .45) * .6)); set('risk', Math.round(risk) + '%');
   }, 1000);
 
   if (reduce) return;
-  let last = performance.now();
+  // the loop sleeps while no drawing is on screen, and the observer wakes it when one comes back
+  let last = performance.now(), raf = 0;
   const loop = t => {
+    raf = 0;
     const dt = Math.min(.05, (t - last) / 1000); last = t;
-    if (views.some(v => v.on)) { stepLine(dt); views.forEach(v => v.on && v.draw()); }
-    requestAnimationFrame(loop);
+    if (!views.some(v => v.on)) return;
+    stepLine(dt); views.forEach(v => v.on && v.draw());
+    raf = requestAnimationFrame(loop);
   };
-  requestAnimationFrame(loop);
+  wake = () => { if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); } };
+  wake();
 })();

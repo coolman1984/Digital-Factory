@@ -123,11 +123,11 @@
         const dn = L.stations.filter(s => s.state === 'down' || s.state === 'maint' || s.state === 'changeover');
         if (dn.length) { const st = dn[0], d = Math.max(60, st.state === 'changeover' ? st.co : st.repair || 900); bars.push(`<i class="bk ${st.state === 'changeover' ? 'co' : st.state === 'maint' ? 'pm' : 'dn'}" style="left:0;width:${x(t0 + d)}%" title="${esc(st.name)} · ${esc(STATE[st.state])}"></i>`); t += d; }
         const o = X.pp.find(p => p.line === L.id && p.status !== 'TECO');
-        let rem = o ? Math.max(0, o.qty - X.ppProgress(o)) : 0, n = o ? +o.id : 0, first = true;
+        let rem = o ? Math.max(0, o.qty - X.ppProgress(o)) : 0, n = o ? +o.id : 0, first = true, k = 0;
         while (t < t0 + H8) {
           const q = first ? rem : (o ? o.qty : 1500), d = q / rate;
-          bars.push(`<i class="bk ord ${first ? 'now' : ''}" style="left:${x(t)}%;width:${(x(t + d) - x(t)).toFixed(2)}%" title="Order ${first ? n : n + bars.length} · ${fmt(q)} × ${esc(MODELS[L.model].name)}"><span>${first ? `${o ? o.id : ''} · ${fmt(q)} left` : `${MODELS[L.model].name} · next order`}</span></i>`);
-          t += d; first = false; if (bars.length > 6) break;
+          bars.push(`<i class="bk ord ${first ? 'now' : ''}" style="left:${x(t)}%;width:${(x(t + d) - x(t)).toFixed(2)}%" title="${o ? `Order ${n + k}` : 'Planned order'} · ${fmt(q)} × ${esc(MODELS[L.model].name)}"><span>${first ? `${o ? o.id : ''} · ${fmt(q)} left` : `${MODELS[L.model].name} · next order`}</span></i>`);
+          t += d; first = false; k++; if (bars.length > 6) break;
         }
         for (const w of P.wo.filter(w => w.status === 'Scheduled' && w.due && P.byId[w.st] && P.byId[w.st].line === L.id && w.due < t0 + H8)) bars.push(`<i class="bk pm" style="left:${x(w.due)}%;width:${Math.max(0.8, x(w.due + 1200) - x(w.due)).toFixed(2)}%" title="${esc(w.id)} · ${esc(w.why)}"></i>`);
         const due = P.orders.filter(od => (od.state === 'open' || od.state === 'loading') && od.model === L.model && od.due < t0 + H8).map(od => `<button type="button" class="due ${late.has(od.id) ? 'bad' : ''}" style="left:${x(od.due)}%" data-ref="order:${esc(od.id)}" title="Order ${esc(od.id)} · ${fmt(od.qty)} × ${esc(MODELS[od.model].name)} due ${clock(od.due)}${late.has(od.id) ? ' · forecast short' : ''}"><span class="sr-only">Order ${esc(od.id)} due ${clock(od.due)}</span></button>`).join('');

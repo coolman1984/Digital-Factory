@@ -1026,6 +1026,7 @@
       for (const p of P.people) {
         if (p.present === false) continue;
         const walking = !!p.path, ride = p.rides;
+        if (ride && walk.ride === ride) continue;   // your seat while you ride along
         const y = ride ? (ride.kind === 'forklift' ? 0.95 : 0.75) : 0;
         const bob = walking ? Math.abs(Math.sin(tAnim * 9 + p.x)) * 0.05 : Math.sin(tAnim * 1.3 + p.x) * 0.01;
         const tc = overlay === 'people' && p.cover ? S.warn : tint[p.role] || C.person;
@@ -1176,17 +1177,31 @@
     for (const bl of BELTS) if (Math.min(bl.y0, bl.y1) < 2) block(Math.min(bl.x0, bl.x1), Math.min(bl.z0, bl.z1) - bl.w / 2, Math.max(bl.x0, bl.x1), Math.max(bl.z0, bl.z1) + bl.w / 2);
     for (const k of colAt) { const [x, z] = k.split(',').map(Number); block(x - 0.3, z - 0.3, x + 0.3, z + 0.3); }
     const free = (x, z) => x > 0.6 && z > 0.6 && x < L.W - 0.6 && z < L.D - 0.6 && !solid[Math.floor(z / GRID) * GW + Math.floor(x / GRID)];
-    const walk = { on: false, x: 107, z: 40, yaw: 0, pitch: -0.05, keys: new Set(), vx: 0, vz: 0, joy: [0, 0], look: null };
-    const EYE = 1.68;
+    const walk = { on: false, x: 107, z: 40, yaw: 0, pitch: -0.05, keys: new Set(), vx: 0, vz: 0, joy: [0, 0], look: null,
+      guide: null, guideRef: null, guideLine: null, auto: false, ride: null, rideH: 0, lookRef: null, lookT: 0, warnT: 0 };
+    const EYE = 1.68, FOV_ORBIT = camera.fov, FOV_WALK = 64;
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const VEHS = () => P.agvs.concat(P.tuggers, P.forklifts);
+    const vref = a => (a.kind === 'tugger' ? 'tug:' : a.kind === 'forklift' ? 'fl:' : 'agv:') + a.id;
+    const vhalf = a => (a.kind === 'tugger' ? 2.9 : a.kind === 'forklift' ? 1.3 : 0.85);
+    // distance from a floor point to a vehicle's body (a segment along its heading, about 1.2 m wide)
+    const vdist = (a, x, z) => { const c = Math.cos(a.h), s2 = Math.sin(a.h), dx = x - a.x, dz = z - a.z; const t = Math.max(-vhalf(a), Math.min(vhalf(a), dx * c + dz * s2)); return Math.hypot(dx - c * t, dz - s2 * t) - 0.6; };
+    const clear = (x, z) => free(x, z) && !VEHS().some(a => Math.abs(a.x - x) < 5 && Math.abs(a.z - z) < 5 && vdist(a, x, z) < 0.35);
+    function nearestFree(x, z) {
+      if (free(x, z)) return [x, z];
+      for (let r = 0.5; r < 14; r += 0.5) for (let i = 0; i < 24; i++) { const q = i / 24 * Math.PI * 2, px = x + Math.cos(q) * r, pz = z + Math.sin(q) * r; if (free(px, pz)) return [px, pz]; }
+      return null;
+    }
     function setWalk(v, at) {
       walk.on = !!v;
+      walk.ride = null; walk.auto = false; clearGuide();
       if (walk.on) {
         if (cine.on) setCinematic(false);
         fly = null; follow = false;
         let p = at || [controls.target.x, controls.target.z];
         // start on the nearest free spot of an aisle
         if (!free(p[0], p[1])) { let best = null; for (const A of L.AISLES) { const h = A.a[1] === A.b[1]; const x = h ? Math.max(Math.min(A.a[0], A.b[0]), Math.min(Math.max(A.a[0], A.b[0]), p[0])) : A.a[0]; const z = h ? A.a[1] : Math.max(Math.min(A.a[1], A.b[1]), Math.min(Math.max(A.a[1], A.b[1]), p[1])); const d = Math.hypot(x - p[0], z - p[1]); if (free(x, z) && (!best || d < best.d)) best = { x, z, d }; } if (best) p = [best.x, best.z]; }
-        walk.x = p[0]; walk.z = p[1];
+        walk.x = p[0]; walk.z = p[1]; walk.vx = walk.vz = 0;
         const dir = controls.target.clone().sub(camera.position); walk.yaw = Math.atan2(dir.x, -dir.z); walk.pitch = -0.08;
         controls.enabled = false;
       } else {
@@ -1195,28 +1210,172 @@
         controls.target.set(walk.x + fwd.x * 8, 0.5, walk.z + fwd.z * 8);
         camera.position.set(walk.x - fwd.x * 10, 9, walk.z - fwd.z * 10);
         if (document.pointerLockElement === canvas) document.exitPointerLock();
+        P.walker = null; walk.lookRef = null; emit('look', null); emit('walkwarn', null);
       }
       emit('walk', walk.on);
     }
+
+    /* a route on the floor to what you chose, along the free cells of the walking grid (A*, 8 directions, no corner cutting) */
+    function findPath(x0, z0, x1, z1) {
+      const s0 = Math.floor(z0 / GRID) * GW + Math.floor(x0 / GRID), g = Math.floor(z1 / GRID) * GW + Math.floor(x1 / GRID);
+      const gx = g % GW, gz = (g / GW) | 0, H = i => Math.hypot(i % GW - gx, ((i / GW) | 0) - gz);
+      const cost = new Float32Array(GW * GD).fill(Infinity), from = new Int32Array(GW * GD).fill(-1), shut = new Uint8Array(GW * GD);
+      const heap = [], push = (i, f) => { heap.push([f, i]); let c = heap.length - 1; while (c) { const p2 = (c - 1) >> 1; if (heap[p2][0] <= heap[c][0]) break; [heap[p2], heap[c]] = [heap[c], heap[p2]]; c = p2; } };
+      const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let c = 0; for (;;) { const l = c * 2 + 1, r = l + 1; let m = c; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === c) break; [heap[m], heap[c]] = [heap[c], heap[m]]; c = m; } } return top[1]; };
+      const ok = (cx, cz) => cx > 1 && cz > 1 && cx < GW - 2 && cz < GD - 2 && !solid[cz * GW + cx];
+      cost[s0] = 0; push(s0, H(s0));
+      let n = 0;
+      while (heap.length && n++ < 260000) {
+        const i = pop(); if (i === g) break; if (shut[i]) continue; shut[i] = 1;
+        const cx = i % GW, cz = (i / GW) | 0;
+        for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
+          if (!dx && !dz) continue;
+          const nx = cx + dx, nz = cz + dz; if (!ok(nx, nz) || (dx && dz && (!ok(cx + dx, cz) || !ok(cx, cz + dz)))) continue;
+          const j = nz * GW + nx, c2 = cost[i] + (dx && dz ? 1.414 : 1);
+          if (c2 < cost[j]) { cost[j] = c2; from[j] = i; push(j, c2 + H(j)); }
+        }
+      }
+      if (from[g] < 0 && g !== s0) return null;
+      const cells = []; for (let i = g; i >= 0; i = i === s0 ? -1 : from[i]) cells.unshift(i);
+      const pts = cells.map(i => [(i % GW + 0.5) * GRID, (((i / GW) | 0) + 0.5) * GRID]);
+      // keep only the turns that line of sight needs, so the walk is smooth
+      const sight = (a2, b2) => { const d = Math.hypot(b2[0] - a2[0], b2[1] - a2[1]), n2 = Math.ceil(d / (GRID * 0.5)); for (let k2 = 1; k2 < n2; k2++) { const t = k2 / n2; if (!free(a2[0] + (b2[0] - a2[0]) * t, a2[1] + (b2[1] - a2[1]) * t)) return false; } return true; };
+      const out = [[x0, z0]]; let k = 0;
+      while (k < pts.length - 1) { let j = pts.length - 1; while (j > k + 1 && !sight(out[out.length - 1], pts[j])) j--; out.push(pts[j]); k = j; }
+      return out;
+    }
+    const GUIDE_M = new T.MeshBasicMaterial({ color: 0x2189FF, transparent: true, opacity: 0.8, side: T.DoubleSide, depthWrite: false });
+    function clearGuide() { if (walk.guideLine) { world.remove(walk.guideLine); walk.guideLine.geometry.dispose(); walk.guideLine = null; } walk.guide = null; walk.guideRef = null; walk.auto = false; }
+    function drawGuide() {
+      if (walk.guideLine) { world.remove(walk.guideLine); walk.guideLine.geometry.dispose(); walk.guideLine = null; }
+      const g = walk.guide; if (!g) return;
+      // a ribbon on the floor, 40 cm wide, from where you stand to the spot in front of the target
+      const pts = [[walk.x, walk.z]].concat(g.pts.slice(g.i)), pos = [];
+      for (let i = 1; i < pts.length; i++) {
+        const [x0, z0] = pts[i - 1], [x1, z1] = pts[i], l = Math.hypot(x1 - x0, z1 - z0) || 1, nx = -(z1 - z0) / l * 0.2, nz = (x1 - x0) / l * 0.2;
+        pos.push(x0 + nx, 0.035, z0 + nz, x0 - nx, 0.035, z0 - nz, x1 + nx, 0.035, z1 + nz, x0 - nx, 0.035, z0 - nz, x1 - nx, 0.035, z1 - nz, x1 + nx, 0.035, z1 + nz);
+      }
+      const geo = new T.BufferGeometry(); geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+      walk.guideLine = new T.Mesh(geo, GUIDE_M); world.add(walk.guideLine);
+    }
+    // "take me there": the route is drawn on the floor and the walker follows it; any walking key takes over again
+    function walkGuide(ref, auto = true) {
+      const info = refInfo(ref); if (!info || !walk.on) return false;
+      if (walk.ride) leaveRide();
+      // stand in front of it: the free spot nearest to its edge on the walker's side
+      const ex = Math.max(info.x - (info.w || 1) / 2 - 0.9, Math.min(info.x + (info.w || 1) / 2 + 0.9, walk.x));
+      const ez = Math.max(info.z - (info.d || 1) / 2 - 0.9, Math.min(info.z + (info.d || 1) / 2 + 0.9, walk.z));
+      const goal = nearestFree(ex, ez) || nearestFree(info.x, info.z); if (!goal) return false;
+      const pts = findPath(walk.x, walk.z, goal[0], goal[1]); if (!pts) return false;
+      walk.guide = { pts, i: 1, target: [info.x, info.z] }; walk.guideRef = ref; walk.auto = auto;
+      drawGuide(); emit('guide', { ref, m: pts.reduce((m, p, i) => m + (i ? Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0), 0) });
+      return true;
+    }
+    // ride along: sit in the cab of a forklift or milk-run train (or on top of an AGV) and look around while it works
+    function rideOn(ref) {
+      const [k, id] = String(ref || '').split(/:(.+)/);
+      const a = (k === 'agv' || k === 'fl' || k === 'tug') && VEHS().find(v => v.id === id); if (!a || !walk.on) return false;
+      clearGuide(); walk.ride = a; walk.rideH = a.h; walk.yaw = a.h + Math.PI / 2; walk.pitch = -0.12; P.walker = null;
+      emit('ride', vref(a)); return true;
+    }
+    function leaveRide() {
+      const a = walk.ride; if (!a) return;
+      walk.ride = null;
+      // step down beside the vehicle, on its right, onto free floor
+      const sx = a.x - Math.sin(a.h) * 1.6, sz = a.z + Math.cos(a.h) * 1.6, p = nearestFree(sx, sz) || nearestFree(a.x, a.z);
+      if (p) { walk.x = p[0]; walk.z = p[1]; }
+      walk.vx = walk.vz = 0; emit('ride', null);
+    }
+    const wrap = v => Math.atan2(Math.sin(v), Math.cos(v));
+    function stepFov(dt) {
+      const want = walk.on ? FOV_WALK : FOV_ORBIT;
+      if (Math.abs(camera.fov - want) > 0.05) { camera.fov += (want - camera.fov) * Math.min(1, dt * 5); camera.updateProjectionMatrix(); }
+    }
     function stepWalk(dt) {
+      stepFov(dt);
       if (!walk.on) return;
       const k = walk.keys, run = k.has('ShiftLeft') || k.has('ShiftRight');
       let f = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0) - walk.joy[1];
       let s = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0) + walk.joy[0];
       if (k.has('KeyQ')) walk.yaw -= dt * 1.4; if (k.has('KeyE')) walk.yaw += dt * 1.4;
-      const sp = run ? 4.2 : 1.9;
+      const manual = Math.abs(f) > 0.05 || Math.abs(s) > 0.05;
+      if (walk.ride) {
+        if (manual) leaveRide();
+        else {
+          const a = walk.ride, seat = a.kind === 'tugger' ? [1.9, 2.05] : a.kind === 'forklift' ? [-0.35, 2.15] : [0, 1.15];
+          walk.yaw += wrap(a.h - walk.rideH); walk.rideH = a.h;
+          walk.x = a.x + Math.cos(a.h) * seat[0]; walk.z = a.z + Math.sin(a.h) * seat[0];
+          const cp = Math.cos(walk.pitch);
+          camera.position.set(walk.x, seat[1], walk.z);
+          camera.lookAt(walk.x + Math.sin(walk.yaw) * cp, seat[1] + Math.sin(walk.pitch), walk.z - Math.cos(walk.yaw) * cp);
+          lookAround(dt); return;
+        }
+      }
+      if (manual && walk.auto) { walk.auto = false; emit('guide', { ref: walk.guideRef, manual: true }); }
+      const g = walk.guide;
+      if (g && walk.auto) {
+        // follow the route: turn toward the next point and walk; the last point is the spot in front of the target
+        let p = g.pts[g.i];
+        while (p && Math.hypot(p[0] - walk.x, p[1] - walk.z) < 0.5) { g.i++; p = g.pts[g.i]; }
+        if (!p) {
+          walk.yaw += wrap(Math.atan2(g.target[0] - walk.x, -(g.target[1] - walk.z)) - walk.yaw);
+          const ref = walk.guideRef; clearGuide(); emit('arrive', ref);
+        } else {
+          const want = Math.atan2(p[0] - walk.x, -(p[1] - walk.z)), d = wrap(want - walk.yaw);
+          walk.yaw += Math.max(-dt * 2.6, Math.min(dt * 2.6, d));
+          f = Math.abs(d) < 0.9 ? 1 : 0.25; s = 0;
+        }
+      }
+      if (g && frames % 10 === 0) drawGuide();
+      const sp = run ? 4.2 : walk.auto ? 2.2 : 1.9;
       // forward (sin yaw, −cos yaw) and right (cos yaw, sin yaw) on the floor
       const fx = Math.sin(walk.yaw), fz = -Math.cos(walk.yaw), rx = Math.cos(walk.yaw), rz = Math.sin(walk.yaw);
       const tx = (fx * f + rx * s) * sp, tz = (fz * f + rz * s) * sp;
       walk.vx += (tx - walk.vx) * Math.min(1, dt * 8); walk.vz += (tz - walk.vz) * Math.min(1, dt * 8);
+      // machines, conveyors, columns and vehicles block the way; a vehicle that drives into you is the one that waits
       const nx = walk.x + walk.vx * dt, nz = walk.z + walk.vz * dt;
-      if (free(nx, walk.z)) walk.x = nx; if (free(walk.x, nz)) walk.z = nz;
-      const bob = Math.hypot(walk.vx, walk.vz) > 0.3 ? Math.sin(tAnim * 9) * 0.025 : 0;
+      if (clear(nx, walk.z)) walk.x = nx; else walk.vx = 0;
+      if (clear(walk.x, nz)) walk.z = nz; else walk.vz = 0;
+      if (!free(walk.x, walk.z)) { const q = nearestFree(walk.x, walk.z); if (q) { walk.x = q[0]; walk.z = q[1]; } }
+      P.walker = { id: 'You', kind: 'person', x: walk.x, z: walk.z, h: 0, path: null, v: 0 };
+      const bob = !still && Math.hypot(walk.vx, walk.vz) > 0.3 ? Math.sin(tAnim * 9) * 0.025 : 0;
       camera.position.set(walk.x, EYE + bob, walk.z);
       const cp = Math.cos(walk.pitch);
       camera.lookAt(walk.x + Math.sin(walk.yaw) * cp, EYE + Math.sin(walk.pitch), walk.z - Math.cos(walk.yaw) * cp);
+      lookAround(dt);
     }
-    addEventListener('keydown', e => { if (walk.on && !e.target.closest('input, textarea')) { walk.keys.add(e.code); if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault(); } });
+    // what is in the middle of the view (within 18 m), and any vehicle heading toward you
+    function lookAround(dt) {
+      walk.lookT += dt;
+      if (walk.lookT < 0.15) return;
+      walk.lookT = 0;
+      ndc.set(0, 0); ray.setFromCamera(ndc, camera); ray.far = 18;
+      let ref = null;
+      for (const h of ray.intersectObjects(PICK, false)) { const o = h.object; const r = o.isInstancedMesh ? o.userData.refs[h.instanceId] : o.userData.ref; if (r && (!walk.ride || r !== vref(walk.ride))) { ref = r; break; } }
+      ray.far = Infinity;
+      if (ref !== walk.lookRef) { walk.lookRef = ref; emit('look', ref ? { ref, name: NAME(ref) } : null); }
+      if (walk.ride) { if (walk.warn) { walk.warn = null; emit('walkwarn', null); } return; }
+      let warn = null;
+      for (const a of VEHS()) {
+        if (!a.path || a.v < 0.2 || Math.abs(a.x - walk.x) > 9 || Math.abs(a.z - walk.z) > 9) continue;
+        const dx = walk.x - a.x, dz = walk.z - a.z, ahead = dx * Math.cos(a.h) + dz * Math.sin(a.h), lat = -dx * Math.sin(a.h) + dz * Math.cos(a.h);
+        const d = vdist(a, walk.x, walk.z);
+        if (ahead > 0 && Math.abs(lat) < 2.2 && d < 7 && (!warn || d < warn.d)) warn = { ref: vref(a), name: NAME(vref(a)), d };
+      }
+      if ((warn && warn.ref) !== (walk.warn && walk.warn.ref) || (warn && Math.abs(warn.d - walk.warn.d) > 0.8)) { walk.warn = warn; emit('walkwarn', warn); }
+    }
+    addEventListener('keydown', e => {
+      if (!walk.on || e.target.closest('input, textarea, select') || !canvas.offsetParent) return;
+      // Space and Enter on a focused button press that button, they do not walk or select
+      if ((e.code === 'Space' || e.code === 'Enter') && e.target.closest('button, a')) return;
+      walk.keys.add(e.code);
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
+      if (e.repeat) return;
+      // F or Enter: details of what you look at · G: walk to the selection · R: ride the vehicle you look at, or get off
+      if ((e.code === 'KeyF' || e.code === 'Enter') && walk.lookRef) select(walk.lookRef);
+      if (e.code === 'KeyG' && selRef) walkGuide(selRef);
+      if (e.code === 'KeyR') { if (walk.ride) leaveRide(); else { const r = [walk.lookRef, selRef].find(x => /^(agv|fl|tug):/.test(x || '')); if (r) rideOn(r); } }
+    });
     addEventListener('keyup', e => walk.keys.delete(e.code));
     addEventListener('blur', () => walk.keys.clear());
     document.addEventListener('mousemove', e => { if (walk.on && document.pointerLockElement === canvas) { walk.yaw += e.movementX * 0.0022; walk.pitch = Math.max(-1.2, Math.min(1.0, walk.pitch - e.movementY * 0.0022)); } });
@@ -1389,7 +1548,8 @@
       setFollow(v) { follow = v; },
       get follow() { return follow; },
       get selected() { return selRef; },
-      setWalk, get walking() { return walk.on; }, walkJoy(x, y) { walk.joy[0] = x; walk.joy[1] = y; }, walkTo(x, z) { if (free(x, z)) { walk.x = x; walk.z = z; } },
+      setWalk, get walking() { return walk.on; }, walkJoy(x, y) { walk.joy[0] = x; walk.joy[1] = y; }, walkTo(x, z) { const p = nearestFree(x, z); if (p) { if (walk.ride) leaveRide(); clearGuide(); walk.x = p[0]; walk.z = p[1]; } },
+      walkGuide, rideOn, leaveRide, clearGuide, get walkState() { return { ride: walk.ride ? vref(walk.ride) : null, guide: walk.guideRef, auto: walk.auto, look: walk.lookRef }; },
       get walkPos() { return { x: walk.x, z: walk.z, yaw: walk.yaw }; },
       camPos() { return walk.on ? { x: walk.x, z: walk.z, yaw: walk.yaw } : { x: controls.target.x, z: controls.target.z, yaw: Math.atan2(controls.target.x - camera.position.x, -(controls.target.z - camera.position.z)), dist: camera.position.distanceTo(controls.target) }; },
       setCinematic, get cinematic() { return cine.on; },

@@ -136,7 +136,7 @@
     const P = {
       t: START, speed: 1, paused: false, seq: 0,
       stations: [], byId: {}, lines: {}, segs: [], bufs: {}, units: new Set(), archive: new Map(), archiveOrder: [],
-      agvs: [], tuggers: [], forklifts: [], people: [], techs: [], inbound: [], trucks: [], pallets: [], fgSlots: [], orders: [],
+      walker: null, agvs: [], tuggers: [], forklifts: [], people: [], techs: [], inbound: [], trucks: [], pallets: [], fgSlots: [], orders: [],
       events: [], alarms: [], recs: [], preds: [], audit: [], kpi: {}, hist: { t: [], kw: [], tph: [], oee: [], wip: [] },
       scen: {}, energy: { kwh: 0 }, c0: START, wo: [], woSeq: 4180, made: { tv: 0, byModel: { M43: 0, M55: 0, M65: 0, M75: 0 } },
       base: { M43: 260, M55: 830, M65: 490, M75: 150 },     // TVs packed between 06:00 and the model start
@@ -520,11 +520,12 @@
       // keep a safe gap: stop for any vehicle in this lane ahead closer than the two half-lengths plus a metre.
       // A vehicle standing still in the lane (loading, waiting at a stop) is overtaken on the left once the other lane is clear;
       // when two wait on each other the one with the lower id goes, and nobody waits longer than 20 s
-      const ch = Math.cos(a.h), sh = Math.sin(a.h), half = v => (v.kind === 'tugger' ? 2.9 : v.kind === 'forklift' ? 1.3 : 0.85);
+      const ch = Math.cos(a.h), sh = Math.sin(a.h), half = v => (v.kind === 'tugger' ? 2.9 : v.kind === 'forklift' ? 1.3 : v.kind === 'person' ? 0.4 : 0.85);
       const still = o => !o.path || o.waitT > 0 || o.v < 0.05;
       let by = null, byLat = 0, oncL = false, oncR = false;
       a.passT = Math.max(0, (a.passT || 0) - dt);
-      for (const o of VEH()) {
+      // a visitor walking the floor in the 3D view (P.walker) is an obstacle too: vehicles stop for people
+      for (const o of P.walker ? VEH().concat(P.walker) : VEH()) {
         if (o === a || Math.abs(o.x - a.x) > 16 || Math.abs(o.z - a.z) > 16) continue;
         const dx = o.x - a.x, dz = o.z - a.z, ahead = dx * ch + dz * sh, lat = -dx * sh + dz * ch;
         if (ahead > -2 && ahead < 14 && Math.abs(lat) > 0.6 && Math.abs(lat) < 3.2) { if (lat < 0) oncL = true; else oncR = true; }
@@ -561,8 +562,8 @@
     const missions = [];
     function createMission(b, prio, reason) {
       if (b.mission) return b.mission;
-      const m = { id: 'M' + (++P.seq), buf: b, src: P.bufs[b.src], qty: b.batch, prio: prio || 1, reason: reason || 'Kanban', created: P.t, veh: null, eta: null, kind: b.feed === 'forklift' ? 'forklift' : 'agv' };
-      missions.push(m); b.mission = m; b.pending = b.batch; return m;
+      const m = { id: 'M' + (++P.seq), buf: b, code: b.code, src: P.bufs[b.src], qty: b.batch, prio: prio || 1, reason: reason || 'Kanban', created: P.t, veh: null, eta: null, kind: b.feed === 'forklift' ? 'forklift' : 'agv' };
+      missions.push(m); b.mission = m; b.pending = (b.pending || 0) + m.qty; return m;
     }
     function runway(b) { return b.rate > 1e-5 ? level(b) / b.rate : Infinity; }
     function dispatch() {
@@ -593,10 +594,13 @@
         driveTo(a, m.buf.id);
         emit('move', { from: m.src.id, to: m.buf.id, code: m.buf.code, qty: n, by: a.id });
       } else if (a.phase === 'toDrop') {
-        const b = m.buf, L = a.load || { qty: 0 };
-        if (b.items) { b.items.push(...(L.items || [])); (L.items || []).forEach(u => { u.loc = { k: 'ls', b }; u.steps.push({ st: b.station, name: 'Delivered by ' + a.id, line: b.line, t0: P.t, t1: P.t, ok: true, note: `To ${P.byId[b.station].name}, ${P.lines[b.line].name}` }); }); }
+        // after a model changeover the load no longer fits this line: it goes back to the store it came from
+        const b = m.code && m.code !== m.buf.code ? m.src : m.buf, L = a.load || { qty: 0 };
+        if (b !== m.buf) log('WMS', `${a.id} returned ${m.code} to ${b.label || b.id}: ${P.lines[m.buf.line] ? P.lines[m.buf.line].name : 'the line'} changed model`);
+        if (b !== m.buf) { if (b.items) { b.items.push(...(L.items || [])); (L.items || []).forEach(u => { u.loc = { k: 'store', b }; }); } else for (const l of L.lots || []) addLot(b, l.id, l.qty, { src: l.src }); }
+        else if (b.items) { b.items.push(...(L.items || [])); (L.items || []).forEach(u => { u.loc = { k: 'ls', b }; u.steps.push({ st: b.station, name: 'Delivered by ' + a.id, line: b.line, t0: P.t, t1: P.t, ok: true, note: `To ${P.byId[b.station].name}, ${P.lines[b.line].name}` }); }); }
         else for (const l of L.lots || []) addLot(b, l.id, l.qty, { src: l.src });
-        a.load = null; a.waitT = 8; b.pending = 0; b.mission = null;
+        a.load = null; a.waitT = 8; m.buf.pending = Math.max(0, (m.buf.pending || 0) - m.qty); m.buf.mission = null;
         missions.splice(missions.indexOf(m), 1); a.mission = null; a.phase = 'idle';
         if (m.onDone) m.onDone();
       }
@@ -617,11 +621,11 @@
       const want = Object.values(LS).filter(b => TROUTE[t.route].serves(b.id) && level(b) + b.pending <= b.rop + (b.cap - b.rop) * 0.25);
       if (!want.length) return null;
       const loads = [];
-      for (const b of want) { const need = Math.max(0, b.cap - level(b) - b.pending); if (need > 0) loads.push({ b, src: P.bufs[b.src], need, got: null }); }
+      for (const b of want) { const need = Math.max(0, b.cap - level(b) - b.pending); if (need > 0) loads.push({ b, code: b.code, src: P.bufs[b.src], need, got: null }); }
       if (!loads.length) return null;
       const pickups = [...new Set(loads.map(l => l.src.id))].sort((a, b) => STOPS[a].z - STOPS[b].z || STOPS[a].x - STOPS[b].x);
       const drops = loads.map(l => l.b.id).sort((a, b) => STOPS[a].z - STOPS[b].z || STOPS[a].x - STOPS[b].x);
-      for (const l of loads) l.b.pending = l.need;
+      for (const l of loads) l.b.pending = (l.b.pending || 0) + l.need;
       return { loads, stops: pickups.map(id => ({ id, kind: 'pick' })).concat(drops.map(id => ({ id, kind: 'drop' }))), started: P.t };
     }
     function tuggerStep(t, dt) {
@@ -635,8 +639,8 @@
             t.waitT = 25;
           } else {
             const l = t.plan.loads.find(l => l.b.id === st.id);
-            if (l && l.got) { for (const x of l.got.lots) addLot(l.b, x.id, x.qty, { src: x.src }); emit('move', { from: l.src.id, to: l.b.id, code: l.b.code, qty: l.got.qty, by: t.id }); }
-            if (l) l.b.pending = 0;
+            if (l && l.got) { const to = l.code !== l.b.code ? l.src : l.b; for (const x of l.got.lots) addLot(to, x.id, x.qty, { src: x.src }); emit('move', { from: l.src.id, to: l.b.id, code: l.b.code, qty: l.got.qty, by: t.id }); }
+            if (l) l.b.pending = Math.max(0, (l.b.pending || 0) - l.need);
             t.waitT = 18;
           }
           t.stopIdx++;
@@ -742,7 +746,7 @@
           tr.k += dt / (tr.area === 'IMP' ? 900 : 480);
           if (tr.k >= 1) {
             tr.state = 'done'; tr.doneAt = P.t;
-            for (const l of tr.lines) { const b = STORE[MAT[l.code].store][l.code]; addLot(b, l.lot || lotId(vendLot(l.code)), l.qty, { src: MAT[l.code].vendor }); b.qty = Math.min(b.qty, b.cap * 1.25); }
+            for (const l of tr.lines) { const b = STORE[MAT[l.code].store][l.code]; addLot(b, l.lot || lotId(vendLot(l.code)), l.qty, { src: MAT[l.code].vendor }); { const over = b.qty - b.cap * 1.25; if (over > 0 && b.lots.length) { const last = b.lots[b.lots.length - 1]; const k = Math.min(over, last.qty); last.qty -= k; b.qty -= k; if (last.qty <= 1e-9) b.lots.pop(); } } }
             emit('received', tr);
             log(tr.area === 'IMP' ? 'Import' : 'Receiving', `${tr.id} received into ${tr.area === 'IMP' ? 'the import warehouse' : 'the local-vendor supermarket'}`);
           }
@@ -790,7 +794,7 @@
       for (const n of s.needs) {
         const got = take(n.b, n.n || 1);
         if (!got) continue;   // the last lot here was just put on hold: nothing usable to record
-        if (n.b.items) { u.parts[n.as] = got[0]; got[0].usedIn = u.sn; got[0].usedAt = P.t; }
+        if (n.b.items) { u.parts[n.as] = got[0]; got[0].usedIn = u.sn; got[0].usedAt = P.t; P.units.delete(got[0]); }   // a built-in part lives on in u.parts (findUnit looks there)
         else u.lots[n.as] = got[0];
         emit('consume', { code: n.b.code, qty: n.n || 1, st: s.id, line: s.line });
       }
@@ -818,7 +822,7 @@
     }
     function stationStep(s, dt) {
       const L = P.lines[s.line];
-      if (s.state === 'down' || s.state === 'maint') { s.counters.down += dt; s.counters[s.state === 'down' ? 'brk' : 'pm'] += dt; if (s.tech && s.tech.state === 'repairing') { s.repair -= dt; if (s.repair <= 0) finishRepair(s); } return; }
+      if (s.state === 'down' || s.state === 'maint') { s.counters.down += dt; s.counters[s.state === 'down' ? 'brk' : 'pm'] += dt; if (s.tech && s.tech.state === 'repairing' && !s.loto) { s.repair -= dt; if (s.repair <= 0) finishRepair(s); } return; }
       if (s.micro > 0) { s.micro -= dt; s.counters.down += dt; s.counters.micro += dt; if (s.micro <= 0) { s.micro = 0; setState(s, 'idle'); } return; }
       if (s.state === 'changeover') { s.counters.down += dt; s.counters.co += dt; s.co -= dt; if (s.co <= 0) setState(s, 'idle'); return; }
       if ((L && (L.stopped || L.tripped)) || s.tripped || s.hold) { setState(s, 'idle', L && L.tripped ? 'Tripped (power)' : s.hold ? 'Stopped from the HMI' : 'Stopped'); s.counters.idle += dt; return; }
@@ -855,7 +859,7 @@
             const lcm = u;
             if (lcm.model !== L.model) { lcm.loc = null; archive(lcm); continue; }
             u = unit('tv', { model: L.model, line: L.id, order: L.order });
-            u.parts.lcm = lcm; lcm.usedIn = u.sn; lcm.usedAt = P.t; lcm.loc = null;
+            u.parts.lcm = lcm; lcm.usedIn = u.sn; lcm.usedAt = P.t; lcm.loc = null; P.units.delete(lcm);
             emit('unit', { kind: 'start', u });
           }
         } else if (s.idx === 0 && (L.kind === 'smd' || L.kind === 'lcm')) {
@@ -908,9 +912,13 @@
         if (level(io.out) + s.batchOut * (s.procs.length + 1) > io.out.cap) { full = true; break; }
         const miss = io.ins.find(([b, n]) => level(b) < n);
         if (miss) { starvedBy = miss[0]; break; }
-        for (const [b, n] of io.ins) { take(b, n); emit('consume', { code: b.code, qty: n, st: s.id, line: s.line }); }
+        // an under-cured coating lot taints what is built from it, so the peeling shows up on the chassis made from that lot
+        const CO = P.scen.coating, bad0 = CO && !CO.fixed && CO.lots;
+        let tainted = false;
+        for (const [b, n] of io.ins) { const got = take(b, n); if (bad0 && got && got.some(g => typeof g === 'string' && bad0.has(g))) tainted = true; emit('consume', { code: b.code, qty: n, st: s.id, line: s.line }); }
         const cure = s.kind === 'oven' ? (s.sens.temp || 195) : undefined;
         const lot = s.kind === 'injection' ? `${s.id}-${s.part}-${pad(Math.floor(s.shots / 40), 4)}` : s.kind === 'cushion' ? `${s.id.slice(0, 4)}-${SIZE(P.lines['ML' + s.line.slice(3)].model)}-${pad(Math.floor(P.t / 1800), 3)}` : `${s.line}-${s.kind === 'press' ? 'ST' : s.kind === 'oven' ? 'CT' : 'CH'}-${pad(Math.floor(P.t / 1200), 3)}`;
+        if (tainted) bad0.add(lot);
         s.procs.push({ left: cycleOf(s), lot, cure });
         if (s.kind !== 'oven' || s.procs.length > s.slots - 1) busy = true; else busy = true;
       }
@@ -976,7 +984,7 @@
         case 'wb': rec.note = `White point x ${rnd(0.312, 0.314).toFixed(4)} y ${rnd(0.328, 0.330).toFixed(4)} · gamma 2.2`; break;
         case 'qa': {
           const shot = u.lots.bc && P.scen.shortshot && P.scen.shortshot.lots.has(u.lots.bc) && R() < 0.5;
-          const coat = u.lots.chs && P.scen.coating && P.scen.coating.lots && [...P.scen.coating.lots].some(l => u.lots.chs && u.lots.chs.startsWith(l.slice(0, 7))) && R() < 0.3;
+          const coat = u.lots.chs && P.scen.coating && P.scen.coating.lots && !P.scen.coating.fixed && P.scen.coating.lots.has(u.lots.chs) && R() < 0.3;
           if (shot || coat || R() < 0.004) {
             u.defect = shot ? { code: 'Back cover short shot', at: s.id, cause: `Back-cover lot ${u.lots.bc}` } : coat ? { code: 'Chassis paint peeling', at: s.id, cause: `Chassis lot ${u.lots.chs} (under-cured)` } : { code: pick(['Scratch on bezel', 'Gap at back cover']), at: s.id, cause: 'Random' };
             if (shot) P.scen.shortshot.fails = (P.scen.shortshot.fails || 0) + 1;
@@ -1061,13 +1069,14 @@
       t.path = route(nearestNode(t.x, t.z), nearestNode(s.x, s.z + s.d)); t.path.unshift([t.x, t.z]); t.path.push([s.x + 0.6, s.z + s.d / 2 + 0.9]); t.len = polyLen(t.path); t.s = 0;
       log('CMMS', `${t.name} dispatched to ${s.name} (${P.lines[s.line] ? P.lines[s.line].name : ''})`, 'info', s.id);
     }
+    function sendHome(t) { t.state = 'returning'; t.job = null; t.path = route(nearestNode(t.x, t.z), nearestNode(t.home[0], t.home[1])); t.path.unshift([t.x, t.z]); t.path.push(t.home); t.len = polyLen(t.path); t.s = 0; }
     function finishRepair(s) {
       const t = s.tech, planned = s.state === 'maint';
       s.health = rnd(96, 99.5); s.fault = null; s.tech = null; s.failWhy = null; s.repairs = (s.repairs || 0) + 1;
       if (s.wo && s.wo.status !== 'Completed') { s.wo.status = 'Completed'; s.wo.closed = P.t; s.wo = null; }
       setState(s, 'idle'); alarm(`${s.id}.DOWN`, false); alarm(`${s.id}.HEALTH`, false);
       log('CMMS', `${s.name} (${P.lines[s.line] ? P.lines[s.line].name : ''}) back in production after ${planned ? 'planned' : 'unplanned'} repair`, 'info', s.id);
-      if (t) { t.state = 'returning'; t.job = null; t.path = route(nearestNode(t.x, t.z), nearestNode(t.home[0], t.home[1])); t.path.unshift([t.x, t.z]); t.path.push(t.home); t.len = polyLen(t.path); t.s = 0; }
+      if (t) sendHome(t);
       if (s.onRepaired) { const f = s.onRepaired; s.onRepaired = null; f(); }
       emit('stateChange', { s, state: 'up' });
     }
@@ -1077,7 +1086,7 @@
           t.s = Math.min(t.len, t.s + 1.35 * dt); const p = polyAt(t.path, t.s); t.x = p[0]; t.z = p[1]; t.h = p[2];
           if (t.s >= t.len - 0.01) { t.path = null; if (t.state === 'walking') { t.state = 'repairing'; log('CMMS', `${t.name} on site at ${t.job.name}`, 'info', t.job.id); } else if (t.state === 'returning') t.state = 'available'; }
         }
-        if (t.state === 'available') { const w = P.stations.find(s => (s.state === 'down' || s.state === 'maint') && !s.tech); if (w) sendTech(w); }
+        if (t.state === 'available') { const w = P.stations.find(s => (s.state === 'down' || s.state === 'maint') && !s.tech && !s.loto); if (w) sendTech(w); }   // a locked-out machine waits for its lockout to be removed
       }
       for (const p of P.people) if (p.rides) { p.x = p.rides.x; p.z = p.rides.z; }
     }
@@ -1288,15 +1297,22 @@
       } else if (k === 'hot') {
         const b = P.bufs[arg]; const src = P.bufs[b.src];
         const a = P.agvs.find(x => !x.mission && !x.fault) || P.agvs.filter(x => x.mission && x.phase === 'toPick')[0];
-        if (a && level(src) > 0) {
+        // one delivery per buffer: a run already on its way is left alone, a waiting one becomes the hot run
+        // and never more than fits: what is on the line plus what is already coming (a milk run, for example) stays within capacity
+        const room = Math.floor(b.cap - level(b) - (b.mission ? 0 : b.pending || 0));
+        if (b.mission && b.mission.veh) { log('AI', `${b.mission.veh.id} is already bringing ${b.code} to ${P.byId[b.station].name}`); }
+        else if (room <= 0 && !b.mission) { log('AI', `Enough ${b.code} is already on its way to ${P.byId[b.station].name}`); }
+        else if (a && level(src) > 0) {
           if (a.mission) { a.mission.veh = null; a.mission = null; }
-          const m = { id: 'M' + (++P.seq), buf: b, src, qty: Math.min(b.batch, Math.floor(level(src))), prio: 3, reason: 'Hot run', created: P.t, veh: null, kind: 'agv' };
-          missions.push(m); b.pending = m.qty; b.mission = m;
+          const m = b.mission || { id: 'M' + (++P.seq), buf: b, code: b.code, src, qty: Math.min(b.batch, Math.floor(level(src)), room), created: P.t, veh: null, kind: 'agv' };
+          m.prio = 3; m.reason = 'Hot run';
+          if (!missions.includes(m)) missions.push(m);
+          if (!b.mission) b.pending = (b.pending || 0) + m.qty; b.mission = m;
           m.onDone = () => { b.mission = null; };
           assign(a, m);
           log('AI', `Logistics agent sent ${a.id} on a hot run: ${m.qty} ${b.code} to ${P.byId[b.station].name}`);
+          audit(who, 'Hot run', `${b.code} to ${P.byId[b.station].name}`);
         }
-        audit(who, 'Hot run', `${b.code} to ${P.byId[b.station].name}`);
       } else if (k === 'planRepair') {
         const s = P.byId[arg]; if (!s || s.state === 'down') return;
         recs.delete('rul:' + arg);
@@ -1321,6 +1337,7 @@
         for (const l of S.lots) P.holds.add(l);
         const im = P.byId[S.st];
         setState(im, 'maint', 'Check ring replacement'); im.repair = 1500; sendTech(im);
+        im.shots = Math.ceil((im.shots + 1) / 40) * 40;   // good shots after the repair start a new lot, not the held one
         const sp = P.byId.IM20; sp.part = im.part; sp.base = INJ_CYCLE[im.part]; sp.batchOut = INJ_CAV[im.part]; setState(sp, 'changeover', `Mould change to ${im.part}`); sp.co = 2400; sp.mold = `MD-${im.part}-S`;
         audit(who, 'Held lots and moved mould', `${S.lots.size} lots of ${im.name} held · ${im.part} on IM20`);
         log('QMS', `${S.lots.size} back-cover lots from ${im.name} on hold · sorting at the lines`, 'warn', im.id);
@@ -1492,7 +1509,7 @@
         else if (cmd === 'start') { s.hold = false; if (s.state === 'idle') setState(s, 'idle'); say('Machine started from the HMI'); }
         else if (cmd === 'faster' || cmd === 'slower') { s.speedMul = Math.max(0.92, Math.min(1.2, (s.speedMul || 1) * (cmd === 'faster' ? 0.95 : 1.1))); say('Machine speed changed', `${Math.round(100 / s.speedMul)}% of rated`); }
         else if (cmd === 'loto') { s.hold = true; s.loto = { by: who, at: P.t }; setState(s, 'maint', 'Locked out (LOTO)'); s.repair = 0; say('Lockout-tagout applied', 'electrical and pneumatic energy isolated'); workOrder(s, 'Corrective', 'Inspection under lockout', 3, { status: 'In progress', tech: 'Maintenance on call', by: who }); }
-        else if (cmd === 'unloto') { s.loto = null; s.hold = false; if (s.wo && s.wo.type === 'Corrective') { s.wo.status = 'Completed'; s.wo.closed = P.t; s.wo = null; } setState(s, 'idle'); say('Lockout removed', 'machine released to production'); }
+        else if (cmd === 'unloto') { s.loto = null; s.hold = false; if (s.tech) { sendHome(s.tech); s.tech = null; } if (s.wo && s.wo.type === 'Corrective') { s.wo.status = 'Completed'; s.wo.closed = P.t; s.wo = null; } setState(s, 'idle'); say('Lockout removed', 'machine released to production'); }
         thinkSoon = true; emit('hmi', { s, cmd }); emit('recs');
       },
       setSpeed(v) { P.speed = v; P.paused = v === 0; emit('speed'); },

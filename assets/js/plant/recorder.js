@@ -2,7 +2,7 @@
    Keeps the whole shift as it happens so the presentation can review any time window later: one frame of the plant
    readouts every plant minute, and every event, agent message, decision card (with the options the agent simulated) and
    audit entry, each stamped with plant time. Pure model: no DOM, so it also runs inside the sample-shift worker.
-   The page saves the recording to this browser (localStorage "df-rec"); nothing leaves the browser. Simulated data. */
+   The page saves the recording to this browser (localStorage "df-rec-live"; a sample shift is "df-rec-sample"); nothing leaves the browser. Simulated data. */
 (function (root) {
   'use strict';
 
@@ -15,7 +15,8 @@
       v: 1, kind: 'plant', source: opts.source || 'live', session: Date.now(), seed: opts.seed || null,
       from: P.t, to: P.t, frames: [], events: [], feed: [], audit: [], cards: []
     };
-    const push = (arr, x, cap) => { arr.push(x); if (arr.length > cap) arr.splice(0, arr.length - cap); };
+    // a full list drops its oldest entries; the recording then starts at its first kept frame
+    const push = (arr, x, cap) => { arr.push(x); if (arr.length > cap) { arr.splice(0, arr.length - cap); if (arr === R.frames) R.from = R.frames[0].t; } };
 
     function frame() {
       const k = P.kpi || {};
