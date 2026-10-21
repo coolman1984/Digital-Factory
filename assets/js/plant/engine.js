@@ -452,9 +452,9 @@
     }
     for (const id in POS) stop(id, POS[id][0], POS[id][1]);
     for (let i = 0; i < 8; i++) stop('PARK-A' + i, 110 + i * 2.6, 37.2);
-    for (let i = 0; i < 6; i++) stop('PARK-F' + i, 207 + i * 3, 123);
+    for (let i = 0; i < 6; i++) stop('PARK-F' + i, 207 + i * 3, 122.6);
     for (let i = 0; i < 3; i++) stop('PARK-W' + i, 56 + i * 3, 37.2);
-    for (let i = 0; i < 5; i++) stop('PARK-T' + i, 112 + i * 9, 123);
+    for (let i = 0; i < 5; i++) stop('PARK-T' + i, 112 + i * 9, 122.6);
     AISLES.forEach((A, i) => {
       const h = A.a[1] === A.b[1];
       const pts = aislePts[i].concat([A.a, A.b]).sort((p, q) => (h ? p[0] - q[0] : p[1] - q[1]));
@@ -499,27 +499,61 @@
 
     function drive(a, toNode, endPt) {
       const from = a.path ? nearestNode(a.x, a.z) : (a.node != null ? a.node : nearestNode(a.x, a.z));
-      a.path = route(from, toNode); a.path.unshift([a.x, a.z]);
-      if (endPt) a.path.push(endPt);
+      // a forklift nosed into a pallet slot backs out to the middle of the aisle first
+      if (a.slotExit) { a.path = route(nearestNode(a.slotExit[0], a.slotExit[1]), toNode); a.path.unshift(a.slotExit); a.slotExit = null; }
+      else a.path = route(from, toNode);
+      a.path.unshift([a.x, a.z]);
+      if (endPt) { if (Array.isArray(endPt[0])) a.path.push(...endPt); else a.path.push(endPt); }
       a.len = polyLen(a.path); a.s = 0; a.target = toNode; a.waitT = 0; a.idleT = 0;
     }
     function driveTo(a, key) { drive(a, STOPS[key].node); }
+    // a parked vehicle turns to lie along the aisle, so it stays out of the traffic lane
+    function settle(a, dt) {
+      if (a.path || a.node !== a.home) return;
+      let d = Math.atan2(Math.sin(-a.h), Math.cos(-a.h)); if (Math.abs(d) > Math.PI / 2) d = Math.atan2(Math.sin(Math.PI - a.h), Math.cos(Math.PI - a.h));
+      a.h += clamp(d, -dt * 0.8, dt * 0.8);
+    }
     function moveStep(a, dt) {
       if (a.fault) { a.v = 0; a.state = 'fault'; return false; }
       if (a.waitT > 0) { a.waitT -= dt; a.v = 0; return false; }
       if (!a.path) return false;
-      let blocked = false;
-      for (const o of VEH()) if (o !== a && o.path && !o.fault && Math.abs(o.x - a.x) < 2.6 && Math.abs(o.z - a.z) < 2.6) {
-        const ahead = (o.x - a.x) * Math.cos(a.h) + (o.z - a.z) * Math.sin(a.h) > 0.6;
-        if (ahead && o.v < a.v + 0.05 && o.id > a.id) blocked = true;
+      // keep a safe gap: stop for any vehicle in this lane ahead closer than the two half-lengths plus a metre.
+      // A vehicle standing still in the lane (loading, waiting at a stop) is overtaken on the left once the other lane is clear;
+      // when two wait on each other the one with the lower id goes, and nobody waits longer than 20 s
+      const ch = Math.cos(a.h), sh = Math.sin(a.h), half = v => (v.kind === 'tugger' ? 2.9 : v.kind === 'forklift' ? 1.3 : 0.85);
+      const still = o => !o.path || o.waitT > 0 || o.v < 0.05;
+      let by = null, byLat = 0, oncL = false, oncR = false;
+      a.passT = Math.max(0, (a.passT || 0) - dt);
+      for (const o of VEH()) {
+        if (o === a || Math.abs(o.x - a.x) > 16 || Math.abs(o.z - a.z) > 16) continue;
+        const dx = o.x - a.x, dz = o.z - a.z, ahead = dx * ch + dz * sh, lat = -dx * sh + dz * ch;
+        if (ahead > -2 && ahead < 14 && Math.abs(lat) > 0.6 && Math.abs(lat) < 3.2) { if (lat < 0) oncL = true; else oncR = true; }
+        if (by || a.blockT > 20 || (o.blockBy === a.id && a.id < o.id)) continue;
+        // the other vehicle's front, middle and back: a long milk-run train crossing ahead blocks along its whole length
+        const oc = Math.cos(o.h) * half(o), os = Math.sin(o.h) * half(o);
+        for (const m of [0, 1, -1]) {
+          const ex = dx + oc * m, ez = dz + os * m, ah = ex * ch + ez * sh, la = -ex * sh + ez * ch;
+          if (ah > 0.2 && ah < half(a) + (m ? 0.3 : half(o)) + 1 && Math.abs(la) < (m ? 0.95 : 1.3)) { by = o; byLat = lat; break; }
+        }
       }
-      a.v = blocked ? 0 : ema(a.v, a.load ? a.vmax * 0.82 : a.vmax, Math.min(1, dt * 1.6));
+      // overtake on the side away from the stopped vehicle: left of the centre line, or further right when it stands on the left
+      if (by && still(by) && (a.blockT || 0) > 1.5 && !a.passT) {
+        const lane = byLat + (-(a.lx || 0) * sh + (a.lz || 0) * ch) > 0 ? -0.95 : 1.6;
+        if (!(lane < 0 ? oncL : oncR)) { a.passT = 9; a.passLane = lane; }
+      }
+      a.blockBy = by ? by.id : null;
+      a.blockT = by ? (a.blockT || 0) + dt : a.blockT > 20 ? (a.blockT > 24 ? 0 : a.blockT + dt) : 0;
+      a.v = by ? 0 : ema(a.v, a.load ? a.vmax * 0.82 : a.vmax, Math.min(1, dt * 1.6));
       a.s = Math.min(a.len, a.s + a.v * dt);
-      const p = polyAt(a.path, a.s); a.x = p[0]; a.z = p[1]; a.h = p[2];
+      // keep right: vehicles drive 0.9 m right of the aisle centre line, so traffic in opposite directions passes side by side
+      // (left while overtaking); the offset fades in after leaving a stop and out before the next one, and eases round corners
+      const p = polyAt(a.path, a.s), lane = (a.passT ? a.passLane : 0.9) * clamp(Math.min(a.s, a.len - a.s) / 4, 0, 1), k = Math.min(1, dt * 2.5);
+      a.lx = ema(a.lx || 0, -Math.sin(p[2]) * lane, k); a.lz = ema(a.lz || 0, Math.cos(p[2]) * lane, k);
+      a.x = p[0] + a.lx; a.z = p[1] + a.lz; a.h = p[2];
       a.km += a.v * dt / 1000;
       if (a.kind === 'agv') a.battery = Math.max(0, a.battery - dt * (a.load ? 0.009 : 0.006));
       a.state = a.load ? 'carrying' : 'moving';
-      if (a.s >= a.len - 0.01) { a.node = a.target; a.path = null; a.v = 0; return true; }
+      if (a.s >= a.len - 0.01) { a.node = a.target; a.path = null; a.v = 0; a.lx = a.lz = 0; a.blockT = 0; a.blockBy = null; a.passT = 0; return true; }
       return false;
     }
 
@@ -571,6 +605,7 @@
       if (a.path) { if (moveStep(a, dt)) { if (a.mission) missionArrived(a); else if (a.phase === 'toPark') a.phase = 'idle'; } return; }
       if (a.waitT > 0) { a.waitT -= dt; return; }
       if (a.fault) { a.state = 'fault'; return; }
+      settle(a, dt);
       a.state = a.kind === 'agv' && a.battery < 70 && a.node === a.home ? 'charging' : 'idle';
       if (a.state === 'charging') a.battery = Math.min(100, a.battery + dt * 0.1);
       a.idleT += dt;
@@ -614,6 +649,7 @@
       if (t.waitT > 0) { t.waitT -= dt; t.state = 'stopped'; return; }
       if (t.fault) { t.state = 'fault'; return; }
       if (t.plan && t.stopIdx < t.plan.stops.length) { driveTo(t, t.plan.stops[t.stopIdx].id); t.phase = t.plan.stops[t.stopIdx].kind === 'pick' ? 'picking' : 'delivering'; return; }
+      settle(t, dt);
       // the loop starts on its timetable (every 12 minutes) or earlier when a kanban is urgent
       t.state = 'idle';
       const due = P.t - t.lapStart >= 720 || Object.values(LS).some(b => TROUTE[t.route].serves(b.id) && level(b) <= b.rop * 0.6 && !b.pending);
@@ -642,17 +678,17 @@
         if (direct) { const tr = loading.find(t => t.model === direct.model); direct.claimed = true; tr.claimed += direct.units.length; f.job = { kind: 'load', pallet: direct, truck: tr, phase: 'toPallet', direct: true }; goPoint(f, [direct.x + 1.6, direct.z]); return; }
         const tr = !lineFull && loading.find(t => P.pallets.some(p => p.where === 'fg' && p.model === t.model && !p.claimed));
         const pal = tr && P.pallets.filter(p => p.where === 'fg' && p.model === tr.model && !p.claimed).sort((a, b) => a.built - b.built)[0];
-        if (tr && pal) { pal.claimed = true; tr.claimed += pal.units.length; f.job = { kind: 'load', pallet: pal, truck: tr, phase: 'toPallet' }; goPoint(f, [pal.slot.x, pal.slot.z + 2.6]); return; }
+        if (tr && pal) { pal.claimed = true; tr.claimed += pal.units.length; f.job = { kind: 'load', pallet: pal, truck: tr, phase: 'toPallet' }; goSlot(f, pal.slot); return; }
         const fresh = lineFull || P.pallets.find(p => p.where === 'pickup' && !p.claimed);
         if (fresh) { const slot = P.fgSlots.find(s => !s.p); if (slot) { fresh.claimed = true; slot.p = fresh; f.job = { kind: 'store', pallet: fresh, slot, phase: 'toPallet' }; goPoint(f, [fresh.x + 1.6, fresh.z]); return; } }
-        f.state = 'idle'; f.idleT += dt;
+        f.state = 'idle'; f.idleT += dt; settle(f, dt);
         if (f.idleT > 20 && f.node !== f.home) { drive(f, f.home); }
         return;
       }
       f.idleT = 0;
       if (j.phase === 'toPallet') {
         f.load = j.pallet; j.pallet.where = 'fork';
-        if (j.kind === 'store') { j.phase = 'toSlot'; goPoint(f, [j.slot.x, j.slot.z + 2.6]); }
+        if (j.kind === 'store') { j.phase = 'toSlot'; goSlot(f, j.slot); }
         else { if (j.pallet.slot) j.pallet.slot.p = null; j.phase = 'toTruck'; goPoint(f, [258.6, j.truck.dock.z]); }
       } else if (j.phase === 'toSlot') {
         j.pallet.where = 'fg'; j.pallet.slot = j.slot; j.pallet.claimed = false; j.pallet.x = j.slot.x; j.pallet.z = j.slot.z; f.load = null; f.job = null;
@@ -664,6 +700,8 @@
       }
     }
     function goPoint(f, pt) { drive(f, nearestNode(pt[0], pt[1]), pt); f.target = nearestNode(pt[0], pt[1]); }
+    // into a pallet slot the forklift runs down the aisle to the slot, then turns and noses in, forks to the pallet
+    function goSlot(f, slot) { const a = [slot.x, slot.z + 3], n = nearestNode(a[0], a[1]); drive(f, n, [a, [slot.x, slot.z + 1.85]]); f.target = n; f.slotExit = a; }
 
     /* ----- finished goods, docks, trucks and inbound ----- */
     for (let r = 0; r < 13; r++) for (let i = 0; i < 18; i++) P.fgSlots.push({ x: 210 + i * 2.7, z: 46 + r * 6, p: null, row: r });

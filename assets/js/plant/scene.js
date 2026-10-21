@@ -276,9 +276,25 @@
     for (let x = 0; x <= L.W + 0.1; x += 24) COLX.push(Math.min(x, L.W));
     for (let z = 0; z <= L.D + 0.1; z += 21) COLZ.push(Math.min(z, L.D));
     const colAt = new Set();
-    for (const x of COLX) for (const z of COLZ) {
-      const inside = (xx, zz) => P.stations.some(s => Math.abs(s.x - xx) < s.w / 2 + 0.6 && Math.abs(s.z - zz) < s.d / 2 + 0.6);
-      if (inside(x, z)) continue;
+    // a column never stands in an aisle, in the finished-goods pallet rows, on a store or dock apron, or in a machine:
+    // where the grid point is taken it moves up to 3.5 m along the grid line, and if no spot is free it is left out
+    const nearAisle = (x, z) => L.AISLES.some(A => A.a[1] === A.b[1]
+      ? Math.abs(z - A.a[1]) < 2.4 && x > Math.min(A.a[0], A.b[0]) - 2.4 && x < Math.max(A.a[0], A.b[0]) + 2.4
+      : Math.abs(x - A.a[0]) < 2.4 && z > Math.min(A.a[1], A.b[1]) - 2.4 && z < Math.max(A.a[1], A.b[1]) + 2.4);
+    const blocked = (x, z) => P.stations.some(s => Math.abs(s.x - x) < s.w / 2 + 0.8 && Math.abs(s.z - z) < s.d / 2 + 0.8)
+      || nearAisle(x, z) || P.fgSlots.some(f => Math.abs(f.x - x) < 1.4 && Math.abs(f.z - z) < 1.3)
+      || Object.values(L.POS).some(p => Math.hypot(p[0] - x, p[1] - z) < 3) || L.DOCKS.some(d => Math.abs(d.z - z) < 3 && x > L.W - 8);
+    const edge = (v, max) => v < 0.1 || v > max - 0.1;
+    for (const x0 of COLX) for (const z0 of COLZ) {
+      let at = null;
+      for (const d of [0, 2.5, -2.5, 3.5, -3.5]) {
+        for (const [x, z] of [[x0, z0 + d], [x0 + d, z0]]) if (!at && !(edge(x0, L.W) && x !== x0) && !(edge(z0, L.D) && z !== z0) && !blocked(x, z)) at = [x, z];
+        if (at) break;
+      }
+      // the outer wall keeps its columns: they stand in the wall line, outside the aisles' clearance
+      if (!at && (edge(x0, L.W) || edge(z0, L.D)) && !P.stations.some(s => Math.abs(s.x - x0) < s.w / 2 + 0.6 && Math.abs(s.z - z0) < s.d / 2 + 0.6)) at = [x0, z0];
+      if (!at) continue;
+      const [x, z] = at;
       colAt.add(x + ',' + z);
       sbox('beam', 0.42, ROOF, 0.12, x, 0, z - 0.17); sbox('beam', 0.42, ROOF, 0.12, x, 0, z + 0.17); sbox('beam', 0.08, ROOF, 0.3, x, 0, z);
       sbox('frame', 0.7, 0.25, 0.7, x, 0, z);
@@ -1264,8 +1280,15 @@
     const labels = [];
     const tmp = new T.Vector3();
     function label(el, getPos, tier) { labels.push({ el, getPos, tier }); }
+    // labels never sit on top of each other: the more important one wins (selection and alerts first, then systems,
+    // departments, lines, zones, stations, vehicles) and the others hide until the camera moves closer
+    const RANK = [['lb-sel', 0], ['lb-pill', 1], ['lb-sys', 2], ['lb-room', 3], ['lb-line', 4], ['lb-zone', 5], ['lb-st', 6], ['lb-agv', 7]];
+    const rankOf = el => { for (const [c, r] of RANK) if (el.classList.contains(c)) return r; return 8; };
+    const ANCHOR = { 'lb-zone': [0.5, 0.5], 'lb-line': [1, 0.5] };
+    let measureAt = 0;
     function projectLabels(w, h) {
       const dist = walk.on ? 20 : camera.position.distanceTo(controls.target);
+      const cand = [];
       for (const Lb of labels) {
         const p = Lb.getPos();
         let tierOk = p && (Lb.tier === 0 ? dist > 120 && !walk.on : Lb.tier === 1 ? dist < 260 : Lb.tier === 2 ? dist < 70 : typeof Lb.tier === 'function' ? Lb.tier(dist) : true);
@@ -1273,8 +1296,27 @@
         if (tierOk) tmp.set(p[0], p[1], p[2]).project(camera);
         const vis = tierOk && tmp.z < 1 && tmp.x > -1.05 && tmp.x < 1.05 && tmp.y > -1.05 && tmp.y < 1.05;
         if (!vis) { if (Lb.shown !== false) { Lb.el.style.display = 'none'; Lb.shown = false; } continue; }
+        if (Lb.rank == null) { Lb.rank = rankOf(Lb.el); const k = Object.keys(ANCHOR).find(c => Lb.el.classList.contains(c)); Lb.anchor = k ? ANCHOR[k] : [0.5, 1]; }
+        cand.push({ Lb, x: (tmp.x + 1) / 2 * w, y: (1 - tmp.y) / 2 * h, z: tmp.z });
+      }
+      // sizes are measured when a label first shows and about once a second after that (texts change)
+      const now = performance.now(), remeasure = now - measureAt > 1000;
+      if (remeasure) measureAt = now;
+      cand.sort((a, b) => a.Lb.rank - b.Lb.rank || a.z - b.z);
+      const taken = [];
+      for (const c of cand) {
+        const Lb = c.Lb;
+        if (Lb.w == null || (remeasure && Lb.shown === true)) { if (Lb.shown !== true) { Lb.el.style.display = ''; Lb.shown = true; } Lb.w = Lb.el.offsetWidth; Lb.h = Lb.el.offsetHeight; }
+        const x0 = c.x - Lb.w * Lb.anchor[0];
+        let y0 = c.y - Lb.h * Lb.anchor[1], r = [x0 - 3, y0 - 3, x0 + Lb.w + 3, y0 + Lb.h + 3];
+        const over = () => Lb.w > 0 && taken.some(t => r[0] < t[2] && r[2] > t[0] && r[1] < t[3] && r[3] > t[1]);
+        // alerts are never hidden: one that lands on another stacks above it
+        if (Lb.rank <= 1) for (let k = 0; k < 6 && over(); k++) { y0 -= Lb.h + 6; r = [x0 - 3, y0 - 3, x0 + Lb.w + 3, y0 + Lb.h + 3]; }
+        else if (over()) { Lb.el.style.display = 'none'; Lb.shown = false; continue; }
+        c.y = y0 + Lb.h * Lb.anchor[1];
         if (Lb.shown !== true) { Lb.el.style.display = ''; Lb.shown = true; }
-        Lb.el.style.transform = `translate3d(${((tmp.x + 1) / 2 * w).toFixed(1)}px, ${((1 - tmp.y) / 2 * h).toFixed(1)}px, 0)`;
+        if (Lb.w > 0) taken.push(r);
+        Lb.el.style.transform = `translate3d(${c.x.toFixed(1)}px, ${c.y.toFixed(1)}px, 0)`;
       }
     }
 
