@@ -1066,6 +1066,8 @@
       const A = P.util.assets;
       A[2].kw = 90 + pneu * 1.6 + (R() - 0.5) * 4; A[3].kw = 90 + pneu * 1.2; A[4].kw = pneu > 60 ? 40 + (pneu - 60) * 2 : 15;
       A[5].kw = 210 + (amb - 28) * 12; A[6].kw = amb > 33 ? 120 + (amb - 33) * 14 : 40; A[7].kw = 60 + P.stations.filter(s => s.kind === 'cushion' && s.state === 'run').length * 22;
+      // peak shaving ordered by the energy agent: chosen assets run staged down for a while
+      if (P.shave && P.t < P.shave.until) for (const x of A) if (P.shave.assets[x.id] !== undefined) x.kw *= P.shave.assets[x.id];
       P.util.kw = A.reduce((a, x) => a + x.kw, 0) + 380;   // lighting, HVAC for offices, IT
     }
 
@@ -1306,10 +1308,12 @@
     function trigger(id) {
       const sc = SCENARIOS.find(s => s.id === id); if (sc) audit('You', 'Started drill', sc.title);
       const S = P.scen;
+      // a drill compresses time: the fault started a while ago, so its first parts are already at the lines
+      const early = (lines, k) => { for (const n of lines) { const b = P.lines[n].ls[k]; if (b && b.lots && b.lots[0]) return b.lots[0].id; } };
       if (id === 'bearing') { const s = P.byId['SMD4-MounterB']; if (s.state === 'down' || s.degrade) return; s.health = Math.min(s.health, 74); s.degrade = 0.03; s.failWhy = 'Spindle bearing seized'; s.failRepair = 2100; log('IoT', 'SMD line 4 Mounter B vibration trend changed slope', 'warn', s.id); }
-      else if (id === 'shortshot') { S.shortshot = { st: 'IM10', lots: new Set(), fails: 0 }; log('IoT', 'IM10 injection pressure dropping · cavity fill below 95%', 'warn', 'IM10'); }
-      else if (id === 'coating') { S.coating = Object.assign(S.coating || {}, { line: 'PR4', drop: 18, fixed: false, lots: new Set(), fails: 0 }); log('IoT', 'Press line 4 coating oven burner fault · temperature falling', 'warn', 'PR4-Coating'); }
-      else if (id === 'software') { const cur = P.sw['PBA-55'].version; S.software = { bad: 'v3.2.0', good: cur, fails: 0 }; P.sw['PBA-55'] = { version: 'v3.2.0', released: P.t, by: 'PE · Eng. Hany Samir' }; log('PE', `Firmware v3.2.0 released for PBA 55 · writers on SMD 1 and 2 updated by GMES`, 'info', 'SMD1-SWdownload'); emit('swRelease', { code: 'PBA-55', version: 'v3.2.0' }); }
+      else if (id === 'shortshot') { S.shortshot = { st: 'IM10', lots: new Set(), fails: 0 }; ['ML4', 'ML5'].forEach(n => { const l = early([n], 'BC'); if (l) S.shortshot.lots.add(l); }); for (const u of P.units) if (u.type === 'tv' && !u.packed && u.model === 'M65' && u.lots.bc && R() < 0.6) S.shortshot.lots.add(u.lots.bc); log('IoT', 'IM10 injection pressure dropping · cavity fill below 95%', 'warn', 'IM10'); }
+      else if (id === 'coating') { S.coating = Object.assign(S.coating || {}, { line: 'PR4', drop: 18, fixed: false, lots: new Set(), fails: 0 }); ['ML4', 'ML5'].forEach(n => { const l = early([n], 'CHS'); if (l) S.coating.lots.add(l); }); log('IoT', 'Press line 4 coating oven burner fault · temperature falling', 'warn', 'PR4-Coating'); }
+      else if (id === 'software') { const cur = P.sw['PBA-55'].version; S.software = { bad: 'v3.2.0', good: cur, fails: 0 }; P.sw['PBA-55'] = { version: 'v3.2.0', released: P.t, by: 'PE · Eng. Hany Samir' }; for (const n of ['ML1', 'ML2']) P.lines[n].ls.PBA.items.slice(0, 14).forEach(u => { u.sw = 'v3.2.0'; }); log('PE', `Firmware v3.2.0 released for PBA 55 · writers on SMD 1 and 2 updated by GMES`, 'info', 'SMD1-SWdownload'); emit('swRelease', { code: 'PBA-55', version: 'v3.2.0' }); }
       else if (id === 'absent') { const st = P.lines.ML3.stations.filter(s => s.manual); let n = 0; for (const s of st) for (const p of s.crew) if (n < 8 && R() < 0.9) { p.present = false; n++; } S.absent = { fixed: false, n }; log('HR', `${n} operators absent on main line 3 (shift A)`, 'warn', 'ML3-PBAandSMPS'); }
       else if (id === 'power') {
         for (let i = 1; i <= 6; i++) { P.lines['SMD' + i].tripped = true; P.lines['PR' + i].tripped = true; }

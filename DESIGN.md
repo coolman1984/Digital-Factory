@@ -40,7 +40,7 @@ Readouts on top as one hairline strip, the detail panel on the right, the value 
 camera moves (1.1–1.3 s). Phones: shadows off, lower pixel ratio, readouts and views as horizontal scrollers.
 The whole plant (264 × 168 m) keeps the frame rate by merging static geometry by material and instancing everything that moves.
 Data packets between the floor, GMES, SAP and the offices are small brand-blue shapes on arcs; they carry no status meaning.
-The 2D tabs (GMES, SAP and data flow, S&OP, MRP, Departments, Decisions) use the same panels: hairline cards, bare numbers,
+The 2D tabs (GMES, SAP and data flow, S&OP, MRP, Departments, AI agents) use the same panels: hairline cards, bare numbers,
 state colour only where something is abnormal; charts use ink for production, brand blue for demand, a dashed grey line for capacity.
 
 ## The guide (guide.html)
