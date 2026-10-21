@@ -131,11 +131,20 @@
       const slope = sxy / sxx, r2 = syy ? (sxy * sxy) / (sxx * syy) : 0;
       return { slope, r2, last: a[N - 1], mean: my };
     }
-    // SPC: limits from the first samples, Nelson rules on the latest ones
-    function spc(arr, base = 60) {
-      const a = arr || []; if (a.length < base + 10) return null;
-      const ref = a.slice(0, base), mu = ref.reduce((s, v) => s + v, 0) / ref.length;
-      const sd = Math.sqrt(ref.reduce((s, v) => s + (v - mu) ** 2, 0) / ref.length) || 1e-6;
+    // SPC: control limits from a golden run of the normal process (captured at start), Nelson rules on the latest samples
+    const BASE = {};
+    function limits(key, arr) {
+      if (BASE[key]) return BASE[key];
+      const a = (arr || []).filter(v => v > 0); if (a.length < 25) return null;
+      const mu = a.reduce((s, v) => s + v, 0) / a.length;
+      return (BASE[key] = { mu, sd: Math.sqrt(a.reduce((s, v) => s + (v - mu) ** 2, 0) / a.length) || 1e-6 });
+    }
+    limits('IM10:press', P.byId.IM10.hist.press);
+    for (const L of Object.values(P.lines)) if (L.kind === 'press') { const ov = L.stations.find(x => x.kind === 'oven'); if (ov) limits(ov.id + ':temp', ov.hist.temp); }
+    A.limits = limits;
+    function spc(arr0, key) {
+      const a = (arr0 || []).filter(v => v > 0), lim = limits(key, a); if (!lim || a.length < 20) return null;
+      const { mu, sd } = lim;
       const recent = a.slice(-20), rules = [];
       if (recent.some(v => Math.abs(v - mu) > 3 * sd)) rules.push('Rule 1: a point beyond 3σ');
       let run = 0, side = 0, best = 0; for (const v of a.slice(-15)) { const sg = Math.sign(v - mu); if (sg === side) run++; else { side = sg; run = 1; } best = Math.max(best, run); } if (best >= 9) rules.push('Rule 2: 9 points on one side of the mean');
@@ -239,14 +248,14 @@
           talk.push({ from: 'Material agent', text: 'Bare PCBs for this line are on the next milk-run lap; no impact.' });
         }
       } else if (kind === 'shot') {
-        const s = P.byId[X.ppProgress ? 'IM10' : 'IM10'], c = spc(s.hist.press);
+        const s = P.byId.IM10, c = spc(s.hist.press, 'IM10:press');
         ev.push({ label: 'Injection pressure', value: `${num(s.sens.press || 0)} bar`, series: s.hist.press, limit: c ? c.lcl : undefined });
         ev.push({ label: 'Cavity fill', value: `${(s.sens.fill || 0).toFixed(1)}%` });
         if (c) why.push(`SPC on IM10 pressure: mean ${num(c.mu)} bar, LCL ${num(c.lcl)}. ${c.rules.length ? 'Nelson ' + c.rules.join('; ') : 'No Nelson rule has fired yet, but the mean is drifting down'}.`);
         why.push(`Genealogy: every TV rejected for a short shot carries a back-cover lot from IM10 (${P.scen.shortshot ? P.scen.shortshot.lots.size : 0} lots).`);
         talk.push({ from: 'Quality agent', text: 'Hold the IM10 lots and move the mould to IM20.' }, { from: 'Scheduling agent', text: 'IM20 needs 40 minutes for the mould change; the injection supermarket covers BC-65 for about that long.' });
       } else if (kind === 'coat') {
-        const ov = P.byId[(P.scen.coating && P.scen.coating.line || 'PR4') + '-Coating'], c = spc(ov.hist.temp);
+        const ov = P.byId[(P.scen.coating && P.scen.coating.line || 'PR4') + '-Coating'], c = spc(ov.hist.temp, ov.id + ':temp');
         ev.push({ label: 'Cure temperature', value: `${(ov.sens.temp || 0).toFixed(1)} °C`, series: ov.hist.temp, limit: 190 });
         if (c) why.push(`SPC on the oven: mean ${c.mu.toFixed(1)} °C, LCL ${c.lcl.toFixed(1)} °C. ${c.rules.length ? 'Nelson ' + c.rules.join('; ') : 'Below the 190 °C cure window'}.`);
         why.push('Every chassis that peeled at final QA was coated in this oven during the drop.');
@@ -362,6 +371,7 @@
         E.later(min * 60, () => E.apply('planRepair:' + id, 'Maintenance agent (scheduled)'));
         E.rec('rul:' + id, null);
         P.byId[id].planned = true;
+        E.workOrder(P.byId[id], 'Predictive', 'Spindle bearing change (vibration trend)', 2, { status: 'Scheduled', due: P.t + min * 60, by: who });
       } else if (k === 'shave') {
         P.shave = { until: P.t + 1800, assets: { 'UTIL-AIR3': 0.1, 'UTIL-CH2': 0.6, 'UTIL-BLR': 0.85 } };
         E.audit(who, 'Peak shaved', 'Compressor 3 staged off, chiller 2 setpoint +2 °C, boiler low fire for 30 min');
