@@ -132,7 +132,7 @@ body { overflow-x: hidden; }
 .al-row .msg { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .al-row .msg small { display: block; color: var(--text-3); font-size: 12.5px; margin-top: 2px; }
 .prio { width: 26px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-size: 11.5px; font-weight: 800; color: #fff; }
-.prio.p1 { background: var(--danger); } .prio.p2 { background: var(--orange); } .prio.p3 { background: var(--warning); color: #111; } .prio.p4 { background: var(--surface-3); color: var(--text-2); }
+.prio.p1 { background: #C42B2E; } .prio.p2 { background: #B54708; } /* AA fills: white text at 5:1 or more */ .prio.p3 { background: var(--warning); color: #111; } .prio.p4 { background: var(--surface-3); color: var(--text-2); }
 .active-unack .prio.p1 { animation: pulse 1s infinite; }
 .empty-row { padding: 18px 0 6px; color: var(--text-2); font-size: 14px; line-height: 1.55; }
 

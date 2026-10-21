@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Digital Factory · Live Plant</title>
+  <meta name="description" content="Plant EG-01, a TV plant, live in 3D and 2D: six main assembly lines, every sub-line, the stores, the offices, SAP, GMES, S&amp;OP and MRP working as one. All data simulated.">
+  <script>try{var t=localStorage.getItem('df-theme')}catch(e){}document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')</script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231428A0'/%3E%3Crect x='8' y='8' width='5' height='15' rx='1' fill='%23fff'/%3E%3Crect x='16' y='13' width='5' height='10' rx='1' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/kit/fonts.css">
+  <link rel="stylesheet" href="assets/kit/brand-ui.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/plant.css">
+</head>
+<body class="pl">
+  <div id="toast-root" aria-live="polite"></div>
+
+  <header class="pl-top">
+    <a class="logo" href="./" aria-label="Digital Factory home"><span class="logo-mark" aria-hidden="true"></span><span class="logo-word">Digital Factory</span></a>
+    <div class="pl-title">
+      <h1>Live plant</h1>
+      <span class="pl-sub">Plant EG-01 · fictional TV plant · simulated</span>
+    </div>
+    <div class="pl-clock" aria-label="Plant clock">
+      <b id="clock">--:--:--</b><span id="shift">Shift A</span>
+    </div>
+    <div class="seg pl-speed" role="group" aria-label="Simulation speed">
+      <button type="button" data-speed="0" aria-pressed="false" title="Pause (Space)"><span data-icon="pause"></span><span class="sr-only">Pause</span></button>
+      <button type="button" data-speed="1" aria-pressed="true" title="Real time (1)">1×</button>
+      <button type="button" data-speed="4" aria-pressed="false" title="Four times (2)">4×</button>
+      <button type="button" data-speed="16" aria-pressed="false" title="Sixteen times (3)">16×</button>
+    </div>
+    <form class="pl-find" id="find" role="search" autocomplete="off">
+      <label class="sr-only" for="findIn">Find a serial number</label>
+      <span data-icon="search" aria-hidden="true"></span>
+      <input id="findIn" type="search" placeholder="Find a serial, e.g. TV26-…" spellcheck="false">
+    </form>
+    <div class="pl-actions">
+      <button type="button" class="btn btn-secondary btn-sm" id="tourBtn" title="Guided tour (G)"><span data-icon="play"></span><span class="hide-md">Guided tour</span></button>
+      <button type="button" class="btn btn-secondary btn-sm theme-btn" data-theme-toggle title="Light / dark (T)"><span class="ti" aria-hidden="true"></span><span class="tl hide-md">Light</span></button>
+      <a class="btn btn-secondary btn-sm hide-sm" href="app.html" title="Command room"><span data-icon="dashboard"></span><span class="hide-md">Command room</span></a>
+    </div>
+  </header>
+
+  <nav class="pl-modes" aria-label="Views of the plant">
+    <div class="modes" role="tablist">
+      <button type="button" role="tab" id="tab-3d" data-mode="3d" aria-selected="true" aria-controls="view3d"><span data-icon="globe"></span>3D factory</button>
+      <button type="button" role="tab" id="tab-gmes" data-mode="gmes" aria-selected="false" aria-controls="view2d" tabindex="-1"><span data-icon="dashboard"></span>GMES · lines</button>
+      <button type="button" role="tab" id="tab-sap" data-mode="sap" aria-selected="false" aria-controls="view2d" tabindex="-1"><span data-icon="database"></span>SAP and data flow</button>
+      <button type="button" role="tab" id="tab-sop" data-mode="sop" aria-selected="false" aria-controls="view2d" tabindex="-1"><span data-icon="chart"></span>S&amp;OP</button>
+      <button type="button" role="tab" id="tab-mrp" data-mode="mrp" aria-selected="false" aria-controls="view2d" tabindex="-1"><span data-icon="box"></span>MRP</button>
+      <button type="button" role="tab" id="tab-depts" data-mode="depts" aria-selected="false" aria-controls="view2d" tabindex="-1"><span data-icon="users"></span>Departments</button>
+      <button type="button" role="tab" id="tab-decisions" data-mode="decisions" aria-selected="false" aria-controls="view2d" tabindex="-1"><span data-icon="sparkles"></span>AI agents <b class="badge" id="decN">0</b></button>
+    </div>
+    <p class="sync" id="sync" aria-live="off"><i></i><span>SAP and GMES in sync</span></p>
+  </nav>
+
+  <section class="pl-kpis" aria-label="Plant readouts">
+    <button type="button" class="ro" data-go="overview"><b id="kOut">—</b><span>Packed today</span><small id="kOutS">—</small></button>
+    <button type="button" class="ro" data-go="forecast"><b id="kFc">—</b><span>Shift forecast</span><small id="kFcS">—</small></button>
+    <button type="button" class="ro" data-go="oee"><b id="kOee">—</b><span>Main-line OEE</span><small id="kOeeS">30-minute window</small></button>
+    <button type="button" class="ro" data-go="fpy"><b id="kFpy">—</b><span>First-pass yield</span><small id="kFpyS">Function test and final QA</small></button>
+    <button type="button" class="ro" data-go="orders"><b id="kOtif">—</b><span>Orders on time</span><small id="kOtifS">—</small></button>
+    <button type="button" class="ro" data-go="finance"><b id="kRev">—</b><span>Revenue today</span><small id="kRevS">—</small></button>
+    <button type="button" class="ro" data-go="energy"><b id="kKw">—</b><span>Power now</span><small id="kKwS">—</small></button>
+    <button type="button" class="ro" data-go="alarms"><b id="kAl">—</b><span>Alarms</span><small id="kAlS">—</small></button>
+  </section>
+
+  <main class="pl-stage" id="main">
+    <div class="pl-3d" id="view3d" role="tabpanel" aria-labelledby="tab-3d">
+      <canvas id="gl" aria-label="3D view of Plant EG-01. Select any machine, store, vehicle, person, office or unit; the panel beside the view describes it."></canvas>
+      <div class="pl-labels" id="labels" aria-hidden="true"></div>
+      <div class="pl-tip" id="tip" role="tooltip" hidden></div>
+      <div class="pl-caption" id="caption" aria-live="polite" hidden></div>
+
+      <nav class="pl-views" aria-label="Plant views">
+        <button type="button" data-view="overview" aria-pressed="true">Whole plant</button>
+        <button type="button" data-view="imp" aria-pressed="false">Import warehouse</button>
+        <button type="button" data-view="loc" aria-pressed="false">Local supermarket</button>
+        <button type="button" data-view="smd" aria-pressed="false">SMD and PBA</button>
+        <button type="button" data-view="inj" aria-pressed="false">Injection</button>
+        <button type="button" data-view="lcm" aria-pressed="false">LCM lines</button>
+        <button type="button" data-view="main" aria-pressed="false">Main lines</button>
+        <button type="button" data-view="press" aria-pressed="false">Press and coating</button>
+        <button type="button" data-view="fg" aria-pressed="false">Shipping</button>
+        <button type="button" data-view="office" aria-pressed="false">Offices and SAP</button>
+        <button type="button" data-view="svc" aria-pressed="false">Service parts</button>
+        <button type="button" data-view="util" aria-pressed="false">Utilities</button>
+      </nav>
+
+      <div class="pl-tools">
+        <div class="seg pl-overlay" role="group" aria-label="What the colours show">
+          <button type="button" data-overlay="status" aria-pressed="true">Status</button>
+          <button type="button" data-overlay="flow" aria-pressed="false">Flow</button>
+          <button type="button" data-overlay="data" aria-pressed="false">Data</button>
+          <button type="button" data-overlay="energy" aria-pressed="false">Energy</button>
+          <button type="button" data-overlay="quality" aria-pressed="false">Quality</button>
+          <button type="button" data-overlay="people" aria-pressed="false">People</button>
+        </div>
+        <div class="pl-legend" id="legend"></div>
+      </div>
+
+      <div class="pl-drill">
+        <div class="seg pl-nav3d" role="group" aria-label="Ways to see the plant">
+          <button type="button" data-nav="walk" aria-pressed="false" title="Walk the floor at eye height"><span data-icon="user"></span><span class="hide-md">Walk</span></button>
+          <button type="button" data-nav="cine" aria-pressed="false" title="Fly through the plant"><span data-icon="sparkles"></span><span class="hide-md">Fly-through</span></button>
+          <button type="button" data-nav="cctv" aria-pressed="false" title="Camera feeds"><span data-icon="eye"></span><span class="hide-md">Cameras</span></button>
+          <button type="button" data-nav="xray" aria-pressed="false" title="See inside the machines"><span data-icon="layers"></span><span class="hide-md">X-ray</span></button>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" id="drillBtn" aria-expanded="false" aria-controls="drills"><span data-icon="wand"></span>Run a drill</button>
+        <div class="pl-menu" id="drills" hidden></div>
+      </div>
+      <canvas class="pl-mini" id="minimap" width="264" height="168" aria-label="Plant map. Select a point to go there."></canvas>
+      <canvas class="pl-vision" id="vision" aria-hidden="true"></canvas>
+      <div class="pl-cctv" id="cctvLabels" aria-hidden="true"></div>
+      <p class="pl-walkhint" id="walkHint" hidden></p>
+      <div class="pl-joy" id="joy" hidden aria-hidden="true"><i></i></div>
+    </div>
+    <div class="pl-2d" id="view2d" role="tabpanel" tabindex="-1" hidden></div>
+
+    <aside class="pl-insp" id="insp" aria-label="Details" tabindex="-1">
+      <div id="inspBody"></div>
+    </aside>
+  </main>
+
+  <footer class="pl-flow" aria-label="Material and information flow, vendor to customer">
+    <ol id="vstream"></ol>
+  </footer>
+
+  <script src="assets/kit/icons.js"></script>
+  <script src="assets/js/theme.js"></script>
+  <script src="assets/vendor/three/three.iife.min.js"></script>
+  <script src="assets/js/plant/engine.js"></script>
+  <script src="assets/js/plant/erp.js"></script>
+  <script src="assets/js/plant/agents.js"></script>
+  <script src="assets/js/plant/scene.js"></script>
+  <script src="assets/js/plant/views2d.js"></script>
+  <script src="assets/js/plant/ui.js"></script>
+</body>
+</html>
