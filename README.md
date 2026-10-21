@@ -6,7 +6,7 @@ Static web app: no install, no server, works offline. Light and dark themes, bui
 | Page | What it is |
 |---|---|
 | `index.html` | Website: the vision, the industry's 2030 direction, the capabilities and the 12-week pilot |
-| `plant.html` | **Live plant**: a whole TV plant as a unit-level twin. 3D: six main assembly lines and every sub-line (LCM, SMD/PBA with firmware download, injection, press and coating, cushions), the stores, milk runs, AGVs, forklifts, docks and the offices with the server room; data packets between the floor, GMES, SAP and the departments. 2D tabs: GMES boards, SAP and data flow, S&OP, MRP, Departments, Decisions. Every TV has a passport; nine drills with decisions that act on the plant |
+| `plant.html` | **Live plant**: a whole TV plant as a unit-level twin. 3D: six main assembly lines and every sub-line (LCM, SMD/PBA with firmware download, injection, press and coating, cushions), the stores, milk runs, AGVs, forklifts, docks and the offices with the server room; data packets between the floor, GMES, SAP and the departments. 2D tabs: GMES boards, SAP and data flow, S&OP, MRP, Departments, AI agents (eight agents that simulate every option on a flow model of the plant before they recommend one, with autonomy per agent and an ask box). Every TV has a passport; nine drills with decisions that act on the plant |
 | `app.html` | **Command room**: live plant floor, AI agent crew, alarms, control, predictions, root cause, scenarios, leadership, maintenance, quality, energy, what-if, copilot |
 | `deck.html` | **Presentation**: 19 slides with the live demo embedded, a live briefing built from a pinned plant moment, an editable business case and speaker notes |
 | `guide.html` | **Reference guide**, Arabic and English: the idea, how it works, every screen, decision and scenario, the live briefing, full translations of the website and the presentation, and a searchable glossary of every term |
@@ -59,7 +59,7 @@ assets/js/        sim.js (plant engine: lines, alarms, agents, forecasts, scenar
                   twin-hero.js (the live SMT line drawn on the website and title slide) · site.js
                   briefing.js (the deck's live briefing) · guide.js · guide-terms.js (glossary and icon list for the guide)
 assets/img/       open-licence factory photos, credits in assets/img/CREDITS.md
-assets/js/plant/  engine (unit-level plant model, AI layer) · scene (three.js view) · ui (panels, drills, tour)
+assets/js/plant/  engine (unit-level plant model) · erp (SAP, GMES, S&OP, MRP, departments) · agents (AI crew, flow-model forecast) · scene (three.js view) · views2d (2D tabs) · ui (panels, drills, tour)
 assets/vendor/    three.js r170, bundled once (see assets/vendor/three/README.md)
 assets/js/app/    core · floor · command · intel (agents, alarms, predictions, root cause, scenarios, control) · perf · copilot · briefing · main
 ```

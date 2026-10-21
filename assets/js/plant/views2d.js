@@ -1,5 +1,5 @@
 /* Digital Factory — Live plant, the 2D views: GMES boards for every line, SAP and the data flow, S&OP, MRP, the
-   departments and the decisions inbox. Each view reads the engine (floor) and the enterprise layer (offices) and is
+   departments and the AI agents view (the crew, its simulated decisions and the ask box). Each view reads the engine (floor) and the enterprise layer (offices) and is
    redrawn about once a second; packets on the data-flow diagram move every frame. Shared helpers for the page live
    here too. All data is simulated. */
 (function () {
@@ -22,16 +22,36 @@
     if (a.startsWith('mrp:') || a === 'sop' || a.startsWith('order:') || a.startsWith('svc:')) return a;
     return 'st:' + a;
   }
+  function spark(arr, o = {}) {
+    if (!arr || arr.length < 2) return '';
+    const w = o.w || 280, h = o.h || 46, a = arr.slice(-90);
+    let lo = Math.min(...a), hi = Math.max(...a);
+    if (o.lo !== undefined) lo = Math.min(lo, o.lo); if (o.hi !== undefined) hi = Math.max(hi, o.hi);
+    if (o.limit !== undefined) { lo = Math.min(lo, o.limit); hi = Math.max(hi, o.limit); }
+    if (hi - lo < 1e-6) { hi += 1; lo -= 1; }
+    const Xp = i => (i / (a.length - 1)) * w, Y = v => h - 3 - ((v - lo) / (hi - lo)) * (h - 6);
+    const d = a.map((v, i) => `${i ? 'L' : 'M'}${Xp(i).toFixed(1)} ${Y(v).toFixed(1)}`).join('');
+    const lim = o.limit !== undefined ? `<line x1="0" x2="${w}" y1="${Y(o.limit).toFixed(1)}" y2="${Y(o.limit).toFixed(1)}" class="lim"/>` : '';
+    return `<svg class="spark ${o.cls || ''}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">${lim}<path d="${d}"/></svg>`;
+  }
+  // the agents' recommendation under a decision card: what they simulated and what they would do
+  function agentLine(r) {
+    const c = H.AG && H.AG.cards.get(r.key);
+    if (!c || !c.best) return '';
+    const b = c.best, d = b.f.packed - c.base.f.packed, dl = c.base.f.late - b.f.late;
+    const gain = b === c.base ? '' : [d > 0 ? `+${fmt(d)} TVs` : '', dl > 0 ? `${dl} order${dl > 1 ? 's' : ''} saved` : ''].filter(Boolean).join(', ');
+    return `<p class="rec-ai">${icon('sparkles')}<span><b>${esc(c.agentName)}</b> simulated ${c.options.length} option${c.options.length > 1 ? 's' : ''} over ${c.h / 60} h and recommends <b>${esc(b.label)}</b>${gain ? ` (${gain} against doing nothing)` : ''}${b.f.late ? `, ${b.f.late} order${b.f.late > 1 ? 's' : ''} still at risk` : ''}.</span></p>`;
+  }
   function recCards(list, X) {
     if (!list.length) return '';
     return list.map(r => {
       const dept = X ? X.DEPTS.find(d => d.id === (r.dept || X.deptOf(r.agent))) : null;
-      return `<article class="rec ${r.level}"><p class="rec-who">${esc(dept ? dept.name : r.agent + ' agent')} · ${r.time}</p><h4>${esc(r.title)}</h4><p>${esc(r.body)}</p>
+      return `<article class="rec ${r.level}"><p class="rec-who">${esc(dept ? dept.name : r.agent + ' agent')} · ${r.time}</p><h4>${esc(r.title)}</h4><p>${esc(r.body)}</p>${agentLine(r)}
       <div class="rec-act">${(r.actions || []).map((a, i) => `<button type="button" class="btn btn-sm ${i === 0 && !a.id.startsWith('focus') ? 'btn-primary' : 'btn-secondary'}" data-key="${esc(a.id)}" ${a.id.startsWith('focus') ? `data-ref="${esc(refFromFocus(a.id.slice(6)))}"` : `data-act="${esc(a.id)}"`}>${esc(a.label)}</button>`).join('')}
       <button type="button" class="btn btn-sm btn-ghost" data-dismiss="${esc(r.key)}" data-key="x-${esc(r.key)}">Dismiss</button></div></article>`;
     }).join('');
   }
-  const H = { esc, icon, fmt, pct, STATE, SCLS, chip, link, bar, refFromFocus, recCards };
+  const H = { esc, icon, fmt, pct, STATE, SCLS, chip, link, bar, refFromFocus, recCards, spark, AG: null };
 
   /* small SVG charts */
   function lineChart(series, o = {}) {
@@ -234,21 +254,91 @@
         <section class="vs2"><div class="dcs">${cards}</div></section>`;
     }
 
-    /* ---------------- decisions ---------------- */
-    function decisions() {
-      const by = {};
-      for (const r of P.recs) { const d = r.dept || X.deptOf(r.agent); (by[d] = by[d] || []).push(r); }
-      const groups = X.DEPTS.filter(d => by[d.id]).map(d => `<section class="vs2"><h3>${esc(d.name)} <span>${by[d.id].length}</span></h3><div class="recs">${recCards(by[d.id], X)}</div></section>`).join('');
-      const log = P.audit.slice(0, 20).map(a => `<tr><td>${esc(a.time)}</td><td>${esc(a.who)}</td><td><b>${esc(a.action)}</b><small>${esc(a.detail)}</small></td></tr>`).join('');
-      return `<header class="vh"><div><h2>Decisions</h2><p>Every department's open decisions in one inbox: the floor agents (maintenance, logistics, quality, planning) and the offices (MRP, S&amp;OP, purchasing, service). Each card says what happens if nobody acts and what each option costs. ${X.egp(P.saved)} of output protected by decisions so far.</p></div></header>
-        ${groups || '<section class="vs2"><p class="quiet">Nothing waiting. Start a drill from the 3D factory to see the departments respond.</p></section>'}
-        <section class="vs2"><h3>Decision log</h3>${log ? `<table class="tbl"><thead><tr><th>Time</th><th>Who</th><th>Decision</th></tr></thead><tbody>${log}</tbody></table>` : '<p class="quiet">No decision taken yet.</p>'}</section>`;
+    /* ---------------- AI agents: the crew, its decisions, its reasoning ---------------- */
+    const AUTON = [['advise', 'Advise'], ['approve', 'Approve'], ['auto', 'Auto']];
+    const egpS = v => v >= 1e6 ? `EGP ${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `EGP ${Math.round(v / 1e3)}k` : `EGP ${fmt(v)}`;
+    function crew(AG) {
+      const open = {}; for (const c of AG.cards.values()) open[c.owner] = (open[c.owner] || 0) + 1;
+      return `<div class="crew">${AG.AGENTS.map(a => `<article class="agent">
+        <header><h4>${esc(a.name)}</h4><span class="dot ${open[a.id] ? 'on' : ''}" title="${open[a.id] ? 'Working on a decision' : 'Watching'}"></span></header>
+        <p>${esc(a.role)}</p>
+        <dl><div><dt>Signals</dt><dd>${fmt(a.signals)}</dd></div><div><dt>Open</dt><dd>${open[a.id] || 0}</dd></div><div><dt>Acted</dt><dd>${a.acted}</dd></div></dl>
+        <div class="seg auton" role="group" aria-label="${esc(a.name)} autonomy">${AUTON.map(([v, l]) => `<button type="button" data-auto="${a.id}:${v}" data-key="auto-${a.id}-${v}" aria-pressed="${a.autonomy === v}">${l}</button>`).join('')}</div>
+      </article>`).join('')}</div>`;
     }
+    function optTable(c) {
+      const base = c.base;
+      const rows = c.options.map((o, i) => {
+        const best = o === c.best, dp = o.f.packed - base.f.packed;
+        return `<tr class="${best ? 'best' : ''}"><td><b>${esc(o.label)}</b>${best ? '<span class="tag">Recommended</span>' : ''}${o.note ? `<small>${esc(o.note)}</small>` : ''}</td>
+          <td>${fmt(o.f.packed)}${o !== base && dp ? `<small class="${dp > 0 ? 'up' : 'dn'}">${dp > 0 ? '+' : ''}${fmt(dp)}</small>` : ''}</td>
+          <td class="${o.f.late ? 'bad' : ''}">${o.f.late}${o.f.late ? `<small>${egpS(o.f.revDelayed)} delayed</small>` : ''}</td>
+          <td>${o.f.starvedMin ? `${o.f.starvedMin} min` : '—'}</td>
+          <td>${o.cost ? egpS(o.cost) : '—'}</td>
+          <td>${o.lost ? egpS(o.lost) : '—'}</td>
+          <td><button type="button" class="btn btn-sm ${best ? 'btn-primary' : 'btn-secondary'}" data-opt="${esc(c.key)}|${i}" data-key="opt-${esc(c.key)}-${i}">${best ? 'Approve' : 'Choose'}</button></td></tr>`;
+      }).join('');
+      return `<div class="tblwrap"><table class="tbl opts"><caption class="sr-only">Options simulated by the ${esc(c.agentName)}</caption><thead><tr><th>Option</th><th>TVs packed</th><th>Orders late</th><th>Starved</th><th>Direct cost</th><th>Output lost</th><th><span class="sr-only">Decide</span></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }
+    function agentCard(r, c) {
+      const ev = c.evidence.map(e => `<div class="ev"><span>${esc(e.label)}</span><b>${esc(e.value)}</b>${e.series ? spark(e.series, { limit: e.limit, h: 34, cls: r.level === 'crit' ? 'bad' : 'warn' }) : ''}</div>`).join('');
+      const talk = c.talk.length ? `<ol class="talk" aria-label="How the agents agreed">${c.talk.map(t => `<li><b>${esc(t.from)}</b><span>${esc(t.text)}</span></li>`).join('')}</ol>` : '';
+      return `<article class="ac ${r.level}">
+        <p class="rec-who">${esc(c.agentName)} · ${esc(r.time)} · confidence ${Math.round(c.confidence * 100)}%</p>
+        <h4>${esc(r.title)}</h4>
+        ${ev ? `<div class="evs">${ev}</div>` : ''}
+        <div class="ac-r"><div><h5>Why</h5><ul class="why">${c.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>${talk ? `<div><h5>How the agents agreed</h5>${talk}</div>` : ''}</div>
+        <h5>Every option, simulated on the next ${c.h / 60} hours of the plant</h5>
+        ${optTable(c)}
+        <div class="rec-act">${(r.actions || []).filter(a => a.id.startsWith('focus')).map(a => `<button type="button" class="btn btn-sm btn-secondary" data-ref="${esc(refFromFocus(a.id.slice(6)))}" data-key="${esc(a.id)}">${esc(a.label)}</button>`).join('')}
+          <button type="button" class="btn btn-sm btn-ghost" data-dismiss="${esc(r.key)}" data-key="x-${esc(r.key)}">Dismiss</button></div>
+      </article>`;
+    }
+    function decisions() {
+      const AG = H.AG;
+      const log = P.audit.slice(0, 16).map(a => `<tr><td>${esc(a.time)}</td><td>${esc(a.who)}</td><td><b>${esc(a.action)}</b><small>${esc(a.detail)}</small></td></tr>`).join('');
+      if (!AG) return `<header class="vh"><div><h2>Decisions</h2></div></header>${recCards(P.recs, X)}`;
+      const cards = P.recs.map(r => { const c = AG.cards.get(r.key) || AG.card(r); return agentCard(r, c); }).join('');
+      const b = AG.base || { packed: 0, late: 0, curve: [] };
+      const plan = Object.values(P.lines).filter(L => L.kind === 'main').reduce((a, L) => a + 3600 / MODELS[L.model].takt * 0.85, 0) / 6;
+      const chart = b.curve.length ? lineChart([{ name: 'Forecast, TVs packed', v: b.curve, cls: 'c-prod' }, { name: 'Plan at 85% OEE', v: b.curve.map((_, i) => Math.round(plan * (i + 1))), cls: 'c-cap', dash: true }], { labels: b.curve.map((_, i) => `+${(i + 1) * 10}`), h: 170, label: 'Forecast of TVs packed over the next two hours, against plan' }) : '';
+      const feed = AG.feed.slice(0, 14).map(f => `<li class="${f.level}"><time>${esc(f.time)}</time><b>${esc(f.agent)}</b><span>${esc(f.text)}</span>${f.ref ? link(refFromFocus(f.ref), 'Show') : ''}</li>`).join('');
+      const st = AG.stats;
+      return `<header class="vh"><div><h2>AI agents</h2><p>Eight agents watch every machine, store, vehicle, order and kilowatt. Before they recommend anything they simulate each option on a flow model of the whole plant for the next two hours (eight for material decisions), then the owner of the decision agrees it with the others. They act alone only on Auto and only when the action can be undone.</p></div></header>
+        <div class="astats"><div><b>${fmt(st.decisions)}</b><span>decisions prepared</span></div><div><b>${fmt(st.simulated)}</b><span>plant simulations run</span></div><div><b>${fmt(st.auto)}</b><span>acted on Auto</span></div><div><b>${X.egp(P.saved)}</b><span>output protected</span></div></div>
+        <section class="vs2"><h3>The crew <span>autonomy per agent: Advise informs, Approve waits for a person, Auto acts on reversible decisions</span></h3>${crew(AG)}</section>
+        <section class="vs2"><h3>Open decisions <span>${P.recs.length}</span></h3>${cards || '<p class="quiet">Nothing waiting. Start a drill from the 3D factory and watch the agents work.</p>'}</section>
+        <section class="vs2 two"><div><h3>Next two hours <span>${fmt(b.packed)} TVs, ${b.late ? `${b.late} order${b.late > 1 ? 's' : ''} at risk` : 'no order at risk'}</span></h3>${chart}</div>
+          <div class="askwrap"></div></section>
+        <section class="vs2 two"><div><h3>Reasoning feed</h3>${feed ? `<ol class="afeed">${feed}</ol>` : '<p class="quiet">Quiet. The agents are watching.</p>'}</div>
+          <div><h3>Decision log</h3>${log ? `<table class="tbl"><thead><tr><th>Time</th><th>Who</th><th>Decision</th></tr></thead><tbody>${log}</tbody></table>` : '<p class="quiet">No decision taken yet.</p>'}</div></section>`;
+    }
+    // the ask box lives outside the redrawn markup so typing is never lost
+    const ask = document.createElement('div');
+    ask.className = 'askwrap ask';
+    ask.innerHTML = `<h3>Ask the crew</h3><form class="askf"><label class="sr-only" for="askq">Question for the agents</label><input id="askq" class="input" type="text" autocomplete="off" placeholder="Why is line 3 slow?"><button type="submit" class="btn btn-primary btn-sm">Ask</button></form>
+      <div class="askchips">${['Shift summary', 'Orders at risk', 'Why is line 3 slow?', 'Material shortages', 'Energy peak'].map(q => `<button type="button" class="chipq" data-q="${q}">${q}</button>`).join('')}</div><div class="askout" aria-live="polite"></div>`;
+    function refName(r) {
+      const [k, id] = r.split(/:(.+)/);
+      if (k === 'st' && P.byId[id]) { const s = P.byId[id]; return `${s.name}, ${line(s.line) ? line(s.line).name : s.line}`; }
+      if (k === 'line' && line(id)) return line(id).name;
+      if (k === 'buf' && P.bufs[id]) return `${P.bufs[id].code} at ${P.byId[P.bufs[id].station] ? P.byId[P.bufs[id].station].name : P.bufs[id].label}`;
+      if (k === 'order') return 'Order ' + id;
+      return id;
+    }
+    function answer(q) {
+      if (!H.AG || !q.trim()) return;
+      const a = H.AG.ask(q);
+      ask.querySelector('.askout').innerHTML = `<p class="askq">${esc(q)}</p><p>${esc(a.text)}</p>${a.refs.length ? `<p class="askrefs">${a.refs.slice(0, 6).map(r => link(r, refName(r))).join('')}</p>` : ''}`;
+    }
+    ask.querySelector('form').addEventListener('submit', e => { e.preventDefault(); answer(ask.querySelector('input').value); });
+    ask.addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (b) { ask.querySelector('input').value = b.dataset.q; answer(b.dataset.q); } });
 
     /* ---------------- dispatch ---------------- */
     let last = '';
     function render(force) {
       const m = state.mode; if (!m || m === '3d') return;
+      if (!force && ask.contains(document.activeElement)) return;   // hold the page still while someone types a question
       if (m === 'sap' && !state.sapSvg) state.sapSvg = sapDiagram();
       const html = m === 'gmes' ? gmes() : m === 'sap' ? sap() : m === 'sop' ? sop() : m === 'mrp' ? mrp() : m === 'depts' ? depts() : decisions();
       if (m === 'sap') {
@@ -259,6 +349,7 @@
       } else if (html !== last || force) {
         const focusKey = document.activeElement && root.contains(document.activeElement) ? (document.activeElement.dataset.key || document.activeElement.dataset.ref || document.activeElement.dataset.act || document.activeElement.dataset.mrp || document.activeElement.dataset.scen) : null;
         root.innerHTML = html; last = html;
+        const slot = root.querySelector('.askwrap'); if (slot) slot.replaceWith(ask);
         if (focusKey) { const el = [...root.querySelectorAll('button')].find(b => [b.dataset.key, b.dataset.ref, b.dataset.act, b.dataset.mrp, b.dataset.scen].includes(focusKey)); if (el) el.focus(); }
       }
       if (window.Theme) Theme.icons(root);
@@ -267,6 +358,8 @@
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.scen) { state.sopScen = b.dataset.scen; render(true); return; }
       if (b.dataset.sopm) { state.sopModel = b.dataset.sopm; render(true); return; }
+      if (b.dataset.auto && H.AG) { const [id, v] = b.dataset.auto.split(':'); H.AG.setAutonomy(id, v); render(true); return; }
+      if (b.dataset.opt && H.AG) { const [key, i] = b.dataset.opt.split('|'); const c = H.AG.cards.get(key); if (c) ui.choose(c, c.options[+i]); return; }
       if (b.dataset.mrp) { state.mrpCode = b.dataset.mrp; render(true); ui.select('mrp:' + b.dataset.mrp, { fly: false }); return; }
     });
     return {
