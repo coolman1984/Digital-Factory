@@ -17,7 +17,9 @@ Findings from the design checks that stay on purpose, with the reason. Everythin
 | Long-page probe timeout | guide | The QA probe walks every element of a 290 KB book; run it with a longer CDP timeout (0 FAIL at 390 / 820 / 1440, light and dark). |
 | 13px secondary labels | live plant: readout sub-lines, value stream, 3D labels | The same operator-screen density as the command room; every primary number is 18–28px and every control is 44px on touch. |
 | Page weight about 1.7 MB; slow largest paint in headless QA | live plant | three.js with its post-processing, environment and control add-ons (820 KB, 235 KB gzipped), the brand fonts and the plant, SAP and view scripts. The QA browser renders WebGL in software, so its LCP (5–9 s) is far above a real GPU; the engine warm-up takes about 1.5 s of it. |
-| Em dashes in readouts | live plant | Used only as the "no value yet" placeholder in readouts, not in prose. |
+| 13px secondary labels | command room: readout sub-lines, chart ticks, table sub-lines, case meta | Operator-screen density (ISA-101 overview); every primary number is 18–32px and every control is 44px on touch. |
+| Em dashes in readouts | live plant, command room | Used only as the "no value yet" placeholder in readouts and table cells, not in prose. |
+| Copilot SDK (212 KB) | command room | Loads only when a viewer switches the copilot to Claude mode. |
 
 | Footnote numbers under 14px | website: superscript source markers | Superscripts are footnote markers; the sources they point to are 14px. |
 | Small text on the theme label | deck: "Light" / "Dark" on the theme button | False positive: the label is screen-reader only (`sr-only`); nothing is drawn. |

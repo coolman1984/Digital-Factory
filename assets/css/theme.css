@@ -90,6 +90,7 @@ body { font-size: 15px; height: auto; min-height: 100%; }
 
 /* toasts use the kit's #toast-root + .toast */
 #toast-root .toast { max-width: min(520px, calc(100vw - 44px)); }
+@media (max-width: 960px) { #toast-root .toast-x { min-width: 44px; min-height: 44px; } }
 
 /* motion (after the Animation studio's web kit): rise from blur, words one by one */
 [data-reveal] { transition: opacity var(--dur-in) var(--ease-out), transform var(--dur-in) var(--ease-out), filter var(--dur-in) var(--ease-out); }
