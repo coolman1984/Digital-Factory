@@ -138,7 +138,7 @@
       stations: [], byId: {}, lines: {}, segs: [], bufs: {}, units: new Set(), archive: new Map(), archiveOrder: [],
       agvs: [], tuggers: [], forklifts: [], people: [], techs: [], inbound: [], trucks: [], pallets: [], fgSlots: [], orders: [],
       events: [], alarms: [], recs: [], preds: [], audit: [], kpi: {}, hist: { t: [], kw: [], tph: [], oee: [], wip: [] },
-      scen: {}, energy: { kwh: 0 }, made: { tv: 0, byModel: { M43: 0, M55: 0, M65: 0, M75: 0 } },
+      scen: {}, energy: { kwh: 0 }, c0: START, wo: [], woSeq: 4180, made: { tv: 0, byModel: { M43: 0, M55: 0, M65: 0, M75: 0 } },
       base: { M43: 260, M55: 830, M65: 490, M75: 150 },     // TVs packed between 06:00 and the model start
       rejects: { rework: [], smtRepair: [] }, saved: 0, leads: [], nodes: [], edges: [], layout: {}, sw: {}, holds: new Set(), svc: { orders: [], shipped: 0 }
     };
@@ -273,7 +273,7 @@
       const K = KIND[kind];
       const s = Object.assign({
         id, name, line, kind, idx: 0, x, z, w: K.w, d: K.d, h: K.h, slots: 1, factor: 1, base: 0, procs: [], state: 'idle', since: 0, why: '',
-        health: rnd(86, 99), degrade: 0, repair: 0, tech: null, counters: { run: 0, idle: 0, starved: 0, blocked: 0, down: 0, made: 0, bad: 0, std: 0 },
+        health: rnd(86, 99), degrade: 0, repair: 0, tech: null, counters: { run: 0, idle: 0, starved: 0, blocked: 0, down: 0, made: 0, bad: 0, std: 0, brk: 0, pm: 0, co: 0, micro: 0 },
         sens: {}, hist: {}, kwNow: 0, speedMul: 1, needs: [], manual: false, operator: null, staff: 1, mtbf: rnd(14, 30) * 3600, micro: 0
       }, o);
       P.stations.push(s); P.byId[id] = s;
@@ -751,6 +751,7 @@
     function consume(s, u) {
       for (const n of s.needs) {
         const got = take(n.b, n.n || 1);
+        if (!got) continue;   // the last lot here was just put on hold: nothing usable to record
         if (n.b.items) { u.parts[n.as] = got[0]; got[0].usedIn = u.sn; got[0].usedAt = P.t; }
         else u.lots[n.as] = got[0];
         emit('consume', { code: n.b.code, qty: n.n || 1, st: s.id, line: s.line });
@@ -779,9 +780,9 @@
     }
     function stationStep(s, dt) {
       const L = P.lines[s.line];
-      if (s.state === 'down' || s.state === 'maint') { s.counters.down += dt; if (s.tech && s.tech.state === 'repairing') { s.repair -= dt; if (s.repair <= 0) finishRepair(s); } return; }
-      if (s.micro > 0) { s.micro -= dt; s.counters.down += dt; if (s.micro <= 0) { s.micro = 0; setState(s, 'idle'); } return; }
-      if (s.state === 'changeover') { s.counters.down += dt; s.co -= dt; if (s.co <= 0) setState(s, 'idle'); return; }
+      if (s.state === 'down' || s.state === 'maint') { s.counters.down += dt; s.counters[s.state === 'down' ? 'brk' : 'pm'] += dt; if (s.tech && s.tech.state === 'repairing') { s.repair -= dt; if (s.repair <= 0) finishRepair(s); } return; }
+      if (s.micro > 0) { s.micro -= dt; s.counters.down += dt; s.counters.micro += dt; if (s.micro <= 0) { s.micro = 0; setState(s, 'idle'); } return; }
+      if (s.state === 'changeover') { s.counters.down += dt; s.counters.co += dt; s.co -= dt; if (s.co <= 0) setState(s, 'idle'); return; }
       if ((L && (L.stopped || L.tripped)) || s.tripped) { setState(s, 'idle', L && L.tripped ? 'Tripped (power)' : 'Stopped'); s.counters.idle += dt; return; }
       const flowKinds = s.kind !== 'oven' && s.kind !== 'aging';
       if (s.procs.length && flowKinds && R() < dt / (s.manual ? 1600 : 1300)) {
@@ -1005,19 +1006,27 @@
     function fail(s, why, repair) {
       if (s.state === 'down') return;
       setState(s, 'down', why); s.fault = { why, at: P.t, repair }; s.repair = repair; s.degrade = 0;
+      workOrder(s, 'Breakdown', why, 1);
       alarm(`${s.id}.DOWN`, true, { prio: 1, area: P.lines[s.line] ? P.lines[s.line].name : 'Plant', msg: `${s.name} stopped · ${why}`, ref: s.id });
       emit('stateChange', { s, state: 'down' });
       sendTech(s);
     }
+    // CMMS work orders: every breakdown, planned and predictive repair is one, from open to completed
+    function workOrder(s, type, why, prio, extra) {
+      const w = Object.assign({ id: 'WO' + (++P.woSeq), st: s.id, type, why, prio, opened: P.t, status: 'Open', tech: null }, extra);
+      P.wo.unshift(w); if (P.wo.length > 60) P.wo.pop(); s.wo = w; return w;
+    }
     function sendTech(s) {
       const t = P.techs.find(x => x.state === 'available'); if (!t) { s.tech = null; return; }
       t.state = 'walking'; t.job = s; s.tech = t;
+      if (s.wo && s.wo.status !== 'Completed') { s.wo.status = 'In progress'; s.wo.tech = t.name; s.wo.started = P.t; }
       t.path = route(nearestNode(t.x, t.z), nearestNode(s.x, s.z + s.d)); t.path.unshift([t.x, t.z]); t.path.push([s.x + 0.6, s.z + s.d / 2 + 0.9]); t.len = polyLen(t.path); t.s = 0;
       log('CMMS', `${t.name} dispatched to ${s.name} (${P.lines[s.line] ? P.lines[s.line].name : ''})`, 'info', s.id);
     }
     function finishRepair(s) {
       const t = s.tech, planned = s.state === 'maint';
       s.health = rnd(96, 99.5); s.fault = null; s.tech = null; s.failWhy = null; s.repairs = (s.repairs || 0) + 1;
+      if (s.wo && s.wo.status !== 'Completed') { s.wo.status = 'Completed'; s.wo.closed = P.t; s.wo = null; }
       setState(s, 'idle'); alarm(`${s.id}.DOWN`, false); alarm(`${s.id}.HEALTH`, false);
       log('CMMS', `${s.name} (${P.lines[s.line] ? P.lines[s.line].name : ''}) back in production after ${planned ? 'planned' : 'unplanned'} repair`, 'info', s.id);
       if (t) { t.state = 'returning'; t.job = null; t.path = route(nearestNode(t.x, t.z), nearestNode(t.home[0], t.home[1])); t.path.unshift([t.x, t.z]); t.path.push(t.home); t.len = polyLen(t.path); t.s = 0; }
@@ -1084,6 +1093,7 @@
       for (const id in P.lines) {
         const L = P.lines[id]; if (L.kind === 'injection') continue;
         const b = L.kind === 'main' ? L.stations.reduce((m, s) => (s.kind === 'aging' || s.kind === 'palletizer' ? 0 : s.factor) > m.factor ? s : m, L.stations[1]) : L.kind === 'press' ? L.stations[2] : L.stations.reduce((m, s) => (s.kind === 'reflow' || s.kind === 'oven' ? 0 : taktOf(s)) > (m.kind === 'reflow' ? 0 : taktOf(m)) ? s : m, L.stations[0]);
+        L.bn = b;
         snap[id] = { run: b.counters.run, lost: b.counters.down + b.counters.starved + b.counters.blocked, made: b.counters.made, std: b.counters.std, bad: L.stations.reduce((a, s) => a + s.counters.bad, 0) };
       }
       win.push({ t: P.t, snap }); while (win.length && P.t - win[0].t > 1800) win.shift();
@@ -1253,6 +1263,7 @@
         const s = P.byId[arg]; if (!s || s.state === 'down') return;
         recs.delete('rul:' + arg);
         s.planned = true; s.degrade = 0; setState(s, 'maint', 'Planned bearing change'); s.repair = 480; alarm(`${s.id}.HEALTH`, false);
+        if (s.wo && s.wo.status === 'Scheduled') s.wo.status = 'Open'; else workOrder(s, 'Predictive', 'Spindle bearing change (vibration trend)', 2, { by: who });
         audit(who, 'Planned repair', `${s.name} (${P.lines[s.line].name}) bearing change now, 8 min`);
         log('CMMS', `Work order approved · ${s.name} bearing change on ${P.lines[s.line].name}`, 'info', s.id);
         sendTech(s);
@@ -1423,12 +1434,16 @@
     for (let i = 0; i < 20; i++) kpis();
     log('GMES', 'Shift A running · Plant EG-01 · 6 main lines, 6 LCM, 6 SMD, 20 injection, 6 press and coating, 6 cushion machines');
     think(); P.recs = recsList();
+    // preventive maintenance already planned in SAP PM for the rest of the shift
+    [['SMD2-MounterA', 'Nozzle and feeder clean (weekly)', 12.5], ['IM05', 'Mould cooling-circuit flush (monthly)', 13], ['PR3-Press', 'Die lubrication and bolt torque check (weekly)', 13.25], ['ML4-Screwandstand', 'Screwdriver torque calibration (quarterly)', 13.5]].forEach(([id, why, h], i) => {
+      if (P.byId[id]) P.wo.push({ id: 'WO' + (4170 + i), st: id, type: 'Preventive', why, prio: 3, opened: SHIFT_START - 86400, status: 'Scheduled', due: h * 3600, tech: null });
+    });
 
     const api = {
       P, MODELS, MAT, BOM, KIND, SCENARIOS, STORE, LS, SILO, missions, SIZE,
       clock, clockS, mins, level, take, addLot, moveLots, lotId, runway,
       on(fn) { listeners.push(fn); }, emit, log, audit, alarm, rec, recs: () => recsList(),
-      run, step, trigger, apply, findUnit, route, receive, later, truckArrive,
+      run, step, trigger, apply, findUnit, route, receive, later, truckArrive, workOrder,
       ext(name, fn) { ext[name] = fn; },
       setSpeed(v) { P.speed = v; P.paused = v === 0; emit('speed'); },
       fastForward(sec) { const h = 0.25; for (let i = 0; i < sec / h; i++) step(h); emit('tick'); emit('recs'); },

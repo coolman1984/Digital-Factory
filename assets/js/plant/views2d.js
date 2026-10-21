@@ -75,7 +75,7 @@
     const P = E.P, { mins, clock } = E;
     const MODELS = E.MODELS;
     const line = id => P.lines[id];
-    const state = { mode: null, sopModel: 'all', sopScen: X.sop.approved || 'chase', mrpCode: 'OC-65', sapSel: null };
+    const state = { mode: null, lossLine: 'ML1', skLine: 'ML3', sopModel: 'all', sopScen: X.sop.approved || 'chase', mrpCode: 'OC-65', sapSel: null };
     const level = E.level;
     const kind = k => Object.values(P.lines).filter(L => L.kind === k);
     const lsCls = b => { const lv = level(b); return lv <= 0 ? 'bad' : lv <= b.rop * 0.5 ? 'warn' : ''; };
@@ -85,6 +85,56 @@
     function feeder(L, label) {
       if (!L) return '';
       return `<button type="button" class="fd ${SCLS(L.state)}" data-ref="line:${L.id}"><span>${esc(label)}</span><b>${fmt(L.tph)}/h</b><small>${esc(STATE[L.state] || L.state)}</small></button>`;
+    }
+    /* andon: every stop on a main, LCM or SMD line climbs the escalation ladder with time */
+    const TIERS = [['Team leader', 0], ['Group leader', 60], ['Area manager', 300], ['Plant manager', 600]];
+    function andon() {
+      const calls = P.stations.filter(s => /^(ML|LCM|SMD)/.test(s.line) && (s.state === 'down' || (s.state === 'starved' && P.t - s.since > 120) || s.state === 'micro'))
+        .map(s => ({ s, d: P.t - (s.since || P.t) })).sort((a, b) => b.d - a.d).slice(0, 8);
+      if (!calls.length) return '<p class="quiet">No andon call open. Every station on the main, LCM and SMD lines is running.</p>';
+      return `<ol class="andon">${calls.map(({ s, d }) => {
+        const tier = TIERS.filter(t => d >= t[1]).length - 1, kindT = s.state === 'down' ? 'Breakdown' : s.state === 'micro' ? 'Short stop' : 'Material';
+        return `<li class="${s.state === 'down' ? 'bad' : 'warn'}"><div>${link('st:' + s.id, s.name)}<small>${esc(line(s.line).name)} · ${kindT}${s.why ? ' · ' + esc(s.why) : ''}</small></div>
+          <ol class="tiers" aria-label="Escalated to ${TIERS[tier][0]}">${TIERS.map((t, i) => `<li class="${i <= tier ? 'on' : ''}" title="${t[0]} after ${t[1] / 60} min">${t[0]}</li>`).join('')}</ol><b>${mins(d)}</b></li>`;
+      }).join('')}</ol>`;
+    }
+    /* the OEE loss tree of a line: where the time of its constraint went since the model start */
+    function lossTree(L) {
+      const s = L.bn; if (!s) return '';
+      const c = s.counters, el = Math.max(1, c.run + c.idle + c.starved + c.blocked + c.down), per = c.made ? c.std / c.made : MODELS[L.model].takt;
+      const bad = L.stations.reduce((a, x) => a + x.counters.bad, 0) * per;
+      const flow = c.starved + c.blocked + c.idle, speed = Math.max(0, c.run - c.std);
+      const rows = [['Planned maintenance', c.pm, 'Planned stop, outside OEE'], ['Breakdowns', c.brk, 'Availability'], ['Setup and changeover', c.co, 'Availability'], ['Small stops', c.micro, 'Performance'], ['Starved or blocked', flow, 'Flow loss from other stations'], ['Reduced speed', speed, 'Performance'], ['Defects and rework', Math.min(bad, Math.max(0, c.std)), 'Quality']];
+      let left = el; const out = [];
+      out.push(`<li class="tot"><span>Last ${Math.round(el / 60)} min</span><i style="--l:0%;--w:100%"></i><b>${Math.round(el / 60)} min</b></li>`);
+      for (const [t, v, g] of rows) { const w = v / el * 100; left -= v; out.push(`<li><span>${t}<small>${g}</small></span><i class="ls" style="--l:${(left / el * 100).toFixed(2)}%;--w:${w.toFixed(2)}%"></i><b>${(v / 60).toFixed(1)} min</b></li>`); }
+      out.push(`<li class="ok"><span>Fully productive<small>OEE of the constraint</small></span><i style="--l:0%;--w:${Math.max(0, left / el * 100).toFixed(2)}%"></i><b>${pct(Math.max(0, left) / el, 0)}</b></li>`);
+      return `<p class="quiet">Measured at ${link('st:' + s.id, s.name)}, the constraint of ${esc(L.name)}. Six big losses, plus the time it waited on the stations around it, since the model started.</p><ol class="wf">${out.join('')}</ol>`;
+    }
+    /* APS: the next eight hours of every main line, with orders due and maintenance windows */
+    function schedule() {
+      const H8 = 8 * 3600, t0 = P.t, x = t => Math.max(0, Math.min(100, (t - t0) / H8 * 100));
+      const late = new Set(H.AG && H.AG.base ? H.AG.base.lateList : []);
+      const ticks = []; for (let h = Math.ceil(t0 / 3600); h * 3600 < t0 + H8; h++) ticks.push(`<span style="left:${x(h * 3600).toFixed(2)}%">${String(h % 24).padStart(2, '0')}:00</span>`);
+      const shiftEnd = 14 * 3600, sb = shiftEnd > t0 && shiftEnd < t0 + H8 ? `<i class="shift" style="left:${x(shiftEnd)}%" title="Shift B starts 14:00"></i>` : '';
+      const rows = kind('main').map(L => {
+        const bars = [], rate = Math.max(30, L.tph || 3600 / MODELS[L.model].takt * 0.85) / 3600;
+        let t = t0;
+        const dn = L.stations.filter(s => s.state === 'down' || s.state === 'maint' || s.state === 'changeover');
+        if (dn.length) { const st = dn[0], d = Math.max(60, st.state === 'changeover' ? st.co : st.repair || 900); bars.push(`<i class="bk ${st.state === 'changeover' ? 'co' : st.state === 'maint' ? 'pm' : 'dn'}" style="left:0;width:${x(t0 + d)}%" title="${esc(st.name)} · ${esc(STATE[st.state])}"></i>`); t += d; }
+        const o = X.pp.find(p => p.line === L.id && p.status !== 'TECO');
+        let rem = o ? Math.max(0, o.qty - X.ppProgress(o)) : 0, n = o ? +o.id : 0, first = true;
+        while (t < t0 + H8) {
+          const q = first ? rem : (o ? o.qty : 1500), d = q / rate;
+          bars.push(`<i class="bk ord ${first ? 'now' : ''}" style="left:${x(t)}%;width:${(x(t + d) - x(t)).toFixed(2)}%" title="Order ${first ? n : n + bars.length} · ${fmt(q)} × ${esc(MODELS[L.model].name)}"><span>${first ? `${o ? o.id : ''} · ${fmt(q)} left` : `${MODELS[L.model].name} · next order`}</span></i>`);
+          t += d; first = false; if (bars.length > 6) break;
+        }
+        for (const w of P.wo.filter(w => w.status === 'Scheduled' && w.due && P.byId[w.st] && P.byId[w.st].line === L.id && w.due < t0 + H8)) bars.push(`<i class="bk pm" style="left:${x(w.due)}%;width:${Math.max(0.8, x(w.due + 1200) - x(w.due)).toFixed(2)}%" title="${esc(w.id)} · ${esc(w.why)}"></i>`);
+        const due = P.orders.filter(od => (od.state === 'open' || od.state === 'loading') && od.model === L.model && od.due < t0 + H8).map(od => `<button type="button" class="due ${late.has(od.id) ? 'bad' : ''}" style="left:${x(od.due)}%" data-ref="order:${esc(od.id)}" title="Order ${esc(od.id)} · ${fmt(od.qty)} × ${esc(MODELS[od.model].name)} due ${clock(od.due)}${late.has(od.id) ? ' · forecast short' : ''}"><span class="sr-only">Order ${esc(od.id)} due ${clock(od.due)}</span></button>`).join('');
+        return `<div class="gr"><button type="button" class="lnk" data-ref="line:${L.id}">${esc(L.name)}<small>${esc(MODELS[L.model].name)}</small></button><div class="gt">${bars.join('')}${due}${sb}</div></div>`;
+      }).join('');
+      return `<div class="gantt"><div class="gr ax"><span></span><div class="gt">${ticks.join('')}</div></div>${rows}</div>
+        <p class="legend2"><span class="k ord"></span>Production order (SAP PP) <span class="k pm"></span>Maintenance window (SAP PM) <span class="k co"></span>Changeover <span class="k dn"></span>Repair <span class="k due"></span>Truck due · red when the forecast is short</p>`;
     }
     function gmes() {
       const mains = kind('main');
@@ -109,6 +159,9 @@
       const veh = [...P.tuggers.map(t => [`tug:${t.id}`, t.id, t.routeName, t.plan ? `lap ${t.laps + 1} · ${t.plan.loads.length} drops` : 'waiting for its timetable']), ...P.agvs.map(a => [`agv:${a.id}`, a.id, 'PBA boards', a.fault ? 'fault' : a.mission ? `${a.mission.qty} × ${a.mission.buf.code} to ${P.byId[a.mission.buf.station].name} (${line(a.mission.buf.line).name})` : 'parked']), ...P.forklifts.map(f => [`fl:${f.id}`, f.id, f.role === 'fg' ? 'Finished goods' : 'Silos and halls', f.job ? (f.job.kind === 'store' ? 'storing a pallet' : 'loading ' + f.job.truck.id) : f.mission ? 'refilling ' + f.mission.buf.label.toLowerCase() : 'waiting'])];
       const docks = P.docks.map(d => `<li><b>${esc(d.id)}</b><span>${d.truck ? `${link('truck:' + d.truck.id, d.truck.id)} · ${fmt(d.truck.loaded)}/${fmt(d.truck.need)} × ${esc(MODELS[d.truck.model].name)} · order ${esc(d.truck.order.id)}` : 'free'}</span></li>`).join('');
       return `<header class="vh"><div><h2>GMES · shop floor</h2><p>${mains.filter(L => L.state === 'run' || L.state === 'warn').length} of 6 main lines running · ${fmt(k.units)} TVs packed against a plan of ${fmt(k.plan)} · OEE ${pct(k.oee || 0, 0)} · ${P.alarms.length} alarms</p></div></header>
+        <section class="vs2 two"><div><h3>Andon <span>escalates to the group leader after 1 min, the area manager after 5, the plant manager after 10</span></h3>${andon()}</div>
+          <div><h3>OEE loss tree</h3><div class="seg sm" role="group" aria-label="Line">${mains.map(L => `<button type="button" data-loss="${L.id}" aria-pressed="${state.lossLine === L.id}">${L.id.slice(2)}</button>`).join('')}</div>${lossTree(line(state.lossLine))}</div></section>
+        <section class="vs2"><h3>Schedule · next eight hours <span>live plan from SAP PP and PM; the Scheduling agent re-forecasts it every two minutes</span></h3>${schedule()}</section>
         <section class="vs2"><h3>Main assembly lines and the sub-lines that feed them</h3><div class="gl-list">${rows}</div></section>
         <section class="vs2 two"><div><h3>Injection moulding · 20 machines</h3><div class="tiles">${inj}</div></div>
           <div><h3>Press, coating and sub-assembly</h3><table class="tbl"><thead><tr><th>Line</th><th>Press</th><th>Coating oven</th><th>Sub-assembly</th><th>WIP</th></tr></thead><tbody>${press}</tbody></table></div></section>
@@ -162,11 +215,12 @@
       const so = P.orders.filter(o => o.state === 'open' || o.state === 'loading').slice(0, 8);
       const po = X.po.filter(p => p.status !== 'Closed').sort((a, b) => a.eta - b.eta).slice(0, 8);
       const pp = X.pp.filter(p => p.status !== 'TECO' && line(p.line) && line(p.line).kind === 'main');
-      const log = X.msgs.slice(0, 16).map(m => `<tr><td>${esc(m.time)}</td><td><b>${esc(m.from)}</b> → ${esc(m.to)}</td><td>${esc(m.type)}${m.mvt ? ` <span class="mvt">${esc(m.mvt)}</span>` : ''}</td><td>${m.ref ? link(m.ref.includes(':') ? (m.ref.startsWith('order:') || m.ref.startsWith('mrp:') || m.ref.startsWith('svc:') ? m.ref : 'buf:' + m.ref) : 'st:' + m.ref, m.text) : esc(m.text)}</td></tr>`).join('');
+      const log = X.msgs.slice(0, 16).map(m => `<tr><td>${esc(m.time)}</td><td><b>${esc(m.from)}</b> → ${esc(m.to)}</td><td>${esc(m.type)}${m.mvt ? ` <span class="mvt">${esc(m.mvt)}</span>` : ''}<small class="idoc">${esc(m.idoc || '')}</small></td><td>${m.ref ? link(m.ref.includes(':') ? (m.ref.startsWith('order:') || m.ref.startsWith('mrp:') || m.ref.startsWith('svc:') ? m.ref : 'buf:' + m.ref) : 'st:' + m.ref, m.text) : esc(m.text)}</td></tr>`).join('');
       return `<header class="vh"><div><h2>SAP and the data flow</h2><p>Every confirmation, goods movement, order and release travels through GMES to SAP and back. ${Math.round(X.stats.perMin)} messages a simulated minute.</p></div></header>
         <section class="vs2 flowwrap">${state.sapSvg || ''}</section>
         <section class="vs2"><h3>Live message log <span>newest first</span></h3><table class="tbl log"><thead><tr><th>Time</th><th>From → to</th><th>Message</th><th>Content</th></tr></thead><tbody>${log}</tbody></table>
-          <p class="mvts"><b>Movement types:</b> <span class="mvt">101</span> goods receipt from production or a PO · <span class="mvt">261</span> issue to production (backflush) · <span class="mvt">311</span> transfer to line side · <span class="mvt">321</span> quality release · <span class="mvt">344</span> block · <span class="mvt">343</span> release from block · <span class="mvt">601</span> goods issue for delivery</p></section>
+          <p class="mvts"><b>Movement types:</b> <span class="mvt">101</span> goods receipt from production or a PO · <span class="mvt">261</span> issue to production (backflush) · <span class="mvt">311</span> transfer to line side · <span class="mvt">321</span> quality release · <span class="mvt">344</span> block · <span class="mvt">343</span> release from block · <span class="mvt">601</span> goods issue for delivery</p>
+          <p class="mvts"><b>Interfaces:</b> <span class="idoc">LOIPRO01</span> production order to GMES · <span class="idoc">CONF21</span> confirmation · <span class="idoc">WMMBID02</span> goods movement · <span class="idoc">ORDERS05</span> sales or purchase order · <span class="idoc">DELVRY03</span> delivery · <span class="idoc">DELFOR02</span> vendor call-off · <span class="idoc">WMTOID01</span> transfer order · <span class="idoc">SHPCON</span> goods issue · <span class="idoc">INVOIC02</span> invoice · <span class="idoc">ECMMAS</span> engineering change · <span class="idoc">DOCMAS</span> firmware document. Notifications travel by API; MRP, QM and S&amp;OP post inside SAP.</p></section>
         <section class="vs2 three">
           <div><h3>Sales orders (SD)</h3><table class="tbl"><thead><tr><th>Order</th><th>Qty</th><th>Due</th><th>ATP</th></tr></thead><tbody>${so.map(o => `<tr><td>${link('order:' + o.id, o.id)}<small>${esc(o.customer)}</small></td><td>${fmt(o.qty)}<small>${esc(MODELS[o.model].name)}</small></td><td>${clock(o.due)}</td><td class="${o.atp && !o.atp.ok ? 'warn' : ''}">${o.state === 'loading' ? 'Loading' : o.atp && o.atp.ok ? 'Confirmed' : 'Short'}</td></tr>`).join('')}</tbody></table></div>
           <div><h3>Purchase orders (MM)</h3><table class="tbl"><thead><tr><th>PO</th><th>Material</th><th>ETA</th><th>Status</th></tr></thead><tbody>${po.map(p => `<tr><td>${link('po:' + p.id, p.id)}<small>${esc(p.vendor)}</small></td><td>${fmt(p.qty)}<small>${esc(p.code)}</small></td><td>${p.eta - P.t > 86400 ? `in ${Math.round((p.eta - P.t) / 86400)} d` : clock(p.eta)}</td><td class="${p.status === 'Held at port' ? 'bad' : ''}">${esc(p.status)}</td></tr>`).join('')}</tbody></table></div>
@@ -227,7 +281,7 @@
       const table = `<table class="tbl wk md"><thead><tr><th>${esc(sel.unit === 'kg' ? 'kg' : 'pieces')}</th><th>Now</th>${W.map(w => `<th>${w}</th>`).join('')}</tr></thead><tbody>${rowsT.map(([t, v], i) => `<tr><td>${t}</td><td>${i === 3 ? fmt(sel.onHand) : ''}</td>${v.map(x => `<td class="${i === 3 ? (x < 0 ? 'bad' : x < sel.ss ? 'warn' : '') : ''}">${x ? fmt(x) : '·'}</td>`).join('')}</tr>`).join('')}<tr class="ss"><td>Safety stock</td><td></td>${W.map(() => `<td>${fmt(sel.ss)}</td>`).join('')}</tr></tbody></table>`;
       const chart = lineChart([{ name: 'Gross requirements', v: sel.gross, cls: 'c-dem', bars: true }, { name: 'Projected available', v: sel.proj.map(v => Math.max(0, v)), cls: 'c-prod' }, { name: 'Safety stock', v: W.map(() => sel.ss), cls: 'c-cap', dash: true }], { labels: W, h: 170, label: 'Requirements and projected stock' });
       const mps = `<table class="tbl wk"><thead><tr><th>Model</th>${W.map(w => `<th>${w}</th>`).join('')}</tr></thead><tbody>${Object.values(MODELS).map(m => `<tr><td>${esc(m.name)}</td>${X.mps[m.id].map(v => `<td>${fmt(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-      const excList = exc.length ? `<ul class="li exc">${exc.map(e => `<li class="${e.level}"><span><b>${esc(e.kind)}</b> · ${esc(e.text)}</span><div>${e.act ? `<button type="button" class="btn btn-sm ${e.level === 'crit' ? 'btn-primary' : 'btn-secondary'}" data-act="${esc(e.act.id)}">${esc(e.act.label)}</button>` : ''}<button type="button" class="btn btn-sm btn-ghost" data-mrp="${esc(e.code)}">Open</button></div></li>`).join('')}</ul>` : '<p class="quiet">No exception messages.</p>';
+      const excList = exc.length ? `<ul class="li exc">${exc.map(e => `<li class="${e.level}"><span><abbr class="md04" title="MD04 exception ${esc(e.md04)}: ${esc(e.md04t)}">${esc(e.md04 || '')}</abbr><b>${esc(e.kind)}</b> · ${esc(e.text)}</span><div>${e.act ? `<button type="button" class="btn btn-sm ${e.level === 'crit' ? 'btn-primary' : 'btn-secondary'}" data-act="${esc(e.act.id)}">${esc(e.act.label)}</button>` : ''}<button type="button" class="btn btn-sm btn-ghost" data-mrp="${esc(e.code)}">Open</button></div></li>`).join('')}</ul>` : '<p class="quiet">No exception messages.</p>';
       return `<header class="vh"><div><h2>MRP · material requirements</h2><p>The master schedule from the approved S&amp;OP plan, exploded through every bill of materials (TV → panel module → open cell and backlight; main board → bare PCB; back cover → resin; chassis → steel coil, paint and brackets; cushion → EPS), netted against stock and open purchase orders and offset by each vendor's lead time. Last run ${clock(R.t)}.</p></div><button type="button" class="btn btn-secondary btn-sm" data-act="erp:mrp">${icon('refresh')}Run MRP now</button></header>
         <section class="vs2"><h3>Master production schedule <span>TVs a week, from S&amp;OP (${esc(X.sop.scenarios.find(s => s.id === X.sop.approved).name)})</span></h3>${mps}</section>
         <section class="vs2 mrpgrid"><nav class="mlist" aria-label="Materials">${list}</nav>
@@ -238,6 +292,50 @@
     }
 
     /* ---------------- departments ---------------- */
+    /* QM: an individuals control chart with limits from the signal's own normal behaviour */
+    function spcChart(arr, title, unit, ref, key) {
+      const a = (arr || []).filter(v => v > 0).slice(-150); if (a.length < 30) return '';
+      const lim = (H.AG && H.AG.limits(key, a)) || (() => { const m = a.reduce((p, v) => p + v, 0) / a.length; return { mu: m, sd: Math.sqrt(a.reduce((p, v) => p + (v - m) ** 2, 0) / a.length) || 1e-6 }; })();
+      const { mu, sd } = lim, ucl = mu + 3 * sd, lcl = mu - 3 * sd;
+      const w = 520, h = 150, pl = 48, pr = 8, pt = 10, pb = 18;
+      const lo = Math.min(lcl - sd, ...a), hi = Math.max(ucl + sd, ...a);
+      const X2 = i => pl + i * (w - pl - pr) / (a.length - 1), Y = v => pt + (h - pt - pb) * (1 - (v - lo) / (hi - lo));
+      const run = []; let side = 0, n = 0; a.forEach((v, i) => { const sg = Math.sign(v - mu); n = sg === side ? n + 1 : 1; side = sg; run.push(n); });
+      const out = a.map((v, i) => (v > ucl || v < lcl || run[i] >= 9) ? `<circle cx="${X2(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3" class="oc"/>` : '').join('');
+      const hl = (v, c, t) => `<line x1="${pl}" x2="${w - pr}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" class="${c}"/><text x="${pl - 4}" y="${(Y(v) + 4).toFixed(1)}" class="ax" text-anchor="end">${t}</text>`;
+      void unit;
+      const nOut = a.filter(v => v > ucl || v < lcl).length;
+      return `<div class="spcw"><h4>${link(ref, title)} <span>${nOut ? `${nOut} point${nOut > 1 ? 's' : ''} outside the limits` : run[run.length - 1] >= 9 ? 'Nelson rule 2: a run on one side' : 'in control'}</span></h4>
+        <svg class="chart spc" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(title)} control chart: mean ${mu.toFixed(1)} ${unit}, limits ${lcl.toFixed(1)} to ${ucl.toFixed(1)}">${hl(ucl, 'cl', 'UCL')}${hl(mu, 'mu', mu.toFixed(0))}${hl(lcl, 'cl', 'LCL')}<path d="${a.map((v, i) => `${i ? 'L' : 'M'}${X2(i).toFixed(1)} ${Y(v).toFixed(1)}`).join('')}" class="sp"/>${out}</svg></div>`;
+    }
+    function quality() {
+      const ov = P.byId[(P.scen.coating && P.scen.coating.line || 'PR4') + '-Coating'], im = P.byId.IM10;
+      const ncr = X.ncr.slice(0, 8).map(n => `<tr><td><b>${esc(n.id)}</b><small>${clock(n.opened)}</small></td><td>${esc(n.code)}<small>${fmt(n.count)} found${n.line && line(n.line) ? ' · ' + esc(line(n.line).name) : ''}</small></td>
+        <td><span class="d8" role="img" aria-label="${esc(X.D8[n.step])}">${X.D8.map((d, i) => `<i class="${i <= n.step ? 'on' : ''}" title="${esc(d)}"></i>`).join('')}</span><small>${esc(X.D8[n.step])}</small></td><td>${esc(n.cause)}<small>${esc(n.action)}</small></td></tr>`).join('');
+      return `<section class="vs2"><h3>Quality · SAP QM <span>statistical process control and nonconformance reports worked through the 8D steps</span></h3>
+        <div class="two">${spcChart(im.hist.press, `${im.name} injection pressure`, 'bar', 'st:' + im.id, 'IM10:press')}${spcChart(ov.hist.temp, `${line(ov.line).name} coating-oven temperature`, '°C', 'st:' + ov.id, ov.id + ':temp')}</div>
+        ${ncr ? `<div class="tblwrap"><table class="tbl ncr"><thead><tr><th>NCR</th><th>Defect</th><th>8D progress</th><th>Root cause and action</th></tr></thead><tbody>${ncr}</tbody></table></div>` : '<p class="quiet">No nonconformance open. An NCR opens when final QA or the function test sees the same defect three times in 30 minutes, or a drill starts one.</p>'}</section>`;
+    }
+    function maintenance() {
+      const done = P.wo.filter(w => w.type === 'Breakdown' && w.status === 'Completed' && w.closed);
+      const mttr = done.length ? done.reduce((a, w) => a + (w.closed - w.opened), 0) / done.length : 0;
+      const brk = P.wo.filter(w => w.type === 'Breakdown').length, el = Math.max(1, (P.t - P.c0) / 3600);
+      const mtbf = brk ? P.stations.length * el / brk : 0;
+      const rows = P.wo.slice(0, 12).map(w => { const st = P.byId[w.st]; return `<tr><td><b>${esc(w.id)}</b><small>P${w.prio}</small></td><td>${st ? link('st:' + st.id, st.name) : esc(w.st)}<small>${st && line(st.line) ? esc(line(st.line).name) : ''}</small></td><td>${esc(w.type)}<small>${esc(w.why || '')}</small></td>
+        <td class="${w.status === 'Open' ? 'bad' : w.status === 'In progress' ? 'warn' : ''}">${esc(w.status)}<small>${w.status === 'Scheduled' ? 'at ' + clock(w.due) : w.status === 'Completed' ? `${Math.round((w.closed - w.opened) / 60)} min` : w.tech ? esc(w.tech) : 'waiting for a technician'}</small></td></tr>`; }).join('');
+      return `<section class="vs2"><h3>Maintenance · SAP PM <span>work orders from breakdowns, predictive repairs and the preventive plan</span></h3>
+        <div class="astats"><div><b>${fmt(P.wo.filter(w => w.status === 'Open' || w.status === 'In progress').length)}</b><span>work orders open</span></div><div><b>${mttr ? Math.round(mttr / 60) + ' min' : '—'}</b><span>mean time to repair</span></div><div><b>${mtbf ? Math.round(mtbf) + ' h' : '—'}</b><span>mean time between failures, per machine</span></div><div><b>${P.techs.filter(t => t.state === 'available').length} of ${P.techs.length}</b><span>technicians free</span></div></div>
+        <div class="tblwrap"><table class="tbl"><thead><tr><th>Work order</th><th>Machine</th><th>Type</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+    }
+    const ILUO = ['', 'I', 'L', 'U', 'O'], ILUOT = ['', 'In training', 'Works with help', 'Certified', 'Can train others'];
+    function skills() {
+      const L = line(state.skLine), m = X.skills(state.skLine);
+      const rows = m.map(r => `<tr><td>${link('st:' + r.st.id, r.st.name)}<small>${r.crew.filter(c => c.present).length} of ${r.st.staff} present</small></td><td><div class="crewc">${r.crew.map(c => `<span class="op ${c.present ? '' : 'away'}" title="${esc(c.p.name)} · ${ILUOT[c.level]}${c.exp < 0 ? ' · certificate expired' : ` · certificate valid ${c.exp} more days`}${c.present ? '' : ' · absent'}${c.cover ? ' · covering: ' + esc(c.cover) : ''}"><b class="lv l${c.level}">${ILUO[c.level]}</b>${esc(c.p.name.split(' ')[0])}${c.exp < 0 ? '<i class="bad">expired</i>' : c.exp < 30 ? `<i class="warn">${c.exp} d</i>` : ''}</span>`).join('')}</div></td></tr>`).join('');
+      return `<section class="vs2"><h3>HR · skills matrix <span>who is certified for which station (ILUO), and when the certificate runs out</span></h3>
+        <div class="seg sm" role="group" aria-label="Line">${kind('main').map(x => `<button type="button" data-sk="${x.id}" aria-pressed="${state.skLine === x.id}">${esc(x.name)}</button>`).join('')}</div>
+        <div class="tblwrap"><table class="tbl skills"><thead><tr><th>Station on ${esc(L.name)}</th><th>Operators</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <p class="legend2"><span><b class="lv l1">I</b> in training</span><span><b class="lv l2">L</b> works with help</span><span><b class="lv l3">U</b> certified</span><span><b class="lv l4">O</b> can train others</span></p></section>`;
+    }
     function depts() {
       const k = P.kpi, f = X.finance();
       const open = P.orders.filter(o => o.state === 'open' || o.state === 'loading');
@@ -251,7 +349,8 @@
       }).join('');
       return `<header class="vh"><div><h2>Departments working as one</h2><p>Order to cash and plan to produce, end to end. Each department works in its own system; SAP and GMES keep them on the same numbers. Select a department to see its people, numbers, decisions and messages.</p></div></header>
         <section class="vs2"><h3>From the customer's order to the invoice</h3><ol class="chainx">${chain}</ol></section>
-        <section class="vs2"><div class="dcs">${cards}</div></section>`;
+        <section class="vs2"><div class="dcs">${cards}</div></section>
+        ${quality()}${maintenance()}${skills()}`;
     }
 
     /* ---------------- AI agents: the crew, its decisions, its reasoning ---------------- */
@@ -358,6 +457,8 @@
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.scen) { state.sopScen = b.dataset.scen; render(true); return; }
       if (b.dataset.sopm) { state.sopModel = b.dataset.sopm; render(true); return; }
+      if (b.dataset.loss) { state.lossLine = b.dataset.loss; render(true); return; }
+      if (b.dataset.sk) { state.skLine = b.dataset.sk; render(true); return; }
       if (b.dataset.auto && H.AG) { const [id, v] = b.dataset.auto.split(':'); H.AG.setAutonomy(id, v); render(true); return; }
       if (b.dataset.opt && H.AG) { const [key, i] = b.dataset.opt.split('|'); const c = H.AG.cards.get(key); if (c) ui.choose(c, c.options[+i]); return; }
       if (b.dataset.mrp) { state.mrpCode = b.dataset.mrp; render(true); ui.select('mrp:' + b.dataset.mrp, { fly: false }); return; }

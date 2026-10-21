@@ -85,8 +85,17 @@
 
     /* ----- messages through GMES ----- */
     // every exchange between the floor, GMES, SAP and the offices is a message; the views draw them as moving packets
+    // the interface each message travels on: an SAP IDoc (basic type), an API call, or a posting inside SAP
+    const IDOC = {
+      'SAP-PP>GMES:Order release': 'LOIPRO01', 'SAP-PP>GMES:Order switch': 'LOIPRO01', 'GMES>SAP-PP:Confirmation': 'CONF21', 'GMES>SAP-PP:Goods receipt': 'WMMBID02',
+      'GMES>SAP-MM:Backflush': 'WMMBID02', 'WMS>SAP-MM:Goods receipt': 'WMMBID02', 'WMS>SAP-MM:Transfer': 'WMMBID02', 'WMS>SAP-SD:Goods issue': 'SHPCON',
+      'SAP-MM>WMS:Purchase order': 'ORDERS05', 'SAP-PP>SAP-MM:Purchase order': 'ORDERS05', 'SAP-SD>SAP-PP:Sales order': 'ORDERS05', 'SAP-SD>WMS:Delivery': 'DELVRY03',
+      'SAP-SD>WMS:Service order': 'DELVRY03', 'SAP-MM>WMS:Transfer': 'WMTOID01', 'SAP-MM>WMS:Stock transfer': 'WMTOID01', 'SAP-MM>WMS:Call-off': 'DELFOR02', 'SAP-SD>SAP-FICO:Billing': 'INVOIC02',
+      'PLM>GMES:ECN release': 'ECMMAS', 'PLM>GMES:Firmware': 'DOCMAS', 'HR>SAP-FICO:Overtime': 'CATS (API)', 'GMES>SAP-QM:Defect': 'QM notification (API)',
+      'GMES>SAP-PM:Work order': 'PM notification (API)', 'GMES>WMS:Handling unit': 'HU (API)', 'SOP>SAP-PP:MPS release': 'IBP → PIR (API)'
+    };
     function msg(from, to, type, text, o) {
-      const m = Object.assign({ id: ++X.msgSeq, t: P.t, time: E.clock(P.t), from, to, type, text }, o);
+      const m = Object.assign({ id: ++X.msgSeq, t: P.t, time: E.clock(P.t), from, to, type, text, idoc: IDOC[`${from}>${to}:${type}`] || 'Posting in SAP' }, o);
       X.msgs.unshift(m); if (X.msgs.length > 400) X.msgs.pop();
       const k = from + '>' + to; X.flows[k] = (X.flows[k] || 0) + 1;
       E.emit('msg', m); return m;
@@ -474,10 +483,11 @@
         }
         const pegs = M.filter(m => usage(m, code) > 0);
         rows[code] = { code, name: mt.name, unit: mt.unit, src: mt.src, vendor: mt.vendor, lt: mt.lt, lot, ss, onHand, plant: Math.round(plantStock(code)), wh: X.wh[code], gross, sched, planned, release, proj, pegs, held: X.block[code] && P.t < X.block[code].until ? X.block[code] : null };
-        if (late.length) exc.push({ key: 'late:' + code, code, level: 'crit', kind: 'Expedite', text: `${code}: needed in ${wkLabel(late[0])} but the ${mt.lt}-day lead time cannot be met`, act: mt.src === 'import' ? { id: 'erp:air:' + code, label: 'Expedite by air' } : { id: 'erp:expedite:' + code, label: 'Expedite vendor' } });
-        else if (release[0] > 0 && !X.converted[code]) exc.push({ key: 'conv:' + code, code, level: 'info', kind: 'Convert', text: `${code}: planned order of ${num(release[0])} ${mt.unit} must be released this week`, act: { id: 'erp:convert:' + code, label: 'Convert to PO' } });
+        if (late.length) exc.push({ key: 'late:' + code, code, level: 'crit', kind: 'Expedite', md04: '06', md04t: 'Start date in the past', text: `${code}: needed in ${wkLabel(late[0])} but the ${mt.lt}-day lead time cannot be met`, act: mt.src === 'import' ? { id: 'erp:air:' + code, label: 'Expedite by air' } : { id: 'erp:expedite:' + code, label: 'Expedite vendor' } });
+        else if (release[0] > 0 && !X.converted[code]) exc.push({ key: 'conv:' + code, code, level: 'info', kind: 'Convert', md04: '05', md04t: 'Opening date in the past', text: `${code}: planned order of ${num(release[0])} ${mt.unit} must be released this week`, act: { id: 'erp:convert:' + code, label: 'Convert to PO' } });
+        if (onHand < ss) exc.push({ key: 'ss:' + code, code, level: 'warn', kind: 'Below safety stock', md04: '96', md04t: 'Stock below safety stock', text: `${code}: ${num(onHand)} on hand against a safety stock of ${num(ss)}`, act: null });
         const max = ss * 3 + lot * 2;
-        if (proj[MRPW - 1] > max && proj[0] > max) exc.push({ key: 'excess:' + code, code, level: 'info', kind: 'Excess', text: `${code}: stock stays above ${num(max)} for eight weeks; push out the next receipt`, act: null });
+        if (proj[MRPW - 1] > max && proj[0] > max) exc.push({ key: 'excess:' + code, code, level: 'info', kind: 'Excess', md04: '15', md04t: 'Reschedule out', text: `${code}: stock stays above ${num(max)} for eight weeks; push out the next receipt`, act: null });
       }
       X.mrp = { rows, exc, t: P.t, weeks: Array.from({ length: MRPW }, (_, i) => wkLabel(i)) };
       return X.mrp;
@@ -705,6 +715,59 @@
     for (let i = 0; i < 14; i++) { svcOrder(); X.svc.orders[0].t = P.t - (14 - i) * rnd(600, 1200); }
     decisions();
     msg('SAP-PP', 'GMES', 'Order release', `${X.pp.filter(p => p.status !== 'TECO').length} production orders released for shift A`, {});
+
+    /* ----- QM: nonconformance reports worked through the 8D steps ----- */
+    const D8 = ['D1 Team', 'D2 Describe', 'D3 Contain', 'D4 Root cause', 'D5 Corrective action', 'D6 Verify', 'D7 Prevent recurrence', 'D8 Close'];
+    X.D8 = D8; X.ncr = []; let ncrSeq = 2207;
+    const recent = {};
+    const SCEN_NCR = { shortshot: ['Back cover short shot', 'Worn check ring on IM10', 'Check ring replaced; lots held; mould on IM20'], coating: ['Chassis paint peeling', 'Burner fault on the press line 4 coating oven', 'Burner repaired; under-cured lots held'], software: ['HDMI-CEC handshake fail', 'Firmware v3.2.0 HDMI-CEC handling', 'Writers rolled back; boards re-flashed; release returned to PE'] };
+    function openNcr(code, o) {
+      let n = X.ncr.find(x => x.code === code && x.step < 7);
+      if (!n) { n = Object.assign({ id: 'NCR-' + (++ncrSeq), code, opened: P.t, step: 1, count: 0, owner: 'Quality engineer, final QA', cause: 'Under investigation', action: '—' }, o); X.ncr.unshift(n); if (X.ncr.length > 30) X.ncr.pop(); msg('GMES', 'SAP-QM', 'Defect', `${n.id} opened · ${code}`, { ref: o && o.ref }); }
+      return n;
+    }
+    E.on((type, d) => {
+      if (type !== 'defect') return;
+      const code = d.u.defect.code, sc = Object.keys(SCEN_NCR).find(k => SCEN_NCR[k][0] === code);
+      const r = recent[code] = (recent[code] || []).filter(t => P.t - t < 1800); r.push(P.t);
+      if (sc || r.length >= 3) { const n = openNcr(code, { ref: d.st.id, scen: sc, line: d.st.line }); n.count++; n.last = P.t; }
+    });
+    function ncrStep() {
+      for (const n of X.ncr) {
+        if (n.step >= 7) continue;
+        const age = (P.t - n.opened) / 60;
+        if (n.scen) {
+          const S = P.scen[n.scen], fixed = S && S.fixed;
+          if (n.step < 2 && age > 2) n.step = 2;                                           // contained at final QA: sorting
+          if (n.step < 3 && (fixed || P.recs.some(r => ['shot', 'coat', 'sw'].includes(r.key)))) { n.step = 3; n.cause = SCEN_NCR[n.scen][1]; }
+          if (fixed && n.step < 4) { n.step = 4; n.action = SCEN_NCR[n.scen][2]; n.fixedAt = P.t; }
+          if (n.fixedAt && n.step < 5 && P.t - n.fixedAt > 600) n.step = 5;               // verified: no new fails for 10 min
+          if (n.step === 5 && P.t - n.fixedAt > 1800) n.step = 6;
+          if (n.step === 6 && P.t - n.fixedAt > 3600) n.step = 7;
+        } else {
+          if (n.step < 2 && age > 3) n.step = 2;
+          if (n.step < 3 && age > 10) { n.step = 3; n.cause = 'Operator handling at the station (5-why)'; }
+          if (n.step < 4 && age > 15) { n.step = 4; n.action = 'Work instruction updated; operators re-briefed'; }
+          if (n.step < 5 && age > 30 && P.t - n.last > 900) n.step = 5;
+          if (n.step === 5 && age > 50) n.step = 6;
+          if (n.step === 6 && age > 70) n.step = 7;
+        }
+      }
+    }
+    let ncrAcc = 0; E.on(t => { if (t === 'second' && ++ncrAcc % 10 === 0) ncrStep(); });
+
+    /* ----- HR: the skills matrix (ILUO levels and certificate expiry) ----- */
+    const hash = s0 => { let h = 2166136261; for (const c of s0) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0) / 4294967296; };
+    for (const p of P.people) if (p.role === 'Operator') {
+      const st = P.byId[p.at], u = hash(p.id + p.name);
+      p.level = u < 0.12 ? 2 : u < 0.55 ? 3 : 4;                 // I = in training, L = can work with help, U = certified, O = can train others
+      p.certExp = Math.round((hash(p.name + p.id) * 420 - 40));    // days until the station certificate expires; negative = expired
+      p.cross = st ? Object.values(P.lines).filter(L => L.kind === 'main' && L.id !== st.line && hash(p.id + L.id) < 0.35).map(L => L.id) : [];
+    }
+    X.skills = line => {
+      const L = P.lines[line]; if (!L) return [];
+      return L.stations.filter(s => s.manual).map(s => ({ st: s, crew: s.crew.map(p => ({ p, level: p.level || 3, exp: p.certExp, present: p.present, cover: p.cover })) }));
+    };
 
     X.run = mrpRun; X.approve = approve; X.sopRun = sopRun; X.usage = usage; X.egp = egp; X.num = num; X.wkLabel = wkLabel; X.rate = rate; X.fgQty = fgQty;
     return X;
