@@ -783,7 +783,7 @@
       if (s.state === 'down' || s.state === 'maint') { s.counters.down += dt; s.counters[s.state === 'down' ? 'brk' : 'pm'] += dt; if (s.tech && s.tech.state === 'repairing') { s.repair -= dt; if (s.repair <= 0) finishRepair(s); } return; }
       if (s.micro > 0) { s.micro -= dt; s.counters.down += dt; s.counters.micro += dt; if (s.micro <= 0) { s.micro = 0; setState(s, 'idle'); } return; }
       if (s.state === 'changeover') { s.counters.down += dt; s.counters.co += dt; s.co -= dt; if (s.co <= 0) setState(s, 'idle'); return; }
-      if ((L && (L.stopped || L.tripped)) || s.tripped) { setState(s, 'idle', L && L.tripped ? 'Tripped (power)' : 'Stopped'); s.counters.idle += dt; return; }
+      if ((L && (L.stopped || L.tripped)) || s.tripped || s.hold) { setState(s, 'idle', L && L.tripped ? 'Tripped (power)' : s.hold ? 'Stopped from the HMI' : 'Stopped'); s.counters.idle += dt; return; }
       const flowKinds = s.kind !== 'oven' && s.kind !== 'aging';
       if (s.procs.length && flowKinds && R() < dt / (s.manual ? 1600 : 1300)) {
         s.micro = rnd(15, 70); s.stops = (s.stops || 0) + 1;
@@ -1445,6 +1445,18 @@
       on(fn) { listeners.push(fn); }, emit, log, audit, alarm, rec, recs: () => recsList(),
       run, step, trigger, apply, findUnit, route, receive, later, truckArrive, workOrder,
       ext(name, fn) { ext[name] = fn; },
+      // machine commands from the HMI; the page checks the interlocks before it calls this
+      hmi(id, cmd, who = 'You') {
+        const s = P.byId[id]; if (!s) return;
+        const L = P.lines[s.line], where = `${s.name}${L ? ' (' + L.name + ')' : ''}`;
+        const say = (what, detail) => { audit(who, what, `${where}${detail ? ' · ' + detail : ''}`); log('HMI', `${what}: ${where}${detail ? ' · ' + detail : ''}`, 'info', s.id); };
+        if (cmd === 'stop') { s.hold = true; say('Machine stopped from the HMI'); }
+        else if (cmd === 'start') { s.hold = false; if (s.state === 'idle') setState(s, 'idle'); say('Machine started from the HMI'); }
+        else if (cmd === 'faster' || cmd === 'slower') { s.speedMul = Math.max(0.92, Math.min(1.2, (s.speedMul || 1) * (cmd === 'faster' ? 0.95 : 1.1))); say('Machine speed changed', `${Math.round(100 / s.speedMul)}% of rated`); }
+        else if (cmd === 'loto') { s.hold = true; s.loto = { by: who, at: P.t }; setState(s, 'maint', 'Locked out (LOTO)'); s.repair = 0; say('Lockout-tagout applied', 'electrical and pneumatic energy isolated'); workOrder(s, 'Corrective', 'Inspection under lockout', 3, { status: 'In progress', tech: 'Maintenance on call', by: who }); }
+        else if (cmd === 'unloto') { s.loto = null; s.hold = false; if (s.wo && s.wo.type === 'Corrective') { s.wo.status = 'Completed'; s.wo.closed = P.t; s.wo = null; } setState(s, 'idle'); say('Lockout removed', 'machine released to production'); }
+        thinkSoon = true; emit('hmi', { s, cmd }); emit('recs');
+      },
       setSpeed(v) { P.speed = v; P.paused = v === 0; emit('speed'); },
       fastForward(sec) { const h = 0.25; for (let i = 0; i < sec / h; i++) step(h); emit('tick'); emit('recs'); },
       dismiss(key) { const r = recs.get(key); if (r) { r.dismissed = true; P.recs = recsList(); emit('recs'); } },
