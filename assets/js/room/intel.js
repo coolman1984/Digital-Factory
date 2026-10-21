@@ -115,6 +115,7 @@
     if (typeof Theme !== 'undefined') Theme.icons(dlgB);
   }
   DF.openCase = function (id) {
+    if (!A.caseById(id)) { DF.toast(`Case ${id} is not in this shift`, 'info'); return; }
     dlgCase = id; dlgB._h = null;
     renderCase();
     if (!dlg.open) { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); }

@@ -217,7 +217,8 @@
       try {
         const w = new Worker('assets/js/twin/twin-worker.js');
         w.onmessage = e => { const j = waiting.get(e.data.id); if (j) j(e.data); };
-        w.onerror = () => {};
+        // a worker that fails to load would leave its jobs waiting forever: fail them and play futures on the page instead
+        w.onerror = () => { for (const [id, j] of waiting) j({ id, error: 'worker failed' }); pool.length = 0; };
         pool.push(w);
       } catch (e) { break; }
     }

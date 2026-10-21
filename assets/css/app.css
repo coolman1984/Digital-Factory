@@ -487,6 +487,7 @@ body.embed .menu-btn, body.embed #tmBtn, body.embed .skip { display: none; }
   .seg-tabs .seg, .mach, .rc-item { min-height: 44px; }
   .link-btn, .tbl .lnk { min-height: 44px; display: inline-flex; align-items: center; }
 }
+@media (max-width: 400px) { .speed [data-speed="4"] { display: none; } }
 @media (max-width: 640px) {
   .hide-sm { display: none; }
   .crumb { display: none; }
@@ -502,6 +503,7 @@ body.embed .menu-btn, body.embed #tmBtn, body.embed .skip { display: none; }
   .tb-clock { display: none; }
   .tb-mid { gap: 6px; }
   .speed button { min-width: 44px; padding: 0 6px; }
+  .tb-mid { min-width: 0; flex-shrink: 1; }
   .tb-left .menu-btn { margin-inline-end: auto; }
   .live-chip { display: none; }
   .pv, .agent .rec { grid-template-columns: repeat(2, minmax(0, 1fr)); }

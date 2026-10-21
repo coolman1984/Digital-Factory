@@ -67,8 +67,21 @@
   T.on((t, n) => { if (t === 'catching') document.body.classList.toggle('catching', !!n); });
 
   /* ---------------- menu, keyboard ---------------- */
-  $('#menuBtn').onclick = () => { $('#side').classList.add('open'); $('#sideShade').hidden = false; $('#side a').focus(); };
-  $('#sideShade').onclick = () => { $('#side').classList.remove('open'); $('#sideShade').hidden = true; };
+  // the phone drawer: off-screen links stay out of the tab order until it opens; Escape or a link closes it
+  const side = $('#side'), menuBtn = $('#menuBtn'), narrow = matchMedia('(max-width: 960px)');
+  function drawer(open) {
+    side.classList.toggle('open', open); $('#sideShade').hidden = !open;
+    menuBtn.setAttribute('aria-expanded', String(open));
+    side.inert = narrow.matches && !open;
+    if (open) side.querySelector('a').focus();
+  }
+  menuBtn.setAttribute('aria-controls', 'side');
+  drawer(false);
+  narrow.addEventListener('change', () => drawer(false));
+  menuBtn.onclick = () => drawer(true);
+  $('#sideShade').onclick = () => { drawer(false); menuBtn.focus(); };
+  side.addEventListener('click', e => { if (narrow.matches && e.target.closest('a')) drawer(false); });
+  side.addEventListener('keydown', e => { if (e.key === 'Escape' && side.classList.contains('open')) { e.stopPropagation(); drawer(false); menuBtn.focus(); } });
   $('#btnCopilot').onclick = () => window.Copilot && Copilot.open();
   const KEYS = ['command', 'alarms', 'control', 'agents', 'predict', 'rootcause', 'simulator', 'scenarios', 'leadership'];
   addEventListener('keydown', e => {
