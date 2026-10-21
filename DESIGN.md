@@ -38,6 +38,10 @@ line-side stock, the andon light, and an amber or red tag above it. Brand blue m
 Products keep their real colours at small scale (green boards, kraft cartons, lit test patterns on burn-in) so the plant reads as real.
 Readouts on top as one hairline strip, the detail panel on the right, the value stream as a hairline strip at the bottom. One ease-out curve for
 camera moves (1.1–1.3 s). Phones: shadows off, lower pixel ratio, readouts and views as horizontal scrollers.
+The whole plant (264 × 168 m) keeps the frame rate by merging static geometry by material and instancing everything that moves.
+Data packets between the floor, GMES, SAP and the offices are small brand-blue shapes on arcs; they carry no status meaning.
+The 2D tabs (GMES, SAP and data flow, S&OP, MRP, Departments, Decisions) use the same panels: hairline cards, bare numbers,
+state colour only where something is abnormal; charts use ink for production, brand blue for demand, a dashed grey line for capacity.
 
 ## The guide (guide.html)
 A book in the same grammar: a blue cover field, ink chapter rules, ruled tables, one blue. Arabic is the default and reads right to left in
