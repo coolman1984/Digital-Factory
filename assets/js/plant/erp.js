@@ -86,12 +86,13 @@
     /* ----- messages through GMES ----- */
     // every exchange between the floor, GMES, SAP and the offices is a message; the views draw them as moving packets
     // the interface each message travels on: an SAP IDoc (basic type), an API call, or a posting inside SAP
+    // message type / basic type, as an SAP integration consultant would write them
     const IDOC = {
-      'SAP-PP>GMES:Order release': 'LOIPRO01', 'SAP-PP>GMES:Order switch': 'LOIPRO01', 'GMES>SAP-PP:Confirmation': 'CONF21', 'GMES>SAP-PP:Goods receipt': 'WMMBID02',
-      'GMES>SAP-MM:Backflush': 'WMMBID02', 'WMS>SAP-MM:Goods receipt': 'WMMBID02', 'WMS>SAP-MM:Transfer': 'WMMBID02', 'WMS>SAP-SD:Goods issue': 'SHPCON',
-      'SAP-MM>WMS:Purchase order': 'ORDERS05', 'SAP-PP>SAP-MM:Purchase order': 'ORDERS05', 'SAP-SD>SAP-PP:Sales order': 'ORDERS05', 'SAP-SD>WMS:Delivery': 'DELVRY03',
-      'SAP-SD>WMS:Service order': 'DELVRY03', 'SAP-MM>WMS:Transfer': 'WMTOID01', 'SAP-MM>WMS:Stock transfer': 'WMTOID01', 'SAP-MM>WMS:Call-off': 'DELFOR02', 'SAP-SD>SAP-FICO:Billing': 'INVOIC02',
-      'PLM>GMES:ECN release': 'ECMMAS', 'PLM>GMES:Firmware': 'DOCMAS', 'HR>SAP-FICO:Overtime': 'CATS (API)', 'GMES>SAP-QM:Defect': 'QM notification (API)',
+      'SAP-PP>GMES:Order release': 'LOIPRO / LOIPRO01', 'SAP-PP>GMES:Order switch': 'LOIPRO / LOIPRO01', 'GMES>SAP-PP:Confirmation': 'CONF21', 'GMES>SAP-PP:Goods receipt': 'WMMBXY / WMMBID02',
+      'GMES>SAP-MM:Backflush': 'WMMBXY / WMMBID02', 'WMS>SAP-MM:Goods receipt': 'WMMBXY / WMMBID02', 'WMS>SAP-MM:Transfer': 'WMMBXY / WMMBID02', 'WMS>SAP-SD:Goods issue': 'SHPCON / DELVRY03',
+      'SAP-MM>WMS:Purchase order': 'ORDERS / ORDERS05', 'SAP-PP>SAP-MM:Purchase order': 'ORDERS / ORDERS05', 'SAP-SD>SAP-PP:Sales order': 'ORDERS / ORDERS05', 'SAP-SD>WMS:Delivery': 'DESADV / DELVRY03',
+      'SAP-SD>WMS:Service order': 'DESADV / DELVRY03', 'SAP-MM>WMS:Transfer': 'WMTORD / WMTOID01', 'SAP-MM>WMS:Stock transfer': 'WMTORD / WMTOID01', 'SAP-MM>WMS:Call-off': 'DELINS / DELFOR02', 'SAP-SD>SAP-FICO:Billing': 'INVOIC / INVOIC02',
+      'PLM>GMES:ECN release': 'ECMMAS + BOMMAT', 'PLM>GMES:Firmware': 'DOCMAS', 'HR>SAP-FICO:Overtime': 'CATS (API)', 'GMES>SAP-QM:Defect': 'QM notification (API)',
       'GMES>SAP-PM:Work order': 'PM notification (API)', 'GMES>WMS:Handling unit': 'HU (API)', 'SOP>SAP-PP:MPS release': 'IBP → PIR (API)'
     };
     function msg(from, to, type, text, o) {
@@ -485,6 +486,7 @@
         rows[code] = { code, name: mt.name, unit: mt.unit, src: mt.src, vendor: mt.vendor, lt: mt.lt, lot, ss, onHand, plant: Math.round(plantStock(code)), wh: X.wh[code], gross, sched, planned, release, proj, pegs, held: X.block[code] && P.t < X.block[code].until ? X.block[code] : null };
         if (late.length) exc.push({ key: 'late:' + code, code, level: 'crit', kind: 'Expedite', md04: '06', md04t: 'Start date in the past', text: `${code}: needed in ${wkLabel(late[0])} but the ${mt.lt}-day lead time cannot be met`, act: mt.src === 'import' ? { id: 'erp:air:' + code, label: 'Expedite by air' } : { id: 'erp:expedite:' + code, label: 'Expedite vendor' } });
         else if (release[0] > 0 && !X.converted[code]) exc.push({ key: 'conv:' + code, code, level: 'info', kind: 'Convert', md04: '05', md04t: 'Opening date in the past', text: `${code}: planned order of ${num(release[0])} ${mt.unit} must be released this week`, act: { id: 'erp:convert:' + code, label: 'Convert to PO' } });
+        if (rows[code].held) exc.push({ key: 'in:' + code, code, level: 'warn', kind: 'Reschedule in', md04: '10', md04t: 'Bring process forward', text: `${code}: the held receipt is needed earlier than its new date; pull it in or cover from the bonded warehouse`, act: null });
         if (onHand < ss) exc.push({ key: 'ss:' + code, code, level: 'warn', kind: 'Below safety stock', md04: '96', md04t: 'Stock below safety stock', text: `${code}: ${num(onHand)} on hand against a safety stock of ${num(ss)}`, act: null });
         const max = ss * 3 + lot * 2;
         if (proj[MRPW - 1] > max && proj[0] > max) exc.push({ key: 'excess:' + code, code, level: 'info', kind: 'Excess', md04: '15', md04t: 'Reschedule out', text: `${code}: stock stays above ${num(max)} for eight weeks; push out the next receipt`, act: null });
@@ -534,7 +536,7 @@
         const blk = blockStock(b, Math.round(rate('M55') * 0.8), 'IQC: crush strength 18% below spec');
         X.block['CTN-55'] = { until: P.t + 3 * 3600, reason: 'Vendor truck 3 h late', noNew: true };
         for (const p of X.po) if (p.code === 'CTN-55' && p.status === 'In transit') reschedule(p, Math.max(p.eta, P.t) + 3 * 3600, 'In transit', 'Vendor truck 3 h late');
-        msg('SAP-QM', 'SAP-MM', 'Block', `CTN-55 lot blocked · ${num(blk.qty)} cartons · crush strength below spec · 344`, { mvt: '344', ref: b.id });
+        msg('SAP-QM', 'SAP-MM', 'Block', `CTN-55 lot blocked · ${num(blk.qty)} cartons · crush strength below spec · 350`, { mvt: '350', ref: b.id });
         E.log('IQC', `CTN-55 lot failed crush test · ${num(blk.qty)} cartons blocked · the next vendor truck is 3 h late`, 'warn', b.id);
         X.cartonBlk = blk;
       } else if (id === 'field') {
@@ -726,8 +728,10 @@
       if (!n) { n = Object.assign({ id: 'NCR-' + (++ncrSeq), code, opened: P.t, step: 1, count: 0, owner: 'Quality engineer, final QA', cause: 'Under investigation', action: '—' }, o); X.ncr.unshift(n); if (X.ncr.length > 30) X.ncr.pop(); msg('GMES', 'SAP-QM', 'Defect', `${n.id} opened · ${code}`, { ref: o && o.ref }); }
       return n;
     }
+    X.pareto = {};
     E.on((type, d) => {
       if (type !== 'defect') return;
+      const pk = d.u.defect.code + '|' + d.st.id; X.pareto[pk] = (X.pareto[pk] || 0) + 1;
       const code = d.u.defect.code, sc = Object.keys(SCEN_NCR).find(k => SCEN_NCR[k][0] === code);
       const r = recent[code] = (recent[code] || []).filter(t => P.t - t < 1800); r.push(P.t);
       if (sc || r.length >= 3) { const n = openNcr(code, { ref: d.st.id, scen: sc, line: d.st.line }); n.count++; n.last = P.t; }

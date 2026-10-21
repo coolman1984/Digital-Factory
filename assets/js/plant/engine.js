@@ -138,7 +138,7 @@
       stations: [], byId: {}, lines: {}, segs: [], bufs: {}, units: new Set(), archive: new Map(), archiveOrder: [],
       agvs: [], tuggers: [], forklifts: [], people: [], techs: [], inbound: [], trucks: [], pallets: [], fgSlots: [], orders: [],
       events: [], alarms: [], recs: [], preds: [], audit: [], kpi: {}, hist: { t: [], kw: [], tph: [], oee: [], wip: [] },
-      scen: {}, energy: { kwh: 0 }, c0: START, wo: [], woSeq: 4180, made: { tv: 0, byModel: { M43: 0, M55: 0, M65: 0, M75: 0 } },
+      scen: {}, energy: { kwh: 0 }, c0: START, wo: [], woSeq: 4180, audSeq: 30410, snaps: [], made: { tv: 0, byModel: { M43: 0, M55: 0, M65: 0, M75: 0 } },
       base: { M43: 260, M55: 830, M65: 490, M75: 150 },     // TVs packed between 06:00 and the model start
       rejects: { rework: [], smtRepair: [] }, saved: 0, leads: [], nodes: [], edges: [], layout: {}, sw: {}, holds: new Set(), svc: { orders: [], shipped: 0 }
     };
@@ -149,7 +149,8 @@
       P.events.unshift(e); if (P.events.length > 220) P.events.pop();
       emit('event', e); return e;
     }
-    function audit(who, action, detail) { P.audit.unshift({ time: clock(P.t), who, action, detail }); if (P.audit.length > 80) P.audit.pop(); emit('audit'); }
+    // every decision gets an audit ID, the way a regulated plant traces who approved what
+    function audit(who, action, detail) { const a = { id: 'AUD-' + (++P.audSeq), t: P.t, time: clock(P.t), who, action, detail }; P.audit.unshift(a); if (P.audit.length > 80) P.audit.pop(); emit('audit', a); return a; }
     const alarmMap = new Map();
     function alarm(key, on, o) {
       const a = alarmMap.get(key);
@@ -784,7 +785,9 @@
       const crew = s.manual && s.staff ? Math.max(0.5, s.crew.filter(p => p.present).length / s.staff) : 1;
       return c * wear * s.speedMul / sp / (crew < 1 ? Math.max(0.55, crew) : 1) * (1 + (R() - 0.2) * 0.12);
     }
-    function setState(s, st, why) { if (s.state !== st || s.why !== why) { s.state = st; s.since = P.t; s.why = why || ''; } }
+    // stop reasons: time lost per state and reason code, kept for the loss tree and the machine panel
+    const LOSS = { down: 1, maint: 1, micro: 1, changeover: 1, starved: 1, blocked: 1 };
+    function setState(s, st, why) { if (s.state !== st || s.why !== why) { if (LOSS[s.state] && s.since !== undefined && P.t > s.since) { const k = s.state + '|' + (s.why || ''); (s.rs = s.rs || {})[k] = (s.rs[k] || 0) + (P.t - s.since); } s.state = st; s.since = P.t; s.why = why || ''; } }
     function canStart(s) { for (const n of s.needs) { if (level(n.b) < (n.n || 1)) return n.b; } return null; }
     function consume(s, u) {
       for (const n of s.needs) {
@@ -1120,6 +1123,11 @@
 
     /* ----- KPIs ----- */
     const win = [];
+    // the time machine: a compact snapshot every 20 s of machine states, vehicles and readouts, 45 minutes deep
+    function snap() {
+      P.snaps.push({ t: P.t, st: P.stations.map(s => [s.state, s.why, s.since]), veh: P.agvs.concat(P.tuggers, P.forklifts).map(v => [v.x, v.z, v.h]), kpi: Object.assign({}, P.kpi), alarms: P.alarms.length });
+      if (P.snaps.length > 135) P.snaps.shift();
+    }
     function kpis() {
       const k = P.kpi;
       const el = (P.t - SHIFT_START) / 3600;
@@ -1412,7 +1420,7 @@
         emit('second');
       }
       if (acc2 >= 2 || thinkSoon) { acc2 = 0; thinkSoon = false; think(); P.recs = recsList(); }
-      if (acc5 >= 5) { acc5 = 0; kpis(); for (const s of P.stations) record(s); }
+      if (acc5 >= 5) { acc5 = 0; kpis(); for (const s of P.stations) record(s); if (P.t >= START && P.t - (P.snaps.length ? P.snaps[P.snaps.length - 1].t : 0) >= 20) snap(); }
     }
     const E_level = level;
     function run(realDt) {

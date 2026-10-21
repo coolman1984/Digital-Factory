@@ -40,8 +40,9 @@
     if (!c || !c.best) return '';
     const b = c.best, d = b.f.packed - c.base.f.packed, dl = c.base.f.late - b.f.late;
     const gain = b === c.base ? '' : [d > 0 ? `+${fmt(d)} TVs` : '', dl > 0 ? `${dl} order${dl > 1 ? 's' : ''} saved` : ''].filter(Boolean).join(', ');
-    return `<p class="rec-ai">${icon('sparkles')}<span><b>${esc(c.agentName)}</b> simulated ${c.options.length} option${c.options.length > 1 ? 's' : ''} over ${c.h / 60} h and recommends <b>${esc(b.label)}</b>${gain ? ` (${gain} against doing nothing)` : ''}${b.f.late ? `, ${b.f.late} order${b.f.late > 1 ? 's' : ''} still at risk` : ''}.</span></p>`;
+    return `<p class="rec-ai">${icon('sparkles')}<span><b>${esc(c.agentName)}</b> simulated ${c.options.length} option${c.options.length > 1 ? 's' : ''} over ${c.h / 60} h and recommends <b>${esc(b.label)}</b>${gain ? ` (${gain} against doing nothing)` : ''}${b.f.late ? `, ${b.f.late} order${b.f.late > 1 ? 's' : ''} still at risk` : ''}.${c.autoAt && !c.veto && !c.decided ? ` Low risk: goes ahead at ${clockOf(c.autoAt)} unless vetoed.` : ''}</span>${c.autoAt && !c.veto && !c.decided ? `<button type="button" class="btn btn-sm btn-ghost" data-veto="${esc(c.key)}" data-key="veto-${esc(c.key)}">Veto</button>` : ''}</p>`;
   }
+  const clockOf = t => { const m = Math.floor(t / 60); return `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
   function recCards(list, X) {
     if (!list.length) return '';
     return list.map(r => {
@@ -75,7 +76,7 @@
     const P = E.P, { mins, clock } = E;
     const MODELS = E.MODELS;
     const line = id => P.lines[id];
-    const state = { mode: null, lossLine: 'ML1', skLine: 'ML3', sopModel: 'all', sopScen: X.sop.approved || 'chase', mrpCode: 'OC-65', sapSel: null };
+    const state = { mode: null, lossLine: 'ML1', skLine: 'ML3', draft: 'live', sopModel: 'all', sopScen: X.sop.approved || 'chase', mrpCode: 'OC-65', sapSel: null };
     const level = E.level;
     const kind = k => Object.values(P.lines).filter(L => L.kind === k);
     const lsCls = b => { const lv = level(b); return lv <= 0 ? 'bad' : lv <= b.rop * 0.5 ? 'warn' : ''; };
@@ -91,8 +92,10 @@
     function andon() {
       const calls = P.stations.filter(s => /^(ML|LCM|SMD)/.test(s.line) && (s.state === 'down' || (s.state === 'starved' && P.t - s.since > 120) || s.state === 'micro'))
         .map(s => ({ s, d: P.t - (s.since || P.t) })).sort((a, b) => b.d - a.d).slice(0, 8);
-      if (!calls.length) return '<p class="quiet">No andon call open. Every station on the main, LCM and SMD lines is running.</p>';
-      return `<ol class="andon">${calls.map(({ s, d }) => {
+      const safe = H.AG ? H.AG.incidents.filter(i => P.t - i.t < 600) : [];
+      const sRows = safe.map(i => `<li class="bad"><div><b>${esc(i.cam)}</b><small>Safety · ${esc(i.text)}</small></div><ol class="tiers" aria-label="Escalated to the area manager">${TIERS.map((t, k) => `<li class="${k <= 2 ? 'on' : ''}">${t[0]}</li>`).join('')}</ol><b>${mins(P.t - i.t)}</b></li>`).join('');
+      if (!calls.length && !sRows) return '<p class="quiet">No andon call open. Every station on the main, LCM and SMD lines is running.</p>';
+      return `<ol class="andon">${sRows}${calls.map(({ s, d }) => {
         const tier = TIERS.filter(t => d >= t[1]).length - 1, kindT = s.state === 'down' ? 'Breakdown' : s.state === 'micro' ? 'Short stop' : 'Material';
         return `<li class="${s.state === 'down' ? 'bad' : 'warn'}"><div>${link('st:' + s.id, s.name)}<small>${esc(line(s.line).name)} · ${kindT}${s.why ? ' · ' + esc(s.why) : ''}</small></div>
           <ol class="tiers" aria-label="Escalated to ${TIERS[tier][0]}">${TIERS.map((t, i) => `<li class="${i <= tier ? 'on' : ''}" title="${t[0]} after ${t[1] / 60} min">${t[0]}</li>`).join('')}</ol><b>${mins(d)}</b></li>`;
@@ -109,7 +112,11 @@
       out.push(`<li class="tot"><span>Last ${Math.round(el / 60)} min</span><i style="--l:0%;--w:100%"></i><b>${Math.round(el / 60)} min</b></li>`);
       for (const [t, v, g] of rows) { const w = v / el * 100; left -= v; out.push(`<li><span>${t}<small>${g}</small></span><i class="ls" style="--l:${(left / el * 100).toFixed(2)}%;--w:${w.toFixed(2)}%"></i><b>${(v / 60).toFixed(1)} min</b></li>`); }
       out.push(`<li class="ok"><span>Fully productive<small>OEE of the constraint</small></span><i style="--l:0%;--w:${Math.max(0, left / el * 100).toFixed(2)}%"></i><b>${pct(Math.max(0, left) / el, 0)}</b></li>`);
-      return `<p class="quiet">Measured at ${link('st:' + s.id, s.name)}, the constraint of ${esc(L.name)}. Six big losses, plus the time it waited on the stations around it, since the model started.</p><ol class="wf">${out.join('')}</ol>`;
+      const rs = {};
+      for (const x of L.stations) { const add = (k, v) => { const [stt, why] = k.split('|'); const key = x.id + '|' + k; rs[key] = rs[key] || { st: x, state: stt, why: why || STATE[stt], v: 0 }; rs[key].v += v; }; for (const k in x.rs || {}) add(k, x.rs[k]); if (['down', 'maint', 'micro', 'changeover', 'starved', 'blocked'].includes(x.state)) add(x.state + '|' + (x.why || ''), P.t - x.since); }
+      const top = Object.values(rs).sort((a, b) => b.v - a.v).slice(0, 6);
+      const reasons = top.length ? `<h4 class="wf-h">Top reason codes on ${esc(L.name)}</h4><table class="tbl rc"><tbody>${top.map(r => `<tr><td>${link('st:' + r.st.id, r.st.name)}</td><td><span class="st ${SCLS(r.state)}"><i></i>${esc(STATE[r.state] || r.state)}</span><small>${esc(r.why)}</small></td><td>${(r.v / 60).toFixed(1)} min</td></tr>`).join('')}</tbody></table>` : '';
+      return `<p class="quiet">Measured at ${link('st:' + s.id, s.name)}, the constraint of ${esc(L.name)}. Six big losses, plus the time it waited on the stations around it, since the model started.</p><ol class="wf">${out.join('')}</ol>${reasons}`;
     }
     /* APS: the next eight hours of every main line, with orders due and maintenance windows */
     function schedule() {
@@ -117,23 +124,29 @@
       const late = new Set(H.AG && H.AG.base ? H.AG.base.lateList : []);
       const ticks = []; for (let h = Math.ceil(t0 / 3600); h * 3600 < t0 + H8; h++) ticks.push(`<span style="left:${x(h * 3600).toFixed(2)}%">${String(h % 24).padStart(2, '0')}:00</span>`);
       const shiftEnd = 14 * 3600, sb = shiftEnd > t0 && shiftEnd < t0 + H8 ? `<i class="shift" style="left:${x(shiftEnd)}%" title="Shift B starts 14:00"></i>` : '';
+      const D = H.AG ? H.AG.drafts() : null, dr = D && state.draft !== 'live' ? D.list.find(x => x.id === state.draft) : null;
       const rows = kind('main').map(L => {
-        const bars = [], rate = Math.max(30, L.tph || 3600 / MODELS[L.model].takt * 0.85) / 3600;
+        const bars = [], rk = dr && dr.mods.rate ? (dr.mods.rate.find(r => r.id === L.id) || { k: 1 }).k : 1, co = dr && dr.mods.co ? dr.mods.co.find(c => c.id === L.id) : null;
+        const rate = Math.max(30, L.tph || 3600 / MODELS[L.model].takt * 0.85) / 3600 * rk;
         let t = t0;
+        if (co) { bars.push(`<i class="bk co dr" style="left:0;width:${x(t0 + co.dur * 60)}%" title="Draft: changeover to ${esc(MODELS[co.model].name)}"></i>`); t += co.dur * 60; }
         const dn = L.stations.filter(s => s.state === 'down' || s.state === 'maint' || s.state === 'changeover');
         if (dn.length) { const st = dn[0], d = Math.max(60, st.state === 'changeover' ? st.co : st.repair || 900); bars.push(`<i class="bk ${st.state === 'changeover' ? 'co' : st.state === 'maint' ? 'pm' : 'dn'}" style="left:0;width:${x(t0 + d)}%" title="${esc(st.name)} · ${esc(STATE[st.state])}"></i>`); t += d; }
         const o = X.pp.find(p => p.line === L.id && p.status !== 'TECO');
         let rem = o ? Math.max(0, o.qty - X.ppProgress(o)) : 0, n = o ? +o.id : 0, first = true;
         while (t < t0 + H8) {
           const q = first ? rem : (o ? o.qty : 1500), d = q / rate;
-          bars.push(`<i class="bk ord ${first ? 'now' : ''}" style="left:${x(t)}%;width:${(x(t + d) - x(t)).toFixed(2)}%" title="Order ${first ? n : n + bars.length} · ${fmt(q)} × ${esc(MODELS[L.model].name)}"><span>${first ? `${o ? o.id : ''} · ${fmt(q)} left` : `${MODELS[L.model].name} · next order`}</span></i>`);
+          const mdl = co ? co.model : L.model, changed = rk !== 1 || co;
+          bars.push(`<i class="bk ord ${first ? 'now' : ''} ${changed ? 'dr' : ''}" style="left:${x(t)}%;width:${(x(t + d) - x(t)).toFixed(2)}%" title="${co ? 'Draft: new order' : 'Order ' + (first ? n : n + bars.length)} · ${fmt(q)} × ${esc(MODELS[mdl].name)}${rk !== 1 ? ` at ${Math.round(rk * 100)}% speed` : ''}"><span>${co ? `${MODELS[mdl].name} · draft order` : first ? `${o ? o.id : ''} · ${fmt(q)} left${rk !== 1 ? ` · ${Math.round(rk * 100)}%` : ''}` : `${MODELS[mdl].name} · next order`}</span></i>`);
           t += d; first = false; if (bars.length > 6) break;
         }
         for (const w of P.wo.filter(w => w.status === 'Scheduled' && w.due && P.byId[w.st] && P.byId[w.st].line === L.id && w.due < t0 + H8)) bars.push(`<i class="bk pm" style="left:${x(w.due)}%;width:${Math.max(0.8, x(w.due + 1200) - x(w.due)).toFixed(2)}%" title="${esc(w.id)} · ${esc(w.why)}"></i>`);
         const due = P.orders.filter(od => (od.state === 'open' || od.state === 'loading') && od.model === L.model && od.due < t0 + H8).map(od => `<button type="button" class="due ${late.has(od.id) ? 'bad' : ''}" style="left:${x(od.due)}%" data-ref="order:${esc(od.id)}" title="Order ${esc(od.id)} · ${fmt(od.qty)} × ${esc(MODELS[od.model].name)} due ${clock(od.due)}${late.has(od.id) ? ' · forecast short' : ''}"><span class="sr-only">Order ${esc(od.id)} due ${clock(od.due)}</span></button>`).join('');
         return `<div class="gr"><button type="button" class="lnk" data-ref="line:${L.id}">${esc(L.name)}<small>${esc(MODELS[L.model].name)}</small></button><div class="gt">${bars.join('')}${due}${sb}</div></div>`;
       }).join('');
-      return `<div class="gantt"><div class="gr ax"><span></span><div class="gt">${ticks.join('')}</div></div>${rows}</div>
+      const drafts = D ? `<div class="drafts"><div class="seg sm" role="group" aria-label="Plan">${D.list.map(d => `<button type="button" data-draft="${d.id}" aria-pressed="${(state.draft || 'live') === d.id}">${d.id === 'live' ? 'Live plan' : 'Draft ' + (d.id === 'AB' ? 'C' : d.id)}</button>`).join('')}</div>
+        <div class="tblwrap"><table class="tbl dft"><thead><tr><th>Plan</th><th>TVs in ${D.h / 60} h</th><th>Orders late</th><th>Changeovers</th><th>Cost</th><th><span class="sr-only">Publish</span></th></tr></thead><tbody>${D.list.map(d => { const dp = d.f.packed - D.list[0].f.packed; return `<tr class="${d === D.best ? 'best' : ''} ${(state.draft || 'live') === d.id ? 'on' : ''}"><td><b>${esc(d.name)}</b>${d === D.best ? '<span class="tag">Recommended</span>' : ''}<small>${esc(d.note)}</small></td><td>${fmt(d.f.packed)}${d.id !== 'live' && dp ? `<small class="${dp > 0 ? 'up' : 'dn'}">${dp > 0 ? '+' : ''}${fmt(dp)}</small>` : ''}</td><td class="${d.f.late ? 'bad' : ''}">${d.f.late}</td><td>${d.co}</td><td>${d.cost ? 'EGP ' + fmt(d.cost / 1000) + 'k' : '—'}</td><td>${d.id === 'live' ? '<small>running</small>' : `<button type="button" class="btn btn-sm ${d === D.best ? 'btn-primary' : 'btn-secondary'}" data-publish="${d.id}" data-key="pub-${d.id}">Publish</button>`}</td></tr>`; }).join('')}</tbody></table></div></div>` : '';
+      return `${drafts}<div class="gantt ${dr ? 'is-draft' : ''}"><div class="gr ax"><span></span><div class="gt">${ticks.join('')}</div></div>${rows}</div>
         <p class="legend2"><span class="k ord"></span>Production order (SAP PP) <span class="k pm"></span>Maintenance window (SAP PM) <span class="k co"></span>Changeover <span class="k dn"></span>Repair <span class="k due"></span>Truck due · red when the forecast is short</p>`;
     }
     function gmes() {
@@ -159,9 +172,9 @@
       const veh = [...P.tuggers.map(t => [`tug:${t.id}`, t.id, t.routeName, t.plan ? `lap ${t.laps + 1} · ${t.plan.loads.length} drops` : 'waiting for its timetable']), ...P.agvs.map(a => [`agv:${a.id}`, a.id, 'PBA boards', a.fault ? 'fault' : a.mission ? `${a.mission.qty} × ${a.mission.buf.code} to ${P.byId[a.mission.buf.station].name} (${line(a.mission.buf.line).name})` : 'parked']), ...P.forklifts.map(f => [`fl:${f.id}`, f.id, f.role === 'fg' ? 'Finished goods' : 'Silos and halls', f.job ? (f.job.kind === 'store' ? 'storing a pallet' : 'loading ' + f.job.truck.id) : f.mission ? 'refilling ' + f.mission.buf.label.toLowerCase() : 'waiting'])];
       const docks = P.docks.map(d => `<li><b>${esc(d.id)}</b><span>${d.truck ? `${link('truck:' + d.truck.id, d.truck.id)} · ${fmt(d.truck.loaded)}/${fmt(d.truck.need)} × ${esc(MODELS[d.truck.model].name)} · order ${esc(d.truck.order.id)}` : 'free'}</span></li>`).join('');
       return `<header class="vh"><div><h2>GMES · shop floor</h2><p>${mains.filter(L => L.state === 'run' || L.state === 'warn').length} of 6 main lines running · ${fmt(k.units)} TVs packed against a plan of ${fmt(k.plan)} · OEE ${pct(k.oee || 0, 0)} · ${P.alarms.length} alarms</p></div></header>
-        <section class="vs2 two"><div><h3>Andon <span>escalates to the group leader after 1 min, the area manager after 5, the plant manager after 10</span></h3>${andon()}</div>
+        <section class="vs2 two"><div><h3>Andon <span>escalates to the group leader after 1 min, the area manager after 5, the plant manager after 10; safety events go straight to the area manager</span></h3>${andon()}</div>
           <div><h3>OEE loss tree</h3><div class="seg sm" role="group" aria-label="Line">${mains.map(L => `<button type="button" data-loss="${L.id}" aria-pressed="${state.lossLine === L.id}">${L.id.slice(2)}</button>`).join('')}</div>${lossTree(line(state.lossLine))}</div></section>
-        <section class="vs2"><h3>Schedule · next eight hours <span>live plan from SAP PP and PM; the Scheduling agent re-forecasts it every two minutes</span></h3>${schedule()}</section>
+        <section class="vs2"><h3>Schedule · next eight hours <span>the live plan from SAP PP and PM, and the Scheduling agent's drafts, each simulated before a person publishes it</span></h3>${schedule()}</section>
         <section class="vs2"><h3>Main assembly lines and the sub-lines that feed them</h3><div class="gl-list">${rows}</div></section>
         <section class="vs2 two"><div><h3>Injection moulding · 20 machines</h3><div class="tiles">${inj}</div></div>
           <div><h3>Press, coating and sub-assembly</h3><table class="tbl"><thead><tr><th>Line</th><th>Press</th><th>Coating oven</th><th>Sub-assembly</th><th>WIP</th></tr></thead><tbody>${press}</tbody></table></div></section>
@@ -219,8 +232,8 @@
       return `<header class="vh"><div><h2>SAP and the data flow</h2><p>Every confirmation, goods movement, order and release travels through GMES to SAP and back. ${Math.round(X.stats.perMin)} messages a simulated minute.</p></div></header>
         <section class="vs2 flowwrap">${state.sapSvg || ''}</section>
         <section class="vs2"><h3>Live message log <span>newest first</span></h3><table class="tbl log"><thead><tr><th>Time</th><th>From → to</th><th>Message</th><th>Content</th></tr></thead><tbody>${log}</tbody></table>
-          <p class="mvts"><b>Movement types:</b> <span class="mvt">101</span> goods receipt from production or a PO · <span class="mvt">261</span> issue to production (backflush) · <span class="mvt">311</span> transfer to line side · <span class="mvt">321</span> quality release · <span class="mvt">344</span> block · <span class="mvt">343</span> release from block · <span class="mvt">601</span> goods issue for delivery</p>
-          <p class="mvts"><b>Interfaces:</b> <span class="idoc">LOIPRO01</span> production order to GMES · <span class="idoc">CONF21</span> confirmation · <span class="idoc">WMMBID02</span> goods movement · <span class="idoc">ORDERS05</span> sales or purchase order · <span class="idoc">DELVRY03</span> delivery · <span class="idoc">DELFOR02</span> vendor call-off · <span class="idoc">WMTOID01</span> transfer order · <span class="idoc">SHPCON</span> goods issue · <span class="idoc">INVOIC02</span> invoice · <span class="idoc">ECMMAS</span> engineering change · <span class="idoc">DOCMAS</span> firmware document. Notifications travel by API; MRP, QM and S&amp;OP post inside SAP.</p></section>
+          <p class="mvts"><b>Movement types:</b> <span class="mvt">101</span> goods receipt from production or a PO · <span class="mvt">261</span> issue to production (backflush) · <span class="mvt">311</span> transfer to line side · <span class="mvt">321</span> quality release · <span class="mvt">350</span> quality inspection to blocked · <span class="mvt">343</span> blocked to unrestricted · <span class="mvt">601</span> goods issue for delivery</p>
+          <p class="mvts"><b>Interfaces (message type / basic type):</b> <span class="idoc">LOIPRO / LOIPRO01</span> production order to GMES · <span class="idoc">CONF21</span> confirmation · <span class="idoc">WMMBXY / WMMBID02</span> goods movement · <span class="idoc">ORDERS / ORDERS05</span> sales or purchase order · <span class="idoc">DESADV / DELVRY03</span> delivery · <span class="idoc">DELINS / DELFOR02</span> vendor call-off · <span class="idoc">WMTORD / WMTOID01</span> transfer order · <span class="idoc">SHPCON</span> goods issue · <span class="idoc">INVOIC / INVOIC02</span> invoice · <span class="idoc">ECMMAS + BOMMAT</span> engineering change and BOM · <span class="idoc">DOCMAS</span> firmware document. Notifications travel by API; MRP, QM and S&amp;OP post inside SAP.</p></section>
         <section class="vs2 three">
           <div><h3>Sales orders (SD)</h3><table class="tbl"><thead><tr><th>Order</th><th>Qty</th><th>Due</th><th>ATP</th></tr></thead><tbody>${so.map(o => `<tr><td>${link('order:' + o.id, o.id)}<small>${esc(o.customer)}</small></td><td>${fmt(o.qty)}<small>${esc(MODELS[o.model].name)}</small></td><td>${clock(o.due)}</td><td class="${o.atp && !o.atp.ok ? 'warn' : ''}">${o.state === 'loading' ? 'Loading' : o.atp && o.atp.ok ? 'Confirmed' : 'Short'}</td></tr>`).join('')}</tbody></table></div>
           <div><h3>Purchase orders (MM)</h3><table class="tbl"><thead><tr><th>PO</th><th>Material</th><th>ETA</th><th>Status</th></tr></thead><tbody>${po.map(p => `<tr><td>${link('po:' + p.id, p.id)}<small>${esc(p.vendor)}</small></td><td>${fmt(p.qty)}<small>${esc(p.code)}</small></td><td>${p.eta - P.t > 86400 ? `in ${Math.round((p.eta - P.t) / 86400)} d` : clock(p.eta)}</td><td class="${p.status === 'Held at port' ? 'bad' : ''}">${esc(p.status)}</td></tr>`).join('')}</tbody></table></div>
@@ -312,7 +325,10 @@
       const ov = P.byId[(P.scen.coating && P.scen.coating.line || 'PR4') + '-Coating'], im = P.byId.IM10;
       const ncr = X.ncr.slice(0, 8).map(n => `<tr><td><b>${esc(n.id)}</b><small>${clock(n.opened)}</small></td><td>${esc(n.code)}<small>${fmt(n.count)} found${n.line && line(n.line) ? ' · ' + esc(line(n.line).name) : ''}</small></td>
         <td><span class="d8" role="img" aria-label="${esc(X.D8[n.step])}">${X.D8.map((d, i) => `<i class="${i <= n.step ? 'on' : ''}" title="${esc(d)}"></i>`).join('')}</span><small>${esc(X.D8[n.step])}</small></td><td>${esc(n.cause)}<small>${esc(n.action)}</small></td></tr>`).join('');
-      return `<section class="vs2"><h3>Quality · SAP QM <span>statistical process control and nonconformance reports worked through the 8D steps</span></h3>
+      const pr = Object.entries(X.pareto || {}).map(([k, n]) => { const [code, st] = k.split('|'); return { code, st: P.byId[st], n }; }).sort((a, b) => b.n - a.n).slice(0, 7);
+      const tot = pr.reduce((a, r) => a + r.n, 0); let cum = 0;
+      const pareto = pr.length ? `<h4>Defects by code and station <span class="quiet">Pareto since the model started</span></h4><ol class="pareto">${pr.map(r => { cum += r.n; return `<li><span>${esc(r.code)}<small>${r.st ? link('st:' + r.st.id, `${r.st.name}, ${line(r.st.line) ? line(r.st.line).name : ''}`) : ''}</small></span><i style="--w:${(r.n / pr[0].n * 100).toFixed(1)}%"></i><b>${fmt(r.n)}</b><em>${pct(cum / tot, 0)}</em></li>`; }).join('')}</ol>` : '';
+      return `<section class="vs2"><h3>Quality · SAP QM <span>statistical process control, a Pareto of defects, and nonconformance reports worked through the 8D steps</span></h3>${pareto}
         <div class="two">${spcChart(im.hist.press, `${im.name} injection pressure`, 'bar', 'st:' + im.id, 'IM10:press')}${spcChart(ov.hist.temp, `${line(ov.line).name} coating-oven temperature`, '°C', 'st:' + ov.id, ov.id + ':temp')}</div>
         ${ncr ? `<div class="tblwrap"><table class="tbl ncr"><thead><tr><th>NCR</th><th>Defect</th><th>8D progress</th><th>Root cause and action</th></tr></thead><tbody>${ncr}</tbody></table></div>` : '<p class="quiet">No nonconformance open. An NCR opens when final QA or the function test sees the same defect three times in 30 minutes, or a drill starts one.</p>'}</section>`;
     }
@@ -389,6 +405,8 @@
         <div class="ac-r"><div><h5>Why</h5><ul class="why">${c.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>${talk ? `<div><h5>How the agents agreed</h5>${talk}</div>` : ''}</div>
         <h5>Every option, simulated on the next ${c.h / 60} hours of the plant</h5>
         ${optTable(c)}
+        ${c.autoAt && !c.veto && !c.decided ? `<p class="ac-auto">${icon('clock')}<span>Low risk and reversible: the ${esc(c.agentName)} goes ahead at <b>${clockOf(c.autoAt)}</b> unless someone vetoes it.</span><button type="button" class="btn btn-sm btn-secondary" data-veto="${esc(c.key)}" data-key="veto-${esc(c.key)}">Veto</button></p>` : ''}
+        <dl class="ac-trace"><div><dt>Trigger</dt><dd>${esc(c.trigger)}</dd></div><div><dt>Approver</dt><dd>${c.decided ? esc(c.decided.by) : H.AG.AGENTS.find(a => a.id === c.owner).autonomy === 'auto' ? 'The agent (Auto), reversible actions only' : c.veto ? 'A person (vetoed auto-approval)' : 'A person (Approve)'}</dd></div><div><dt>Audit ID</dt><dd>${c.decided ? esc(c.decided.audit) : 'given when decided'}</dd></div></dl>
         <div class="rec-act">${(r.actions || []).filter(a => a.id.startsWith('focus')).map(a => `<button type="button" class="btn btn-sm btn-secondary" data-ref="${esc(refFromFocus(a.id.slice(6)))}" data-key="${esc(a.id)}">${esc(a.label)}</button>`).join('')}
           <button type="button" class="btn btn-sm btn-ghost" data-dismiss="${esc(r.key)}" data-key="x-${esc(r.key)}">Dismiss</button></div>
       </article>`;
@@ -403,12 +421,14 @@
       const chart = b.curve.length ? lineChart([{ name: 'Forecast, TVs packed', v: b.curve, cls: 'c-prod' }, { name: 'Plan at 85% OEE', v: b.curve.map((_, i) => Math.round(plan * (i + 1))), cls: 'c-cap', dash: true }], { labels: b.curve.map((_, i) => `+${(i + 1) * 10}`), h: 170, label: 'Forecast of TVs packed over the next two hours, against plan' }) : '';
       const feed = AG.feed.slice(0, 14).map(f => `<li class="${f.level}"><time>${esc(f.time)}</time><b>${esc(f.agent)}</b><span>${esc(f.text)}</span>${f.ref ? link(refFromFocus(f.ref), 'Show') : ''}</li>`).join('');
       const st = AG.stats;
-      return `<header class="vh"><div><h2>AI agents</h2><p>Eight agents watch every machine, store, vehicle, order and kilowatt. Before they recommend anything they simulate each option on a flow model of the whole plant for the next two hours (eight for material decisions), then the owner of the decision agrees it with the others. They act alone only on Auto and only when the action can be undone.</p></div></header>
+      return `<header class="vh"><div><h2>AI agents</h2><p>Nine agents watch every machine, store, vehicle, order, kilowatt and camera. Before they recommend anything they simulate each option on a flow model of the whole plant for the next two hours (eight for material decisions), then the owner of the decision agrees it with the others. They act alone only on Auto and only when the action can be undone.</p></div></header>
         <div class="astats"><div><b>${fmt(st.decisions)}</b><span>decisions prepared</span></div><div><b>${fmt(st.simulated)}</b><span>plant simulations run</span></div><div><b>${fmt(st.auto)}</b><span>acted on Auto</span></div><div><b>${X.egp(P.saved)}</b><span>output protected</span></div></div>
-        <section class="vs2"><h3>The crew <span>autonomy per agent: Advise informs, Approve waits for a person, Auto acts on reversible decisions</span></h3>${crew(AG)}</section>
+        <section class="vs2"><h3>The crew <span>autonomy per agent: Advise informs; Approve asks a person, except low-risk reversible steps that go ahead after two minutes unless vetoed; Auto acts on reversible decisions</span></h3>${crew(AG)}</section>
         <section class="vs2"><h3>Open decisions <span>${P.recs.length}</span></h3>${cards || '<p class="quiet">Nothing waiting. Start a drill from the 3D factory and watch the agents work.</p>'}</section>
         <section class="vs2 two"><div><h3>Next two hours <span>${fmt(b.packed)} TVs, ${b.late ? `${b.late} order${b.late > 1 ? 's' : ''} at risk` : 'no order at risk'}</span></h3>${chart}</div>
           <div class="askwrap"></div></section>
+        <section class="vs2"><h3>Recently decided <span>each with its audit ID, who approved it, and what the simulation promised</span></h3>${AG.decided.length ? `<div class="tblwrap"><table class="tbl"><thead><tr><th>Audit ID</th><th>Decision</th><th>Approver</th><th>Forecast</th></tr></thead><tbody>${AG.decided.slice(0, 8).map(d => `<tr><td><b>${esc(d.audit)}</b><small>${esc(d.time)}</small></td><td>${esc(d.label)}<small>${esc(d.title)}</small></td><td>${esc(d.by)}<small>${d.recommended ? 'followed the recommendation' : 'overrode the recommendation'}</small></td><td>${fmt(d.packed)} TVs in ${d.h / 60} h<small>${d.late} order${d.late === 1 ? '' : 's'} late</small></td></tr>`).join('')}</tbody></table></div>` : '<p class="quiet">Nothing decided yet.</p>'}</section>
+        <section class="vs2"><h3>Safety and vision <span>stills from the camera feeds when the AI sees a hazard</span></h3>${AG.incidents.length ? `<div class="incs">${AG.incidents.slice(0, 6).map(i => `<figure class="inc">${i.img ? `<img src="${i.img}" alt="${esc(i.cam)} at ${esc(i.time)}: ${esc(i.text)}" width="240" height="135">` : '<div class="noimg">No still</div>'}<figcaption><b>${esc(i.id)} · ${esc(i.time)}</b><span>${esc(i.cam)}: ${esc(i.text)}</span></figcaption></figure>`).join('')}</div>` : '<p class="quiet">No hazard seen. Turn on Cameras in the 3D factory: the AI watches the four feeds for forklift near misses and missing safety glasses.</p>'}</section>
         <section class="vs2 two"><div><h3>Reasoning feed</h3>${feed ? `<ol class="afeed">${feed}</ol>` : '<p class="quiet">Quiet. The agents are watching.</p>'}</div>
           <div><h3>Decision log</h3>${log ? `<table class="tbl"><thead><tr><th>Time</th><th>Who</th><th>Decision</th></tr></thead><tbody>${log}</tbody></table>` : '<p class="quiet">No decision taken yet.</p>'}</div></section>`;
     }
@@ -458,6 +478,9 @@
       if (b.dataset.scen) { state.sopScen = b.dataset.scen; render(true); return; }
       if (b.dataset.sopm) { state.sopModel = b.dataset.sopm; render(true); return; }
       if (b.dataset.loss) { state.lossLine = b.dataset.loss; render(true); return; }
+      if (b.dataset.draft) { state.draft = b.dataset.draft; render(true); return; }
+      if (b.dataset.publish && H.AG) { ui.publish(b.dataset.publish); state.draft = 'live'; return; }
+      if (b.dataset.veto && H.AG) { H.AG.veto(b.dataset.veto); render(true); return; }
       if (b.dataset.sk) { state.skLine = b.dataset.sk; render(true); return; }
       if (b.dataset.auto && H.AG) { const [id, v] = b.dataset.auto.split(':'); H.AG.setAutonomy(id, v); render(true); return; }
       if (b.dataset.opt && H.AG) { const [key, i] = b.dataset.opt.split('|'); const c = H.AG.cards.get(key); if (c) ui.choose(c, c.options[+i]); return; }
