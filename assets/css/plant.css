@@ -458,6 +458,8 @@ rect.c-short, .legend2 .c-short { fill: var(--danger); background: var(--danger)
 .pl-mini { position: absolute; right: 14px; top: 66px; z-index: 4; width: 264px; height: 168px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); cursor: crosshair; box-shadow: var(--shadow-md, 0 4px 14px rgba(0,0,0,.12)); }
 body[data-mode]:not([data-mode="3d"]) .pl-mini { display: none; }
 .pl-cctv { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.pl-vision { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
+.pl-cctv .cam.alert { border-color: #FF4D4F; box-shadow: inset 0 0 0 1px #FF4D4F; }
 .pl-cctv .cam { position: absolute; border: 1px solid rgba(255,255,255,.35); border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px 7px; box-sizing: border-box; }
 .pl-cctv .cam b { font-size: 13px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.85); }
 .pl-cctv .cam span { align-self: flex-end; font-size: 13px; font-variant-numeric: tabular-nums; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.85); }
@@ -597,3 +599,16 @@ svg.spc .oc { fill: var(--danger); }
   .gr { grid-template-columns: 90px minmax(560px, 1fr); }
   .seg.sm button { height: 44px; }
 }
+
+/* HMI control in the machine panel */
+.hmi { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.hmi .btn { height: 40px; } .hmi .btn[aria-pressed="true"] { border-color: var(--text); }
+.btn.danger-o { color: var(--danger-text); }
+.hmi-pre { margin-top: 12px; padding: 12px; border-radius: 12px; border: 1px solid var(--border-strong); background: var(--surface-2); }
+.hmi-pre h4 { margin: 0 0 8px; font-size: 14.5px; } .hmi-pre h5 { margin: 10px 0 4px; font-size: 13px; color: var(--text-2); }
+.ilk { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13.5px; }
+.ilk li { display: flex; gap: 8px; align-items: flex-start; } .ilk .icon { width: 16px; height: 16px; flex: none; margin-top: 2px; }
+.ilk li.ok .icon { color: var(--success-text); } .ilk li.bad { color: var(--danger-text); font-weight: 650; }
+.hmi-eff { margin: 0; font-size: 14px; line-height: 1.5; } .hmi-eff b.bad { color: var(--danger-text); } .hmi-eff b.ok { color: var(--success-text); }
+.hmi-pre .btn:disabled { opacity: .55; cursor: not-allowed; }
+@media (max-width: 900px), (pointer: coarse) { .hmi .btn { height: 44px; } }

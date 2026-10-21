@@ -85,6 +85,7 @@
     if (ref && ref.startsWith('kpi:')) { kpiView = ref.slice(4); sel = null; if (V) V.select(null, { fly: false }); render(true); return; }
     if (ref === 'sop') { setMode('sop'); ref = null; }
     if (ref && ref.startsWith('mrp:')) { views.showMrp(ref.slice(4)); if (mode !== 'mrp') setMode('mrp'); else views.render(true); }
+    if (ref !== sel) hmiPending = null;
     kpiView = null; sel = ref;
     if (V && ref && mode === '3d') V.select(ref, o);
     else if (V && ref && o.fly !== false && V.refInfo(ref) && mode === '3d') V.select(ref, o);
@@ -120,6 +121,9 @@
     if (b.dataset.follow !== undefined && V) { if (mode !== '3d') setMode('3d'); V.setFollow(!V.follow); if (V.follow && sel) V.select(sel, { follow: true }); render(true); return; }
     if (b.dataset.show3d !== undefined && V && sel) { setMode('3d'); V.select(sel, { fly: true }); return; }
     if (b.dataset.kpi) return select('kpi:' + b.dataset.kpi);
+    if (b.dataset.hmi && sel && sel.startsWith('st:')) { const s = P.byId[sel.slice(3)]; hmiPending = { st: s.id, cmd: b.dataset.hmi, f: hmiForecast(s, b.dataset.hmi) }; render(true); const g = insp.querySelector('[data-hmigo]'); if (g) g.closest('.hmi-pre').scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); return; }
+    if (b.dataset.hmigo && hmiPending) { const p = hmiPending; hmiPending = null; E.hmi(p.st, p.cmd); toast(`${HMI[p.cmd]}: ${P.byId[p.st].name}`, 'success'); render(true); views.render(true); return; }
+    if (b.dataset.hmix !== undefined) { hmiPending = null; render(true); return; }
   });
 
   const head = (title, sub, extra = '') => `<header class="ih"><button type="button" class="back" data-back data-key="back">${icon('chevronLeft')}<span>Plant now</span></button><h2>${esc(title)}</h2><p class="ih-sub">${sub}</p>${extra}</header>`;
@@ -201,6 +205,45 @@
     return `<div class="split" aria-hidden="true">${seg('run', 'run', 'Running')}${seg('idle', 'idle', 'Idle')}${seg('starved', 'warn', 'Starved')}${seg('blocked', 'idle2', 'Blocked')}${seg('down', 'bad', 'Stopped')}</div>
       <p class="legend-s"><span><i class="run"></i>Running ${pct(c.run / tot, 0)}</span><span><i class="idle"></i>Idle ${pct(c.idle / tot, 0)}</span><span><i class="warn"></i>Starved ${pct(c.starved / tot, 0)}</span><span><i class="idle2"></i>Blocked ${pct(c.blocked / tot, 0)}</span><span><i class="bad"></i>Stopped ${pct(c.down / tot, 0)}</span></p>`;
   }
+  /* ---------------- HMI control: interlocks first, then the simulated effect, then the command ---------------- */
+  let hmiPending = null;
+  const HMI = { stop: 'Stop machine', start: 'Start machine', slower: 'Speed −10%', faster: 'Speed +5%', loto: 'Lock out (LOTO)', unloto: 'Remove lockout' };
+  function hmiChecks(s, cmd) {
+    const L = line(s.line), S = s.sens || {}, hold = (P.scen.shortshot && P.scen.shortshot.st === s.id && !P.scen.shortshot.fixed);
+    const c = [];
+    if (cmd === 'start') c.push(['No lockout on the machine', !s.loto], ['No fault waiting for repair', s.state !== 'down'], ['No quality hold on its output', !hold], ['Line supply on (no trip)', !(L && L.tripped)]);
+    if (cmd === 'loto') c.push(['Machine stopped from the HMI', !!s.hold], ['No unit left inside (drain it first)', !(s.procs && s.procs.length)], ['Isolation points: main breaker, air valve', true], ['Permit to work by the area supervisor', true]);
+    if (cmd === 'unloto') c.push(['Technician out of the guarded area', !(s.tech && s.tech.state === 'repairing')], ['Guards closed and interlocked', true], ['Lock removed by the person who applied it', true]);
+    if (cmd === 'faster') c.push(['Health above 70%', s.health > 70], ['Vibration below 3 mm/s', !(S.vib > 3)], ['Line first-pass quality above 97%', !L || (L.qual || 1) > 0.97], ['Below 120% of rated speed', (s.speedMul || 1) > 0.93]);
+    if (cmd === 'stop') c.push(['A stop is always allowed (safety first)', true]);
+    if (cmd === 'slower') c.push(['Slowing down is always allowed', true]);
+    return c;
+  }
+  function hmiForecast(s, cmd) {
+    const L = line(s.line); if (!L) return null;
+    const tgt = L.kind === 'main' ? L.id : L.kind === 'lcm' ? 'ML' + L.id.slice(3) : (L.kind === 'smd' || L.kind === 'press') ? L.id : L.kind === 'injection' ? s.id : null;
+    if (!tgt) return { note: 'This machine is not in the two-hour flow model; its buffer covers short stops.' };
+    const constraint = L.bn === s || L.kind !== 'main';
+    const mods = cmd === 'stop' ? { down: [{ id: tgt, at: 0, dur: 10 }] } : cmd === 'loto' ? { down: [{ id: tgt, at: 0, dur: 30 }] } : cmd === 'slower' && constraint ? { rate: [{ id: tgt, k: 0.9 }] } : cmd === 'faster' && constraint && L.kind === 'main' ? { rate: [{ id: tgt, k: 1.05 }] } : {};
+    const base = AG.forecast({}), f = AG.forecast(mods);
+    return { d: f.packed - base.packed, late: f.late - base.late, assume: cmd === 'stop' ? 'a 10-minute stop' : cmd === 'loto' ? 'a 30-minute lockout' : '', constraint };
+  }
+  function hmiBlock(s) {
+    const L = line(s.line);
+    const mode = s.loto ? 'Locked out' : s.hold ? 'Stopped from the HMI' : STATE[s.state] || s.state;
+    const cmds = s.loto ? ['unloto'] : s.hold ? ['start', 'loto'] : ['stop', 'slower', 'faster'];
+    let pend = '';
+    if (hmiPending && hmiPending.st === s.id) {
+      const cmd = hmiPending.cmd, checks = hmiChecks(s, cmd), okAll = checks.every(c => c[1]), f = hmiPending.f;
+      const eff = !f ? '' : f.note ? `<p class="quiet">${esc(f.note)}</p>` : `<p class="hmi-eff"><b class="${f.d < 0 ? 'bad' : f.d > 0 ? 'ok' : ''}">${f.d > 0 ? '+' : ''}${fmt(f.d)} TVs</b> in the next two hours${f.late > 0 ? `, <b class="bad">${f.late} more order${f.late > 1 ? 's' : ''} late</b>` : ''}${f.assume ? `, assuming ${f.assume}` : ''}.${(cmd === 'faster' || cmd === 'slower') && !f.constraint ? ' This machine is not the constraint of its line, so its speed does not change the output.' : ''}</p>`;
+      pend = `<div class="hmi-pre" role="group" aria-label="Confirm ${esc(HMI[cmd])}"><h4>${esc(HMI[cmd])} · check first</h4>
+        <ul class="ilk">${checks.map(([t, ok]) => `<li class="${ok ? 'ok' : 'bad'}">${icon(ok ? 'check' : 'x')}<span>${esc(t)}</span></li>`).join('')}</ul>
+        <h5>Simulated effect</h5>${eff}
+        <div class="rec-act"><button type="button" class="btn btn-sm btn-primary" data-hmigo="${esc(cmd)}" data-key="hmigo" ${okAll ? '' : 'disabled'}>${okAll ? 'Confirm' : 'Blocked by an interlock'}</button><button type="button" class="btn btn-sm btn-ghost" data-hmix data-key="hmix">Cancel</button></div></div>`;
+    }
+    return kv([['Mode', esc(mode)], ['Speed', `${Math.round(100 / (s.speedMul || 1))}% of rated`], L && L.bn ? ['Constraint of the line', L.bn === s ? 'yes: its speed sets the line output' : 'no'] : null])
+      + `<div class="hmi">${cmds.map(c => `<button type="button" class="btn btn-sm ${c === 'stop' || c === 'loto' ? 'btn-secondary danger-o' : 'btn-secondary'}" data-hmi="${c}" data-key="hmi-${c}" aria-pressed="${hmiPending && hmiPending.st === s.id && hmiPending.cmd === c}">${esc(HMI[c])}</button>`).join('')}</div>` + pend;
+  }
   function stationDetail(s) {
     const L = line(s.line);
     const prev = L && L.stations[L.stations.indexOf(s) - 1], next = L && L.stations[L.stations.indexOf(s) + 1];
@@ -215,6 +258,7 @@
       + show3d()
       + (recs.length ? sect('Needs a decision', recCards(recs, X)) : '')
       + sect('Live signals', sensorsBlock(s))
+      + sect('Control · HMI', hmiBlock(s), 'interlocked, simulated first')
       + (out ? sect('Moulding', out) : '')
       + sect('Condition', kv([['Health', `${s.health.toFixed(0)}%`], ['Failure forecast', rul], ['Short stops', fmt(s.stops || 0)]]))
       + sect('Output', kv([['Units done', fmt(s.counters.made)], ['Rejected here', fmt(s.counters.bad)], L && L.kind === 'main' ? ['Line OEE', `${pct(L.oee)} = ${pct(L.avail, 0)} × ${pct(L.perf, 0)} × ${pct(L.qual, 1)}`] : null]) + timeSplit(s))
@@ -625,7 +669,56 @@
     if (!V || !V.cctv) { if (cctvBox.childElementCount) cctvBox.innerHTML = ''; return; }
     const rects = V.cctvRects();
     if (cctvBox.childElementCount !== rects.length) cctvBox.innerHTML = rects.map(() => '<div class="cam"><b></b><span></span></div>').join('');
-    rects.forEach((R, i) => { const el = cctvBox.children[i]; el.style.cssText = `left:${R.x}px;top:${R.y}px;width:${R.w}px;height:${R.h}px`; el.querySelector('b').textContent = R.c.name; el.querySelector('span').textContent = clockS(P.t); });
+    rects.forEach((R, i) => { const el = cctvBox.children[i], sm = vis.sum[R.c.id]; el.className = 'cam' + (sm && sm.alert ? ' alert' : ''); el.style.cssText = `left:${R.x}px;top:${R.y}px;width:${R.w}px;height:${R.h}px`; el.querySelector('b').textContent = R.c.name; el.querySelector('span').textContent = `${sm ? `AI · ${sm.people} ${sm.people === 1 ? 'person' : 'people'} · ${sm.veh} vehicle${sm.veh === 1 ? '' : 's'}${sm.alert ? ' · ' + sm.alert : ''} · ` : ''}${clockS(P.t)}`; });
+  }
+  /* AI vision on the CCTV feeds: people and vehicles detected in each camera, PPE checks and forklift near misses */
+  const vc = $('#vision'), vx = vc.getContext('2d');
+  const vis = { sum: {}, seen: new Map() };
+  const hashU = s0 => { let h = 2166136261; for (const c of s0) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0) / 4294967296; };
+  function visionTick() {
+    if (!V || !V.cctv || mode !== '3d') { if (vc.width) { vc.width = 0; vc.height = 0; vis.sum = {}; } return; }
+    const r = $('#gl').getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1);
+    const W = Math.round(r.width * dpr), Hh = Math.round(r.height * dpr);
+    if (vc.width !== W || vc.height !== Hh) { vc.width = W; vc.height = Hh; }
+    vx.setTransform(dpr, 0, 0, dpr, 0, 0); vx.clearRect(0, 0, r.width, r.height);
+    const T = V.THREE, v = new T.Vector3();
+    const veh = [...P.forklifts.map(f => ({ k: 'Forklift', id: f.id, x: f.x, z: f.z, w: 1.3, d: 2.6, h: 2.2 })), ...P.agvs.map(a => ({ k: 'AGV', id: a.id, x: a.x, z: a.z, w: 1.2, d: 1.6, h: 0.6 })), ...P.tuggers.map(t => ({ k: 'Milk-run train', id: t.id, x: t.x, z: t.z, w: 1.4, d: 4, h: 1.6 }))];
+    const ppl = P.people.filter(p => p.present !== false && isFinite(p.x)).map(p => ({ k: 'Person', id: p.id, p, x: p.x, z: p.z, w: 0.7, d: 0.7, h: 1.75, noPpe: hashU(p.id) < 0.03 }));
+    const near = new Set();
+    // a person closer than 0.8 m is the driver on board; 0.8 to 3 m from a moving forklift is a near miss
+    for (const f of veh) if (f.k === 'Forklift') for (const q of ppl) { const d = Math.hypot(f.x - q.x, f.z - q.z); if (d >= 0.8 && d < 3) { near.add(q); near.add(f); f.near = q; f.nd = d; } }
+    vx.lineWidth = 1.5; vx.font = '600 11px Inter, system-ui, sans-serif'; vx.textBaseline = 'bottom';
+    for (const R of V.cctvRects()) {
+      const cam = R.c.cam, tags = []; let people = 0, vehicles = 0, alert = '';
+      vx.save(); vx.beginPath(); vx.rect(R.x, R.y, R.w, R.h); vx.clip();
+      for (const e of ppl.concat(veh)) {
+        if (Math.hypot(e.x - cam.position.x, e.z - cam.position.z) > 60) continue;
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, ok = true;
+        for (const cx of [-e.w / 2, e.w / 2]) for (const cy of [0, e.h]) for (const cz of [-e.d / 2, e.d / 2]) {
+          v.set(e.x + cx, cy, e.z + cz).project(cam); if (v.z > 1 || v.z < -1) { ok = false; break; }
+          const sx = R.x + (v.x + 1) / 2 * R.w, sy = R.y + (1 - v.y) / 2 * R.h; x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy);
+        }
+        if (!ok || x1 < R.x || x0 > R.x + R.w || y1 < R.y || y0 > R.y + R.h || (x1 - x0) * (y1 - y0) < 12) continue;
+        const bad = near.has(e) || e.noPpe, col = bad ? '#FF4D4F' : e.k === 'Person' ? '#3DDC84' : '#FFC53D';
+        vx.strokeStyle = col; vx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+        tags.push({ bad, col, x0, y0, big: y1 - y0, t: `${e.k === 'Person' ? (e.noPpe ? 'No safety glasses' : 'Person') : e.k + ' ' + e.id} ${(0.9 + hashU(e.id + R.c.id) * 0.09).toFixed(2)}` });
+        if (e.k === 'Person') people++; else vehicles++;
+        if (e.k === 'Forklift' && e.near) {
+          alert = `near miss ${e.nd.toFixed(1)} m`;
+          const key = e.id + e.near.id; if (!vis.seen.has(key) || P.t - vis.seen.get(key) > 300) { vis.seen.set(key, P.t); E.log('Vision', `${R.c.name.split(' · ')[0]}: person ${e.nd.toFixed(1)} m from forklift ${e.id} · near miss logged, forklift slowed to walking speed`, 'warn'); }
+        }
+        if (e.noPpe && !alert) { alert = 'PPE missing'; const key = 'ppe' + e.id; if (!vis.seen.has(key) || P.t - vis.seen.get(key) > 900) { vis.seen.set(key, P.t); E.log('Vision', `${R.c.name.split(' · ')[0]}: ${e.p.name} without safety glasses · team leader notified`, 'warn'); } }
+      }
+      // labels: alerts first, then the nearest objects, never on top of each other
+      const placed = [];
+      for (const g of tags.sort((a, b) => (b.bad - a.bad) || (b.big - a.big))) {
+        const tw = vx.measureText(g.t).width + 6, box = [g.x0, g.y0 - 14, g.x0 + tw, g.y0];
+        if (placed.length >= 5 || placed.some(q => box[0] < q[2] && box[2] > q[0] && box[1] < q[3] && box[3] > q[1])) continue;
+        placed.push(box); vx.fillStyle = g.col; vx.fillRect(box[0], box[1], tw, 14); vx.fillStyle = '#111'; vx.fillText(g.t, g.x0 + 3, g.y0 - 1);
+      }
+      vx.restore();
+      vis.sum[R.c.id] = { people, veh: vehicles, alert };
+    }
   }
   // the plant map: zones, lines and aisles drawn once; vehicles, alarms and the camera drawn live
   const mini = $('#minimap'), mctx = mini.getContext('2d');
@@ -762,6 +855,7 @@
     acc += dt; accR += dt;
     if (acc > 0.5) { acc = 0; kpis(); vstream(); labelsTick(); cctvTick(); }
     if (mode === '3d' && (frameN++ % 6 === 0)) miniTick();
+    if (frameN % 2 === 0) visionTick();
     if (accR > 1) { accR = 0; render(); if (mode !== '3d') views.render(); }
     requestAnimationFrame(frame);
   }
@@ -771,5 +865,5 @@
   requestAnimationFrame(frame);
   fromHash();
   addEventListener('hashchange', fromHash);
-  window.Plant = { E, X, V, AG, select, setMode };   // for the console and the presentation
+  window.Plant = { E, X, V, AG, vis, select, setMode };   // for the console and the presentation
 })();
