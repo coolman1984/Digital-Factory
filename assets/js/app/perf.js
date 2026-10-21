@@ -2,8 +2,30 @@
 (function () {
   'use strict';
   const { $, $$, fmt, pct, money, esc, icon, P, STATE_LABEL, STATE_CHIP } = DF;
+  const acousticRng = DFRng.stream('acoustic');
+  const visionRng = DFRng.stream('vision');
 
   /* ---------------- leadership ---------------- */
+  const SIX_LOSSES = [
+    ['breakdown', 'Breakdowns'],
+    ['setupAdjust', 'Setup / adjust'],
+    ['minorStop', 'Minor stops'],
+    ['reducedSpeed', 'Reduced speed'],
+    ['starvation', 'Waiting / starvation'],
+    ['operatorStop', 'Operator stops'],
+    ['startupRejects', 'Startup rejects'],
+    ['productionRejects', 'Production rejects']
+  ];
+  function renderLineLosses(lines) {
+    const box = $('#lineLosses');
+    if (!box) return;
+    box.innerHTML = lines.map(l => {
+      const ls = l.ledger.losses;
+      const tot = Object.values(ls).reduce((a, b) => a + b, 0) || 1;
+      const c = l.oeeComponents || { A: 0, P: 0, Q: 0 };
+      return `<div class="loss-line"><div class="row"><b>${esc(l.name)}</b><span class="muted small">A ${pct(c.A, 0)} · P ${pct(c.P, 0)} · Q ${pct(c.Q, 0)}</span></div><div class="loss-bars">${SIX_LOSSES.map(([k, label]) => `<div class="pb"><div class="row"><span>${label}</span><span class="muted">${fmt(ls[k])} s</span></div><div class="bar"><i style="width:${Math.min(100, ls[k] / tot * 100)}%"></i></div></div>`).join('')}</div></div>`;
+    }).join('');
+  }
   const PILLARS = [
     ['Connected machines and data foundation', 35, 80],
     ['Digital twin from warehouse to shipping', 15, 45],
@@ -46,6 +68,7 @@
       const warn = l.stations.some(s => s.state === 'warn' || s.state === 'maint');
       return `<tr><td><b>${esc(l.name)}</b><div class="small muted">${esc(l.sub)}</div></td><td><span class="chip ${halted ? 'chip-danger' : warn ? 'chip-warning' : 'chip-success'}">${halted ? 'Interrupted' : warn ? 'Attention' : 'Running'}</span></td><td class="num"><div style="display:flex;gap:8px;align-items:center">${pct(l.oee, 0)}<div class="mini-bar"><i style="width:${l.oee * 100}%"></i></div></div></td><td class="num">${pct(l.fpyNow)}</td><td class="num">${fmt(l.tph)}</td></tr>`;
     }).join('');
+    renderLineLosses(S.lines);
     if (rebuild || !$('#readiness').children.length) {
       $('#readiness').innerHTML = PILLARS.map(([n, now, pilot]) => `<div class="rd"><div class="row"><b>${esc(n)}</b><span class="muted">${now}% → <b class="hl">${pilot}%</b></span></div><div class="bar"><i class="pilot" style="width:${pilot}%"></i><i class="now" style="width:${now}%"></i></div></div>`).join('') +
         `<small>Grey: assumed starting point. Blue: target after the 12-week pilot. To be replaced by a joint assessment on site.</small>`;
@@ -102,10 +125,10 @@
     ctx.putImageData(img, 0, 0);
     for (let b = 0; b < bins; b++) {
       const f = 1 - b / bins;
-      let e = 0.08 + Math.random() * 0.08;
+      let e = 0.08 + acousticRng.range(0, 0.08);
       if (!idle) {
         e += Math.exp(-((f - 0.12) ** 2) / 0.002) * 0.7 + Math.exp(-((f - 0.24) ** 2) / 0.002) * 0.4;
-        if (defect) e += Math.exp(-((f - 0.7) ** 2) / 0.004) * (0.25 + wear * 1.6) * (0.6 + Math.random() * 0.4);
+        if (defect) e += Math.exp(-((f - 0.7) ** 2) / 0.004) * (0.25 + wear * 1.6) * (0.6 + acousticRng.range(0, 0.4));
       }
       e = Math.min(1, e);
       const c = e > 0.6 ? `rgba(255,176,32,${e})` : `rgba(33,137,255,${Math.min(1, e * 1.4)})`;
@@ -137,18 +160,18 @@
   function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
   function newBoard() {
     const S = Sim.state, lineId = boardNo % 2 ? 'L2' : 'L1', l = Sim.line(lineId), parts = [];
-    for (let i = 0; i < 4; i++) parts.push({ type: 'ic', x: 0.08 + i * 0.19 + Math.random() * 0.03, y: 0.18 + Math.random() * 0.08, w: 0.11 + Math.random() * 0.04, h: 0.16 + Math.random() * 0.05 });
+    for (let i = 0; i < 4; i++) parts.push({ type: 'ic', x: 0.08 + i * 0.19 + visionRng.range(0, 0.03), y: 0.18 + visionRng.range(0, 0.08), w: 0.11 + visionRng.range(0, 0.04), h: 0.16 + visionRng.range(0, 0.05) });
     for (let r = 0; r < 3; r++) for (let c = 0; c < 9; c++) parts.push({ type: 'p', x: 0.08 + c * 0.095, y: 0.56 + r * 0.12, w: 0.035, h: 0.02, rot: (r + c) % 3 === 0 });
     parts.push({ type: 'cap', x: 0.86, y: 0.16, r: 0.04 });
     const defs = [];
-    if (Math.random() < Math.min(0.85, 0.22 * l.defectMult)) {
+    if (visionRng.chance(Math.min(0.85, 0.22 * l.defectMult))) {
       const hot = S.active.solder && lineId === 'L2';
-      const type = hot ? (Math.random() < 0.8 ? 'Solder bridge' : 'Insufficient solder') : DEFECTS[Math.floor(Math.random() * DEFECTS.length)];
+      const type = hot ? (visionRng.chance(0.8) ? 'Solder bridge' : 'Insufficient solder') : DEFECTS[visionRng.int(DEFECTS.length)];
       const cands = parts.filter(q => type === 'Solder bridge' ? q.type === 'ic' : q.type === 'p');
-      const target = cands[Math.floor(Math.random() * cands.length)];
-      target.defect = type; defs.push({ type, part: target, conf: (95 + Math.random() * 4.6).toFixed(1) });
+      const target = cands[visionRng.int(cands.length)];
+      target.defect = type; defs.push({ type, part: target, conf: (95 + visionRng.range(0, 4.6)).toFixed(1) });
     }
-    board = { no: boardNo++, line: lineId, parts, defs, t: 0, ms: (11 + Math.random() * 6).toFixed(1), counted: false };
+    board = { no: boardNo++, line: lineId, parts, defs, t: 0, ms: (11 + visionRng.range(0, 6)).toFixed(1), counted: false };
   }
   function drawPart(ctx, p, bx, by, BW, BH) {
     const x = bx + BW * p.x, y = by + BH * p.y;
@@ -258,24 +281,153 @@
   };
 
   /* ---------------- what-if ---------------- */
-  const REQ = { L1: 0.80, L2: 0.72, L3: 0.86, L4: 0.78, L5: 0.75 };
-  function model(o) {
-    const over = Math.max(0, o.speed - 100);
-    const A = (o.pdm ? 0.93 : 0.855) - over * 0.0022, Pf = 0.95 - Math.max(0, 100 - o.speed) * 0.001, Q = (o.vision ? 0.992 : 0.974) - over * 0.0011;
-    const oee = A * Pf * Q, hours = o.shifts * 7.5;
-    const lines = Sim.state.lines.map(l => ({ id: l.id, name: l.name, cap: l.rate * (o.speed / 100) * hours * oee, req: l.rate * 15 * REQ[l.id] * (o.demand / 100) }));
-    const req = lines.reduce((a, l) => a + l.req, 0), out = lines.reduce((a, l) => a + Math.min(l.cap, l.req), 0);
-    const kwhU = 1.18 * (o.energy ? 0.9 : 1), scrap = out * (1 - Q);
+  const whatIfCache = new Map();
+  let whatIfWorker, whatIfWorkerDisabled = false, whatIfSeq = 0;
+  const pendingWhatIf = new Map();
+
+  function whatIfSyncResult(opt) {
+    const key = Sim.shiftSimCacheKey(opt);
+    if (whatIfCache.has(key)) return whatIfCache.get(key);
+    const r = Sim.runShiftSimulationCached(opt);
+    whatIfCache.set(key, r);
+    return r;
+  }
+
+  function whatIfWorkerUrl() {
+    const seed = Sim.seed;
+    return 'assets/js/sim-worker.js' + (seed != null && seed !== '' ? '?seed=' + (seed >>> 0) : '');
+  }
+
+  function disableWhatIfWorker() {
+    whatIfWorkerDisabled = true;
+    if (!whatIfWorker) return;
+    try { whatIfWorker.terminate(); } catch (e) { /* already dead */ }
+    whatIfWorker = null;
+  }
+
+  function recoverWhatIfViaSync() {
+    const pending = Array.from(pendingWhatIf.values());
+    pendingWhatIf.clear();
+    disableWhatIfWorker();
+    pending.forEach(p => {
+      try {
+        const result = whatIfSyncResult(p.opt);
+        p.resolve(result);
+      } catch (e) {
+        p.reject(e);
+      }
+    });
+  }
+
+  function ensureWhatIfWorker() {
+    if (whatIfWorkerDisabled || whatIfWorker) return whatIfWorker;
+    try {
+      whatIfWorker = new Worker(whatIfWorkerUrl());
+      whatIfWorker.onmessage = (ev) => {
+        const { id, result, error } = ev.data;
+        const pending = pendingWhatIf.get(id);
+        if (!pending) return;
+        pendingWhatIf.delete(id);
+        if (error) {
+          try {
+            const fallback = whatIfSyncResult(pending.opt);
+            pending.resolve(fallback);
+          } catch (e) {
+            pending.reject(new Error(error));
+          }
+          return;
+        }
+        whatIfCache.set(pending.key, result);
+        pending.resolve(result);
+      };
+      whatIfWorker.onerror = () => { recoverWhatIfViaSync(); };
+      whatIfWorker.onmessageerror = () => { recoverWhatIfViaSync(); };
+    } catch (e) {
+      disableWhatIfWorker();
+      return null;
+    }
+    return whatIfWorker;
+  }
+
+  function whatIfRunOptions(o) {
+    const hours = o.shifts * 7.5;
+    const common = { hours, maxSteps: 4200, lineSpeed: o.speed / 100 };
+    return Object.assign({ seedSalt: 0x77686174, pdm: o.pdm, vision: o.vision, energy: o.energy }, common);
+  }
+
+  function runWhatIfShift(opt) {
+    const key = Sim.shiftSimCacheKey(opt);
+    if (whatIfCache.has(key)) return Promise.resolve(whatIfCache.get(key));
+    if (typeof Worker === 'undefined' || typeof window === 'undefined' || whatIfWorkerDisabled) {
+      return Promise.resolve(whatIfSyncResult(opt));
+    }
+    return new Promise((resolve, reject) => {
+      const worker = ensureWhatIfWorker();
+      if (!worker) {
+        try { resolve(whatIfSyncResult(opt)); } catch (e) { reject(e); }
+        return;
+      }
+      const id = ++whatIfSeq;
+      pendingWhatIf.set(id, { resolve, reject, key, opt });
+      try {
+        worker.postMessage({ id, opt });
+      } catch (e) {
+        pendingWhatIf.delete(id);
+        recoverWhatIfViaSync();
+        try { resolve(whatIfSyncResult(opt)); } catch (err) { reject(err); }
+      }
+    });
+  }
+
+  function modelFromRun(r, o) {
+    const lines = r.lines.map(l => ({
+      id: l.id, name: l.name,
+      cap: l.good,
+      req: Sim.dailyRequirement(l.id, o.demand)
+    }));
+    const req = lines.reduce((a, l) => a + l.req, 0);
+    const out = lines.reduce((a, l) => a + Math.min(l.cap, l.req), 0);
+    const kwhU = 1.18 * (o.energy ? 0.9 : 1);
+    const scrap = r.scrap;
     const cost = (o.shifts * 380000 + out * kwhU * 2.2 + scrap * 1800) / Math.max(1, out);
     const bottleneck = lines.slice().sort((a, b) => a.cap / a.req - b.cap / b.req)[0];
-    return { oee, lines, req, out, otd: out / req, cost, mwh: out * kwhU / 1000, scrap, bottleneck };
+    return { oee: r.oee, lines, req, out, otd: out / req, cost, mwh: out * kwhU / 1000, scrap, bottleneck };
   }
+
+  function model(o) {
+    const r = Sim.runShiftSimulationCached(whatIfRunOptions(o));
+    return modelFromRun(r, o);
+  }
+
+  async function modelAsync(o) {
+    const r = await runWhatIfShift(whatIfRunOptions(o));
+    return modelFromRun(r, o);
+  }
+
   DF.model = model;
+  DF.whatIfRunOptions = whatIfRunOptions;
+  DF.runWhatIfShift = runWhatIfShift;
   const inputs = () => ({ demand: +$('#sDemand').value, shifts: +$('#sShifts').value, speed: +$('#sSpeed').value, pdm: $('#tPdm').checked, vision: $('#tVision').checked, energy: $('#tEnergy').checked });
-  DF.runSim = function () {
+  let simRunToken = 0;
+  DF.runSim = async function () {
     const o = inputs();
+    const token = ++simRunToken;
     $('#vDemand').textContent = o.demand + '%'; $('#vShifts').textContent = o.shifts; $('#vSpeed').textContent = o.speed + '%';
-    const r = model(o), b = model(Object.assign({}, o, { pdm: false, vision: false, energy: false }));
+    const baseOpt = whatIfRunOptions(Object.assign({}, o, { pdm: false, vision: false, energy: false }));
+    let rShift, bShift;
+    try {
+      [rShift, bShift] = await Promise.all([
+        runWhatIfShift(whatIfRunOptions(o)),
+        runWhatIfShift(baseOpt)
+      ]);
+    } catch (e) {
+      if (token !== simRunToken) return;
+      rShift = whatIfSyncResult(whatIfRunOptions(o));
+      bShift = whatIfSyncResult(baseOpt);
+    }
+    if (token !== simRunToken) return;
+    const r = modelFromRun(rShift, o);
+    const b = modelFromRun(bShift, Object.assign({}, o, { pdm: false, vision: false, energy: false }));
     const usingDF = o.pdm || o.vision || o.energy;
     const delta = (a, c, good, f) => {
       if (!usingDF || Math.abs(a - c) < 1e-9) return '<span class="muted">baseline</span>';
@@ -314,7 +466,9 @@
     }
     $('#simAdvice').innerHTML = `${icon('sparkles')}<p>${adv}</p>`;
   };
-  $$('.sim-controls input').forEach(i => i.addEventListener('input', DF.runSim));
+  let simDebounce;
+  const scheduleSim = () => { clearTimeout(simDebounce); simDebounce = setTimeout(DF.runSim, 280); };
+  $$('.sim-controls input').forEach(i => i.addEventListener('input', scheduleSim));
   $$('[data-preset]').forEach(b => b.addEventListener('click', () => {
     const p = b.dataset.preset;
     if (p === 'peak') { $('#sDemand').value = 135; $('#sShifts').value = 2; $('#sSpeed').value = 100; $('#tPdm').checked = $('#tVision').checked = $('#tEnergy').checked = true; }

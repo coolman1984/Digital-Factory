@@ -46,6 +46,7 @@ body { overflow-x: hidden; }
 .shell { margin-inline-start: var(--side-w); min-height: 100vh; }
 .topbar { height: 64px; position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-inline: 32px; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); }
 .tb-left, .tb-mid, .tb-right { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.tb-right { flex-wrap: wrap; justify-content: flex-end; }
 .crumb { font-size: 13px; color: var(--text-2); display: flex; gap: 10px; align-items: center; white-space: nowrap; }
 .crumb strong { color: var(--text); font-weight: 650; }
 .crumb .sep { color: var(--border-strong); }
@@ -55,6 +56,9 @@ body { overflow-x: hidden; }
 .live-chip .status-dot { background: currentColor; }
 .live-chip.replay { background: var(--warning-soft); color: var(--warning); }
 .topbar .btn-sm { height: 40px; padding: 0 16px; }
+.sim-speed { display: inline-flex; align-items: center; gap: 4px; padding: 3px; border-radius: 10px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.sim-speed .btn-sm { min-width: 44px; padding: 0 10px; height: 34px; font-variant-numeric: tabular-nums; box-shadow: none; }
+.sim-speed .btn-sm.on { background: var(--brand-soft); color: var(--brand-2); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-2) 35%, var(--border)); font-weight: 650; }
 
 .tm { position: sticky; top: 64px; z-index: 45; display: flex; align-items: center; gap: 12px; padding: 10px 24px; background: var(--warning-soft); border-bottom: 1px solid var(--border); font-size: 13.5px; color: var(--text); }
 .tm .icon { color: var(--warning); }
@@ -173,6 +177,9 @@ table.league, table.audit, table.alarms { width: 100%; border-collapse: collapse
 .league th, .audit th, .alarms th { text-align: start; color: var(--text-2); font-weight: 500; font-size: 13px; padding: 8px 10px; border-bottom: 1px solid var(--border-strong); white-space: nowrap; }
 .league td, .audit td, .alarms td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .league td.num, .alarms td.num { font-variant-numeric: tabular-nums; font-weight: 650; }
+.losses-wrap { margin-top: 14px; display: grid; gap: 12px; }
+.loss-line .loss-bars { display: grid; gap: 6px; margin-top: 6px; }
+.loss-line .pb .bar i { background: var(--warning); }
 .mini-bar { height: 6px; border-radius: 99px; background: var(--surface-3); overflow: hidden; min-width: 70px; }
 .mini-bar i { display: block; height: 100%; border-radius: 99px; background: var(--brand); }
 .readiness { display: flex; flex-direction: column; gap: 14px; }
