@@ -597,6 +597,7 @@
     else if (e.key === 't' || e.key === 'T') window.Theme && Theme.toggle();
     else if (e.key === 'g' || e.key === 'G') tour ? stopTour() : startTour();
     else if (e.key === '/') { e.preventDefault(); $('#findIn').focus(); }
+    else if ((e.key === 'c' || e.key === 'C') && !e.metaKey && !e.ctrlKey && window.Copilot) { e.preventDefault(); Copilot.open(); }
     else if (e.key === 'Escape') { if (!drills.hidden) openMenu(false); else if (tour) stopTour(); else select(null); }
   });
 
@@ -620,6 +621,7 @@
   A.on(t => { if (t === 'change' || t === 'step' || t === 'awaiting' || t === 'closed') { if (sel && sel.startsWith('case:')) render(); } });
   CaseUI.bind(insp, () => setTimeout(() => render(true), 60));
   kpis(); vstream(); labelsTick(); render(true);
+  const cpb = $('#btnCopilot'); if (cpb) cpb.onclick = () => window.Copilot && Copilot.open(sel && !sel.startsWith('kpi:') ? `Tell me about ${sel.replace(/^\w+:/, '')}: its state, what drives it and what you would do.` : undefined);
   fromHash();
   addEventListener('hashchange', fromHash);
   booted = true;

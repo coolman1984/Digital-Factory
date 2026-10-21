@@ -467,6 +467,7 @@
         const n = Object.assign({ key, id: ++P.seq, t: P.t, time: clock(P.t), state: 'active', prio: 3, shelvedTo: 0, tag: key }, o);
         map.set(key, n); P.alarms.unshift(n);
         const S = P.alarmStats; S.raised++; S.recent.push(P.t);
+        const AL = P.alarmLog || (P.alarmLog = []); AL.push([Math.round(P.t), n.prio]); if (AL.length > 3000) AL.shift();   // the shift's alarm history (rate charts)
         log(n.area || 'PLC', n.msg, n.prio <= 1 ? 'crit' : n.prio === 2 ? 'warn' : 'info', n.ref);
         emit('alarms');
       } else if (!on && a) {
@@ -1747,11 +1748,14 @@
       P.t = START; P.k = 0;
       P.base.tv += P.made.packedTv; P.base.phone += P.made.packedPhone; P.made.packedTv = 0; P.made.packedPhone = 0;
       P.events.length = 0; P.audit.length = 0; W.alarmMap.clear(); P.alarms = []; P.cmdLog.length = 0;
-      P.alarmStats = { raised: 0, recent: [], rate10: 0, flood: false, floods: 0, peak10: 0 };
+      P.alarmStats = { raised: 0, recent: [], rate10: 0, flood: false, floods: 0, peak10: 0 }; P.alarmLog = [];
+      P.rejects.aoi = 0; P.rejects.fct = 0; P.rejects.qc = 0;
       for (const k in W.stats) if (typeof W.stats[k] === 'number') W.stats[k] = 0;
       for (const k in W.stats.downSec) W.stats.downSec[k] = 0;
       P.energy.kwh = 0; P.energy.cost = 0; P.energy.peak = 0; P.energy.over = 0;
-      for (const s of P.stations) { s.hist = {}; for (let i = 0; i < 40; i++) { sensors(s); record(s); } }
+      // counters start with the shift view at 09:12 (the warm-up hour does not count as today's losses)
+      for (const s of P.stations) { s.counters = { run: 0, idle: 0, starved: 0, blocked: 0, down: 0, made: 0, bad: 0, std: 0 }; s.hist = {}; for (let i = 0; i < 40; i++) { sensors(s); record(s); } }
+      W.win.length = 0;
       for (let i = 0; i < 24; i++) kpis();
       log('MES', 'Shift A running · Plant EG-01 · 5 lines, 6 AGVs, 2 forklifts, 13 people on the floor');
       sense();

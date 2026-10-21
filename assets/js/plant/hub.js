@@ -19,7 +19,8 @@
   const T = {
     E: null, ready: null, oid, peers: 0, catching: false, restored: false,
     anchor: { wall: 0, k: 0, speed: 1 },          // plant step = anchor.k + (wall - anchor.wall) / 1000 * speed / STEP
-    pending: [], seq: 0, lastSave: 0
+    pending: [], seq: 0, lastSave: 0,
+    log: [], logN: 0                              // commands as applied here: { k, cmd, n } (time machine replay)
   };
 
   const target = (w = now()) => Math.floor(T.anchor.k + Math.max(0, w - T.anchor.wall) / 1000 * T.anchor.speed / STEP + 1e-9);
@@ -134,6 +135,12 @@
   }
 
   /* ---------------- the clock ---------------- */
+  function applyNext() {
+    const p = T.pending.shift();
+    T.log.push({ k: T.E.P.k, cmd: p.cmd, n: ++T.logN }); if (T.log.length > 1500) T.log.shift();
+    const ok = T.E.exec(p.cmd);
+    if (p.oid === oid && p.resolve) p.resolve(ok);
+  }
   let lastDigestK = 0;
   T.frame = function () {
     const E = T.E; if (!E) return 0;
@@ -142,15 +149,11 @@
     const max = 2400;
     const t0 = performance.now();
     while (E.P.k < want && n < max) {
-      while (T.pending.length && T.pending[0].k <= E.P.k) {
-        const p = T.pending.shift();
-        const ok = E.exec(p.cmd);
-        if (p.oid === oid && p.resolve) p.resolve(ok);
-      }
+      while (T.pending.length && T.pending[0].k <= E.P.k) applyNext();
       E.step(); n++;
       if ((n & 255) === 0 && performance.now() - t0 > 30) break;
     }
-    while (T.pending.length && T.pending[0].k <= E.P.k) { const p = T.pending.shift(); const ok = E.exec(p.cmd); if (p.oid === oid && p.resolve) p.resolve(ok); }
+    while (T.pending.length && T.pending[0].k <= E.P.k) applyNext();
     const behind = want - E.P.k;
     const catching = behind > 600;
     if (catching !== T.catching) { T.catching = catching; emit('catching', catching ? behind : 0); }
@@ -224,11 +227,14 @@
     const E = T.E;
     req = Object.assign({ horizon: 2700, seeds: 3 }, req);
     req.id = req.id || 'w' + (++reqSeq);
-    const snap = E.snapshot({ lite: true });
+    // a what-if starts from the live plant, or from a given world (the time machine branches from the past)
+    const snap = req.snap || E.snapshot({ lite: true });
+    const from = req.snap ? req.snap.P : E.P;
+    delete req.snap;
     const parts = window.WhatIf.plan(req);
     const ws = workers();
     const t0 = performance.now();
-    if (!ws.length) return Promise.resolve(Object.assign(window.WhatIf.run(PE, snap, req), { ms: performance.now() - t0, at: E.P.t }));
+    if (!ws.length) return Promise.resolve(Object.assign(window.WhatIf.run(PE, snap, req), { ms: performance.now() - t0, at: from.t, k: from.k }));
     const chunks = ws.map(() => []);
     parts.forEach((p, i) => chunks[i % ws.length].push(p));
     const jobs = chunks.map((c, i) => c.length ? new Promise((res, rej) => {
@@ -236,7 +242,7 @@
       waiting.set(id, d => { waiting.delete(id); if (d.error) rej(new Error(d.error)); else res(d.results); });
       ws[i].postMessage({ id, snap, req, parts: c });
     }) : Promise.resolve([]));
-    return Promise.all(jobs).then(r => Object.assign(window.WhatIf.combine(req, r.flat()), { ms: Math.round(performance.now() - t0), at: E.P.t, k: E.P.k }));
+    return Promise.all(jobs).then(r => Object.assign(window.WhatIf.combine(req, r.flat()), { ms: Math.round(performance.now() - t0), at: from.t, k: from.k }));
   };
 
   T.ready = new Promise(res => { T._ready = res; });
