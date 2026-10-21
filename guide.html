@@ -1438,7 +1438,7 @@
             <li><b>من غرفة التحكم:</b> عندما ترى اللحظة التي تريد عرضها، اضغط <span class="ui"><span data-icon="tv"></span>Send to deck</span> أو المفتاح <kbd>P</kbd>، أو اطلب من المساعد «Prepare the briefing». ويظهر إشعار «Moment 09:16 sent to the presentation briefing»، ويُسجَّل التثبيت في سجل التدقيق. وإذا كنت داخل آلة الزمن، تُثبَّت أقرب لحظة محفوظة للوقت الذي تعيد عرضه.</li>
             <li><b>من العرض التقديمي:</b> اضغط زر الإحاطة الحية <span class="ui"><span data-icon="live"></span></span> في أعلى الشاشة أو المفتاح <kbd>B</kbd>، فتظهر لوحة تضم:
               <ul>
-                <li><b>الوضع:</b> «Pinned moment» لتثبيت لحظة، أو «Follow live» لمتابعة المصنع لحظيًا مع تحديث الشرائح كل بضع ثوانٍ.</li>
+                <li><b>الوضع:</b> «Pinned» لتثبيت لحظة، أو «Live» لمتابعة المصنع لحظيًا مع تحديث الشرائح كل بضع ثوانٍ، أو «Time window» لمراجعة نافذة زمنية سابقة (انظر أدناه).</li>
                 <li><b>Command room now:</b> آخر لحظة وصلت من غرفة التحكم، مع زر <span class="ui primary">Pin this moment</span>.</li>
                 <li><b>Or choose a stored moment:</b> قائمة باللحظات المحفوظة (لحظة كل 30 ثانية، وبعد كل حدث مهم)، لكل منها وقتها وفعاليتها وعدد قراراتها ووجود حادثة.</li>
                 <li><b>Pinned:</b> اللحظة المثبتة حاليًا، مع زر <span class="ui">Clear</span>.</li>
@@ -1449,7 +1449,18 @@
           </ol>
           <h3 class="minor">كيف يكتب وكيل الإحاطة</h3>
           <p>يتبع الوكيل ترتيب الأولويات نفسه المتبع في الجملة الحية بغرفة التحكم: الحادثة المفتوحة أولًا، ثم القرارات المنتظرة، ثم الإنذارات العاجلة، ثم الحالة الطبيعية. ويوصي بالموافقة على القرار الأعلى قيمة إن وُجد، ويذكر نصه وأثره. فإن لم يوجد قرار وكانت هناك حادثة، أوضح أن الاستجابة جارية بالفعل. وإن كانت إحدى الماكينات تقترب من الخطر، نبّه إلى متابعتها. وإلا أوصى بإبقاء مستويات الاستقلالية كما هي.</p>
-          <div class="note"><b>حدود الإحاطة</b><p>تُحفظ اللحظات في هذا المتصفح فقط، ولا تُرسل إلى أي مكان. وبيانات المصنع محاكاة، ووكيل الإحاطة في هذا العرض قائم على قواعد محددة. وفي المصنع الحقيقي تأتي اللحظة من البيانات الفعلية، ويمكن أن تُكتب الإحاطة بنموذج لغوي يُراجعها المسؤول قبل العرض.</p></div>
+          <h3 class="minor">مراجعة نافذة زمنية سابقة</h3>
+          <p>إذا وقعت المشكلة قبل ساعات، من 13:00 إلى 13:30 مثلًا، والاجتماع الآن، فلا حاجة إلى قراءة السجلات سطرًا سطرًا. فالمصنع الحي يحتفظ بـ<a class="t" data-term="recorder">مسجّل الرحلة</a>، وتجمع <a class="t" data-term="window-review">مراجعة النافذة الزمنية</a> كل ما سُجّل في النافذة التي تختارها في عرض متكامل من ثلاث شرائح.</p>
+          <ol>
+            <li><b>التسجيل:</b> افتح المصنع الحي (plant.html) واتركه يعمل؛ ويُحفظ التسجيل في هذا المتصفح تلقائيًا كل بضع ثوانٍ. وبالسرعة 16× تمر ساعة من وقت المصنع في نحو أربع دقائق. أو اضغط <span class="ui">Build a sample shift</span> في اللوحة، فتُبنى وردية نموذجية من 09:12 إلى 14:30 في نحو نصف دقيقة، فيها تآكل محمل في الماكينة B على خط التركيب السطحي 4 عند 12:35، ونقص الحقن في ماكينة الحقن IM10 عند 13:20، ومدير المصنع يوافق على توصيات الوكلاء بعد دقائق.</li>
+            <li><b>اختيار النافذة:</b> في لوحة الإحاطة الحية اختر الوضع <span class="ui">Time window</span>، ثم المصدر (<span class="ui">Live plant</span> أو <span class="ui">Sample shift</span>). ويعرض قسم <span class="ui">Problems found</span> المشكلات التي اكتشفها الوكيل في التسجيل، فيكفي الضغط على إحداها، أو اكتب وقتي <span class="ui">From</span> و<span class="ui">To</span> بنفسك، ثم اضغط <span class="ui primary">Show the review</span>.</li>
+            <li><b>الشريحة 2:</b> العنوان («13:00–13:30: نقص الحقن في IM10. قرار واحد من الأفراد، و9 إجراءات من الوكلاء، وحماية 674 ألف جنيه»)، ثم القصة بالترتيب الزمني: المشكلة، وما رآه الوكيل وكم خيارًا حاكى وبماذا أوصى ونسبة ثقته، ومن وافق ومتى، والنتيجة. ثم ست قراءات للنافذة: الأجهزة المعبأة مقابل الخطة، والفعالية من بدايتها إلى نهايتها، وفرصة تحقيق الخطة، والإنذارات في الذروة، والقرارات، والقيمة المحمية، ثم حالة الخطوط الرئيسية عند نهاية النافذة.</li>
+            <li><b>الشريحة 3:</b> ثلاثة أعمدة بعنوان «ماذا حدث دقيقة بدقيقة»: المشكلة، وما فعله الذكاء الاصطناعي (بطاقات القرار مع الخيارات التي حاكاها وتوصيته)، وما تقرر (من قرر، ومتى، وماذا)، ثم النتائج.</li>
+            <li><b>الشريحة 4 والمتابعة:</b> اضغط <span class="ui">+30 min</span> أو <span class="ui">+1 h</span> أو <span class="ui">+2 h</span> لعرض ما حدث بعد النافذة، أو اضغط <span class="ui">Play</span> فتتقدم ساعة المتابعة ربع ساعة كل ثانيتين، وتتغير الأرقام والإجراءات والتوصية أمام الحاضرين.</li>
+            <li><b>PowerPoint:</b> يصنع <span class="ui">Export PowerPoint</span> ملفًا قابلًا للتعديل بالشرائح الثلاث نفسها، بجداولها وملاحظات المتحدث، لإرساله بعد الاجتماع.</li>
+          </ol>
+          <p>ويعمل وكيل الإحاطة هنا بالقواعد نفسها: يُسقط المكرر، ويقدّم ما يتعلق بالمشكلة على الأعمال الروتينية، ويجمع إصلاحات الماكينات المتشابهة في سطر واحد، ثم يوصي: إن بقيت إنذارات من الأولوية الأولى طلب استمرار الاستجابة والمراجعة بعد 30 دقيقة، وإلا ذكر البند المفتوح التالي وتوصية الوكيل فيه.</p>
+          <div class="note"><b>حدود الإحاطة</b><p>تُحفظ اللحظات والتسجيلات في هذا المتصفح فقط، ولا تُرسل إلى أي مكان. وبيانات المصنع محاكاة، ووكيل الإحاطة في هذا العرض قائم على قواعد محددة. وفي المصنع الحقيقي تأتي اللحظة من البيانات الفعلية، ويمكن أن تُكتب الإحاطة بنموذج لغوي يُراجعها المسؤول قبل العرض.</p></div>
           <div class="note key"><b>سيناريو مقترح لاجتماع عاجل</b><p>افتح غرفة التحكم قبل الاجتماع بدقيقة، وانتظر حتى تظهر اللحظة التي تمثل الموقف، ثم اضغط P. افتح العرض التقديمي على الشريحة 2، فتجد العنوان والأرقام والتوصية جاهزة. ابدأ بالعنوان، ثم القراءات الست، ثم انتقل إلى الشريحة 3 لطلب القرار، ثم أكمل العرض بالعرض الحي إن احتاج الأمر إلى إثبات.</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
@@ -1465,7 +1476,7 @@
             <li><b>From the command room:</b> when you see the moment you want to show, press <span class="ui"><span data-icon="tv"></span>Send to deck</span> or the <kbd>P</kbd> key, or ask the copilot to “Prepare the briefing”. A notice reads “Moment 09:16 sent to the presentation briefing” and the pin is recorded in the audit trail. Inside the time machine, the stored moment closest to the replayed time is pinned.</li>
             <li><b>From the presentation:</b> press the live-briefing button <span class="ui"><span data-icon="live"></span></span> at the top or the <kbd>B</kbd> key. A panel opens with:
               <ul>
-                <li><b>Mode:</b> Pinned moment, or Follow live to track the plant with the slides refreshing every few seconds.</li>
+                <li><b>Mode:</b> Pinned, Live to track the plant with the slides refreshing every few seconds, or Time window to review a past window (below).</li>
                 <li><b>Command room now:</b> the latest moment received from the command room, with <span class="ui primary">Pin this moment</span>.</li>
                 <li><b>Or choose a stored moment:</b> the stored moments (one every 30 seconds and after every important event), each with its time, OEE, decisions and whether an incident was open.</li>
                 <li><b>Pinned:</b> the moment pinned now, with <span class="ui">Clear</span>.</li>
@@ -1476,7 +1487,18 @@
           </ol>
           <h3 class="minor">How the briefing agent writes</h3>
           <p>It follows the same order as the live sentence in the command room: an open incident first, then decisions waiting, then urgent alarms, then the normal state. It recommends approving the highest-value decision if there is one, quoting it and its effect. With no decision but an open incident, it explains that the response is already running. If a machine is approaching risk, it says to watch it. Otherwise it recommends keeping autonomy levels as they are.</p>
-          <div class="note"><b>Limits of the briefing</b><p>Moments are kept in this browser only and sent nowhere. Plant data is simulated, and the briefing agent in this demo is rule-based. In a real plant the moment comes from real data, and the briefing can be written by a language model and reviewed by the responsible person before it is shown.</p></div>
+          <h3 class="minor">Reviewing a past time window</h3>
+          <p>When the problem happened hours ago, say from 13:00 to 13:30, and the meeting is now, nobody needs to read the logs line by line. The live plant keeps a <a class="t" data-term="recorder">flight recorder</a>, and the <a class="t" data-term="window-review">time-window review</a> turns everything recorded in the window you choose into one integrated, three-slide briefing.</p>
+          <ol>
+            <li><b>Recording:</b> open the live plant (plant.html) and let it run; the recording is saved to this browser every few seconds. At 16× an hour of plant time passes in about four minutes. Or press <span class="ui">Build a sample shift</span> in the panel: a sample shift from 09:12 to 14:30 is built in about half a minute, with bearing wear on Mounter B of SMD line 4 at 12:35, short shots on injection machine IM10 at 13:20, and the plant manager approving the agents' recommendations a few minutes later.</li>
+            <li><b>Choosing the window:</b> in the Live briefing panel choose <span class="ui">Time window</span>, then the source (<span class="ui">Live plant</span> or <span class="ui">Sample shift</span>). <span class="ui">Problems found</span> lists the problems the agent detected in the recording: press one, or type <span class="ui">From</span> and <span class="ui">To</span> yourself, then press <span class="ui primary">Show the review</span>.</li>
+            <li><b>Slide 2:</b> the headline (“13:00–13:30: Short shots on injection machine IM10. 1 decision by people, 9 actions by agents, EGP 674k protected.”), then the story in time order: the problem, what the agent saw, how many options it simulated, what it recommended and how sure it was, who approved and when, and the result. Then six readouts for the window: TVs packed against plan, OEE from start to end, chance to hit plan, alarms at the peak, decisions and value protected, then the main lines at the end of the window.</li>
+            <li><b>Slide 3:</b> three columns under “What happened, minute by minute”: the problem; what the AI did (the decision cards with the options simulated and the recommendation); what was decided (who, when, what); then the results.</li>
+            <li><b>Slide 4 and the follow-up:</b> press <span class="ui">+30 min</span>, <span class="ui">+1 h</span> or <span class="ui">+2 h</span> to show what happened after the window, or <span class="ui">Play</span>: the follow-up clock moves fifteen minutes every two seconds, and the numbers, actions and recommendation change in front of the room.</li>
+            <li><b>PowerPoint:</b> <span class="ui">Export PowerPoint</span> makes an editable file with the same three slides, their tables and speaker notes, to send after the meeting.</li>
+          </ol>
+          <p>The briefing agent follows the same rules here: it drops repeats, puts what belongs to the problem before routine work, folds similar machine repairs into one line, then recommends: with priority-1 alarms still open, keep the response running and review again in 30 minutes; otherwise it names the next open item and the agent's recommendation for it.</p>
+          <div class="note"><b>Limits of the briefing</b><p>Moments and recordings are kept in this browser only and sent nowhere. Plant data is simulated, and the briefing agent in this demo is rule-based. In a real plant the moment comes from real data, and the briefing can be written by a language model and reviewed by the responsible person before it is shown.</p></div>
           <div class="note key"><b>A suggested run for an urgent meeting</b><p>Open the command room a minute before the meeting, wait for the moment that represents the situation, press P. Open the presentation on slide 2: headline, numbers and recommendation are ready. Start with the headline, then the six readouts, move to slide 3 for the ask, and continue with the live demo if proof is needed.</p></div>
         </div>
       </div>
@@ -1796,12 +1818,12 @@
       </div>
       <div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <p class="lede">يتكون العرض من 19 شريحة مدتها نحو 20 دقيقة، ويتبع منطقًا ثابتًا: الخلاصة أولًا، ثم المشكلة، ثم الدليل، ثم الحل، ثم العرض الحي، ثم القيمة والخطة، ثم الطلب. ولكل شريحة هنا: غرضها، ونصها مترجمًا، وملاحظات المتحدث مترجمة.</p>
+          <p class="lede">يتكون العرض من 20 شريحة مدتها نحو 20 دقيقة، ويتبع منطقًا ثابتًا: الخلاصة أولًا، ثم المشكلة، ثم الدليل، ثم الحل، ثم العرض الحي، ثم القيمة والخطة، ثم الطلب. ولكل شريحة هنا: غرضها، ونصها مترجمًا، وملاحظات المتحدث مترجمة.</p>
           <h3 class="minor">التحكم في العرض</h3>
           <p><kbd>←</kbd> <kbd>→</kbd> أو جهاز التحكم للتنقل · <kbd>T</kbd> فاتح أو داكن · <kbd>F</kbd> ملء الشاشة · <kbd>N</kbd> ملاحظات المتحدث · <kbd>B</kbd> الإحاطة الحية · <kbd>Home</kbd> و<kbd>End</kbd> للشريحة الأولى والأخيرة · السحب الأفقي على الشاشات اللمسية. ويمثل الشريط السفلي خط إنتاج تتقدم عليه «وحدة» زرقاء مع كل شريحة.</p>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <p class="lede">The presentation has 19 slides and runs about 20 minutes. It follows a fixed logic: the answer first, then the problem, the proof, the solution, the live demo, the value and the plan, then the ask. For each slide: its purpose, its full text and its speaker notes.</p>
+          <p class="lede">The presentation has 20 slides and runs about 20 minutes. It follows a fixed logic: the answer first, then the problem, the proof, the solution, the live demo, the value and the plan, then the ask. For each slide: its purpose, its full text and its speaker notes.</p>
           <h3 class="minor">Controlling the presentation</h3>
           <p><kbd>←</kbd> <kbd>→</kbd> or a clicker to move · <kbd>T</kbd> light or dark · <kbd>F</kbd> full screen · <kbd>N</kbd> speaker notes · <kbd>B</kbd> live briefing · <kbd>Home</kbd> and <kbd>End</kbd> for the first and last slide · swipe on touch screens. The rail at the bottom is a production line on which a blue “unit” moves forward with each slide.</p>
         </div>
@@ -1839,238 +1861,253 @@
 
       <div class="sub" id="d-4"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 4 · الملخص التنفيذي</h3>
+          <h3>الشريحة 4 · ماذا حدث بعد ذلك</h3>
+          <div class="quote"><p class="q-h">الترجمة (قبل اختيار نافذة زمنية)</p><p><b>ماذا حدث بعد ذلك، بعد الوقت الذي تختاره.</b> اختر نافذة زمنية من تسجيل المصنع، ثم اضغط +30 دقيقة أو +1 ساعة أو +2 ساعة أو «تشغيل»، فتعرض هذه الشريحة ما تغيّر، وما نُفّذ، وما بقي مفتوحًا. [اختر نافذة زمنية]</p></div>
+          <p><b>الغرض.</b> إكمال مراجعة النافذة الزمنية (الفصل 10): بعد أن تعرض الشريحتان 2 و3 المشكلة وما فعله الذكاء الاصطناعي والقرارات، تعرض هذه الشريحة النتيجة لاحقًا: جدول «قبل وبعد» (الإنتاج مقابل الخطة، والفعالية، وفرصة تحقيق الخطة، والإنذارات المفتوحة، والقيمة المحمية، والإيراد)، ثم «ما نُفّذ منذ ذلك الحين»، ثم توصية وكيل الإحاطة وما بقي مفتوحًا. ولا تظهر إلا في وضع «Time window» بعد تحديد وقت المتابعة.</p>
+          <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>استخدم هذه الشريحة بعد مراجعة المشكلة. اضغط +1 ساعة أو «تشغيل» في لوحة الإحاطة الحية لتحريك الساعة إلى الأمام، فتتبعها الأرقام والإجراءات والتوصية. اقرأ العنوان، ثم جدول قبل وبعد، ثم ما بقي مفتوحًا.</p><p>وتُستبدل هذه الملاحظات تلقائيًا بنص مكتوب من النافذة المختارة.</p></div>
+        </div>
+        <div class="en" lang="en" dir="ltr">
+          <h3>Slide 4 · What happened next</h3>
+          <div class="quote"><p class="q-h">Original (before a time window is chosen)</p><p><b>What happened next, after the time you choose.</b> Choose a time window from the plant recording, then press +30 min, +1 h, +2 h or Play: this slide shows what changed, what was done and what is still open. [Choose a time window]</p></div>
+          <p><b>Purpose.</b> To complete the time-window review (Chapter 10): after slides 2 and 3 show the problem, what the AI did and the decisions, this slide shows the result later: a before-and-after table (TVs against plan, OEE, chance to hit plan, open alarms, value protected, revenue), then “Done since”, then the briefing agent's recommendation and what is still open. It appears only in Time window mode, once a follow-up time is set.</p>
+          <div class="quote"><p class="q-h">Speaker notes</p><p>Use this slide after the review of the problem. Press +1 hour or Play in the Live briefing panel to move the clock forward; the numbers, the actions and the recommendation follow. Read the headline, then the before-and-after table, then what is still open.</p><p>These notes are replaced automatically by a script written from the chosen window.</p></div>
+        </div>
+      </div></div>
+
+      <div class="sub" id="d-5"><div class="bi">
+        <div class="ar" lang="ar" dir="rtl">
+          <h3>الشريحة 5 · الملخص التنفيذي</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>خط واحد، واثنا عشر أسبوعًا، ونتيجة مقيسة.</b></p><p><b>الفرصة:</b> التوقف، وعيوب الجودة التي تصل إلى العميل، والطاقة هي أكبر التكاليف القابلة للتحكم في خط الإلكترونيات، ومعظم البيانات اللازمة لخفضها موجودة بالفعل في المصنع.</p><p><b>الحل:</b> توأم رقمي حي للمصنع مع ذكاء اصطناعي يتنبأ بالأعطال، ويفحص كل لوحة، ويوصي بأفضل إجراء تالٍ، ويُبنى فوق الأنظمة القائمة.</p><p><b>القرار:</b> الموافقة على تجربة مدتها 12 أسبوعًا على خط تركيب سطحي واحد، بمعايير نجاح يُتفق عليها مسبقًا ويقيسها فريقكم.</p></div>
           <p><b>الغرض.</b> الاجتماع كله في صفحة واحدة، على مساحة اللون الأزرق.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>هذه الشريحة هي الاجتماع كله في صفحة واحدة. اقرأ العناوين الثلاثة: الفرصة، والحل، والقرار. ثم قل: «بقية العرض تدعم هذه النقاط الثلاث». فالقيادة العليا تفضّل سماع الإجابة أولًا.</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 4 · Executive summary</h3>
+          <h3>Slide 5 · Executive summary</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>One line, twelve weeks, a measured result.</b></p><p><b>The opportunity:</b> Downtime, quality escapes and energy are the largest controllable costs on an electronics line. Most of the data needed to reduce them already exists on the floor.</p><p><b>The solution:</b> A live digital twin of the plant with AI that predicts failures, inspects every board, and recommends the next best action, built on top of existing systems.</p><p><b>The decision:</b> Approve a 12-week pilot on one SMT line. Success criteria are agreed up front and measured by your own team.</p></div>
           <p><b>Purpose.</b> The whole meeting on one page, on the blue field.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>This slide is the whole meeting in one page. Read the three titles: opportunity, solution, decision. Then say: “The rest of the presentation supports these three points.” Senior leaders like the answer first.</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-5"><div class="bi">
+      <div class="sub" id="d-6"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 5 · الموقف</h3>
+          <h3>الشريحة 6 · الموقف</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>كل ماكينة تنتج بيانات بالفعل. لكن معظم القرارات ما زالت تعتمد على أرقام الأمس.</b></p><p><b>التوقفات غير المخططة:</b> عطل واحد في خط تركيب سطحي يوقف التجميع والاختبار والشحن خلفه. · <b>عيوب الجودة الواصلة إلى العميل:</b> العيب المكتشف في السوق يكلّف أضعاف العيب المكتشف على الخط. · <b>تكاليف الطاقة:</b> التعريفات ترتفع، وعملاء التصدير يطلبون انبعاثات ثاني أكسيد الكربون لكل وحدة. · <b>الخبرة المعرّضة للفقد:</b> حكم الخبراء يسكن عقولهم ويغادر مع نهاية الوردية.</p><p>وقد عالجت المصانع الرائدة في العالم، ومنها شبكة المنارات العالمية، هذه المشكلة بالطريقة نفسها: <b>ربط كل شيء، ورؤيته لحظيًا، وترك الذكاء الاصطناعي يتنبأ، وتمكين الأفراد من القرار الأسرع.</b></p></div>
           <p><b>الغرض.</b> الحديث عن مشكلات صاحب القرار لا عن المنتج، بجوار صورة يد مشغل على الماكينة.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>هذه الشريحة عن مشكلاته هو، لا عن منتجنا. اطرح سؤالًا مفتوحًا واحدًا: «أي هذه التكاليف الأربع هو الأكبر لديكم اليوم؟» ودعه يتحدث. ومهما كانت إجابته، اربطها لاحقًا بالعرض الحي.</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 5 · Situation</h3>
+          <h3>Slide 6 · Situation</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>Every machine already produces data. Most decisions still use yesterday's numbers.</b></p><p><b>Unplanned stops:</b> One failure on an SMT line stops assembly, test and shipping behind it. · <b>Quality escapes:</b> A defect found in the market costs far more than one caught on the line. · <b>Energy costs:</b> Tariffs are rising, and export customers ask for CO₂ per unit. · <b>Know-how at risk:</b> Expert judgement lives in people's heads and leaves at shift end.</p><p>The world's leading factories, including the WEF Global Lighthouse Network, solved this the same way: <b>connect everything, see it live, let AI predict, and let people decide faster.</b></p></div>
           <p><b>Purpose.</b> To talk about the decision-maker's problems, not the product, beside a photo of an operator's hand on a machine.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>This slide is about his problems, not our product. Ask one open question: “Which of these four costs you the most today?” Let him talk. Whatever he says, connect it to the demo later.</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-6"><div class="bi">
+      <div class="sub" id="d-7"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 6 · توجه 2030</h3>
+          <h3>الشريحة 7 · توجه 2030</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>هدف الصناعة: كل مصنع مدار بالذكاء الاصطناعي بحلول 2030. ويمكن أن يكون المصنع EG-01 جاهزًا مبكرًا.</b></p><p>مارس 2026: كبرى شركات الإلكترونيات تلتزم بمصانع مدارة بالذكاء الاصطناعي · هذا الربع: تجربة على خط واحد في المصنع EG-01 (مقترحة) · 2030: المصانع المدارة بالذكاء الاصطناعي تصبح القاعدة.</p><p><b>التوأم الرقمي:</b> محاكاة عبر السلسلة كلها، من تخزين المواد إلى الإنتاج والشحن. في العرض: توأم حي، وآلة زمن، و«ماذا لو». · <b>وكلاء الذكاء الاصطناعي:</b> وكلاء للجودة والإنتاج والإمداد يخططون ويتصرفون نحو أهداف. في العرض: ستة وكلاء مع مفتاح للاستقلالية. · <b>ذكاء السلامة:</b> كشف مبكر للمخاطر ووقاية تلقائية في البيئة والصحة والسلامة. في العرض: وكيل السلامة باستجابة 0.4 ثانية. · <b>الروبوتات:</b> روبوتات للإمداد والتجميع والسلامة، مع إدخال الروبوتات البشرية تدريجيًا. في العرض: مركبات موجهة يرسلها الذكاء الاصطناعي.</p><p><b>المصنع الرقمي وسيلة محلية وسريعة لتطبيق هذه المحاور على خط واحد في المصنع EG-01 بدءًا من هذا الربع.</b></p><p>المصدر: إعلانات علنية في 2026 لكبرى شركات تصنيع الإلكترونيات العالمية.</p></div>
           <p><b>الغرض.</b> ربط المشروع بالموعد العالمي، وإثبات أن كل محور منه يعمل بالفعل في العرض الحي (السطر الأزرق تحت كل محور).</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>اجعلها قصيرة. قل: «حددت كبرى شركات الإلكترونيات عام 2030 موعدًا لتصبح مصانعها مدارة بالذكاء الاصطناعي. واقتراحنا وسيلة عملية ليصل هذا المصنع إلى ذلك مبكرًا، على خط واحد، وبمهندسين محليين». وأشر إلى السطر الأزرق تحت كل محور: كل ذلك يعمل بالفعل في العرض.</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 6 · The 2030 direction</h3>
+          <h3>Slide 7 · The 2030 direction</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>The industry goal: every factory AI-driven by 2030. Plant EG-01 can be ready early.</b></p><p>March 2026: Leading electronics makers commit to AI-driven factories · This quarter: Pilot on one Plant EG-01 line (proposed) · 2030: AI-driven factories become the industry norm.</p><p><b>Digital twin:</b> Simulation across the whole chain, from materials warehousing to production and shipping. In the demo: live twin, time machine, what-if. · <b>AI agents:</b> Agents for quality, production and logistics that plan and act toward goals. In the demo: six agents with an autonomy dial. · <b>Safety AI:</b> Early detection of hazards and automatic prevention across environment, health and safety. In the demo: safety agent, 0.4 s response. · <b>Robotics:</b> Logistics, assembly and safety robots, with humanoids phased in over time. In the demo: AGVs dispatched by AI.</p><p><b>Digital Factory is a local, fast way to put these pillars to work on one Plant EG-01 line, starting this quarter.</b></p><p>Source: public 2026 announcements by leading global electronics manufacturers on AI-driven factories by 2030.</p></div>
           <p><b>Purpose.</b> To tie the project to the global deadline and show every pillar already working in the demo (the blue line under each pillar).</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>Keep it short. Say: “Leading electronics makers have set 2030 as the year their factories become AI-driven. Our proposal is a practical way for this plant to get there early, on one line, with local engineers.” Point at the blue line under each pillar: everything is already working in the demo.</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-7"><div class="bi">
+      <div class="sub" id="d-8"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 7 · ما حققه الأفضل</h3>
+          <h3>الشريحة 8 · ما حققه الأفضل</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>النتائج منشورة. والفجوة في التنفيذ.</b></p><p><b>−78% زمن الإنجاز:</b> مصنع سيمنز للإلكترونيات في نانجينغ، اختير منارة للمنتدى الاقتصادي العالمي في 2026 بأكثر من 50 تطبيقًا للذكاء الاصطناعي وإنتاجية أعلى بنسبة 14%. · <b>−40% معدل العيوب:</b> مصنع هاير لأجهزة تنقية المياه في تشينغداو، وانخفضت تكاليف الجودة 72% بعد 32 حلًا رقميًا (وفق بيانات الشركة). · <b>نحو 50% أسرع في إنشاء المصانع:</b> تخطط فوكسكون مصانعها وتدرب روبوتاتها في توأم رقمي قبل بنائها (تقدير الشركة). · <b>238 موقع منارة:</b> يمثل الذكاء الاصطناعي التوليدي بالفعل 23% من أفضل الحلول في شبكة المنتدى.</p><p>المصادر: شبكة المنارات العالمية (تقرير 2025 وإصدارات 2026)، وبيان سيمنز عن نانجينغ، وبيان هاير، ودراسة حالة إنفيديا وفوكسكون. وتعتمد النتائج على نقطة البداية.</p></div>
           <p><b>الغرض.</b> أربعة أرقام كبيرة على المساحة الداكنة تقول إن التقنية مجرّبة عالميًا.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>اجعلها قصيرة: هذه هي المراجع العالمية. والرسالة: «التقنية مثبتة، والفائز هو من يطبقها أسرع وأفضل في أرض المصنع». وهذا هو دورنا.</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 7 · What the best achieve</h3>
+          <h3>Slide 8 · What the best achieve</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>The results are public. The gap is in execution.</b></p><p><b>−78% Lead time:</b> Siemens electronics plant, Nanjing. Named a WEF Lighthouse in 2026 with more than 50 AI applications and +14% productivity. · <b>−40% Defect rate:</b> Haier water-purifier factory, Qingdao. Quality costs down 72% after 32 digital solutions (company-reported). · <b>≈ 50% Faster factory setup:</b> Foxconn plans plants and trains robots in a digital twin before building them (company estimate). · <b>238 Lighthouse sites:</b> Generative AI already makes up 23% of the top solutions in the WEF network.</p><p>Sources: WEF Global Lighthouse Network (2025 report, 2026 releases); Siemens press release on Nanjing; Haier press release; NVIDIA and Foxconn case study. Results depend on the starting point.</p></div>
           <p><b>Purpose.</b> Four large figures on the ink field saying the technology is proven worldwide.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>Keep this short: these are the world's references. The message: “The technology is proven. What wins is how fast and how well it is applied on the floor.” That is our role.</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-8"><div class="bi">
+      <div class="sub" id="d-9"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 8 · التحول</h3>
+          <h3>الشريحة 9 · التحول</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>من رد الفعل على المشكلات إلى منعها.</b></p><p>اليوم ← مع المصنع الرقمي:<br>تُصلح الماكينات بعد أن تتعطل ← يُخطَّط للإصلاح قبل العطل بأيام<br>فحص بالعينات وبالعين البشرية ← فحص كل وحدة بالذكاء الاصطناعي بسرعة الخط<br>تقرير الأمس في اجتماع الصباح ← رؤية حية لكل خط في كل ثانية<br>قرارات كبرى بالخبرة وحدها ← كل قرار يُختبر على التوأم أولًا<br>الإجابات مرهونة بالعثور على المهندس المناسب ← إجابات من المساعد الذكي في ثوانٍ</p></div>
           <p><b>الغرض.</b> مقارنة واضحة بين الواقع الحالي والهدف، سطرًا بسطر.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>اقرأ الصفوف سريعًا. اليسار هو اليوم، واليمين هو الهدف، ولا تشرح التفاصيل. واختم بقول: «دعوني أريكم ذلك بدلًا من وصفه».</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 8 · The shift</h3>
+          <h3>Slide 9 · The shift</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>From reacting to problems to preventing them.</b></p><p>Today → With Digital Factory:<br>Machines are repaired after they fail → Repairs are planned days before a failure<br>Inspection by sampling and human eyes → Every unit inspected by AI at line speed<br>Yesterday's report in this morning's meeting → A live view of every line, every second<br>Big decisions based on experience alone → Every decision tested on the twin first<br>Answers depend on finding the right engineer → Answers from the copilot in seconds</p></div>
           <p><b>Purpose.</b> A clear comparison of today and the goal, row by row.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>Read the rows quickly. Left is today, right is the goal. Do not explain details. Finish with: “Let me show you this instead of describing it.”</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-9"><div class="bi">
+      <div class="sub" id="d-10"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 9 · الحل</h3>
+          <h3>الشريحة 10 · الحل</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>أربع طبقات. وصورة واحدة واضحة للمصنع.</b></p><p>لا يُستبدل شيء. يعمل المصنع الرقمي فوق الماكينات ونظامي التنفيذ وتخطيط الموارد التي تشغّلونها بالفعل.</p><p><b>كل إشارة:</b> وحدات التحكم ومعدات التركيب السطحي · الفحص البصري وفحص المعجون وأجهزة الاختبار · عدادات الطاقة والمركبات الموجهة · أنظمة التنفيذ والموارد والصيانة.<br><b>توأم رقمي حي:</b> كل خط ومحطة ووحدة · الفعالية والعائد وزمن الإيقاع لحظيًا · من أرض المصنع إلى قاعة الإدارة · على الشاشات والهواتف.<br><b>الاستبصار بالذكاء الاصطناعي:</b> العمر المتبقي للماكينات · كشف العيوب بالرؤية · تحليل السبب الجذري · توقعات الطلب والطاقة.<br><b>قرارات واضحة:</b> إجراءات مرتبة حسب القيمة · أوامر عمل تلقائية · محاكاة «ماذا لو» · المساعد الذكي للإنتاج.</p></div>
           <p><b>الغرض.</b> شرح الطبقات الأربع، مع صورة لموصلات صناعية ترمز إلى الربط.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>الجملة المحورية: «نحن لا نستبدل أي ماكينة أو نظام لديكم». فهي تزيل الخوف من المخاطرة. وطريقة مبسطة لشرح الطبقات: الأعصاب (الربط)، والعيون (الرؤية)، والعقل (التنبؤ)، واليدان (التنفيذ).</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 9 · Solution</h3>
+          <h3>Slide 10 · Solution</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>Four layers. One clear picture of the plant.</b></p><p>Nothing is replaced. Digital Factory sits on top of the machines, MES and ERP you already run.</p><p><b>Every signal:</b> PLCs and SMT equipment · AOI, SPI and testers · Energy meters and AGVs · MES, ERP and CMMS.<br><b>Live digital twin:</b> Every line, station and unit · OEE, yield and takt, live · Floor to boardroom · Screens and mobile.<br><b>AI foresight:</b> Remaining machine life · Vision defect detection · Root-cause analysis · Demand and energy forecasts.<br><b>Clear decisions:</b> Actions ranked by value · Automatic work orders · What-if simulation · Production copilot.</p></div>
           <p><b>Purpose.</b> To explain the four layers, with a photo of industrial connectors standing for “connect”.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>The key sentence: “We do not replace any machine or system you have.” This removes the fear of risk. A simple way to explain the layers: nerves (Connect), eyes (See), brain (Predict), hands (Act).</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-10"><div class="bi">
+      <div class="sub" id="d-11"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 10 · العرض الحي</h3>
+          <h3>الشريحة 11 · العرض الحي</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>غرفة التحكم تعمل الآن.</b> [غرفة التحكم | المصنع الحي ثلاثي الأبعاد] [افتح بملء الشاشة]</p></div>
           <p><b>الغرض.</b> أهم لحظة في الاجتماع: غرفة التحكم كاملة داخل الشريحة، تعمل وتستجيب. والتنقل بالأسهم داخلها ينقل الشرائح، والمفتاح P داخلها يثبت لحظة للإحاطة. ويبدّل المفتاح أعلى الشريحة بين غرفة التحكم والمصنع الحي ثلاثي الأبعاد (الفصل 5)، ويفتح زر ملء الشاشة العرض المختار.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>أهم جزء. افتح العرض بملء الشاشة. (1) اعرض غرفة التحكم وفعالية المصنع. (2) افتح السيناريوهات وشغّل «تآكل المحمل في ماكينة التركيب B»، وانتظر الإنذار وقل: «رأى الذكاء الاصطناعي هذا العطل قبل نحو 40 ساعة». (3) دعه يضغط «جدولة الإصلاح» بنفسه. وعندما يظهر «توفير 1.6 مليون جنيه» توقف ثانيتين. (4) افتح شاشة القيادة. (5) افتح المساعد واضغط «لخّص هذه الوردية». (6) انتقل إلى «المصنع الحي ثلاثي الأبعاد»: مصنع تلفزيونات كامل بأرضيته ومكاتبه وأنظمته. اضغط أي تلفزيون لتعرض جوازه، وافتح تبويب SAP وتدفق البيانات، ثم شغّل تمرين الحاوية ودعه يتخذ القرار.</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 10 · Live demo</h3>
+          <h3>Slide 11 · Live demo</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>The command room, running right now.</b> [Command room | Live plant 3D] [Open full screen]</p></div>
           <p><b>Purpose.</b> The most important moment of the meeting: the whole command room inside the slide, running and responding. Arrow keys inside it move the slides; P inside it pins a moment for the briefing. The switch above the slide changes between the command room and the live plant in 3D (Chapter 5); Open full screen opens the one shown.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>The most important part. Open the demo full screen. (1) Show the command room and plant OEE. (2) Open Scenarios and run “Bearing wear on Mounter B”. Wait for the alarm: “The AI saw this failure about 40 hours early.” (3) Let him click “Schedule repair” himself. When “EGP 1.6M saved” appears, pause for two seconds. (4) Open the Leadership view. (5) Open the copilot and click “Summarize this shift”. (6) Switch to “Live plant 3D”: a whole TV plant, floor, offices and systems. Click any TV to show its passport, open the SAP and data flow tab, then run the container drill and let him take the decision.</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-11"><div class="bi">
+      <div class="sub" id="d-12"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 11 · القدرات</h3>
+          <h3>الشريحة 12 · القدرات</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>عشر قدرات تعمل اليوم. ومعظم المصانع لا تملك أيًا منها.</b></p><p>غرفة التحكم: كل خط ووحدة لحظيًا · طاقم الوكلاء: ستة وكلاء واستقلالية تتحكم فيها · من فيضان الإنذارات إلى سبب واحد: عشرات الإنذارات تصبح حادثة واحدة · توقع الوردية: فرصة تحقيق الخطة كل ثانية · سلاسل السبب الجذري: من العَرَض إلى السبب إلى التكلفة · آلة الزمن: إعادة عرض أي دقيقة من الوردية · مختبر السيناريوهات: عشرة تمارين من الواقع على التوأم · حاكِ قبل أن تتصرف: النتيجة قبل أي تغيير · شاشة القيادة: القرارات مرتبة حسب المال المعرّض للخطر · الذكاء الصوتي: يسمع تآكل المحمل قبل أن يظهر.</p></div>
           <p><b>الغرض.</b> تلخيص ما رآه في العرض الحي. وكل سطر رابط يفتح الشاشة المقابلة في نافذة جديدة.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>استعرض ما رآه للتو، نفَسًا واحدًا لكل سطر. وإن لم يتذكر إلا شيئًا واحدًا، فليكن طاقم الوكلاء مع مفتاح الاستقلالية؛ لأنه يضع فريقه في موقع التحكم في مقدار ما يفعله الذكاء الاصطناعي.</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 11 · Capabilities</h3>
+          <h3>Slide 12 · Capabilities</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>Ten capabilities, working today. Most plants have none of them.</b></p><p>Command room: Every line and unit, live · AI agent crew: Six agents, autonomy you control · Alarm flood → one cause: Dozens of alarms become one incident · Shift forecast: Chance to hit plan, every second · Root-cause chains: From symptom to cause to cost · Time machine: Replay any minute of the shift · Scenario lab: Ten real-world drills on the twin · Simulate before you act: See the result before any change · Leadership view: Decisions ranked by money at stake · Acoustic AI: Hears bearing wear before it shows.</p></div>
           <p><b>Purpose.</b> To recap what was seen in the demo. Each row is a link that opens the matching screen in a new window.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>Recap of what he just saw, one breath per tile. If he only remembers one: the agent crew with the autonomy dial. It puts his team in control of how much the AI does.</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-12"><div class="bi">
+      <div class="sub" id="d-13"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 12 · الصيانة التنبؤية</h3>
+          <h3>الشريحة 13 · الصيانة التنبؤية</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>نُصلح في موعدنا، لا حين تقرر الماكينة.</b></p><p><b>بدون الذكاء الاصطناعي · تصحيحية:</b> تشغيل ← توقف غير مخطط 4.5 ساعات. يتعطل المحمل في منتصف الوردية، فيتوقف الخط، وتُطلب القطع على عجل، ويلزم عمل إضافي للتعويض.</p><p><b>مع المصنع الرقمي · تنبؤية:</b> تشغيل ← تنبيه الذكاء الاصطناعي ← تشغيل مع حجز القطع ← 25 دقيقة. ينبّه الذكاء الاصطناعي قبل نحو 40 ساعة، فيدخل الإصلاح في تغيير الوردية، ويُحمى الإنتاج.</p><p>قياس الاهتزاز والحرارة وتيار المحرك على <b>كل ماكينة حرجة</b> · يتعلم الذكاء الاصطناعي السلوك الطبيعي لكل ماكينة ويتوقع <b>عمرها التشغيلي المتبقي</b> · يُرتَّب أمر العمل وقطعة الغيار والفني تلقائيًا · النتائج المنشورة: <b>خفض التوقف غير المخطط 30% إلى 50%</b> وإطالة عمر الماكينات 20% إلى 40%.</p><p>المصدر: أبحاث ماكنزي آند كومباني عن الصيانة التنبؤية، وتختلف النتائج باختلاف نقطة البداية.</p></div>
           <p><b>الغرض.</b> شريطان مرسومان بمقياس الوقت يقارنان الوردية مع العطل وبدونه.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>اربط هذه الشريحة بما رآه للتو في العرض الحي. واسأل: «كم ساعة من التوقف غير المخطط تشهدها خطوط التركيب السطحي لديكم شهريًا؟» واحفظ الرقم، فستُدخله في دراسة الجدوى بعد شرائح قليلة.</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 12 · Predictive maintenance</h3>
+          <h3>Slide 13 · Predictive maintenance</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>Repair on our schedule, not when the machine decides.</b></p><p><b>Without AI · reactive:</b> Running → 4.5 h unplanned stop. The bearing fails mid-shift. The line stops, parts are rushed in, and overtime is needed to recover.</p><p><b>With Digital Factory · predictive:</b> Running → AI alert → Running · parts reserved → 25 min. The AI warns about 40 hours ahead. The repair fits into the shift change. Output is protected.</p><p>Vibration, temperature and motor current on <b>every critical machine</b> · AI learns each machine's normal behaviour and forecasts its <b>remaining useful life</b> · The work order, spare part and technician are arranged automatically · Published results: <b>30–50% less unplanned downtime</b> and 20–40% longer machine life.</p><p>Source: McKinsey &amp; Company research on predictive maintenance. Results vary with the starting point.</p></div>
           <p><b>Purpose.</b> Two bars drawn to time scale compare the shift with and without the breakdown.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>Link this to what he just saw in the demo. Ask: “How many hours of unplanned downtime do your SMT lines have per month?” Remember the number; you will type it into the business case in a few slides.</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-13"><div class="bi">
+      <div class="sub" id="d-14"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 13 · الرؤية بالذكاء الاصطناعي</h3>
+          <h3>الشريحة 14 · الرؤية بالذكاء الاصطناعي</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>كل لوحة. وكل مكوّن. وفي كل مرة.</b></p><p><b>100% تغطية الفحص:</b> نماذج التعلم العميق تفحص كل وحدة بسرعة الخط، بلا عينات ولا إرهاق ولا تراجع في الوردية الليلية. · <b>نحو 12 مللي ثانية لكل قرار:</b> الجسور اللحامية، والمكونات المفقودة، و«شاهد القبر»، وعدم المحاذاة، والخدوش، ولكل منها درجة ثقة. · <b>السبب الجذري، لا الاكتشاف فقط:</b> تُربط العيوب ببيانات العملية، مثل «الجسور تضاعفت 4 مرات لأن ضغط الطابعة انحرف»، وتُعالج من مصدرها.</p><p>يعمل <b>إلى جانب الفحص البصري القائم</b> لخفض الرفض الكاذب، فلا يراجع المشغلون إلا ما يستحق · وتشير الدراسات المنشورة إلى تحسن كشف العيوب بالرؤية <b>بنسبة تصل إلى 90%</b> مقارنة بالفحص اليدوي.</p></div>
           <p><b>الغرض.</b> ثلاثة أرقام كبيرة عن الجودة، مع رسالة أن المنظومة لا تستبدل معدات الفحص.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>النقطة الأساسية: لا نستبدل ماكينات الفحص البصري لديهم، بل نخفض الرفض الكاذب ونجد السبب الجذري. وقل: «نحن لا نكتشف العيب فقط، بل نجد مصدره ونوقفه».</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 13 · AI vision</h3>
+          <h3>Slide 14 · AI vision</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>Every board. Every component. Every time.</b></p><p><b>100% Inspection coverage:</b> Deep-learning models inspect every unit at line speed. No sampling, no fatigue, no night-shift dip. · <b>≈ 12 ms Per decision:</b> Solder bridges, missing parts, tombstones, misalignment and scratches, each with a confidence score. · <b>Root cause, not just detection:</b> Defects are linked to process data, for example “bridges up 4×, printer pressure drifted”, and fixed at the source.</p><p>Works <b>alongside existing AOI</b> to cut false calls, so operators review only what matters · Published studies report AI visual inspection improving defect detection <b>by up to 90%</b> compared with manual inspection.</p></div>
           <p><b>Purpose.</b> Three large quality figures, with the message that the system does not replace the inspection equipment.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>Key point: we do not replace their AOI machines. We reduce false calls and find the root cause. Say: “We do not only catch the defect. We find where it came from and stop it.”</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-14"><div class="bi">
+      <div class="sub" id="d-15"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 14 · القرارات</h3>
+          <h3>الشريحة 15 · القرارات</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>مساعد ذكي لكل مدير. وتوأم رقمي لكل قرار.</b></p><p><b>المساعد الذكي للإنتاج:</b> اسأل بلغة عادية، فتأتي الإجابات من بيانات المصنع الحية مع مصادرها. «لماذا تباطأ الخط 1؟» · «ما الذي يجب أن نصلحه أولًا هذا الأسبوع؟» · «لخّص هذه الوردية».</p><p><b>محاكاة «ماذا لو»:</b> اختبر الخطة على التوأم قبل الالتزام بالأفراد أو العمل الإضافي أو رأس المال. ذروة موسمية +35%: أي خط ينهار أولًا؟ · وردية ثالثة للمصنع كله أم لعنق الزجاجة فقط؟ · إيقاع أسرع: ماذا يحدث للعائد؟</p><p>النتيجة: <b>اجتماعات صباحية تتخذ القرارات، بدلًا من اجتماعات تجمع الأرقام.</b></p></div>
           <p><b>الغرض.</b> الانتقال من المهندسين إلى المدير نفسه: الأسئلة التي يطرحها هو.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>هذه الشريحة عن المدير نفسه، لا عن المهندسين فقط. وإن كان ذلك مفيدًا، افتح «ماذا لو» في العرض الحي واعرض «ذروة موسمية +35%»: تسمّي المنظومة خط عنق الزجاجة وتقترح وردية ثالثة على هذا الخط وحده بدلًا من المصنع كله.</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 14 · Decisions</h3>
+          <h3>Slide 15 · Decisions</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>A copilot for every manager. A twin for every decision.</b></p><p><b>Production copilot:</b> Ask in plain language. Answers come from live plant data, with their sources. “Why did Line 1 slow down?” · “What should we fix first this week?” · “Summarize this shift.”</p><p><b>What-if simulation:</b> Test a plan on the twin before committing people, overtime or capital. Seasonal peak +35%: which line breaks first? · A third shift for the whole plant, or only the bottleneck? · A faster takt: what happens to yield?</p><p>The result: <b>morning meetings that make decisions, instead of meetings that collect numbers.</b></p></div>
           <p><b>Purpose.</b> To move from the engineers to the manager: the questions he or she asks.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>This is about the manager himself, not only the engineers. If useful, open What-If in the demo and show “Seasonal peak +35%”: the system names the bottleneck line and suggests a third shift on that line only, instead of the whole plant.</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-15"><div class="bi">
+      <div class="sub" id="d-16"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 15 · البنية التقنية</h3>
+          <h3>الشريحة 16 · البنية التقنية</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>معايير مفتوحة. وجودة صناعية. وبياناتكم تبقى داخل المصنع.</b></p><p><b>التطبيقات:</b> غرفة التحكم · لوحة القيادة · تطبيق المشرفين على الهاتف · المساعد الذكي.<br><b>الذكاء الاصطناعي والتوأم:</b> محرك التوأم الرقمي · نماذج الشذوذ والعمر المتبقي · نماذج الرؤية على معالجات رسوميات طرفية · المحاكاة بالأحداث المتقطعة.<br><b>منصة البيانات:</b> تدفق الأحداث · قاعدة السلاسل الزمنية · فضاء الأسماء الموحد · نموذج الأصول ISA-95.<br><b>الحافة:</b> OPC UA · MQTT · IPC-CFX وSECS/GEM · حساسات التحديث اللاحق · الحوسبة الطرفية.<br><b>أرض المصنع:</b> وحدات التحكم · ماكينات التركيب والطابعات وأفران اللحام · الفحص البصري وفحص المعجون والاختبار داخل الدائرة والاختبار الوظيفي · عدادات الطاقة · المركبات الموجهة · أنظمة التنفيذ وSAP والصيانة.</p><p><b>الأمن مدمج في التصميم:</b> تركيب محلي أو هجين حسب اختياركم · فصل شبكتي التقنيات التشغيلية وتقنية المعلومات · الوصول للقراءة فقط أولًا · ممارسات IEC 62443 · صلاحيات حسب الدور وسجل تدقيق كامل · لا تغادر أي بيانات المصنع دون موافقة.<br><b>يتكامل مع:</b> أنظمة التنفيذ وSAP القائمة · الأنظمة المؤسسية العالمية · موردي الفحص والاختبار الحاليين.</p></div>
           <p><b>الغرض.</b> طمأنة فرق تقنية المعلومات والأمن، وعرض الطبقات كقطاع رأسي تقع أرض المصنع في قاعدته.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>لا تدخل في التفاصيل التقنية إلا إذا طُلب منك. الجملة المهمة: «بياناتكم لا تغادر المصنع أبدًا، وفي المرحلة الأولى نقرأ البيانات فقط، ولا نتحكم في أي ماكينة». فهذه الجملة تطمئن فريقي تقنية المعلومات والأمن.</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 15 · Architecture</h3>
+          <h3>Slide 16 · Architecture</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>Open standards. Industrial grade. Your data stays in the plant.</b></p><p><b>Applications:</b> Command room · Leadership dashboard · Supervisor mobile app · Production copilot.<br><b>AI and twin:</b> Digital twin engine · Anomaly and remaining-life models · Vision models on edge GPUs · Discrete-event simulation.<br><b>Data platform:</b> Event streaming · Time-series store · Unified namespace · ISA-95 asset model.<br><b>Edge:</b> OPC UA · MQTT · IPC-CFX and SECS/GEM · Retrofit sensors · Edge compute.<br><b>Shop floor:</b> PLCs · Mounters, printers, reflow · AOI, SPI, ICT, FCT · Energy meters · AGVs · MES, SAP, CMMS.</p><p><b>Security by design:</b> On-premise or hybrid, your choice · OT and IT networks kept separate · Read-only access first · IEC 62443 practices · Role-based access and full audit trail · No data leaves the plant without approval.<br><b>Integrates with:</b> Existing MES and SAP · Global corporate systems · Current AOI and test vendors.</p></div>
           <p><b>Purpose.</b> To reassure IT and security, showing the layers as a section with the shop floor at its base.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>Do not go into technical detail unless asked. The sentence that matters: “Your data never leaves the plant, and in the first phase we only read data. We never control a machine.” This reassures IT and security.</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-16"><div class="bi">
+      <div class="sub" id="d-17"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 16 · دراسة الجدوى</h3>
+          <h3>الشريحة 17 · دراسة الجدوى</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>ما قيمته لمصنعكم؟</b></p><p>المدخلات: عدد خطوط الإنتاج المشمولة · ساعات التوقف غير المخطط لكل خط شهريًا · تكلفة ساعة توقف الخط (بالجنيه) · تكلفة الهالك وإعادة التشغيل شهريًا · فاتورة الطاقة شهريًا · قيمة الاستثمار في البرنامج.</p><p>النتائج: خفض التوقف (30%) · خفض الهالك وإعادة التشغيل (20%) · وفر الطاقة (8%) · فترة الاسترداد · <b>القيمة السنوية المقدرة</b>، ونحو ثلاثة أضعافها على ثلاث سنوات، بافتراضات متحفظة عند الحد الأدنى للنطاقات المنشورة.</p></div>
           <p><b>الغرض.</b> حاسبة حية تتغير نتائجها فور تعديل أي رقم. ويشرح الفصل العاشر طريقة الحساب.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>أقوى لحظة في الاجتماع. اطلب منه أرقامه هو (ساعات التوقف، وتكلفة الساعة، والهالك، وفاتورة الطاقة)، وأدخلها أمامه، فتتحدث النتيجة فورًا. وحين تأتي القيمة السنوية من أرقامه، يصبح الاستنتاج استنتاجه هو لا استنتاجنا. والافتراضات متحفظة عمدًا عند الحد الأدنى للنطاقات المنشورة.</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 16 · Business case</h3>
+          <h3>Slide 17 · Business case</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>What is it worth to your plant?</b></p><p>Inputs: Production lines in scope · Unplanned downtime, hours per line per month · Cost of one hour of line downtime (EGP) · Scrap and rework cost per month (EGP) · Energy bill per month (EGP) · Programme investment (EGP).</p><p>Results: Less downtime (30%) · Less scrap and rework (20%) · Energy savings (8%) · Payback · <b>Estimated annual value</b>, and about three times that over three years, with conservative assumptions at the low end of published ranges.</p></div>
           <p><b>Purpose.</b> A live calculator whose results change as soon as any number changes. Chapter 11 explains the arithmetic.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>The strongest moment of the meeting. Ask him for his own numbers (downtime hours, cost per hour, scrap, energy bill) and type them in front of him. The result updates instantly. When the annual value comes from his numbers, the conclusion is his, not ours. The assumptions are deliberately conservative, at the low end of published ranges.</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-17"><div class="bi">
+      <div class="sub" id="d-18"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 17 · الخطة</h3>
+          <h3>الشريحة 18 · الخطة</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>خط واحد. واثنا عشر أسبوعًا. وإثبات على أرض مصنعكم.</b></p><p><b>الربط (الأسبوعان 1–2):</b> جولة ميدانية، واختيار خط التركيب السطحي التجريبي، والاتصال بالماكينات ونظام التنفيذ للقراءة فقط، والاتفاق على خط الأساس. · <b>الرؤية (الأسابيع 3–6):</b> توأم حي للخط التجريبي، والفعالية والعائد والطاقة على الشاشات والهواتف. · <b>التنبؤ (الأسابيع 7–10):</b> الصيانة التنبؤية للماكينات الحرجة، والرؤية على الفحص البصري، والمساعد لفريق الخط. · <b>الإثبات (الأسبوعان 11–12):</b> قياس النتائج مقارنة بخط الأساس واعتمادها من فريقكم، مع خطة للتوسع. · <b>التوسع (الأشهر 4–12):</b> جميع الخطوط، والطاقة، والمخزن، والمركبات، نحو مصنع بمستوى المنارات.</p><p>أهداف التجربة: −30% التوقف غير المخطط · +5 نقاط في الفعالية على الخط التجريبي · −20% الهالك وإعادة التشغيل · 0 ساعة أثر على الإنتاج، فلا حاجة إلى أي توقف للتركيب.</p></div>
           <p><b>الغرض.</b> الخطة مرسومة كشريط تتناسب أجزاؤه الأربعة الأولى مع الأسابيع الفعلية، والتوسع بعدها كجزء مفتوح.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>رسالة واحدة: «لا نطلب منكم المراهنة بالمصنع كله. خط واحد، و12 أسبوعًا، وفريقكم يعتمد الأرقام». واذكر أن التركيب لا يوقف الإنتاج ساعة واحدة.</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 17 · Plan</h3>
+          <h3>Slide 18 · Plan</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>One line. Twelve weeks. Proof on your own floor.</b></p><p><b>Connect (weeks 1–2):</b> Site walk, choose the pilot SMT line, read-only connection to machines and MES, agree the baseline. · <b>See (weeks 3–6):</b> Live twin of the pilot line. OEE, yield and energy on screens and mobile. · <b>Predict (weeks 7–10):</b> Predictive maintenance on critical machines, vision AI on AOI, copilot for the line team. · <b>Prove (weeks 11–12):</b> Results measured against the baseline and signed off by your team, with a plan to scale. · <b>Scale (months 4–12):</b> All lines, energy, warehouse and AGVs, toward a lighthouse-class plant.</p><p>Pilot targets: −30% unplanned downtime · +5 pts OEE on the pilot line · −20% scrap and rework · 0 h production impact, no stop needed to install.</p></div>
           <p><b>Purpose.</b> The plan drawn as a bar whose first four parts follow the real weeks, with Scale after them as an open block.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>One message: “We are not asking you to bet the whole plant. One line, 12 weeks, and your team signs off the numbers.” Mention that installation does not stop production for a single hour.</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-18"><div class="bi">
+      <div class="sub" id="d-19"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 18 · لماذا نحن</h3>
+          <h3>الشريحة 19 · لماذا نحن</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>لم تروا شرائح. بل رأيتم برنامجًا يعمل.</b></p><p><b>السرعة:</b> نبني بسرعة ونحسّن على أرض مصنعكم، والعرض الذي استخدمتموه للتو يبيّن طريقة عملنا. · <b>فريق متكامل:</b> إنترنت الأشياء الصناعي، وهندسة البيانات، والذكاء الاصطناعي والرؤية الحاسوبية، والمحاكاة، والويب والهاتف. · <b>محليون وفي الموقع:</b> مهندسون مصريون بجوار فريقكم، في منطقتكم الزمنية، من اليوم الأول. · <b>مفتوح وبلا احتكار:</b> معايير مفتوحة، وتبقى بياناتكم ونماذجكم وملكيتكم الفكرية لكم. · <b>الدفع مقابل الإثبات:</b> معايير نجاح التجربة متفق عليها مسبقًا ويقيسها فريقكم. · <b>مصمم للإلكترونيات:</b> التركيب السطحي، والتجميع النهائي، والاختبار والتعبئة؛ فالتوأم يتحدث لغة خطكم من اليوم الأول.</p></div>
           <p><b>الغرض.</b> ستة أسباب بجوار صورة فريق يعمل على لوحة تحكم ماكينة.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>تحدث عن فريقك بثقة، وأضف أمثلة حقيقية إن وجدت (مشروعات سابقة وخبرات الفريق). والجملة المحورية: «ما رأيتموه بُني بسرعة. فتخيلوا ما يمكننا فعله ببيانات حقيقية من خطكم».</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 18 · Why us</h3>
+          <h3>Slide 19 · Why us</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>You did not see slides. You saw working software.</b></p><p><b>Speed:</b> We build fast and improve on your floor. The demo you just used shows how we work. · <b>One complete team:</b> Industrial IoT, data engineering, AI and computer vision, simulation, web and mobile. · <b>Local and on site:</b> Egyptian engineers next to your team, in your time zone, from day one. · <b>Open, no lock-in:</b> Open standards. Your data, your models and your IP stay yours. · <b>Paid for proof:</b> Pilot success criteria agreed up front and measured by your team. · <b>Built for electronics:</b> SMT, final assembly, test and pack. The twin speaks your line's language from day one.</p></div>
           <p><b>Purpose.</b> Six reasons beside a photo of a team working at a machine's control panel.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>Talk about your team with confidence, and add real examples if you have them (past projects, team experience). The key sentence: “What you saw was built quickly. Imagine what we can do with real data from your line.”</p></div>
         </div>
       </div></div>
 
-      <div class="sub" id="d-19"><div class="bi">
+      <div class="sub" id="d-20"><div class="bi">
         <div class="ar" lang="ar" dir="rtl">
-          <h3>الشريحة 19 · القرار</h3>
+          <h3>الشريحة 20 · القرار</h3>
           <div class="quote"><p class="q-h">الترجمة</p><p><b>وافقوا على خط تجريبي واحد. وسنثبت الباقي على أرض مصنعكم.</b></p><p><b>هذا الأسبوع:</b> نختار الخط التجريبي معًا · <b>الأسبوع 2:</b> جولة ميدانية، واتفاقية عدم الإفصاح، والوصول إلى البيانات للقراءة فقط · <b>الأسبوع 3:</b> البدء، والتوأم يعمل خلال 30 يومًا.</p><p>[افتح العرض الحي] [موقع المشروع]</p></div>
           <p><b>الغرض.</b> طلب محدد على المساحة الزرقاء، مع الخطوات الثلاث التالية.</p>
           <div class="quote"><p class="q-h">ملاحظات المتحدث</p><p>اختم بطلب واضح ومحدد، لا بعبارة «لنبقَ على تواصل». قل: «أحتاج منكم أمرًا واحدًا: أن نختار الخط التجريبي معًا، وأن نحدد موعدًا لزيارة ميدانية الأسبوع القادم». ثم توقف عن الكلام وانتظر الإجابة.</p></div>
         </div>
         <div class="en" lang="en" dir="ltr">
-          <h3>Slide 19 · The decision</h3>
+          <h3>Slide 20 · The decision</h3>
           <div class="quote"><p class="q-h">Original</p><p><b>Approve one pilot line. We will prove the rest on your floor.</b></p><p><b>This week:</b> Choose the pilot line together · <b>Week 2:</b> Site walk, NDA and read-only data access · <b>Week 3:</b> Kick-off. The twin is live within 30 days.</p><p>[Open the live demo] [Project website]</p></div>
           <p><b>Purpose.</b> A specific ask on the blue field, with the next three steps.</p>
           <div class="quote"><p class="q-h">Speaker notes</p><p>Close with a clear, specific request, not “let's stay in touch”. Say: “I need one thing from you: let's choose the pilot line together and set a date for a site visit next week.” Then stop talking and wait for his answer.</p></div>

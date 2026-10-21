@@ -318,3 +318,26 @@ body[data-tone="ink"] { background: #0F1115; }
 .bp-acts { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
 .bp-acts .btn { min-height: 44px; }
 .bp-note { font-size: 13.5px; color: var(--text-3); margin-top: 14px; }
+
+/* time-window review (assets/js/review.js) */
+.bp-mode label { padding: 0 10px; font-size: 14px; white-space: nowrap; }
+.bp-src { font-size: 14px; line-height: 1.5; color: var(--text-2); margin-top: 10px; }
+.bp-prog { margin-top: 14px; }
+.bp-prog i { display: block; height: 6px; width: 0; border-radius: 3px; background: var(--brand-2); transition: width .3s; }
+.bp-prog span { display: block; font-size: 13.5px; color: var(--text-2); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.bp-found { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.bp-found > span { width: 100%; font-size: 14px; font-weight: 600; color: var(--text-2); }
+.bp-found .chip-btn { min-height: 40px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); font: inherit; font-size: 13.5px; font-weight: 600; text-align: left; cursor: pointer; font-variant-numeric: tabular-nums; }
+.bp-found .chip-btn:hover { background: var(--brand-soft); color: var(--brand-text); }
+.bp-times { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.bp-times label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600; color: var(--text-2); }
+.bp-times input { height: 44px; font-size: 15px; font-variant-numeric: tabular-nums; }
+.bp-then { flex-wrap: wrap; }
+.bp-step { display: flex; gap: 6px; }
+.bp-step .btn { min-height: 40px; padding: 0 10px; }
+.bcmp { width: 100%; border-collapse: collapse; margin-top: 16px; font-variant-numeric: tabular-nums; }
+.bcmp th, .bcmp td { padding: 10px 0; text-align: right; font-size: 17px; border-bottom: 1px solid var(--border); }
+.bcmp th[scope="row"] { text-align: left; font-weight: 600; color: var(--text-2); font-size: 15.5px; }
+.bcmp th[scope="col"] { font-size: 14px; color: var(--text-2); font-weight: 650; }
+.bcmp td:last-child { font-weight: 750; }
+.brief-lines:has(.bl:nth-child(6)) { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0 24px; }

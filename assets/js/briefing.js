@@ -63,8 +63,11 @@
 
   const LSTATE = { run: ['Running', 'ok'], attn: ['Attention', 'warn'], down: ['Interrupted', 'bad'] };
   function render() {
+    // a time window is written by the review (assets/js/review.js)
+    if (mode === 'window') { if (window.Review) Review.render(); return; }
+    if (window.Review) Review.restore();
     const c = current();
-    $$('.brief').forEach(sl => { sl.querySelector('[data-b-empty]').hidden = !!c; sl.querySelector('[data-b-full]').hidden = !c; });
+    $$('.brief').forEach(sl => { const on = !!c && sl.dataset.id !== 'briefing-after'; sl.querySelector('[data-b-empty]').hidden = on; sl.querySelector('[data-b-full]').hidden = !on; });
     if (!c) return;
     const s = c.snap, n = narrate(s), set = (k, v, html) => $$(`[data-b="${k}"]`).forEach(el => { html ? (el.innerHTML = v) : (el.textContent = v); });
     set('stamp', stampOf(c));
@@ -91,6 +94,7 @@
     if (notes[1]) notes[1].textContent = `${n.ask} ${n.rec}`;
     if (window.Deck && /^briefing/.test(Deck.current())) Deck.refresh();
   }
+  // the third briefing slide belongs to the time-window review; in the other modes it keeps its explanation
 
   /* ---------- the panel ---------- */
   const panel = $('#bpanel'), btn = $('#briefBtn');
@@ -105,6 +109,8 @@
       ring.map((m, k) => `<option value="${k}">${m.clock} · OEE ${pct(m.oee)} · ${m.decisions.length} decision${m.decisions.length === 1 ? '' : 's'}${m.incidents.length ? ' · incident' : ''}</option>`).join('');
     sel.disabled = !ring.length;
     $$('input[name="bpMode"]').forEach(r => { r.checked = r.value === mode; });
+    $('#bpMoment').hidden = mode === 'window'; $('#bpWindow').hidden = mode !== 'window';
+    if (mode === 'window' && window.Review) Review.fill();
   }
   function open(v) {
     const o = v === undefined ? panel.hidden : v;
@@ -152,8 +158,8 @@
     if (!panel.hidden && Object.values(KEYS).includes(e.key)) fill();
   });
   // the embedded demo shares this tab, so storage events do not fire for it: poll while live
-  setInterval(() => { if (mode === 'live') render(); if (!panel.hidden) fill(); }, 3000);
+  setInterval(() => { if (mode === 'live') render(); if (!panel.hidden && mode !== 'window') fill(); }, 3000);
 
-  window.Brief = { toggle: () => open(), render, narrate };
+  window.Brief = { toggle: () => open(), open, render, narrate, setMode, mode: () => mode };
   render();
 })();
