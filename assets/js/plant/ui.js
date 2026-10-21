@@ -5,7 +5,7 @@
   'use strict';
   const $ = s => document.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-  const { esc, icon, fmt, pct, STATE, SCLS, chip, link, bar, refFromFocus, recCards } = PlantViews.H;
+  const { esc, icon, fmt, pct, STATE, SCLS, chip, link, bar, refFromFocus, recCards, spark } = PlantViews.H;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const narrow = matchMedia('(max-width: 900px)').matches;
 
@@ -18,22 +18,13 @@
   const egp = X.egp;
   let V = null;
   try { V = PlantScene.create($('#gl'), E, X, { lowPower: narrow }); } catch (err) { V = null; }
-  const views = PlantViews.create($('#view2d'), E, X, { select: (r, o) => select(r, o) });
+  const AG = PlantAgents.create(E, X);
+  PlantViews.H.AG = AG;
+  const views = PlantViews.create($('#view2d'), E, X, { select: (r, o) => select(r, o), choose: (c, o) => choose(c, o) });
 
   const KINDN = { loader: 'Magazine loader', unloader: 'Magazine unloader', printer: 'Solder paste printer', spi: 'Solder paste inspection', mounter: 'Pick-and-place mounter', reflow: 'Reflow oven, 8 zones', aoi: 'Automated optical inspection', writer: 'Software download (firmware writer)', ict: 'In-circuit and function test', lcmload: 'Open-cell loading robot', blu: 'Backlight assembly (manual)', bond: 'Module bonding', lighting: 'Lighting test', robot: 'Robot cell', bench: 'Manual workstation', fct: 'Function test', aging: 'Aging rack, 20 minutes powered', wb: 'White-balance camera', qa: 'Final QA booth', packer: 'Packing station', palletizer: 'Palletizing robot', injection: 'Injection moulding machine', press: 'Stamping press', oven: 'Powder-coating oven', subassy: 'Chassis sub-assembly (manual)', cushion: 'EPS cushion moulding', repair: 'Repair bench' };
 
   /* ---------------- small charts and toasts ---------------- */
-  function spark(arr, o = {}) {
-    if (!arr || arr.length < 2) return '';
-    const w = 280, h = o.h || 46, a = arr.slice(-90);
-    let lo = Math.min(...a), hi = Math.max(...a);
-    if (o.lo !== undefined) lo = Math.min(lo, o.lo); if (o.hi !== undefined) hi = Math.max(hi, o.hi);
-    if (hi - lo < 1e-6) { hi += 1; lo -= 1; }
-    const Xp = i => (i / (a.length - 1)) * w, Y = v => h - 3 - ((v - lo) / (hi - lo)) * (h - 6);
-    const d = a.map((v, i) => `${i ? 'L' : 'M'}${Xp(i).toFixed(1)} ${Y(v).toFixed(1)}`).join('');
-    const lim = o.limit !== undefined ? `<line x1="0" x2="${w}" y1="${Y(o.limit).toFixed(1)}" y2="${Y(o.limit).toFixed(1)}" class="lim"/>` : '';
-    return `<svg class="spark ${o.cls || ''}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">${lim}<path d="${d}"/></svg>`;
-  }
   function toast(msg, level) {
     const type = level === 'error' || level === 'crit' ? 'error' : level === 'warning' || level === 'warn' ? 'warning' : level === 'info' ? 'info' : 'success';
     const root = $('#toast-root'), node = document.createElement('div');
@@ -73,6 +64,14 @@
     if (b.dataset.act) { act(b.dataset.act); return; }
     if (b.dataset.dismiss) { E.dismiss(b.dataset.dismiss); views.render(true); }
   });
+  // a person picks one of the options the agents simulated
+  function choose(c, o) {
+    if (o.id) E.apply(o.id, 'You');
+    else E.dismiss(c.key);
+    E.audit('You', o === c.best ? 'Approved the agents\' recommendation' : 'Overrode the agents', `${o.label} (forecast ${fmt(o.f.packed)} TVs in ${c.h / 60} h, ${o.f.late} late)`);
+    toast(o === c.best ? `Approved: ${o.label}` : `Your call: ${o.label}. The agents logged it and re-plan around it.`, 'success');
+    views.render(true); render(true);
+  }
   function act(id) {
     E.apply(id);
     if (id.startsWith('erp:sop:')) toast('Plan approved. The master schedule is in SAP PP and MRP has run.', 'success');
@@ -772,5 +771,5 @@
   requestAnimationFrame(frame);
   fromHash();
   addEventListener('hashchange', fromHash);
-  window.Plant = { E, X, V, select, setMode };   // for the console and the presentation
+  window.Plant = { E, X, V, AG, select, setMode };   // for the console and the presentation
 })();
