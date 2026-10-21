@@ -101,9 +101,19 @@
       </div>
 
       <div class="pl-drill">
+        <div class="seg pl-nav3d" role="group" aria-label="Ways to see the plant">
+          <button type="button" data-nav="walk" aria-pressed="false" title="Walk the floor at eye height"><span data-icon="user"></span><span class="hide-md">Walk</span></button>
+          <button type="button" data-nav="cine" aria-pressed="false" title="Fly through the plant"><span data-icon="sparkles"></span><span class="hide-md">Fly-through</span></button>
+          <button type="button" data-nav="cctv" aria-pressed="false" title="Camera feeds"><span data-icon="eye"></span><span class="hide-md">Cameras</span></button>
+          <button type="button" data-nav="xray" aria-pressed="false" title="See inside the machines"><span data-icon="layers"></span><span class="hide-md">X-ray</span></button>
+        </div>
         <button type="button" class="btn btn-primary btn-sm" id="drillBtn" aria-expanded="false" aria-controls="drills"><span data-icon="wand"></span>Run a drill</button>
         <div class="pl-menu" id="drills" hidden></div>
       </div>
+      <canvas class="pl-mini" id="minimap" width="264" height="168" aria-label="Plant map. Select a point to go there."></canvas>
+      <div class="pl-cctv" id="cctvLabels" aria-hidden="true"></div>
+      <p class="pl-walkhint" id="walkHint" hidden></p>
+      <div class="pl-joy" id="joy" hidden aria-hidden="true"><i></i></div>
     </div>
     <div class="pl-2d" id="view2d" role="tabpanel" tabindex="-1" hidden></div>
 
