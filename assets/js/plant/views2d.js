@@ -461,9 +461,11 @@
       if (m === 'sap' && !state.sapSvg) state.sapSvg = sapDiagram();
       const html = m === 'gmes' ? gmes() : m === 'sap' ? sap() : m === 'sop' ? sop() : m === 'mrp' ? mrp() : m === 'depts' ? depts() : decisions();
       if (m === 'sap') {
-        // keep the diagram node (its packets animate every frame); replace the rest
+        // keep the diagram node (its packets animate every frame); replace the rest, and keep keyboard focus where it was
+        const fa = document.activeElement && root.contains(document.activeElement) ? document.activeElement : null, fk = fa ? fa.dataset.ref || fa.dataset.key || fa.dataset.mode : null;
         if (!root.querySelector('svg.flow') || force) { root.innerHTML = html; last = ''; }
         else { const keep = root.querySelector('.flowwrap'); const tmp = document.createElement('div'); tmp.innerHTML = html; tmp.querySelector('.flowwrap').replaceWith(keep); root.replaceChildren(...tmp.childNodes); }
+        if (fk && !root.contains(fa)) { const q = CSS.escape(fk), el = root.querySelector(`[data-ref="${q}"], [data-key="${q}"], [data-mode="${q}"]`); if (el) el.focus(); }
         sapCounts(); last = root.innerHTML;
       } else if (html !== last || force) {
         const focusKey = document.activeElement && root.contains(document.activeElement) ? (document.activeElement.dataset.key || document.activeElement.dataset.ref || document.activeElement.dataset.act || document.activeElement.dataset.mrp || document.activeElement.dataset.scen) : null;

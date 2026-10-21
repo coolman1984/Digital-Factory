@@ -523,6 +523,8 @@
       E.rec('erp.' + key, Object.assign({ agent: o.agent || 'Planning' }, o));
     }
     function drill(id) {
+      // a drill can run again: the decision it raises is fresh each time
+      if (id === 'container') X.ocFixed = false; else if (id === 'carton') X.ctnFixed = false; else if (id === 'field') X.fieldFixed = false;
       if (id === 'container') {
         const until = P.t + 5 * 86400;
         X.block['OC-65'] = { until, reason: 'Container held at port · customs inspection', status: 'Held at port', noNew: true };

@@ -306,7 +306,11 @@
       const tr = trend(kw, 60); const peak = avg + (tr ? Math.max(0, tr.slope) * 180 : 0);
       A.energy = { avg, peak };
       const shaving = P.shave && P.t < P.shave.until;
-      if (!shaving && peak > 3960) E.rec('agent.energy', { agent: 'Energy', level: peak > 4040 ? 'crit' : 'warn', ref: 'UTIL-CH2', title: `Demand peak forecast ${num(peak)} kW against the 4,000 kW contract`, body: 'Shave the peak with utilities only; takt does not change.', actions: [{ id: 'agent:shave', label: 'Shave the peak' }, { id: 'focus:UTIL-CH2', label: 'Show chillers' }] });
+      // only a real rise counts: a clear upward trend, or an average already close to the contract; and not again
+      // within 30 minutes of the last shave unless the average itself is at the limit
+      const real = (tr && tr.r2 > 0.3 && tr.slope > 0) || avg > 3900;
+      const rested = !P.shave || P.t - P.shave.until > 1800 || avg > 3950;
+      if (!shaving && real && rested && peak > 3960) E.rec('agent.energy', { agent: 'Energy', level: peak > 4040 ? 'crit' : 'warn', ref: 'UTIL-CH2', title: `Demand peak forecast ${num(peak)} kW against the 4,000 kW contract`, body: 'Shave the peak with utilities only; takt does not change.', actions: [{ id: 'agent:shave', label: 'Shave the peak' }, { id: 'focus:UTIL-CH2', label: 'Show chillers' }] });
       else E.rec('agent.energy', null);
       // scheduling: orders at risk in the next two hours
       const base = forecast();
@@ -404,7 +408,7 @@
         P.shave = { until: P.t + 1800, assets: { 'UTIL-AIR3': 0.1, 'UTIL-CH2': 0.6, 'UTIL-BLR': 0.85 } };
         E.audit(who, 'Peak shaved', 'Compressor 3 staged off, chiller 2 setpoint +2 °C, boiler low fire for 30 min');
         say('energy', 'Peak shaving on for 30 minutes: about 190 kW off the demand without touching takt.', 'info', 'UTIL-CH2');
-        E.rec('agent.energy', null); P.saved += 34000;
+        E.rec('agent.energy', null); P.saved += Math.round(Math.max(0, Math.min(190, A.energy.peak - 3810)) * 180);   // the demand charge actually avoided
       }
     });
     // a drill makes the crew re-forecast at once

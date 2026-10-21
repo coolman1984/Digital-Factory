@@ -110,15 +110,15 @@
   const insp = $('#inspBody');
   let lastHtml = '', pressing = false;
   insp.addEventListener('pointerdown', () => { pressing = true; });
-  addEventListener('pointerup', () => { if (pressing) { pressing = false; setTimeout(() => render(), 30); } });
+  for (const ev of ['pointerup', 'pointercancel']) addEventListener(ev, () => { if (pressing) { pressing = false; setTimeout(() => render(), 30); } });
   function render(force) {
     if (pressing && !force) return;
     const html = sel ? detail(sel) : kpiView ? kpiPanel(kpiView) : plantNow();
     if (html === lastHtml && !force) return;
-    const focusKey = document.activeElement && insp.contains(document.activeElement) ? document.activeElement.dataset.key : null;
+    const fa = document.activeElement && insp.contains(document.activeElement) ? document.activeElement : null, focusKey = fa ? fa.dataset.key || fa.dataset.ref || fa.dataset.act || fa.dataset.veto : null;
     insp.innerHTML = html; lastHtml = html;
     if (window.Theme) Theme.icons(insp);
-    if (focusKey) { const el = insp.querySelector(`[data-key="${CSS.escape(focusKey)}"]`); if (el) el.focus(); }
+    if (focusKey) { const q = CSS.escape(focusKey), el = insp.querySelector(`[data-key="${q}"], [data-ref="${q}"], [data-act="${q}"], [data-veto="${q}"]`); if (el) el.focus(); }
   }
   insp.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
@@ -130,8 +130,9 @@
     if (b.dataset.follow !== undefined && V) { if (mode !== '3d') setMode('3d'); V.setFollow(!V.follow); if (V.follow && sel) V.select(sel, { follow: true }); render(true); return; }
     if (b.dataset.show3d !== undefined && V && sel) { setMode('3d'); V.select(sel, { fly: true }); return; }
     if (b.dataset.kpi) return select('kpi:' + b.dataset.kpi);
+    if (b.dataset.veto) { AG.veto(b.dataset.veto); render(true); views.render(true); return; }
     if (b.dataset.hmi && sel && sel.startsWith('st:')) { const s = P.byId[sel.slice(3)]; hmiPending = { st: s.id, cmd: b.dataset.hmi, f: hmiForecast(s, b.dataset.hmi) }; render(true); const g = insp.querySelector('[data-hmigo]'); if (g) g.closest('.hmi-pre').scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); return; }
-    if (b.dataset.hmigo && hmiPending) { const p = hmiPending; hmiPending = null; E.hmi(p.st, p.cmd); toast(`${HMI[p.cmd]}: ${P.byId[p.st].name}`, 'success'); render(true); views.render(true); return; }
+    if (b.dataset.hmigo && hmiPending) { if (replay) replayStop(); const p = hmiPending; hmiPending = null; E.hmi(p.st, p.cmd); toast(`${HMI[p.cmd]}: ${P.byId[p.st].name}`, 'success'); render(true); views.render(true); return; }
     if (b.dataset.hmix !== undefined) { hmiPending = null; render(true); return; }
   });
 
@@ -239,7 +240,7 @@
     const L = line(s.line), S = s.sens || {}, hold = (P.scen.shortshot && P.scen.shortshot.st === s.id && !P.scen.shortshot.fixed);
     const c = [];
     if (cmd === 'start') c.push(['No lockout on the machine', !s.loto], ['No fault waiting for repair', s.state !== 'down'], ['No quality hold on its output', !hold], ['Line supply on (no trip)', !(L && L.tripped)]);
-    if (cmd === 'loto') c.push(['Machine stopped from the HMI', !!s.hold], ['No unit left inside (drain it first)', !(s.procs && s.procs.length)], ['Isolation points: main breaker, air valve', true], ['Permit to work by the area supervisor', true]);
+    if (cmd === 'loto') c.push(['Machine stopped from the HMI', !!s.hold], [s.batchOut || s.kind === 'aging' ? 'Batch inside held in the machine' : 'No unit left inside (it finishes first)', !!(s.batchOut || s.kind === 'aging') || !(s.procs && s.procs.length)], ['Isolation points: main breaker, air valve', true], ['Permit to work by the area supervisor', true]);
     if (cmd === 'unloto') c.push(['Technician out of the guarded area', !(s.tech && s.tech.state === 'repairing')], ['Guards closed and interlocked', true], ['Lock removed by the person who applied it', true]);
     if (cmd === 'faster') c.push(['Health above 70%', s.health > 70], ['Vibration below 3 mm/s', !(S.vib > 3)], ['Line first-pass quality above 97%', !L || (L.qual || 1) > 0.97], ['Below 108% of rated speed (the machine maximum)', (s.speedMul || 1) > 0.93]);
     if (cmd === 'stop') c.push(['A stop is always allowed (safety first)', true]);
@@ -659,12 +660,13 @@
   /* ---------------- the time machine: replay machine states, vehicles and readouts of the last 45 minutes ---------------- */
   let replay = null;
   const rBar = $('#replayBar'), rRange = $('#replayRange'), rTime = $('#replayTime'), rBtn = $('#replayBtn'), rPlay = $('#replayPlay');
+  $('.pl-stage').append(rBar);   // over the 3D view and the 2D views alike
   const fleet = () => P.agvs.concat(P.tuggers, P.forklifts);
   function replayStart() {
     if (replay) return;
     if (P.snaps.length < 2) { toast('Nothing to replay yet: the plant keeps a snapshot every 20 seconds.', 'info'); return; }
     replay = { speed: P.speed, paused: P.paused, t: P.t, st: P.stations.map(s => [s.state, s.why, s.since]), veh: fleet().map(v => [v.x, v.z, v.h]), kpi: Object.assign({}, P.kpi), i: P.snaps.length - 1, timer: null };
-    E.setSpeed(0);
+    setSpeed(0);
     rRange.max = String(P.snaps.length - 1); rRange.value = rRange.max;
     rBar.hidden = false; rBtn.setAttribute('aria-pressed', 'true'); document.body.classList.add('replaying');
     replayShow(P.snaps.length - 1);
@@ -918,10 +920,11 @@
   const drills = $('#drills'), drillBtn = $('#drillBtn');
   drills.innerHTML = `<p class="menu-h">Start a real-world drill. Watch the cause travel through the lines, the stores and the offices, and the departments respond.</p>` + E.SCENARIOS.map(s => `<button type="button" class="drill" data-drill="${s.id}"><b>${esc(s.title)}</b><span>${esc(s.what)}</span><small>${esc(s.area)} · ${esc(s.chain)}</small></button>`).join('')
     + `<div class="menu-f"><button type="button" class="btn btn-secondary btn-sm" data-ff="600">Fast-forward 10 min</button><button type="button" class="btn btn-secondary btn-sm" data-ff="1800">30 min</button></div>`;
-  const openMenu = v => { drills.hidden = !v; drillBtn.setAttribute('aria-expanded', String(v)); if (v) drills.querySelector('button').focus(); };
+  const openMenu = v => { const inside = drills.contains(document.activeElement); drills.hidden = !v; drillBtn.setAttribute('aria-expanded', String(v)); if (v) drills.querySelector('button').focus(); else if (inside) drillBtn.focus(); };
   drillBtn.addEventListener('click', () => openMenu(drills.hidden));
   const DRILL_TARGET = { bearing: 'st:SMD4-MounterB', shortshot: 'st:IM10', coating: 'st:PR4-Coating', software: 'st:SMD1-SWdownload', container: 'buf:IMP:OC-65', carton: 'buf:LOC:CTN-55', absent: 'line:ML3', field: 'buf:SVC:PBA-55', power: 'util:UTIL-TX1' };
   function runDrill(id) {
+    if (replay) replayStop();
     E.trigger(id);
     const sc = E.SCENARIOS.find(s => s.id === id);
     if (sc) toast(`Drill started: ${sc.title}`, 'info');
@@ -930,7 +933,7 @@
   drills.addEventListener('click', e => {
     const d = e.target.closest('[data-drill]'), ff = e.target.closest('[data-ff]');
     if (d) { openMenu(false); runDrill(d.dataset.drill); }
-    if (ff) { E.fastForward(+ff.dataset.ff); openMenu(false); toast(`Moved ${+ff.dataset.ff / 60} minutes ahead`, 'info'); render(true); views.render(true); }
+    if (ff) { if (replay) replayStop(); E.fastForward(+ff.dataset.ff); openMenu(false); toast(`Moved ${+ff.dataset.ff / 60} minutes ahead`, 'info'); render(true); views.render(true); }
   });
   document.addEventListener('click', e => { if (!drills.hidden && !e.target.closest('.pl-drill')) openMenu(false); });
 
@@ -980,6 +983,7 @@
   const embed = /[?&]embed=1/.test(location.search) && parent !== window;
   if (embed) document.body.classList.add('embed');
   addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.target.closest('input, textarea')) { if (e.key === 'Escape') e.target.blur(); return; }
     if (embed && ['ArrowRight', 'ArrowLeft', 'PageDown', 'PageUp', 'f', 'F', 'n', 'N', 'b', 'B'].includes(e.key)) { e.preventDefault(); parent.postMessage({ dfDeckKey: e.key }, location.origin); return; }
     if (e.target.closest('[role="tab"]') && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) return;

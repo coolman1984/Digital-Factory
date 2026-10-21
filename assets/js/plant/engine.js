@@ -828,7 +828,7 @@
       if (s.state === 'down' || s.state === 'maint') { s.counters.down += dt; s.counters[s.state === 'down' ? 'brk' : 'pm'] += dt; if (s.tech && s.tech.state === 'repairing' && !s.loto) { s.repair -= dt; if (s.repair <= 0) finishRepair(s); } return; }
       if (s.micro > 0) { s.micro -= dt; s.counters.down += dt; s.counters.micro += dt; if (s.micro <= 0) { s.micro = 0; setState(s, 'idle'); } return; }
       if (s.state === 'changeover') { s.counters.down += dt; s.counters.co += dt; s.co -= dt; if (s.co <= 0) setState(s, 'idle'); return; }
-      if ((L && (L.stopped || L.tripped)) || s.tripped || s.hold) { setState(s, 'idle', L && L.tripped ? 'Tripped (power)' : s.hold ? 'Stopped from the HMI' : 'Stopped'); s.counters.idle += dt; return; }
+      if ((L && (L.stopped || L.tripped)) || s.tripped || (s.hold && (s.batchOut || s.kind === 'aging' || !s.procs.length))) { setState(s, 'idle', L && L.tripped ? 'Tripped (power)' : s.hold ? 'Stopped from the HMI' : 'Stopped'); s.counters.idle += dt; return; }
       const flowKinds = s.kind !== 'oven' && s.kind !== 'aging';
       if (s.procs.length && flowKinds && R() < dt / (s.manual ? 1600 : 1300)) {
         s.micro = rnd(15, 70); s.stops = (s.stops || 0) + 1;
@@ -849,6 +849,7 @@
         if (handOff(s, p.u)) { if (p.rec) p.rec.t1 = P.t; s.procs.splice(i, 1); s.counters.made++; s.counters.std += stdCycle(s); }
       }
       const blocked = s.procs.some(p => p.done && !p.reject);
+      if (s.hold) { setState(s, 'idle', 'Stopping: the unit inside finishes first'); count(s, dt); return; }
       let starvedBy = null;
       while (s.procs.length < s.slots) {
         let u = null;
@@ -1072,6 +1073,17 @@
       t.path = route(nearestNode(t.x, t.z), nearestNode(s.x, s.z + s.d)); t.path.unshift([t.x, t.z]); t.path.push([s.x + 0.6, s.z + s.d / 2 + 0.9]); t.len = polyLen(t.path); t.s = 0;
       log('CMMS', `${t.name} dispatched to ${s.name} (${P.lines[s.line] ? P.lines[s.line].name : ''})`, 'info', s.id);
     }
+    // the preventive plan: a work order that falls due stops its machine for planned work; a technician is dispatched
+    function pmDue() {
+      for (const w of P.wo) {
+        if (w.type !== 'Preventive' || w.status !== 'Scheduled' || !w.due || P.t < w.due) continue;
+        const s = P.byId[w.st]; if (!s || s.loto) continue;
+        if (s.state === 'down' || s.state === 'maint') { w.due = P.t + 600; continue; }   // busy with a repair: ten minutes later
+        w.status = 'Open'; w.opened = P.t; s.wo = w;
+        setState(s, 'maint', `Preventive: ${w.why}`); s.repair = 900;
+        log('CMMS', `${w.id} preventive work started on ${s.name}${P.lines[s.line] ? ' (' + P.lines[s.line].name + ')' : ''} · ${w.why}`, 'info', s.id);
+      }
+    }
     function sendHome(t) { t.state = 'returning'; t.job = null; t.path = route(nearestNode(t.x, t.z), nearestNode(t.home[0], t.home[1])); t.path.unshift([t.x, t.z]); t.path.push(t.home); t.len = polyLen(t.path); t.s = 0; }
     function finishRepair(s) {
       const t = s.tech, planned = s.state === 'maint';
@@ -1087,7 +1099,7 @@
       for (const t of P.techs) {
         if (t.path) {
           t.s = Math.min(t.len, t.s + 1.35 * dt); const p = polyAt(t.path, t.s); t.x = p[0]; t.z = p[1]; t.h = p[2];
-          if (t.s >= t.len - 0.01) { t.path = null; if (t.state === 'walking') { t.state = 'repairing'; log('CMMS', `${t.name} on site at ${t.job.name}`, 'info', t.job.id); } else if (t.state === 'returning') t.state = 'available'; }
+          if (t.s >= t.len - 0.01) { t.path = null; if (t.state === 'walking') { const j = t.job; if (!j || (j.state !== 'down' && j.state !== 'maint') || j.loto) { if (j && j.tech === t) j.tech = null; sendHome(t); } else { t.state = 'repairing'; log('CMMS', `${t.name} on site at ${j.name}`, 'info', j.id); } } else if (t.state === 'returning') t.state = 'available'; }
         }
         if (t.state === 'available') { const w = P.stations.find(s => (s.state === 'down' || s.state === 'maint') && !s.tech && !s.loto); if (w) sendTech(w); }   // a locked-out machine waits for its lockout to be removed
       }
@@ -1149,7 +1161,7 @@
         const L = P.lines[id]; if (L.kind === 'injection') continue;
         const b = L.kind === 'main' ? L.stations.reduce((m, s) => (s.kind === 'aging' || s.kind === 'palletizer' ? 0 : s.factor) > m.factor ? s : m, L.stations[1]) : L.kind === 'press' ? L.stations[2] : L.stations.reduce((m, s) => (s.kind === 'reflow' || s.kind === 'oven' ? 0 : taktOf(s)) > (m.kind === 'reflow' ? 0 : taktOf(m)) ? s : m, L.stations[0]);
         L.bn = b;
-        snap[id] = { run: b.counters.run, lost: b.counters.down + b.counters.starved + b.counters.blocked, made: b.counters.made, std: b.counters.std, bad: L.stations.reduce((a, s) => a + s.counters.bad, 0) };
+        snap[id] = { run: b.counters.run, lost: b.counters.down - b.counters.pm + b.counters.starved + b.counters.blocked, made: b.counters.made, std: b.counters.std, bad: L.stations.reduce((a, s) => a + s.counters.bad, 0) };
       }
       win.push({ t: P.t, snap }); while (win.length && P.t - win[0].t > 1800) win.shift();
       const w0 = win[0]; let oW = 0, rW = 0;
@@ -1231,8 +1243,10 @@
         const lineSide = users.reduce((a, L) => a + L.ls.PBA.items.length, 0);
         const rw = demand ? (lane.items.length + lineSide) / (demand / 3600) : Infinity;
         lane.rw = rw;
-        const short = feeders.length && running < feeders.length && rw < 2700;
-        const spare = Object.values(P.lines).filter(L => L.kind === 'smd' && L.model !== m && L.state === 'run').map(L => ({ L, cover: (STORE.PBA['PBA-' + SIZE(L.model)].items.length) / Math.max(1e-6, Object.values(P.lines).filter(x => x.kind === 'main' && x.model === L.model).length * 3600 / MODELS[L.model].takt / 3600) })).sort((a, b) => b.cover - a.cover)[0];
+        // short when a feeder is stopped, or when no SMD line builds this board at all and main lines still need it
+        const short = (feeders.length ? running < feeders.length : true) && rw < 2700;
+        // a spare SMD line must not be the only one building its own board, or the switch just moves the shortage
+        const spare = Object.values(P.lines).filter(L => L.kind === 'smd' && L.model !== m && L.state === 'run' && Object.values(P.lines).filter(x => x.kind === 'smd' && x.model === L.model).length > 1).map(L => ({ L, cover: (STORE.PBA['PBA-' + SIZE(L.model)].items.length) / Math.max(1e-6, Object.values(P.lines).filter(x => x.kind === 'main' && x.model === L.model).length * 3600 / MODELS[L.model].takt / 3600) })).sort((a, b) => b.cover - a.cover)[0];
         if (short && demand) rec('pba:' + m, { agent: 'Planning', level: rw < 900 ? 'crit' : 'warn', ref: lane.id, title: `PBA ${SIZE(m)} runs out for ${users.map(L => L.name).join(' and ')} in ${mins(rw)}`,
           body: `${feeders.filter(L => L.state === 'down').map(L => L.name).join(', ') || 'An SMD line'} is not feeding. ${lane.items.length} boards in the supermarket and ${lineSide} at the lines for ${Math.round(demand)} an hour. ${spare ? `Switch ${spare.L.name} from PBA ${SIZE(spare.L.model)} (stock covers ${mins(spare.cover)}) to PBA ${SIZE(m)}: a 10-minute changeover, then about 340 boards an hour.` : ''}`,
           actions: spare ? [{ id: `switchSmd:${spare.L.id}:${m}`, label: `Switch ${spare.L.name} to PBA ${SIZE(m)}` }, { id: 'focus:' + lane.id, label: 'Show supermarket' }] : [{ id: 'focus:' + lane.id, label: 'Show supermarket' }] });
@@ -1335,7 +1349,7 @@
         const from = L.model; L.model = m; L.ls.PCB.code = 'PCB-' + SIZE(m); L.ls.PCB.src = 'LOC:PCB-' + SIZE(m); L.ls.PCB.label = MAT['PCB-' + SIZE(m)].name;
         // return the old boards to stock; the milk run brings the new ones
         moveLots(L.ls.PCB, STORE.LOC['PCB-' + SIZE(from)], L.ls.PCB.qty); moveLots(STORE.LOC['PCB-' + SIZE(m)], L.ls.PCB, 80);
-        L.stations.forEach(s => { setState(s, 'changeover', `Changeover to PBA ${SIZE(m)}`); s.co = 600; });
+        L.stations.forEach(s => { if (s.state === 'down' || s.state === 'maint') return; setState(s, 'changeover', `Changeover to PBA ${SIZE(m)}`); s.co = 600; });
         recs.delete('pba:' + m);
         audit(who, 'Product changeover', `${L.name}: PBA ${SIZE(from)} → PBA ${SIZE(m)}`);
         log('GMES', `${L.name} changeover to PBA ${SIZE(m)} started (10 min) · SAP production order re-assigned`, 'info', L.stations[0].id);
@@ -1420,6 +1434,7 @@
         if (tr.state === 'arriving') { tr.k = Math.min(1, tr.k + dt / 40); if (tr.k >= 1) tr.state = 'loading'; }
         else if (tr.state === 'leaving') { tr.k = Math.max(0, tr.k - dt / 40); if (tr.k <= 0) tr.state = 'gone'; }
         else if (tr.state === 'loading' && P.t > tr.order.due + 20 * 60 && tr.loaded > 0) truckDepart(tr);
+        else if (tr.state === 'loading' && P.t > tr.order.due + 60 * 60 && !tr.loaded) { const o = tr.order; tr.state = 'leaving'; tr.k = 1; o.truck = null; o.state = 'open'; o.due += 2 * 3600; o.repromised = (o.repromised || 0) + 1; log('Shipping', `${tr.id} left ${tr.dock.id} empty: no ${MODELS[o.model].name} in finished goods · ${o.id} re-promised to ${clock(o.due)}`, 'warn'); }
       }
       for (const tr of P.trucks) if (tr.state === 'gone' && tr.dock.truck === tr) tr.dock.truck = null;
       P.trucks = P.trucks.filter(t => t.state !== 'gone');
@@ -1436,7 +1451,7 @@
         P.energy.kwh += (P.kpi.kw || 0) / 3600;
         emit('second');
       }
-      if (acc2 >= 2 || thinkSoon) { acc2 = 0; thinkSoon = false; think(); P.recs = recsList(); }
+      if (acc2 >= 2 || thinkSoon) { acc2 = 0; thinkSoon = false; think(); P.recs = recsList(); pmDue(); }
       if (acc5 >= 5) { acc5 = 0; kpis(); for (const s of P.stations) record(s); if (P.t >= START && P.t - (P.snaps.length ? P.snaps[P.snaps.length - 1].t : 0) >= 20) snap(); }
     }
     const E_level = level;
@@ -1521,7 +1536,7 @@
         thinkSoon = true; emit('hmi', { s, cmd }); emit('recs');
       },
       setSpeed(v) { P.speed = v; P.paused = v === 0; emit('speed'); },
-      fastForward(sec) { const h = 0.25; for (let i = 0; i < sec / h; i++) step(h); emit('tick'); emit('recs'); },
+      fastForward(sec) { const h = 0.25; for (let i = 0; i < sec / h; i++) { step(h); if (i % 240 === 239) emit('tick'); } emit('tick'); emit('recs'); },
       dismiss(key) { const r = recs.get(key); if (r) { r.dismissed = true; P.recs = recsList(); emit('recs'); } },
       changeover(lineIdx, model, who = 'You') {
         // a main line changes model: its LCM line and cushion machine follow; line-side stock goes back to the stores
@@ -1535,7 +1550,7 @@
         }
         for (const k in LC.ls) { const b = LC.ls[k]; moveLots(b, P.bufs[b.src], b.qty); b.code = (k === 'OC' ? 'OC-' : 'BLU-') + s; b.label = MAT[b.code].name; b.src = 'IMP:' + b.code; }
         ML.model = model; LC.model = model; CU.model = model;
-        for (const st of ML.stations.concat(LC.stations, CU.stations)) { setState(st, 'changeover', `Changeover to ${MODELS[model].name}`); st.co = st.line.startsWith('CUS') ? 1200 : 900; }
+        for (const st of ML.stations.concat(LC.stations, CU.stations)) { if (st.state === 'down' || st.state === 'maint') continue; setState(st, 'changeover', `Changeover to ${MODELS[model].name}`); st.co = st.line.startsWith('CUS') ? 1200 : 900; }
         audit(who, 'Model changeover', `${ML.name}: ${MODELS[from].name} → ${MODELS[model].name}`);
         log('GMES', `${ML.name}, LCM line ${lineIdx} and cushion machine ${lineIdx}: changeover to ${MODELS[model].name} (15 min)`, 'info', ML.stations[0].id);
         emit('changeover', { line: ML, from, to: model });

@@ -244,7 +244,8 @@ body.pl { margin: 0; background: var(--bg); color: var(--text); font-size: 15px;
   .pl-views button { white-space: nowrap; flex: none; }
   .pl-drill { top: auto; bottom: 12px; right: 8px; }
   .pl-menu { top: auto; bottom: 52px; }
-  .pl-tools { left: 8px; bottom: 12px; right: 130px; }
+  .pl-tools { left: 8px; bottom: 12px; right: 8px; }
+  .pl-drill { bottom: 64px; }   /* the view buttons and the drill button sit above the colour buttons, never on them */
   .pl-overlay { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
   .pl-overlay button { padding: 0 10px; flex: none; }
   .pl-overlay { flex-wrap: nowrap; }
@@ -649,7 +650,7 @@ body.replaying .pl-kpis { box-shadow: inset 0 -3px 0 var(--indigo); }
 @media (max-width: 900px) {
   .ac-trace { grid-template-columns: minmax(0, 1fr); }
   .pareto li { grid-template-columns: minmax(0, 1fr) 70px 40px 40px; }
-  .pl-replay { bottom: 16px; flex-wrap: wrap; } .pl-replay .btn { height: 44px; }
+  .pl-replay { bottom: auto; top: 56px; flex-wrap: wrap; } .pl-replay .btn { height: 44px; }
 }
 /* first-person walk: where you are, a compass, the crosshair, what you look at, vehicle warnings and actions */
 .pl-hud { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
