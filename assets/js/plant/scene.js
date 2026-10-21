@@ -64,6 +64,9 @@
     controls.screenSpacePanning = false; controls.zoomSpeed = 1.1; controls.rotateSpeed = 0.6;
     const CENTER = new T.Vector3(L.W / 2, 0, L.D / 2 + 4);
     const HOME = new T.Vector3(CENTER.x + 34, 205, CENTER.z + 196);
+    // portrait screens need the camera further back to fit the plant's width
+    const homePos = () => { const k = Math.max(1, 1.5 / Math.max(0.3, camera.aspect)); return CENTER.clone().add(HOME.clone().sub(CENTER).multiplyScalar(k)); };
+    let moved = false;
     controls.target.copy(CENTER); camera.position.copy(HOME);
 
     const hemi = new T.HemisphereLight(C.hemi[0], C.hemi[1], C.hemi[2]); scene.add(hemi);
@@ -915,6 +918,7 @@
     let fly = null;
     const ease = t => 1 - Math.pow(1 - t, 3);
     function flyTo(info, dist) {
+      moved = true;
       const r = dist || Math.max(16, (info.r || 4) * 3.6);
       const to = new T.Vector3(info.x, (info.y || 0) * 0.5, info.z);
       const dir = camera.position.clone().sub(controls.target).normalize();
@@ -923,7 +927,7 @@
       fly = { t: 0, dur: 1.1, p0: camera.position.clone(), t0: controls.target.clone(), p1: to.clone().add(dir.multiplyScalar(r)), t1: to };
     }
     function view(v) {
-      if (v === 'overview') { fly = { t: 0, dur: 1.3, p0: camera.position.clone(), t0: controls.target.clone(), p1: HOME.clone(), t1: CENTER.clone() }; return; }
+      if (v === 'overview') { fly = { t: 0, dur: 1.3, p0: camera.position.clone(), t0: controls.target.clone(), p1: homePos(), t1: CENTER.clone() }; return; }
       const to = new T.Vector3(v[0], 0, v[1]);
       fly = { t: 0, dur: 1.2, p0: camera.position.clone(), t0: controls.target.clone(), p1: to.clone().add(new T.Vector3(v[2] * 0.22, v[2] * 0.74, v[2] * 0.7)), t1: to };
     }
@@ -934,7 +938,7 @@
       camera.position.lerpVectors(fly.p0, fly.p1, k); controls.target.lerpVectors(fly.t0, fly.t1, k);
       if (fly.t >= 1) fly = null;
     }
-    controls.addEventListener('start', () => { fly = null; if (follow) follow = false; });
+    controls.addEventListener('start', () => { moved = true; fly = null; if (follow) follow = false; });
 
     /* ---------------- picking ---------------- */
     const ray = new T.Raycaster(), ndc = new T.Vector2();
@@ -1005,6 +1009,7 @@
       const r = canvas.parentElement.getBoundingClientRect();
       Wd = Math.max(1, r.width); Ht = Math.max(1, r.height);
       renderer.setSize(Wd, Ht, false); camera.aspect = Wd / Ht; camera.updateProjectionMatrix();
+      if (!moved && !fly) camera.position.copy(homePos());
     }
     new ResizeObserver(resize).observe(canvas.parentElement); resize();
     function render(dt) {
