@@ -61,6 +61,8 @@
       : `Pinned moment · plant time ${s.clock}, shift ${s.shift} · captured ${when(s.pinnedAt || s.at)} · simulated plant data`;
   }
 
+  // the speaker notes as written in deck.html, kept before any briefing replaces them
+  $$('.brief .sn').forEach(x => { x.dataset.orig = x.textContent; });
   const LSTATE = { run: ['Running', 'ok'], attn: ['Attention', 'warn'], down: ['Interrupted', 'bad'] };
   function render() {
     // a time window is written by the review (assets/js/review.js)
@@ -68,7 +70,12 @@
     if (window.Review) Review.restore();
     const c = current();
     $$('.brief').forEach(sl => { const on = !!c && sl.dataset.id !== 'briefing-after'; sl.querySelector('[data-b-empty]').hidden = on; sl.querySelector('[data-b-full]').hidden = !on; });
-    if (!c) return;
+    if (!c) {
+      // nothing pinned: the slides show their explanation, and the notes go back to the written ones
+      $$('.brief .sn').forEach(x => { if (x.dataset.orig != null) x.textContent = x.dataset.orig; });
+      if (window.Deck && /^briefing/.test(Deck.current())) Deck.refresh();
+      return;
+    }
     const s = c.snap, n = narrate(s), set = (k, v, html) => $$(`[data-b="${k}"]`).forEach(el => { html ? (el.innerHTML = v) : (el.textContent = v); });
     set('stamp', stampOf(c));
     set('headline', n.head); set('lead', n.lead); set('ask', n.ask); set('rec', n.rec);
@@ -146,11 +153,12 @@
   $('#bpRead').addEventListener('click', readNow);
   $('#bpGo').addEventListener('click', () => { open(false); window.Deck && Deck.go('briefing'); });
   $$('input[name="bpMode"]').forEach(r => r.addEventListener('change', () => setMode(r.value)));
-  $$('[data-b-read]').forEach(b => b.addEventListener('click', readNow));
+  // in the time-window mode the slide buttons open the panel: reading the plant now would leave that mode
+  $$('[data-b-read]').forEach(b => b.addEventListener('click', () => (mode === 'window' ? open(true) : readNow())));
   $$('[data-b-open]').forEach(b => b.addEventListener('click', () => open(true)));
   panel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); open(false); } });
   // keep slide keys away from the panel's own controls
-  panel.addEventListener('keydown', e => { if (['ArrowLeft', 'ArrowRight', ' ', 'Enter', 'b', 'B', 't', 'T', 'f', 'F', 'n', 'N'].includes(e.key) && e.target !== panel) e.stopPropagation(); });
+  panel.addEventListener('keydown', e => { if (['ArrowLeft', 'ArrowRight', ' ', 'Enter', 'Home', 'End', 'PageUp', 'PageDown', 'Backspace', 'b', 'B', 't', 'T', 'f', 'F', 'n', 'N'].includes(e.key) && e.target !== panel) e.stopPropagation(); });
 
   // another tab (the command room) pinned a moment or wrote a newer live snapshot
   addEventListener('storage', e => {

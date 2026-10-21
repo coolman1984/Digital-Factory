@@ -330,8 +330,10 @@
       const ex = evidenceFor(r);
       const st = r.key.startsWith('rul') && P.byId[r.key.slice(4)];
       const conf = st ? Math.min(0.97, 0.6 + (trend(st.hist.health, 60) || { r2: 0.5 }).r2 * 0.37) : r.key.startsWith('agent.energy') ? 0.82 : 0.9;
+      // a decision an agent already took on its own stays taken while the same situation lasts (its title counts down)
       const c = { key: r.key, at: P.t, title: r.title, trigger: `${r.time} · ${r.title}`, level: r.level, owner, agentName: agent(owner).name, options: opts, best, evidence: ex.ev, why: ex.why, talk: ex.talk, confidence: conf, h: S.h, base: opts.find(o => o.id === null) || opts[opts.length - 1] };
-      if (prev) for (const k of ['autoDone', 'autoAt', 'veto', 'decided']) c[k] = prev[k];
+      if (prev) for (const k of ['autoAt', 'veto', 'decided', 'autoDoneAt']) c[k] = prev[k];
+      c.autoDone = !!(prev && prev.autoDone && P.t - (prev.autoDoneAt || 0) < 900);
       A.cards.set(r.key, c);
       if (!prev) {
         say(owner, `${r.title}. Simulated ${opts.length} option${opts.length > 1 ? 's' : ''} over the next ${S.h / 60} h; recommending: ${best.label}.`, r.level === 'crit' ? 'crit' : 'warn', r.ref);
@@ -340,7 +342,7 @@
       // autonomy: act alone only when allowed and the recommended action can be undone
       const ag = agent(owner);
       if (ag.autonomy === 'auto' && best.id && best.reversible && !c.autoDone) {
-        c.autoDone = true;
+        c.autoDone = true; c.autoDoneAt = P.t;
         decide(c, best, `${ag.name} (Auto)`, 'auto');
         say(owner, `Acted on my own (Auto): ${best.label}. Logged as ${c.decided.audit}.`, 'info', r.ref);
       }

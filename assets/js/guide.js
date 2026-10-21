@@ -26,7 +26,9 @@
     root.dir = l === 'ar' ? 'rtl' : 'ltr';
     save(l);
     $$('.langs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === l)));
-    buildToc(); renderDrawer(); renderCats();
+    const openIds = $$('.dr-item.open').map(x => x.dataset.id);
+    buildToc(); renderDrawer(); renderCats(); renderGlossary();
+    openIds.forEach(id => { const it = $(`.dr-item[data-id="${id}"]`); if (it) { it.classList.add('open'); it.querySelector('button').setAttribute('aria-expanded', 'true'); } });
     $('#drSearch').placeholder = pick('Search a term or an abbreviation…', 'ابحث عن مصطلح أو اختصار…');
     $('#drTitle').textContent = pick('Terms and abbreviations', 'المصطلحات والاختصارات');
     document.title = pick('Digital Factory · Reference guide', 'المصنع الرقمي · الدليل المرجعي');
@@ -90,7 +92,7 @@
   const drawer = $('#drawer'), shade = $('#shade');
   function renderDrawer(q) {
     q = (q == null ? $('#drSearch').value : q).trim().toLowerCase();
-    const norm = s => String(s).toLowerCase().replace(/[ً-ْ]/g, '');
+    const norm = s => String(s).toLowerCase().replace(/[ً-ْ]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ـ/g, '').replace(/ى/g, 'ي').replace(/ة/g, 'ه');   // أداء = اداء, إنذار = انذار
     const hits = TERMS.filter(t => !q || [t.abbr, t.full, t.arName, t.en.def, t.ar.def, ...(t.alias || [])].some(v => norm(v || '').includes(norm(q))))
       .sort((a, b) => a.abbr.localeCompare(b.abbr, 'en', { sensitivity: 'base' }));
     $('#drList').innerHTML = hits.map(t => `<div class="dr-item" data-id="${t.id}">
@@ -129,7 +131,12 @@
     const t = e.target.closest('.t[data-term]'); if (!t) return;
     e.preventDefault(); openDrawer(true, t.dataset.term);
   });
-  function flash(id) { const el = document.getElementById(id); if (!el) return; el.scrollIntoView({ block: 'start' }); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+  function flash(id) {
+    let el = document.getElementById(id);
+    // a term hidden by the category filter: show all categories, then go to it
+    if (!el && id.startsWith('g-') && cat !== 'all') { cat = 'all'; renderCats(); renderGlossary(); el = document.getElementById(id); }
+    if (!el) return; el.scrollIntoView({ block: 'start' }); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+  }
 
   /* ---------- icon gallery ---------- */
   function renderIcons() {
@@ -140,7 +147,8 @@
   // terms written in the text as <a class="t" data-term="oee">OEE</a> get a link target and an accessible hint
   $$('.t[data-term]').forEach(a => { a.setAttribute('href', '#g-' + a.dataset.term); a.setAttribute('role', 'button'); });
 
-  renderIcons(); renderGlossary();
+  renderIcons();
   setLang(read() || 'ar');
   if (location.hash.startsWith('#g-')) setTimeout(() => flash(location.hash.slice(1)), 200);
+  addEventListener('hashchange', () => { if (location.hash.startsWith('#g-')) flash(location.hash.slice(1)); });
 })();

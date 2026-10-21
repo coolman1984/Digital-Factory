@@ -26,7 +26,7 @@
   if (reduce) return;
   let timer = null;
   new IntersectionObserver(es => {
-    if (es[0].isIntersecting) { if (!timer) timer = setInterval(() => lite(k = (k + 1) % names.length), 2600); }
+    if (es[es.length - 1].isIntersecting) { if (!timer) timer = setInterval(() => lite(k = (k + 1) % names.length), 2600); }
     else { clearInterval(timer); timer = null; }
   }).observe(names[0].parentElement);
 })();

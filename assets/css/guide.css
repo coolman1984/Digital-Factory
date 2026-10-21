@@ -201,6 +201,7 @@ small { font-size: max(14px, .8em); }
 }
 @media (max-width: 720px) {
   .logo-sub, .top .hide-sm, .top .logo-word { display: none; }
+  .top .theme-btn { min-width: 44px; padding-inline: 10px; } .top .theme-btn .tl { display: none; }   /* the theme stays switchable on phones, as an icon */
   .langs button { white-space: nowrap; }
   .top .wrap { gap: 8px; }
   .langs button { padding: 0 10px; font-size: 14px; min-height: 44px; }

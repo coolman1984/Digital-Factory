@@ -29,6 +29,8 @@ time (e.g. 13:00–13:30), and slides 2–4 tell what happened, what the AI did 
 three slides as an editable .pptx (PptxGenJS, vendored in `assets/vendor/`, loaded only on demand).
 
 **Live plant** (`plant.html`): `Space` pause · `1` `2` `3` speed 1× / 4× / 16× · `G` guided tour · `R` replay the last 45 minutes · `/` find a serial · `Esc` clear.
+*Walk* puts you on the floor at eye height: the crosshair shows the live state of what you look at (`F` for details), `G` walks you
+along a route drawn on the floor to the selection, `R` rides along with the forklift or milk run you look at; vehicles stop for you.
 Start the guided tour, then let the guest select a TV and press *Follow in 3D*; *Run a drill* shows a cause travelling through the plant.
 Deep links: `plant.html#st:SMD4-MounterB`, `#line:ML1`, `#dept:planning`, `#mrp:OC-65`, `#mode:sop`, `#unit:<serial>`, `#drill:container`, `#tour`. Arrow keys move between the tabs.
 

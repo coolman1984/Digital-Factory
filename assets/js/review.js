@@ -31,6 +31,15 @@
     if (W.source === 'live' && !live && sample) W.source = 'sample';
     if (W.source === 'sample' && !sample && live) W.source = 'live';
     R = W.source === 'sample' ? sample : live;
+    // a window saved for another recording (the live plant was reloaded) starts again; one past the end is cut to it
+    if (R && W.session != null && W.session !== R.session) { W.from = W.to = W.then = null; }
+    if (R) {
+      W.session = R.session;
+      if (W.to != null && W.to > R.to) W.to = R.to;
+      if (W.then != null && W.then > R.to) W.then = R.to;
+      if (W.from != null && (W.from < R.from || W.to == null || W.to <= W.from)) W.from = W.to = W.then = null;
+      if (W.then != null && W.then <= W.to) W.then = null;
+    }
     return R;
   }
 
@@ -129,13 +138,13 @@
     if (!R) return [];
     const out = [];
     const round5 = t => Math.round(t / 300) * 300;
-    for (const d of R.audit.filter(x => x.action === DRILL)) out.push({ from: Math.max(R.from, round5(d.t - 120)), to: Math.min(R.to, round5(d.t + 1800)), label: d.detail });
+    for (const d of R.audit.filter(x => x.action === DRILL)) out.push({ from: Math.max(R.from, Math.min(d.t, round5(d.t - 120))), to: Math.min(R.to, round5(d.t + 1800)), label: d.detail });
     // the busiest half hour of stops that is not a drill
     const crit = R.events.filter(e => e.level === 'crit' && e.src !== 'AI');
     let best = null;
     for (const e of crit) { const n = crit.filter(x => x.t >= e.t && x.t < e.t + 1800).length; if (!best || n > best.n) best = { t: e.t, n }; }
-    if (best && best.n >= 3 && !out.some(o => best.t >= o.from && best.t <= o.to)) out.push({ from: round5(best.t), to: Math.min(R.to, round5(best.t + 1800)), label: `${best.n} stops in 30 minutes` });
-    return out.sort((x, y) => x.from - y.from);
+    if (best && best.n >= 3 && !out.some(o => best.t >= o.from && best.t <= o.to)) out.push({ from: Math.max(R.from, Math.min(best.t, round5(best.t))), to: Math.min(R.to, round5(best.t + 1800)), label: `${best.n} stops in 30 minutes` });
+    return out.filter(o => o.to - o.from >= 300).sort((x, y) => x.from - y.from);
   }
 
   /* ---------- the slides ---------- */
@@ -145,13 +154,17 @@
   const srcLine = () => `${R.source === 'sample' ? 'Sample shift' : 'Live plant recording'} · simulated plant data`;
 
   // the moment modes own these texts: keep the originals to give them back when the window review is left
-  const ORIG = { heads: $$('[data-id="briefing-actions"] .brief-cols h3').map(h => h.textContent), notes: $$('.brief .sn').map(n => n.textContent) };
+  const ORIG = { heads: $$('[data-id="briefing-actions"] .brief-cols h3').map(h => h.textContent), notes: $$('.brief .sn').map(n => n.dataset.orig != null ? n.dataset.orig : n.textContent), empty: $$('.brief .brief-empty .lead').map(p => p.innerHTML) };
+  const WIN_EMPTY = 'Choose a time window in the <b>Live briefing</b> panel (key B): a problem the agent found in the recording, or a From and To time.';
   function restore() {
     $$('[data-id="briefing-actions"] .brief-cols h3').forEach((h, i) => { h.textContent = ORIG.heads[i]; });
     $$('.brief .sn').forEach((n, i) => { n.textContent = ORIG.notes[i]; });
-    if (playing) { clearInterval(playing); playing = null; }
+    $$('.brief .brief-empty .lead').forEach((p, i) => { p.innerHTML = ORIG.empty[i]; });
+    $$('[data-b-read]').forEach(b => { b.hidden = false; });
+    stopPlay();
   }
 
+  function stopPlay() { if (playing) { clearInterval(playing); playing = null; } }
   function valid() { return R && W.from != null && W.to != null && W.to > W.from; }
   function render() {
     load();
@@ -160,7 +173,10 @@
       const on = ok && (sl.dataset.id !== 'briefing-after' || (W.then && W.then > W.to));
       sl.querySelector('[data-b-empty]').hidden = on; sl.querySelector('[data-b-full]').hidden = !on;
     });
-    if (!ok) return;
+    // in this mode the empty slides explain the window, and reading the plant now is not offered
+    $$('.brief .brief-empty .lead').forEach(p => { p.innerHTML = WIN_EMPTY; });
+    $$('[data-b-read]').forEach(b => { b.hidden = true; });
+    if (!ok) { $$('.brief .sn').forEach((n, i) => { n.textContent = ORIG.notes[i]; }); return; }
     const st = story(W.from, W.to), K = st.K;
     set('stamp', `Review · ${hm(W.from)}–${hm(W.to)} plant time · ${srcLine()}`);
     set('headline', st.head); set('lead', st.lead);
@@ -216,6 +232,7 @@
     if (notes[0]) notes[0].textContent = `${st.head} ${st.lead}`;
     if (notes[1]) notes[1].textContent = `Walk left to right: the problem, what the AI saw and recommended, what was decided. ${st.people.length ? 'Name who decided and when.' : 'Point out that no person had to step in.'}`;
     if (notes[2] && W.then > W.to) { const A = after(W.to, W.then); notes[2].textContent = `${A.head} ${A.rec} ${A.openTxt}`; }
+    else if (notes[2]) notes[2].textContent = ORIG.notes[2];
     if (window.Deck && /^briefing/.test(Deck.current())) Deck.refresh();
   }
 
@@ -231,9 +248,11 @@
     const eps = episodes();
     $('#rvFound').innerHTML = eps.length ? '<span>Problems found:</span>' + eps.map((e, k) => `<button type="button" class="chip-btn" data-ep="${k}">${hm(e.from)}–${hm(e.to)} · ${esc(e.label)}</button>`).join('') : '';
     const ins = [$('#rvFrom'), $('#rvTo')];
-    ins.forEach(i => { i.disabled = !R; if (R) { i.min = hm(R.from); i.max = hm(R.to); } });
-    if (R && (W.from == null || W.from < R.from || W.from > R.to)) { const e = eps[0]; W.from = e ? e.from : Math.max(R.from, R.to - 1800); W.to = e ? e.to : R.to; W.then = null; }
-    if (R) { $('#rvFrom').value = hm(W.from); $('#rvTo').value = hm(W.to); }
+    // min and max are set only when they change: rewriting them rebuilds the field and drops the focus while typing
+    ins.forEach(i => { if (i.disabled !== !R) i.disabled = !R; if (R && (i.min !== hm(R.from) || i.max !== hm(R.to))) { i.min = hm(R.from); i.max = hm(R.to); } });
+    if (R && (W.from == null || W.from < R.from || W.from > R.to)) { const e = eps[0]; W.from = e ? e.from : Math.max(R.from, R.to - 1800); W.to = e ? e.to : R.to; W.then = null; saveW(); render(); }
+    // a field being typed in keeps what is typed; it is rewritten only when the focus has left it
+    if (R) for (const [i, v] of [[$('#rvFrom'), W.from], [$('#rvTo'), W.to]]) if (document.activeElement !== i) i.value = hm(v);
     $('#rvThen').textContent = W.then && W.then > W.to ? `${hm(W.to)} → ${hm(W.then)} (${durTxt(W.then - W.to)})` : 'Not set';
     $$('[data-then]').forEach(b => { b.disabled = !R || W.to + +b.dataset.then > R.to + 59; });
     ['#rvShow', '#rvPlay', '#rvPptx'].forEach(s => { $(s).disabled = !valid(); });
@@ -241,11 +260,14 @@
     $('#rvPlay').textContent = playing ? 'Pause' : 'Play';
     $('#rvPlay').setAttribute('aria-pressed', String(!!playing));
   }
-  const apply = () => { saveW(); fill(); render(); };
+  const apply = () => { if (!W.then) stopPlay(); saveW(); fill(); render(); };
+  // a typed time belongs to the recording's day (a recording can run past midnight); outside the recording it is not taken
+  const toPlant = v => { if (v == null || !R) return null; let t = v + Math.floor(R.from / 86400) * 86400; if (t < R.from - 59) t += 86400; return t >= R.from - 59 && t <= R.to + 59 ? Math.max(R.from, Math.min(R.to, t)) : null; };
 
-  $('#rvSource').addEventListener('change', e => { W.source = e.target.value; W.from = W.to = W.then = null; apply(); });
-  $('#rvFrom').addEventListener('change', e => { const v = parseHm(e.target.value); if (v != null) { W.from = v; if (W.to <= v) W.to = Math.min(R.to, v + 1800); W.then = null; apply(); } });
-  $('#rvTo').addEventListener('change', e => { const v = parseHm(e.target.value); if (v != null && v > W.from) { W.to = Math.min(R.to, v); W.then = null; apply(); } });
+  $('#rvSource').addEventListener('change', e => { stopPlay(); W.source = e.target.value; W.from = W.to = W.then = null; apply(); });
+  $('#rvFrom').addEventListener('change', e => { const v = toPlant(parseHm(e.target.value)); if (v != null && v < R.to) { W.from = v; if (W.to <= v) W.to = Math.min(R.to, v + 1800); W.then = null; apply(); } });
+  [$('#rvFrom'), $('#rvTo')].forEach(i => i.addEventListener('blur', () => { if (R) fill(); }));
+  $('#rvTo').addEventListener('change', e => { const v = toPlant(parseHm(e.target.value)); if (v != null && v > W.from) { W.to = Math.min(R.to, v); W.then = null; apply(); } });
   $('#rvFound').addEventListener('click', e => { const b = e.target.closest('[data-ep]'); if (!b) return; const ep = episodes()[+b.dataset.ep]; W.from = ep.from; W.to = ep.to; W.then = null; apply(); });
   $$('[data-then]').forEach(b => b.addEventListener('click', () => { W.then = Math.min(R.to, W.to + +b.dataset.then); apply(); if (window.Deck) Deck.go('briefing-after'); }));
   $('#rvShow').addEventListener('click', () => { Brief.open(false); if (window.Deck) Deck.go('briefing'); });
@@ -256,6 +278,7 @@
     if (!W.then || W.then <= W.to) W.then = W.to;
     if (window.Deck) Deck.go('briefing-after');
     playing = setInterval(() => {
+      if (!W.then || !R) { stopPlay(); fill(); return; }
       W.then = Math.min(R.to, W.then + 900); saveW(); render(); fill();
       if (W.then >= R.to) { clearInterval(playing); playing = null; fill(); }
     }, 2000);

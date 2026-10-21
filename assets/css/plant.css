@@ -651,3 +651,27 @@ body.replaying .pl-kpis { box-shadow: inset 0 -3px 0 var(--indigo); }
   .pareto li { grid-template-columns: minmax(0, 1fr) 70px 40px 40px; }
   .pl-replay { bottom: 16px; flex-wrap: wrap; } .pl-replay .btn { height: 44px; }
 }
+/* first-person walk: where you are, a compass, the crosshair, what you look at, vehicle warnings and actions */
+.pl-hud { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.pl-hud[hidden] { display: none; }
+.hud-top { position: absolute; left: 50%; top: 64px; translate: -50% 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.hud-where { margin: 0; padding: 6px 12px; border-radius: 9px; background: color-mix(in srgb, var(--surface) 88%, transparent); border: 1px solid var(--border); font-size: 14px; font-weight: 700; color: var(--text); white-space: nowrap; backdrop-filter: blur(6px); }
+.hud-where span { font-weight: 600; color: var(--text-2); }
+.hud-compass { position: relative; width: 240px; height: 26px; overflow: hidden; border-radius: 8px; background: color-mix(in srgb, var(--surface) 80%, transparent); border: 1px solid var(--border); mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); }
+.hud-compass div { position: absolute; top: 0; left: 0; height: 100%; display: flex; white-space: nowrap; will-change: transform; }
+.hud-compass div b { width: 40px; flex: none; text-align: center; font-size: 13px; line-height: 26px; font-weight: 700; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.hud-compass div b.c { color: var(--text); }
+.hud-compass i { position: absolute; left: 50%; top: 0; width: 2px; height: 7px; translate: -1px 0; background: var(--brand-2); }
+.hud-cross { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; translate: -50% -50%; border-radius: 50%; border: 2px solid rgba(255,255,255,.9); box-shadow: 0 0 0 1px rgba(0,0,0,.35); transition: width .15s, height .15s, border-color .15s; }
+.hud-cross.on { width: 22px; height: 22px; border-color: var(--brand-2); }
+.hud-look { position: absolute; left: 50%; top: calc(50% + 22px); translate: -50% 0; display: flex; flex-direction: column; align-items: center; gap: 2px; max-width: min(360px, calc(100% - 32px)); padding: 8px 12px; border-radius: 10px; background: var(--text); color: var(--bg); text-align: center; font-size: 13.5px; line-height: 1.35; }
+.hud-look[hidden], .hud-warn[hidden] { display: none; }
+.hud-look b { font-size: 14.5px; }
+.hud-look span { opacity: .85; }
+.hud-look em { font-style: normal; font-size: 13px; opacity: .7; }
+.hud-warn { position: absolute; left: 50%; top: 136px; translate: -50% 0; margin: 0; padding: 8px 14px; border-radius: 10px; background: var(--danger); color: #fff; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.hud-acts { position: absolute; left: 50%; bottom: 96px; translate: -50% 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: calc(100% - 32px); pointer-events: auto; }
+.hud-acts .btn { min-height: 44px; box-shadow: var(--shadow-md, 0 4px 14px rgba(0,0,0,.12)); }
+.hud-acts kbd { font: inherit; font-size: 12.5px; font-weight: 700; padding: 1px 6px; border-radius: 5px; border: 1px solid currentColor; opacity: .7; }
+@media (max-width: 900px) { .hud-top { top: 70px; } .hud-compass { width: 180px; } .hud-acts { bottom: 150px; } .hud-acts kbd { display: none; } .hud-warn { top: 150px; white-space: normal; } }
+@media (prefers-reduced-motion: reduce) { .hud-cross { transition: none; } }

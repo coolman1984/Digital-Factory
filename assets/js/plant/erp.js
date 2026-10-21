@@ -146,7 +146,7 @@
       } else if (type === 'changeover') {
         const L = d.line;
         const old = X.pp.find(p => p.line === L.id && p.status !== 'TECO');
-        if (old) { old.status = 'TECO'; old.closed = P.t; }
+        if (old) { old.final = Math.max(0, lineOut(L) - old.base); old.status = 'TECO'; old.closed = P.t; }
         releasePP(L);
         msg('SAP-PP', 'GMES', 'Order switch', `${L.name}: production order for ${d.to.startsWith('M') ? MODELS[d.to].name : d.to} released`, { ref: L.stations[0].id, line: L.id });
       } else if (type === 'event' && d.src === 'CMMS') msg('GMES', 'SAP-PM', 'Work order', d.msg, { ref: d.ref });
@@ -219,7 +219,7 @@
       const done = L.kind === 'main' ? Math.round(P.base[L.model] / mainLines().filter(x => x.model === L.model).length) : Math.round(o.qty * 0.38);
       o.base -= done; o.start = 6 * 3600;
     }
-    X.ppProgress = o => { const L = P.lines[o.line]; const c = (o.status === 'TECO' ? o.final : lineOut(L) - o.base); return Math.max(0, c); };
+    X.ppProgress = o => { const L = P.lines[o.line]; const c = (o.status === 'TECO' ? o.final || 0 : lineOut(L) - o.base); return Math.max(0, c); };
 
     /* ----- MM: purchase orders, vendor deliveries and IQC ----- */
     const inTransit = code => X.po.filter(p => p.code === code && (p.status === 'In transit' || p.status === 'Held at port' || p.status === 'At dock')).reduce((a, p) => a + p.qty, 0);
