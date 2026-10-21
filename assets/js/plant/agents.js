@@ -17,15 +17,16 @@
     { id: 'logistics', name: 'Logistics agent', dept: 'scm', role: 'Dispatches AGVs, milk runs and forklifts; sends hot runs; watches docks and vehicle faults.' },
     { id: 'energy', name: 'Energy agent', dept: 'pe', role: 'Forecasts the 15-minute demand peak against the 4,000 kW contract and shaves it without touching takt.' },
     { id: 'people', name: 'People agent', dept: 'hr', role: 'Matches certified operators to stations, covers absences, approves overtime within policy.' },
-    { id: 'service', name: 'Service agent', dept: 'svc', role: 'Balances spare parts for customers against production needs.' }
+    { id: 'service', name: 'Service agent', dept: 'svc', role: 'Balances spare parts for customers against production needs.' },
+    { id: 'safety', name: 'Safety and vision agent', dept: 'ehs', role: 'Watches the camera feeds with AI vision: people, vehicles, forklift near misses and missing PPE. Feeds the andon and keeps the safety log with a still of each incident.' }
   ];
   const OWNER = { Maintenance: 'maint', Quality: 'quality', Planning: 'aps', Logistics: 'logistics', Energy: 'energy', Service: 'service', HR: 'people' };
 
   function create(E, X) {
     const P = E.P, MODELS = E.MODELS, SIZE = E.SIZE, level = E.level;
     const A = {
-      AGENTS: AGENTS.map(a => Object.assign({ autonomy: a.id === 'logistics' || a.id === 'energy' ? 'auto' : 'approve', acted: 0, signals: 0 }, a)),
-      feed: [], cards: new Map(), stats: { decisions: 0, auto: 0, simulated: 0, saved: 0 }
+      AGENTS: AGENTS.map(a => Object.assign({ autonomy: a.id === 'logistics' || a.id === 'energy' || a.id === 'safety' ? 'auto' : 'approve', acted: 0, signals: 0 }, a)),
+      feed: [], cards: new Map(), decided: [], incidents: [], stats: { decisions: 0, auto: 0, simulated: 0, saved: 0 }
     };
     const agent = id => A.AGENTS.find(a => a.id === id);
     const mainLines = () => Object.values(P.lines).filter(L => L.kind === 'main');
@@ -305,7 +306,11 @@
       const tr = trend(kw, 60); const peak = avg + (tr ? Math.max(0, tr.slope) * 180 : 0);
       A.energy = { avg, peak };
       const shaving = P.shave && P.t < P.shave.until;
-      if (!shaving && peak > 3960) E.rec('agent.energy', { agent: 'Energy', level: peak > 4040 ? 'crit' : 'warn', ref: 'UTIL-CH2', title: `Demand peak forecast ${num(peak)} kW against the 4,000 kW contract`, body: 'Shave the peak with utilities only; takt does not change.', actions: [{ id: 'agent:shave', label: 'Shave the peak' }, { id: 'focus:UTIL-CH2', label: 'Show chillers' }] });
+      // only a real rise counts: a clear upward trend, or an average already close to the contract; and not again
+      // within 30 minutes of the last shave unless the average itself is at the limit
+      const real = (tr && tr.r2 > 0.3 && tr.slope > 0) || avg > 3900;
+      const rested = !P.shave || P.t - P.shave.until > 1800 || avg > 3950;
+      if (!shaving && real && rested && peak > 3960) E.rec('agent.energy', { agent: 'Energy', level: peak > 4040 ? 'crit' : 'warn', ref: 'UTIL-CH2', title: `Demand peak forecast ${num(peak)} kW against the 4,000 kW contract`, body: 'Shave the peak with utilities only; takt does not change.', actions: [{ id: 'agent:shave', label: 'Shave the peak' }, { id: 'focus:UTIL-CH2', label: 'Show chillers' }] });
       else E.rec('agent.energy', null);
       // scheduling: orders at risk in the next two hours
       const base = forecast();
@@ -330,7 +335,9 @@
       const st = r.key.startsWith('rul') && P.byId[r.key.slice(4)];
       const conf = st ? Math.min(0.97, 0.6 + (trend(st.hist.health, 60) || { r2: 0.5 }).r2 * 0.37) : r.key.startsWith('agent.energy') ? 0.82 : 0.9;
       // a decision an agent already took on its own stays taken while the same situation lasts (its title counts down)
-      const c = { autoDone: !!(prev && prev.autoDone && P.t - prev.autoAt < 900), autoAt: prev && prev.autoAt, key: r.key, at: P.t, title: r.title, owner, agentName: agent(owner).name, options: opts, best, evidence: ex.ev, why: ex.why, talk: ex.talk, confidence: conf, h: S.h, base: opts.find(o => o.id === null) || opts[opts.length - 1] };
+      const c = { key: r.key, at: P.t, title: r.title, trigger: `${r.time} · ${r.title}`, level: r.level, owner, agentName: agent(owner).name, options: opts, best, evidence: ex.ev, why: ex.why, talk: ex.talk, confidence: conf, h: S.h, base: opts.find(o => o.id === null) || opts[opts.length - 1] };
+      if (prev) for (const k of ['autoAt', 'veto', 'decided', 'autoDoneAt']) c[k] = prev[k];
+      c.autoDone = !!(prev && prev.autoDone && P.t - (prev.autoDoneAt || 0) < 900);
       A.cards.set(r.key, c);
       if (!prev) {
         say(owner, `${r.title}. Simulated ${opts.length} option${opts.length > 1 ? 's' : ''} over the next ${S.h / 60} h; recommending: ${best.label}.`, r.level === 'crit' ? 'crit' : 'warn', r.ref);
@@ -339,16 +346,39 @@
       // autonomy: act alone only when allowed and the recommended action can be undone
       const ag = agent(owner);
       if (ag.autonomy === 'auto' && best.id && best.reversible && !c.autoDone) {
-        c.autoDone = true; c.autoAt = P.t;
-        E.apply(best.id, `${ag.name} (auto)`);
-        ag.acted++; A.stats.auto++;
-        say(owner, `Acted on my own (Auto): ${best.label}. Logged in the decision log.`, 'info', r.ref);
+        c.autoDone = true; c.autoDoneAt = P.t;
+        decide(c, best, `${ag.name} (Auto)`, 'auto');
+        say(owner, `Acted on my own (Auto): ${best.label}. Logged as ${c.decided.audit}.`, 'info', r.ref);
+      }
+      // risk-based interruption: on Approve, a person is asked only when it matters. A low-cost, reversible,
+      // non-urgent recommendation goes ahead after two minutes unless someone vetoes it
+      else if (ag.autonomy === 'approve' && best.id && best.reversible && best.cost <= 10000 && r.level !== 'crit' && !c.veto && !c.decided && !c.autoAt) {
+        c.autoAt = P.t + 120;
+        say(owner, `Low risk and reversible: I will go ahead with "${best.label}" at ${E.clock(c.autoAt)} unless someone vetoes it.`, 'info', r.ref);
       }
       return c;
     }
+    // every decision, by a person or an agent, is applied by the plant's own deterministic action and gets an audit ID
+    function decide(c, op, who, how) {
+      const n0 = P.audit.length, top = P.audit[0];
+      if (op.id) E.apply(op.id, who); else E.dismiss(c.key);
+      const fresh = P.audit[0] !== top || P.audit.length !== n0;
+      const a = fresh ? P.audit[0] : E.audit(who, op.id ? op.label : 'Chose to wait', c.title);
+      c.decided = { by: who, label: op.label, audit: a.id, t: P.t, how };
+      const ag = agent(c.owner); if (how !== 'person') { ag.acted++; A.stats.auto++; }
+      A.decided.unshift({ key: c.key, title: c.title, agent: c.agentName, label: op.label, by: who, how, audit: a.id, time: E.clock(P.t), packed: op.f.packed, late: op.f.late, recommended: op === c.best, h: c.h });
+      if (A.decided.length > 20) A.decided.pop();
+      return c.decided;
+    }
+    A.decide = (c, op, who = 'You') => decide(c, op, who, 'person');
+    A.veto = key => { const c = A.cards.get(key); if (!c) return; c.veto = true; c.autoAt = null; E.audit('You', 'Vetoed an automatic approval', `${c.best.label} · ${c.title}`); say(c.owner, `Vetoed: I will wait for a person to decide on "${c.title}".`, 'warn'); };
     A.card = r => card(r);
     function refresh() {
       for (const r of P.recs) card(r);
+      for (const c of A.cards.values()) if (c.autoAt && P.t >= c.autoAt && !c.veto && !c.decided && P.recs.some(r => r.key === c.key)) {
+        decide(c, c.best, `${c.agentName} (low risk, not vetoed)`, 'risk');
+        say(c.owner, `Went ahead with "${c.best.label}" after two minutes without a veto. Logged as ${c.decided.audit}.`, 'info');
+      }
       for (const k of [...A.cards.keys()]) if (!P.recs.some(r => r.key === k)) A.cards.delete(k);
       // signals each agent is watching (for the crew roster)
       const st = P.stations.length;
@@ -360,6 +390,7 @@
       A.AGENTS.find(a => a.id === 'energy').signals = P.util.assets.length + st;
       A.AGENTS.find(a => a.id === 'people').signals = P.people.length;
       A.AGENTS.find(a => a.id === 'service').signals = X.svc.orders.length + 9;
+      A.AGENTS.find(a => a.id === 'safety').signals = P.people.length + P.agvs.length + P.tuggers.length + P.forklifts.length;
     }
 
     /* ---------------- actions only the agents take ---------------- */
@@ -377,13 +408,57 @@
         P.shave = { until: P.t + 1800, assets: { 'UTIL-AIR3': 0.1, 'UTIL-CH2': 0.6, 'UTIL-BLR': 0.85 } };
         E.audit(who, 'Peak shaved', 'Compressor 3 staged off, chiller 2 setpoint +2 °C, boiler low fire for 30 min');
         say('energy', 'Peak shaving on for 30 minutes: about 190 kW off the demand without touching takt.', 'info', 'UTIL-CH2');
-        E.rec('agent.energy', null); P.saved += 34000;
+        E.rec('agent.energy', null); P.saved += Math.round(Math.max(0, Math.min(190, A.energy.peak - 3810)) * 180);   // the demand charge actually avoided
       }
     });
     // a drill makes the crew re-forecast at once
     E.on((t, d) => {
       if (t === 'drill') say('aps', 'A disruption started; re-forecasting the next two hours.', 'info');
     });
+
+    /* ---------------- safety incidents from the camera feeds ---------------- */
+    let incSeq = 310;
+    A.incident = o => {
+      const i = Object.assign({ id: 'INC-' + (++incSeq), t: P.t, time: E.clock(P.t) }, o);
+      A.incidents.unshift(i); if (A.incidents.length > 12) A.incidents.pop();
+      agent('safety').acted++;
+      say('safety', `${i.cam}: ${i.text}`, 'warn');
+      return i;
+    };
+
+    /* ---------------- scheduling drafts: re-plans simulated over eight hours, published only by a person ---------------- */
+    let draftsAt = -1e9, draftsCache = null;
+    function drafts(force) {
+      if (!force && draftsCache && P.t - draftsAt < 60) return draftsCache;
+      const S = snapshot(240), f0 = forecast({}, S);
+      const ML = mainLines(), models = [...new Set(ML.map(L => L.model))];
+      const outOf = (f, m) => ML.filter(L => L.model === m).reduce((a, L) => a + (f.byLine[L.id] || 0), 0);
+      const due = m => S.orders.filter(o => o.model === m).reduce((a, o) => a + o.need, 0);
+      const cover = m => (S.fg[m] || 0) + outOf(f0, m) - due(m);
+      const byCover = models.slice().sort((a, b) => cover(a) - cover(b));
+      const target = byCover[0], spare = byCover.filter(m => m !== target && ML.filter(L => L.model === m).length > 0).pop();
+      const slow = ML.filter(L => L.model === target).sort((a, b) => a.speed - b.speed)[0];
+      const give = spare ? ML.filter(L => L.model === spare).sort((a, b) => (a.oee || 0) - (b.oee || 0))[0] : null;
+      const list = [{ id: 'live', name: 'Live plan', note: 'What the lines run now', mods: {}, acts: [], cost: 0, co: 0 }];
+      if (slow && slow.speed < 1.08) list.push({ id: 'A', name: `Draft A · ${slow.name} to 108%`, note: `More ${MODELS[target].name}, the model with the least cover`, mods: { rate: [{ id: slow.id, k: 1.08 }] }, acts: [['boost', slow.id]], cost: 5000, co: 0 });
+      if (give) list.push({ id: 'B', name: `Draft B · ${give.name} to ${MODELS[target].name}`, note: `${give.name} leaves ${MODELS[spare].name} (most cover) after a 15-minute changeover`, mods: { co: [{ id: give.id, at: 0, dur: 15, model: target }] }, acts: [['co', give.id, target]], cost: 12000, co: 1 });
+      if (list.length === 3) list.push({ id: 'AB', name: 'Draft C · both', note: 'Speed and changeover together', mods: { rate: list[1].mods.rate, co: list[2].mods.co }, acts: list[1].acts.concat(list[2].acts), cost: 17000, co: 1 });
+      for (const d of list) { d.f = d.id === 'live' ? f0 : forecast(d.mods, S); }
+      // a plan is worth what it ships on time: lost TVs at a flat contribution, revenue that slips, cost and changeovers
+      const top = Math.max(...list.map(d => d.f.packed));
+      for (const d of list) d.score = d.cost + (top - d.f.packed) * 1500 + d.f.revDelayed * 0.08 + d.co * 3000;
+      const best = list.slice().sort((a, b) => a.score - b.score)[0];
+      draftsCache = { list, best, target, at: P.t, h: 240 }; draftsAt = P.t;
+      return draftsCache;
+    }
+    A.drafts = drafts;
+    A.publish = (id, who = 'You') => {
+      const D = drafts(); const d = D.list.find(x => x.id === id); if (!d || id === 'live') return;
+      for (const a of d.acts) { if (a[0] === 'boost') E.apply('boost:' + a[1], who); else if (a[0] === 'co') E.changeover(+a[1].slice(2), a[2], who); }
+      const au = E.audit(who, 'Published a plan', `${d.name} · forecast ${num(d.f.packed)} TVs in 4 h, ${d.f.late} late (live plan: ${num(D.list[0].f.packed)}, ${D.list[0].f.late} late)`);
+      say('aps', `${d.name} is now the live plan (${au.id}). Re-forecasting.`, 'info');
+      draftsCache = null; return au;
+    };
 
     /* ---------------- ask the crew: answers from plant data ---------------- */
     function ask(q) {
@@ -416,8 +491,12 @@
         refs.push(...rows.map(x => 'buf:' + x.b.id));
         return { text: `Shortest runways: ${rows.map(x => `${x.b.code} at ${P.byId[x.b.station].name} (${P.lines[x.b.line].name}) ${Math.round(x.rw / 60)} min`).join('; ')}. Every one has a milk-run lap or AGV planned unless the Material agent says otherwise.`, refs };
       }
+      if (/safety|vision|camera|near miss|ppe|سلامة|كاميرا/.test(s)) {
+        const last = A.incidents.filter(i => P.t - i.t < 3600);
+        return { text: last.length ? `${last.length} safety event${last.length > 1 ? 's' : ''} from the cameras in the last hour: ${last.slice(0, 4).map(i => `${i.time} ${i.cam}, ${i.text}`).join('; ')}. Each has a still in the AI agents tab.` : 'No safety event from the cameras in the last hour. Turn on Cameras in the 3D factory to watch the AI vision live.', refs };
+      }
       if (/energy|power|kw|peak|طاقة|كهرباء/.test(s)) return { text: `Plant demand ${num(k.kw)} kW; 15-minute average ${num(A.energy.avg)} kW, forecast peak ${num(A.energy.peak)} kW against the 4,000 kW contract. ${P.shave && P.t < P.shave.until ? 'Peak shaving is on.' : ''}`, refs: ['util:UTIL-CH1'] };
-      return { text: 'Ask about the shift summary, a line (for example “why is line 3 slow”), orders at risk, OEE, material shortages or energy. Answers come from the live plant data and the two-hour forecast, with links.', refs };
+      return { text: 'Ask about the shift summary, a line (for example “why is line 3 slow”), orders at risk, OEE, material shortages, energy or safety. Answers come from the live plant data and the two-hour forecast, with links.', refs };
     }
     A.ask = ask;
 
@@ -430,7 +509,7 @@
       refresh();
     });
     detect(); refresh();
-    A.setAutonomy = (id, v) => { const a = agent(id); if (a) { a.autonomy = v; E.audit('You', 'Agent autonomy', `${a.name}: ${v === 'auto' ? 'Auto' : v === 'approve' ? 'Approve' : 'Advise'}`); say(id, `Autonomy set to ${v === 'auto' ? 'Auto: I act on reversible decisions and report' : v === 'approve' ? 'Approve: I recommend, a person decides' : 'Advise: I only inform'}.`); } };
+    A.setAutonomy = (id, v) => { const a = agent(id); if (a) { a.autonomy = v; E.audit('You', 'Agent autonomy', `${a.name}: ${v === 'auto' ? 'Auto' : v === 'approve' ? 'Approve' : 'Advise'}`); say(id, `Autonomy set to ${v === 'auto' ? 'Auto: I act on reversible decisions and report' : v === 'approve' ? 'Approve: a person decides; low-risk reversible steps go ahead after two minutes unless vetoed' : 'Advise: I only inform'}.`); } };
     A.OWNER = OWNER;
     return A;
   }

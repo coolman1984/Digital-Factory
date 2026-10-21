@@ -20,7 +20,7 @@
   try { V = PlantScene.create($('#gl'), E, X, { lowPower: narrow }); } catch (err) { V = null; }
   const AG = PlantAgents.create(E, X);
   PlantViews.H.AG = AG;
-  const views = PlantViews.create($('#view2d'), E, X, { select: (r, o) => select(r, o), choose: (c, o) => choose(c, o) });
+  const views = PlantViews.create($('#view2d'), E, X, { select: (r, o) => select(r, o), choose: (c, o) => choose(c, o), publish: id => publish(id) });
 
   const KINDN = { loader: 'Magazine loader', unloader: 'Magazine unloader', printer: 'Solder paste printer', spi: 'Solder paste inspection', mounter: 'Pick-and-place mounter', reflow: 'Reflow oven, 8 zones', aoi: 'Automated optical inspection', writer: 'Software download (firmware writer)', ict: 'In-circuit and function test', lcmload: 'Open-cell loading robot', blu: 'Backlight assembly (manual)', bond: 'Module bonding', lighting: 'Lighting test', robot: 'Robot cell', bench: 'Manual workstation', fct: 'Function test', aging: 'Aging rack, 20 minutes powered', wb: 'White-balance camera', qa: 'Final QA booth', packer: 'Packing station', palletizer: 'Palletizing robot', injection: 'Injection moulding machine', press: 'Stamping press', oven: 'Powder-coating oven', subassy: 'Chassis sub-assembly (manual)', cushion: 'EPS cushion moulding', repair: 'Repair bench' };
 
@@ -68,13 +68,19 @@
   });
   // a person picks one of the options the agents simulated
   function choose(c, o) {
-    if (o.id) E.apply(o.id, 'You');
-    else E.dismiss(c.key);
-    E.audit('You', o === c.best ? 'Approved the agents\' recommendation' : 'Overrode the agents', `${o.label} (forecast ${fmt(o.f.packed)} TVs in ${c.h / 60} h, ${o.f.late} late)`);
-    toast(o === c.best ? `Approved: ${o.label}` : `Your call: ${o.label}. The agents logged it and re-plan around it.`, 'success');
+    if (replay) replayStop();
+    const d = AG.decide(c, o, 'You');
+    toast(o === c.best ? `Approved: ${o.label} (${d.audit})` : `Your call: ${o.label} (${d.audit}). The agents re-plan around it.`, 'success');
+    views.render(true); render(true);
+  }
+  function publish(id) {
+    if (replay) replayStop();
+    const a = AG.publish(id);
+    if (a) toast(`Plan published (${a.id}). The lines change now.`, 'success');
     views.render(true); render(true);
   }
   function act(id) {
+    if (replay) replayStop();
     E.apply(id);
     if (id.startsWith('erp:sop:')) toast('Plan approved. The master schedule is in SAP PP and MRP has run.', 'success');
     else if (id.startsWith('erp:convert')) toast('Planned order converted to a purchase order.', 'success');
@@ -104,15 +110,15 @@
   const insp = $('#inspBody');
   let lastHtml = '', pressing = false;
   insp.addEventListener('pointerdown', () => { pressing = true; });
-  addEventListener('pointerup', () => { if (pressing) { pressing = false; setTimeout(() => render(), 30); } });
+  for (const ev of ['pointerup', 'pointercancel']) addEventListener(ev, () => { if (pressing) { pressing = false; setTimeout(() => render(), 30); } });
   function render(force) {
     if (pressing && !force) return;
     const html = sel ? detail(sel) : kpiView ? kpiPanel(kpiView) : plantNow();
     if (html === lastHtml && !force) return;
-    const focusKey = document.activeElement && insp.contains(document.activeElement) ? document.activeElement.dataset.key : null;
+    const fa = document.activeElement && insp.contains(document.activeElement) ? document.activeElement : null, focusKey = fa ? fa.dataset.key || fa.dataset.ref || fa.dataset.act || fa.dataset.veto : null;
     insp.innerHTML = html; lastHtml = html;
     if (window.Theme) Theme.icons(insp);
-    if (focusKey) { const el = insp.querySelector(`[data-key="${CSS.escape(focusKey)}"]`); if (el) el.focus(); }
+    if (focusKey) { const q = CSS.escape(focusKey), el = insp.querySelector(`[data-key="${q}"], [data-ref="${q}"], [data-act="${q}"], [data-veto="${q}"]`); if (el) el.focus(); }
   }
   insp.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
@@ -124,8 +130,9 @@
     if (b.dataset.follow !== undefined && V) { if (mode !== '3d') setMode('3d'); V.setFollow(!V.follow); if (V.follow && sel) V.select(sel, { follow: true }); render(true); return; }
     if (b.dataset.show3d !== undefined && V && sel) { setMode('3d'); V.select(sel, { fly: true }); return; }
     if (b.dataset.kpi) return select('kpi:' + b.dataset.kpi);
+    if (b.dataset.veto) { AG.veto(b.dataset.veto); render(true); views.render(true); return; }
     if (b.dataset.hmi && sel && sel.startsWith('st:')) { const s = P.byId[sel.slice(3)]; hmiPending = { st: s.id, cmd: b.dataset.hmi, f: hmiForecast(s, b.dataset.hmi) }; render(true); const g = insp.querySelector('[data-hmigo]'); if (g) g.closest('.hmi-pre').scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); return; }
-    if (b.dataset.hmigo && hmiPending) { const p = hmiPending; hmiPending = null; E.hmi(p.st, p.cmd); toast(`${HMI[p.cmd]}: ${P.byId[p.st].name}`, 'success'); render(true); views.render(true); return; }
+    if (b.dataset.hmigo && hmiPending) { if (replay) replayStop(); const p = hmiPending; hmiPending = null; E.hmi(p.st, p.cmd); toast(`${HMI[p.cmd]}: ${P.byId[p.st].name}`, 'success'); render(true); views.render(true); return; }
     if (b.dataset.hmix !== undefined) { hmiPending = null; render(true); return; }
   });
 
@@ -208,6 +215,24 @@
     return `<div class="split" aria-hidden="true">${seg('run', 'run', 'Running')}${seg('idle', 'idle', 'Idle')}${seg('starved', 'warn', 'Starved')}${seg('blocked', 'idle2', 'Blocked')}${seg('down', 'bad', 'Stopped')}</div>
       <p class="legend-s"><span><i class="run"></i>Running ${pct(c.run / tot, 0)}</span><span><i class="idle"></i>Idle ${pct(c.idle / tot, 0)}</span><span><i class="warn"></i>Starved ${pct(c.starved / tot, 0)}</span><span><i class="idle2"></i>Blocked ${pct(c.blocked / tot, 0)}</span><span><i class="bad"></i>Stopped ${pct(c.down / tot, 0)}</span></p>`;
   }
+  // from a machine down to why it lost time and the documents about it in SAP and GMES
+  function lossesHere(s) {
+    const rs = Object.assign({}, s.rs || {});
+    if (['down', 'maint', 'micro', 'changeover', 'starved', 'blocked'].includes(s.state)) { const k = s.state + '|' + (s.why || ''); rs[k] = (rs[k] || 0) + (P.t - s.since); }
+    const top = Object.entries(rs).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    if (!top.length) return '';
+    return `<table class="tbl rc"><tbody>${top.map(([k, v]) => { const [st, why] = k.split('|'); return `<tr><td><span class="st ${SCLS(st)}"><i></i>${esc(STATE[st] || st)}</span><small>${esc(why || '—')}</small></td><td>${(v / 60).toFixed(1)} min</td></tr>`; }).join('')}</tbody></table>`;
+  }
+  function docsHere(s) {
+    const L = line(s.line), rows = [];
+    const o = L && X.pp.find(p => p.line === L.id && p.status !== 'TECO');
+    if (o) rows.push(['SAP PP · production order', `${esc(o.id)} · ${fmt(X.ppProgress(o))} of ${fmt(o.qty)} confirmed (LOIPRO, CONF21)`]);
+    for (const w of P.wo.filter(w => w.st === s.id).slice(0, 3)) rows.push([`SAP PM · ${esc(w.id)}`, `${esc(w.type)} · ${esc(w.status)}${w.why ? ' · ' + esc(w.why) : ''}`]);
+    for (const n of X.ncr.filter(n => n.ref === s.id).slice(0, 2)) rows.push([`SAP QM · ${esc(n.id)}`, `${esc(n.code)} · ${esc(X.D8[n.step])}`]);
+    for (const m of X.msgs.filter(m => m.ref === s.id).slice(0, 3)) rows.push([`${esc(m.from)} → ${esc(m.to)} · ${esc(m.time)}`, `${esc(m.type)}${m.idoc ? ' · ' + esc(m.idoc) : ''}`]);
+    for (const a of P.audit.filter(a => a.detail && a.detail.includes(s.name) && (!L || a.detail.includes(L.name))).slice(0, 2)) rows.push([`Decision · ${esc(a.id)}`, `${esc(a.action)} · ${esc(a.who)}`]);
+    return rows.length ? kv(rows) : '';
+  }
   /* ---------------- HMI control: interlocks first, then the simulated effect, then the command ---------------- */
   let hmiPending = null;
   const HMI = { stop: 'Stop machine', start: 'Start machine', slower: 'Speed −10%', faster: 'Speed +5%', loto: 'Lock out (LOTO)', unloto: 'Remove lockout' };
@@ -215,7 +240,7 @@
     const L = line(s.line), S = s.sens || {}, hold = (P.scen.shortshot && P.scen.shortshot.st === s.id && !P.scen.shortshot.fixed);
     const c = [];
     if (cmd === 'start') c.push(['No lockout on the machine', !s.loto], ['No fault waiting for repair', s.state !== 'down'], ['No quality hold on its output', !hold], ['Line supply on (no trip)', !(L && L.tripped)]);
-    if (cmd === 'loto') c.push(['Machine stopped from the HMI', !!s.hold], ['No unit left inside (drain it first)', !(s.procs && s.procs.length)], ['Isolation points: main breaker, air valve', true], ['Permit to work by the area supervisor', true]);
+    if (cmd === 'loto') c.push(['Machine stopped from the HMI', !!s.hold], [s.batchOut || s.kind === 'aging' ? 'Batch inside held in the machine' : 'No unit left inside (it finishes first)', !!(s.batchOut || s.kind === 'aging') || !(s.procs && s.procs.length)], ['Isolation points: main breaker, air valve', true], ['Permit to work by the area supervisor', true]);
     if (cmd === 'unloto') c.push(['Technician out of the guarded area', !(s.tech && s.tech.state === 'repairing')], ['Guards closed and interlocked', true], ['Lock removed by the person who applied it', true]);
     if (cmd === 'faster') c.push(['Health above 70%', s.health > 70], ['Vibration below 3 mm/s', !(S.vib > 3)], ['Line first-pass quality above 97%', !L || (L.qual || 1) > 0.97], ['Below 108% of rated speed (the machine maximum)', (s.speedMul || 1) > 0.93]);
     if (cmd === 'stop') c.push(['A stop is always allowed (safety first)', true]);
@@ -265,6 +290,8 @@
       + (out ? sect('Moulding', out) : '')
       + sect('Condition', kv([['Health', `${s.health.toFixed(0)}%`], ['Failure forecast', rul], ['Short stops', fmt(s.stops || 0)]]))
       + sect('Output', kv([['Units done', fmt(s.counters.made)], ['Rejected here', fmt(s.counters.bad)], L && L.kind === 'main' ? ['Line OEE', `${pct(L.oee)} = ${pct(L.avail, 0)} × ${pct(L.perf, 0)} × ${pct(L.qual, 1)}`] : null]) + timeSplit(s))
+      + sect('Time lost here', lossesHere(s), 'by reason code')
+      + sect('Documents', docsHere(s), 'SAP, GMES and decisions')
       + (now ? sect('Now inside', `<ul class="li">${now}</ul>`) : '')
       + (feeds ? sect('Fed by', `<ul class="li">${feeds}</ul>`) : '')
       + sect('Linked to', kv([prev && ['Upstream', stLink(prev.id)], next && ['Downstream', stLink(next.id)], L && ['Line', link('line:' + L.id, L.name)], who && ['People', who]]))
@@ -630,7 +657,54 @@
   }
   $$('.pl-overlay [data-overlay]').forEach(b => b.addEventListener('click', () => setOverlay(b.dataset.overlay)));
   setOverlay('status');
+  /* ---------------- the time machine: replay machine states, vehicles and readouts of the last 45 minutes ---------------- */
+  let replay = null;
+  const rBar = $('#replayBar'), rRange = $('#replayRange'), rTime = $('#replayTime'), rBtn = $('#replayBtn'), rPlay = $('#replayPlay');
+  $('.pl-stage').append(rBar);   // over the 3D view and the 2D views alike
+  const fleet = () => P.agvs.concat(P.tuggers, P.forklifts);
+  function replayStart() {
+    if (replay) return;
+    if (P.snaps.length < 2) { toast('Nothing to replay yet: the plant keeps a snapshot every 20 seconds.', 'info'); return; }
+    replay = { speed: P.speed, paused: P.paused, t: P.t, st: P.stations.map(s => [s.state, s.why, s.since]), veh: fleet().map(v => [v.x, v.z, v.h]), kpi: Object.assign({}, P.kpi), i: P.snaps.length - 1, timer: null };
+    setSpeed(0);
+    rRange.max = String(P.snaps.length - 1); rRange.value = rRange.max;
+    rBar.hidden = false; rBtn.setAttribute('aria-pressed', 'true'); document.body.classList.add('replaying');
+    replayShow(P.snaps.length - 1);
+    rRange.focus();
+  }
+  function replayShow(i) {
+    const sn = P.snaps[i]; if (!sn || !replay) return;
+    replay.i = i; P.t = sn.t;
+    P.stations.forEach((s, k) => { const v = sn.st[k]; if (v) { s.state = v[0]; s.why = v[1]; s.since = v[2]; } });
+    fleet().forEach((v, k) => { const q = sn.veh[k]; if (q) { v.x = q[0]; v.z = q[1]; v.h = q[2]; } });
+    Object.assign(P.kpi, sn.kpi);
+    rTime.textContent = `${clockS(sn.t)} · ${Math.round((replay.t - sn.t) / 60)} min ago`;
+    kpis(); vstream(); render(true); if (mode !== '3d') views.render(true);
+  }
+  function replayStop() {
+    if (!replay) return;
+    const R = replay; replay = null; clearInterval(R.timer);
+    P.t = R.t;
+    P.stations.forEach((s, k) => { const v = R.st[k]; s.state = v[0]; s.why = v[1]; s.since = v[2]; });
+    fleet().forEach((v, k) => { const q = R.veh[k]; if (q) { v.x = q[0]; v.z = q[1]; v.h = q[2]; } });
+    Object.assign(P.kpi, R.kpi);
+    rBar.hidden = true; rBtn.setAttribute('aria-pressed', 'false'); rPlay.setAttribute('aria-pressed', 'false'); document.body.classList.remove('replaying');
+    setSpeed(R.paused ? 0 : R.speed);
+    kpis(); vstream(); render(true); views.render(true);
+  }
+  rBtn.addEventListener('click', () => (replay ? replayStop() : replayStart()));
+  $('#replayLive').addEventListener('click', replayStop);
+  rRange.addEventListener('input', () => replayShow(+rRange.value));
+  rPlay.addEventListener('click', () => {
+    if (!replay) return;
+    if (replay.timer) { clearInterval(replay.timer); replay.timer = null; rPlay.setAttribute('aria-pressed', 'false'); return; }
+    rPlay.setAttribute('aria-pressed', 'true');
+    replay.timer = setInterval(() => { if (!replay) return; const n = replay.i + 1; if (n >= P.snaps.length) { clearInterval(replay.timer); replay.timer = null; rPlay.setAttribute('aria-pressed', 'false'); return; } rRange.value = String(n); replayShow(n); }, 450);
+  });
+  rBar.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); replayStop(); rBtn.focus(); } });
+
   function setSpeed(v) {
+    if (replay && v > 0) replayStop();
     E.setSpeed(v);
     $$('.pl-speed [data-speed]').forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.speed === v)));
   }
@@ -745,7 +819,7 @@
   }
   /* AI vision on the CCTV feeds: people and vehicles detected in each camera, PPE checks and forklift near misses */
   const vc = $('#vision'), vx = vc.getContext('2d');
-  const vis = { sum: {}, seen: new Map() };
+  const vis = { sum: {}, seen: new Map(), pend: [] };
   const hashU = s0 => { let h = 2166136261; for (const c of s0) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0) / 4294967296; };
   function visionTick() {
     if (!V || !V.cctv || mode !== '3d') { if (vc.width) { vc.width = 0; vc.height = 0; vis.sum = {}; } return; }
@@ -777,9 +851,9 @@
         if (e.k === 'Person') people++; else vehicles++;
         if (e.k === 'Forklift' && e.near) {
           alert = `near miss ${e.nd.toFixed(1)} m`;
-          const key = e.id + e.near.id; if (!vis.seen.has(key) || P.t - vis.seen.get(key) > 300) { vis.seen.set(key, P.t); E.log('Vision', `${R.c.name.split(' · ')[0]}: person ${e.nd.toFixed(1)} m from forklift ${e.id} · near miss logged, forklift slowed to walking speed`, 'warn'); }
+          const key = e.id + e.near.id; if (!vis.seen.has(key) || P.t - vis.seen.get(key) > 300) { vis.seen.set(key, P.t); vis.pend.push({ R, cam: R.c.name.split(' · ')[0], text: `person ${e.nd.toFixed(1)} m from forklift ${e.id}; near miss logged, forklift slowed to walking speed` }); }
         }
-        if (e.noPpe && !alert) { alert = 'PPE missing'; const key = 'ppe' + e.id; if (!vis.seen.has(key) || P.t - vis.seen.get(key) > 900) { vis.seen.set(key, P.t); E.log('Vision', `${R.c.name.split(' · ')[0]}: ${e.p.name} without safety glasses · team leader notified`, 'warn'); } }
+        if (e.noPpe && !alert) { alert = 'PPE missing'; const key = 'ppe' + e.id; if (!vis.seen.has(key) || P.t - vis.seen.get(key) > 900) { vis.seen.set(key, P.t); vis.pend.push({ R, cam: R.c.name.split(' · ')[0], text: `${e.p.name} without safety glasses; team leader notified` }); } }
       }
       // labels: alerts first, then the nearest objects, never on top of each other
       const placed = [];
@@ -790,6 +864,19 @@
       }
       vx.restore();
       vis.sum[R.c.id] = { people, veh: vehicles, alert };
+    }
+    // a still of each new incident: the camera image with the AI boxes, taken in the same frame it was drawn
+    for (const p of vis.pend.splice(0)) {
+      let img = '';
+      try {
+        const c2 = document.createElement('canvas'); c2.width = 240; c2.height = 135; const g = c2.getContext('2d');
+        const gl = $('#gl'), kx = gl.width / r.width;
+        g.drawImage(gl, p.R.x * kx, p.R.y * kx, p.R.w * kx, p.R.h * kx, 0, 0, 240, 135);
+        g.drawImage(vc, p.R.x * dpr, p.R.y * dpr, p.R.w * dpr, p.R.h * dpr, 0, 0, 240, 135);
+        img = c2.toDataURL('image/jpeg', 0.72);
+      } catch (err) { img = ''; }
+      E.log('Vision', `${p.cam}: ${p.text}`, 'warn');
+      AG.incident({ cam: p.cam, text: p.text, img });
     }
   }
   // the plant map: zones, lines and aisles drawn once; vehicles, alarms and the camera drawn live
@@ -833,10 +920,11 @@
   const drills = $('#drills'), drillBtn = $('#drillBtn');
   drills.innerHTML = `<p class="menu-h">Start a real-world drill. Watch the cause travel through the lines, the stores and the offices, and the departments respond.</p>` + E.SCENARIOS.map(s => `<button type="button" class="drill" data-drill="${s.id}"><b>${esc(s.title)}</b><span>${esc(s.what)}</span><small>${esc(s.area)} · ${esc(s.chain)}</small></button>`).join('')
     + `<div class="menu-f"><button type="button" class="btn btn-secondary btn-sm" data-ff="600">Fast-forward 10 min</button><button type="button" class="btn btn-secondary btn-sm" data-ff="1800">30 min</button></div>`;
-  const openMenu = v => { drills.hidden = !v; drillBtn.setAttribute('aria-expanded', String(v)); if (v) drills.querySelector('button').focus(); };
+  const openMenu = v => { const inside = drills.contains(document.activeElement); drills.hidden = !v; drillBtn.setAttribute('aria-expanded', String(v)); if (v) drills.querySelector('button').focus(); else if (inside) drillBtn.focus(); };
   drillBtn.addEventListener('click', () => openMenu(drills.hidden));
   const DRILL_TARGET = { bearing: 'st:SMD4-MounterB', shortshot: 'st:IM10', coating: 'st:PR4-Coating', software: 'st:SMD1-SWdownload', container: 'buf:IMP:OC-65', carton: 'buf:LOC:CTN-55', absent: 'line:ML3', field: 'buf:SVC:PBA-55', power: 'util:UTIL-TX1' };
   function runDrill(id) {
+    if (replay) replayStop();
     E.trigger(id);
     const sc = E.SCENARIOS.find(s => s.id === id);
     if (sc) toast(`Drill started: ${sc.title}`, 'info');
@@ -845,7 +933,7 @@
   drills.addEventListener('click', e => {
     const d = e.target.closest('[data-drill]'), ff = e.target.closest('[data-ff]');
     if (d) { openMenu(false); runDrill(d.dataset.drill); }
-    if (ff) { E.fastForward(+ff.dataset.ff); openMenu(false); toast(`Moved ${+ff.dataset.ff / 60} minutes ahead`, 'info'); render(true); views.render(true); }
+    if (ff) { if (replay) replayStop(); E.fastForward(+ff.dataset.ff); openMenu(false); toast(`Moved ${+ff.dataset.ff / 60} minutes ahead`, 'info'); render(true); views.render(true); }
   });
   document.addEventListener('click', e => { if (!drills.hidden && !e.target.closest('.pl-drill')) openMenu(false); });
 
@@ -895,6 +983,7 @@
   const embed = /[?&]embed=1/.test(location.search) && parent !== window;
   if (embed) document.body.classList.add('embed');
   addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.target.closest('input, textarea')) { if (e.key === 'Escape') e.target.blur(); return; }
     if (embed && ['ArrowRight', 'ArrowLeft', 'PageDown', 'PageUp', 'f', 'F', 'n', 'N', 'b', 'B'].includes(e.key)) { e.preventDefault(); parent.postMessage({ dfDeckKey: e.key }, location.origin); return; }
     if (e.target.closest('[role="tab"]') && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) return;
@@ -904,6 +993,7 @@
     else if (e.key === '1') setSpeed(1); else if (e.key === '2') setSpeed(4); else if (e.key === '3') setSpeed(16);
     else if (e.key === 't' || e.key === 'T') window.Theme && Theme.toggle();
     else if (e.key === 'g' || e.key === 'G') tour ? stopTour() : startTour();
+    else if (e.key === 'r' || e.key === 'R') replay ? replayStop() : replayStart();
     else if (e.key === '/') { e.preventDefault(); $('#findIn').focus(); }
     else if (e.key === 'Escape') { if (!drills.hidden) openMenu(false); else if (tour) stopTour(); else select(null); }
   });

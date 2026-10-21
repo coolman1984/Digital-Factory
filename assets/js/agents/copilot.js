@@ -106,6 +106,8 @@
     if (b.dataset.cp === 'key') { $('#cpKey').hidden = false; $('#cpKeyIn').focus(); }
     if (b.dataset.cp === 'local') { store.clear(); client = null; history.length = 0; modeBar(); msg('ai', '<p>Back to local mode. Your key was removed from this browser.</p>'); }
   });
+  // a key typed after a rejected one must be able to submit again
+  $('#cpKeyIn').addEventListener('input', e => e.target.setCustomValidity(''));
   $('#cpKey').addEventListener('submit', async e => {
     e.preventDefault();
     const k = $('#cpKeyIn').value.trim();
@@ -277,7 +279,7 @@
   const history = [];
   function loadSdk() {
     if (window.AnthropicSDK) return Promise.resolve(window.AnthropicSDK);
-    if (!SDKp) SDKp = new Promise((res, rej) => { const s = document.createElement('script'); s.src = SDK; s.onload = () => res(window.AnthropicSDK); s.onerror = () => rej(new Error('Could not load the SDK')); document.head.append(s); });
+    if (!SDKp) SDKp = new Promise((res, rej) => { const s = document.createElement('script'); s.src = SDK; s.onload = () => res(window.AnthropicSDK); s.onerror = () => { s.remove(); rej(new Error('Could not load the SDK')); }; document.head.append(s); }).catch(err => { SDKp = null; throw err; });
     return SDKp;
   }
   const SYSTEM = `You are the production copilot of Plant EG-01, a fictional electronics plant (SMT lines 1-2, final assembly A for TVs and B for smartphones, burn-in, final QC, packing, AGVs, utilities). Every number comes from a live, simulated digital twin; never invent plant data - read it with the tools, and say which tool a number came from when it matters. Plant time is in the user's message.

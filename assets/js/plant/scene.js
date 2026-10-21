@@ -78,10 +78,10 @@
     Object.assign(sun.shadow.camera, { left: -175, right: 175, top: 125, bottom: -125, near: 20, far: 560 });
     sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.05; sun.shadow.radius = 3;
     scene.add(sun, sun.target);
-    scene.fog = new T.Fog(C.fog, 520, 1400);
+    scene.fog = new T.Fog(C.fog, 340, 1100);   // atmospheric depth: far halls soften a little at overview distance
 
     /* ---------------- post-processing: MSAA, ambient occlusion, bloom, tone mapping ---------------- */
-    let quality = low ? 'low' : 'high', composer = null, gtao = null, bloom = null;
+    let quality = low ? 'low' : 'high', composer = null, gtao = null, bloom = null, vig = null;
     function buildComposer() {
       if (quality === 'low') { composer = null; return; }
       const size = renderer.getDrawingBufferSize(new T.Vector2());
@@ -98,6 +98,12 @@
       bloom = new T.UnrealBloomPass(new T.Vector2(size.x / 2, size.y / 2), C.bloom, 0.55, 1.45);
       composer.addPass(bloom);
       composer.addPass(new T.OutputPass());
+      // a quiet vignette after tone mapping keeps the eye on the middle of the floor
+      composer.addPass(vig = new T.ShaderPass({
+        uniforms: { tDiffuse: { value: null }, amount: { value: theme === 'dark' ? 0.38 : 0.22 } },
+        vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+        fragmentShader: 'uniform sampler2D tDiffuse; uniform float amount; varying vec2 vUv; void main() { vec4 c = texture2D(tDiffuse, vUv); vec2 d = vUv - 0.5; float v = smoothstep(0.85, 0.25, length(d * vec2(1.0, 0.8))); gl_FragColor = vec4(c.rgb * mix(1.0 - amount, 1.0, v), c.a); }'
+      }));
     }
     // adaptive quality: drop to a cheaper pipeline when frames get slow
     let ftAvg = 16, ftN = 0, autoQ = true;
@@ -869,7 +875,7 @@
     let xray = false;
     function applyTheme() {
       C = PAL[theme]; S = STATUS[theme];
-      scene.background = new T.Color(C.bg); scene.fog.color.set(C.fog);
+      scene.background = new T.Color(C.bg); scene.fog.color.set(C.fog); if (vig) vig.uniforms.amount.value = theme === 'dark' ? 0.38 : 0.22;
       scene.environmentIntensity = C.env;
       hemi.color.set(C.hemi[0]); hemi.groundColor.set(C.hemi[1]); hemi.intensity = C.hemi[2]; sun.intensity = C.sun; amb.intensity = C.amb;
       renderer.toneMappingExposure = C.exp;

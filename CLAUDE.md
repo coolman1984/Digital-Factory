@@ -2,9 +2,10 @@
 
 Static site (no build): `index.html` (website), `app.html` (command room), `deck.html` (presentation), `guide.html` (bilingual reference guide), `plant.html` (live plant in 3D). Plant data is simulated.
 When a screen, scenario, decision, slide or term changes, update `guide.html` (both languages) and `assets/js/guide-terms.js` to match.
-One deterministic twin (`assets/js/plant/engine.js`) runs every page through the hub (`assets/js/plant/hub.js`); the agents and the copilot
-live in `assets/js/agents/`, the command room in `assets/js/room/`. Change the plant only through commands (`Twin.exec`), never by
-writing to the world from a page, or tabs, saved visits and the time machine drift apart.
+The command room runs one deterministic twin (`assets/js/twin/engine.js`) through the hub (`assets/js/twin/hub.js`); its agents and copilot
+live in `assets/js/agents/`, the room in `assets/js/room/`. Change that twin only through commands (`Twin.exec`), never by writing to the
+world from a page, or tabs, saved visits and the time machine drift apart. The live plant (`plant.html`) is a separate model:
+`assets/js/plant/` (engine, erp, agents, scene, views2d, ui, recorder).
 Design is the brand UI kit in `assets/kit/` (pinned brand: Inter, brand blues, light and dark). The plant is fictional (Plant EG-01);
 never name a real company or city for it.
 

@@ -10,7 +10,7 @@
   const T = window.Twin, A = window.Agents, PE = window.PlantEngine;
   const KEYS = { live: 'df-live', moments: 'df-moments', pinned: 'df-pinned' };
   const RING = 40;
-  const embed = document.body.classList.contains('embed');
+  const embed = /[?&]embed=1/.test(location.search);   // main.js adds body.embed later, after this file runs
   const read = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
   const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
   const lineStatus = L => (L.stopped || L.tripped || L.state === 'down' || L.state === 'starved') ? 'down' : (L.state === 'warn' || L.state === 'changeover' || L.stations.some(s => s.state === 'maint' || s.degrade > 0)) ? 'attn' : 'run';

@@ -111,10 +111,11 @@
     if (!c) return;
     if (dlgB.contains(document.activeElement) && document.activeElement.closest('.cs-dec, .cs-opts')) return;
     $('#caseDlgT').textContent = c.title;
-    html(dlgB, CaseUI.detail(c, { noTitle: true }) + `<div class="cs-actions">${c.chain && c.chain.length ? `<button type="button" class="btn btn-secondary btn-sm" data-chain="${esc(c.id)}"><span data-icon="layers"></span>Show the cause path on the mimic</button>` : ''}<a class="btn btn-secondary btn-sm" href="plant.html#case:${esc(c.id)}"><span data-icon="layers"></span>Open in 3D</a><button type="button" class="btn btn-secondary btn-sm" data-ask-case="${esc(c.id)}"><span data-icon="sparkles"></span>Ask the copilot</button></div>`);
+    html(dlgB, CaseUI.detail(c, { noTitle: true }) + `<div class="cs-actions">${c.chain && c.chain.length ? `<button type="button" class="btn btn-secondary btn-sm" data-chain="${esc(c.id)}"><span data-icon="layers"></span>Show the cause path on the mimic</button>` : ''}<a class="btn btn-secondary btn-sm" href="plant.html"><span data-icon="layers"></span>Open the 3D plant</a><button type="button" class="btn btn-secondary btn-sm" data-ask-case="${esc(c.id)}"><span data-icon="sparkles"></span>Ask the copilot</button></div>`);
     if (typeof Theme !== 'undefined') Theme.icons(dlgB);
   }
   DF.openCase = function (id) {
+    if (!A.caseById(id)) { DF.toast(`Case ${id} is not in this shift`, 'info'); return; }
     dlgCase = id; dlgB._h = null;
     renderCase();
     if (!dlg.open) { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); }

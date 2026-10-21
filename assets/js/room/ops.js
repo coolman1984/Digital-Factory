@@ -54,8 +54,9 @@
   document.addEventListener('click', e => {
     const f = e.target.closest('#alarmFilter .seg');
     if (f) { alFilter = f.dataset.f; $$('#alarmFilter .seg').forEach(x => { x.classList.toggle('active', x === f); x.setAttribute('aria-pressed', String(x === f)); }); alarms(); return; }
-    const a = e.target.closest('[data-ack]'); if (a) { T.exec({ type: 'ack', id: a.dataset.ack }).then(() => DF.refresh(true)); return; }
-    const s = e.target.closest('[data-shelve]'); if (s) { T.exec({ type: 'shelve', id: s.dataset.shelve }).then(() => { DF.toast('Alarm shelved for 20 minutes and logged', 'info'); DF.refresh(true); }); return; }
+    // the list is not redrawn while focus is inside it, so release focus before the redraw that shows the new state
+    const a = e.target.closest('[data-ack]'); if (a) { a.blur(); T.exec({ type: 'ack', id: a.dataset.ack }).then(() => DF.refresh(true)); return; }
+    const s = e.target.closest('[data-shelve]'); if (s) { s.blur(); T.exec({ type: 'shelve', id: s.dataset.shelve }).then(() => { DF.toast('Alarm shelved for 20 minutes and logged', 'info'); DF.refresh(true); }); return; }
     const ai = e.target.closest('[data-ack-inc]');
     if (ai) {
       const P = DF.world(), i = DF.incidents(P).find(x => x.open && x.first.key === ai.dataset.ackInc);

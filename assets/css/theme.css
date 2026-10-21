@@ -52,7 +52,8 @@ html { -webkit-text-size-adjust: 100%; }
 body { font-size: 15px; height: auto; min-height: 100%; }
 :focus-visible { outline: 3px solid var(--brand-2); outline-offset: 3px; border-radius: 8px; }
 .toggle input:focus-visible + .toggle-track { outline: 3px solid var(--brand-2); outline-offset: 4px; }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+table.sr-only { display: block; }   /* tables ignore width: 1px; as a block the hidden data table no longer widens the page */
 
 /* legacy button names → kit buttons */
 .btn:where(:not(.btn-primary, .btn-secondary, .btn-ghost, .btn-success, .btn-danger, .primary)) {
