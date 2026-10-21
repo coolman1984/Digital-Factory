@@ -53,7 +53,7 @@
     let s;
     if (DF.replay) s = `Replaying <b>${PE.clockS(P.t)}</b>. The live plant keeps running; this is the twin rebuilt from its own commands.`;
     else if (flood) s = `<span class="bad">Alarm flood:</span> ${P.alarmStats.rate10} alarms in 10 minutes. The agents folded them under ${DF.incidents(P).filter(i => i.open).length || 1} first-out cause${DF.incidents(P).filter(i => i.open).length === 1 ? '' : 's'}.`;
-    else if (wait.length) { const c = wait.slice().sort((a, b) => (b.value || 0) - (a.value || 0))[0]; s = `<span class="warn">${wait.length} decision${wait.length > 1 ? 's' : ''} wait for you.</span> First: <b>${esc(c.title)}</b>${c.value > 0 ? `, worth ${money(c.value)} against doing nothing` : ''}.`; }
+    else if (wait.length) { const c = wait.slice().sort((a, b) => (b.value || 0) - (a.value || 0))[0]; s = `<span class="warn">${wait.length} decision${wait.length > 1 ? 's wait' : ' waits'} for you.</span> First: <b>${esc(c.title)}</b>${c.value > 0 ? `, worth ${money(c.value)} against doing nothing` : ''}.`; }
     else if (down.length) s = `<b>${esc(down[0].name)}</b> on ${esc(P.lines[down[0].line] ? P.lines[down[0].line].name : '')} is ${down[0].state === 'maint' ? 'in planned work' : '<span class="bad">stopped</span>'}: ${esc((down[0].why || '').toLowerCase())}.`;
     else s = `All lines running. <b>${fmt(k.units)}</b> packed against a plan of ${fmt(k.plan)}; ${Math.round(f.prob * 100)}% chance to hit ${fmt(f.plan)} by 14:00${f.sim ? ` across ${f.n} simulated futures` : ''}.`;
     html($('#viewSay'), s);
@@ -123,7 +123,7 @@
     if (!cs.length) return '';
     return `<section class="insp-sec"><h4>Open cases</h4>${cs.map(c => `<p class="small" style="margin:0 0 6px">${link('case:' + c.id, c.title)} · ${esc(CaseUI.agentName(c.agent))}</p>`).join('')}</section>`;
   }
-  const acts = (ref, extra = '') => `<div class="acts">${extra}<a class="btn btn-secondary btn-sm" href="plant.html#${esc(ref)}"><span data-icon="layers"></span>Open in 3D</a><button type="button" class="btn btn-secondary btn-sm" data-ask="${esc(ref)}"><span data-icon="sparkles"></span>Ask the copilot</button></div>`;
+  const acts = (ref, extra = '') => `<div class="acts">${extra}<a class="btn btn-secondary btn-sm" href="plant.html"><span data-icon="layers"></span>Open the 3D plant</a><button type="button" class="btn btn-secondary btn-sm" data-ask="${esc(ref)}"><span data-icon="sparkles"></span>Ask the copilot</button></div>`;
   function plantNow(P) {
     const k = P.kpi;
     const lines = ['L1', 'L2', 'L3', 'L4', 'L5'].map(id => P.lines[id]);

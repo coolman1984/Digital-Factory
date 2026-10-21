@@ -6,8 +6,8 @@ Static web app: no install, no server, works offline. Light and dark themes, bui
 | Page | What it is |
 |---|---|
 | `index.html` | Website: the vision, the industry's 2030 direction, the capabilities and the 12-week pilot |
-| `plant.html` | **Live plant**: a whole TV plant as a unit-level twin. 3D: six main assembly lines and every sub-line (LCM, SMD/PBA with firmware download, injection, press and coating, cushions), the stores, milk runs, AGVs, forklifts, docks and the offices with the server room; data packets between the floor, GMES, SAP and the departments. 2D tabs: GMES boards, SAP and data flow, S&OP, MRP, Departments, AI agents (eight agents that simulate every option on a flow model of the plant before they recommend one, with autonomy per agent and an ask box). GMES adds andon escalation, the OEE loss tree and an 8-hour schedule; Departments adds SPC, NCR/8D, SAP PM work orders and the skills matrix. Every machine has HMI control behind interlocks with the effect simulated first, and the CCTV feeds run AI vision (people, vehicles, near misses, PPE). Every TV has a passport; nine drills with decisions that act on the plant |
-| `app.html` | **Command room** on the same twin: plant mimic, value stream, agent cases with simulated futures, ISA-18.2 alarms, control previewed on the twin, predictions, root cause and genealogy, what-if lab, drills, leadership, maintenance, quality, energy, a time machine and the copilot |
+| `plant.html` | **Live plant**: a whole TV plant as a unit-level twin. 3D: six main assembly lines and every sub-line (LCM, SMD/PBA with firmware download, injection, press and coating, cushions), the stores, milk runs, AGVs, forklifts, docks and the offices with the server room; data packets between the floor, GMES, SAP and the departments. 2D tabs: GMES boards, SAP and data flow, S&OP, MRP, Departments, AI agents (nine agents that simulate every option on a flow model of the plant before they recommend one, with autonomy per agent and an ask box). GMES adds andon escalation, the OEE loss tree and an 8-hour schedule; Departments adds SPC, NCR/8D, SAP PM work orders and the skills matrix. Every machine has HMI control behind interlocks with the effect simulated first, and the CCTV feeds run AI vision (people, vehicles, near misses, PPE). Every TV has a passport; nine drills with decisions that act on the plant |
+| `app.html` | **Command room** on its own twin (a five-line electronics plant): plant mimic, value stream, agent cases with simulated futures, ISA-18.2 alarms, control previewed on the twin, predictions, root cause and genealogy, what-if lab, drills, leadership, maintenance, quality, energy, a time machine and the copilot |
 | `deck.html` | **Presentation**: 20 slides with the live demo embedded, a live briefing built from a pinned plant moment or a past time window of the live plant, an editable business case and speaker notes |
 | `guide.html` | **Reference guide**, Arabic and English: the idea, how it works, every screen, decision and scenario, the live briefing, full translations of the website and the presentation, and a searchable glossary of every term |
 | `docs/RESEARCH.md` | Research brief on the world's best factories, with sources, and the ideas built from it |
@@ -28,7 +28,7 @@ time (e.g. 13:00–13:30), and slides 2–4 tell what happened, what the AI did 
 *Play* show what changed afterwards. *Build a sample shift* makes a demo recording in about 30 s; *Export PowerPoint* saves the
 three slides as an editable .pptx (PptxGenJS, vendored in `assets/vendor/`, loaded only on demand).
 
-**Live plant** (`plant.html`): `Space` pause · `1` `2` `3` speed 1× / 4× / 16× · `G` guided tour · `/` find a serial · `Esc` clear.
+**Live plant** (`plant.html`): `Space` pause · `1` `2` `3` speed 1× / 4× / 16× · `G` guided tour · `R` replay the last 45 minutes · `/` find a serial · `Esc` clear.
 Start the guided tour, then let the guest select a TV and press *Follow in 3D*; *Run a drill* shows a cause travelling through the plant.
 Deep links: `plant.html#st:SMD4-MounterB`, `#line:ML1`, `#dept:planning`, `#mrp:OC-65`, `#mode:sop`, `#unit:<serial>`, `#drill:container`, `#tour`. Arrow keys move between the tabs.
 
@@ -43,8 +43,8 @@ Deep links: `plant.html#st:SMD4-MounterB`, `#line:ML1`, `#dept:planning`, `#mrp:
 Suggested live moment: start *Bearing wear on Mounter B*, set 16×, and watch the maintenance agent open a case from the vibration
 trend, recall a past case and play three options forward. When it reaches **Needs you**, let the guest approve it, then open **Leadership**.
 
-The whole site runs one plant: open the command room and the 3D plant side by side and they stay in step; the plant continues on the
-next visit (Drills → New shift starts over).
+The command room runs one twin across all its tabs: open it twice and both stay in step, and the plant continues on the next visit
+(Drills → New shift starts over). The live 3D plant is a separate, larger model of a TV plant with its own engine and agents.
 
 ## Design
 
@@ -57,8 +57,8 @@ Open `index.html` in a browser, or serve the folder: `python3 -m http.server`.
 
 ## Deploy
 
-`.github/workflows/pages.yml` copies the site to the `gh-pages` branch on every push to `main`; GitHub Pages serves that branch
-(Settings → Pages → Deploy from a branch → `gh-pages` / root).
+`.github/workflows/pages.yml` uploads the site as a Pages artifact and deploys it on every push to `main`
+(Settings → Pages → Source: **GitHub Actions**).
 
 ## Structure
 
