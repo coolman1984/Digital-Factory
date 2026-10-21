@@ -1398,7 +1398,7 @@
     }
     for (let i = 1; i <= 6; i++) { const L = P.lines['ML' + i]; moveItems(STORE.PBA[L.ls.PBA.code], L.ls.PBA, 40); }
     function moveItems(from, to, n) { const it = from.items.splice(0, n); it.forEach(u => { u.loc = { k: 'ls', b: to }; }); to.items.push(...it); }
-    P.t = START - 50 * 60;
+    P.t = START - 32 * 60;
     for (const s of P.stations) if (s.kind === 'cushion') s.procs = [];
     // the aging racks are full when the model starts: TVs assembled earlier this shift, ageing in arrival order
     for (const s of P.stations) if (s.kind === 'aging') {
@@ -1411,6 +1411,8 @@
     }
     // the coating ovens run around the clock: each starts the morning full of chassis parts
     for (const s of P.stations) if (s.kind === 'oven') for (let i = 0; i < s.slots; i++) s.procs.push({ left: (i + 1) * s.base, lot: `${s.line}-CT-${pad(Math.floor((START - 3600) / 1200), 3)}`, cure: 199 });
+    // a coarse step for the first twenty minutes, then the normal one, so the page opens fast
+    while (P.t < START - 12 * 60) step(1);
     while (P.t < START) step(0.5);
     P.events.length = 0; P.audit.length = 0; recs.clear(); alarmMap.clear(); P.alarms = [];
     for (const s of P.stations) { s.hist = {}; for (let i = 0; i < 30; i++) { sensors(s); record(s); } }
