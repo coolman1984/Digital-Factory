@@ -6,6 +6,7 @@ Findings from the design checks that stay on purpose, with the reason. Everythin
 |---|---|---|
 | Overused font: Inter | all pages | Pinned by the brand UI kit the client asked us to use. Distinction comes from scale, weight and the live line, not the face. |
 | Pulsing dots | command room: live chip, agent waiting/acting, unacknowledged P1 alarms, copilot typing | Each is tied to a real changing state. Flashing unacknowledged alarms follows ISA-18.2 practice. |
+| Plant mimic edge to edge | command room: `.mimic-wrap` | The plant map is a drawing that fills its frame like a 3D view; its zoom buttons and legend carry their own inset. |
 | Cramped padding on colour fields | website | False positive: fields have 28px to 56px of inner space; the checker misreads the 12-column grid. |
 | Tight leading on display type | website | Display headlines at 0.92–1.0 leading by design; all body text is 1.5–1.7. |
 | Small tap targets inside dashboard cards | command room | Dense operator screen; nav, topbar and every primary action are 44px on touch. |
