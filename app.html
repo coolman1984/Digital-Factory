@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Command room · Digital Factory</title>
-  <meta name="description" content="Digital Factory command room: the live twin of Plant EG-01, AI agent cases with simulated futures, ISA-18.2 alarms, predictions, root cause, drills, a what-if lab and a time machine. Simulated plant.">
+  <meta name="description" content="Digital Factory command room for Plant EG-01, a TV plant with six main lines and the LCM, SMD, injection, press and cushion lines that feed them: AI agents that simulate before they act, ISA-18.2 alarms, control, predictions, root cause, drills, a what-if lab and a time machine. Simulated plant.">
   <script>try{var t=localStorage.getItem('df-theme')}catch(e){}document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')</script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231428A0'/%3E%3Crect x='8' y='8' width='5' height='15' rx='1' fill='%23fff'/%3E%3Crect x='16' y='13' width='5' height='10' rx='1' fill='%23fff'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="assets/kit/fonts.css">
@@ -12,15 +12,18 @@
   <link rel="stylesheet" href="assets/css/theme.css">
   <link rel="stylesheet" href="assets/css/app.css">
   <link rel="stylesheet" href="assets/css/agents.css">
+  <link rel="stylesheet" href="assets/css/room-floor.css">
+  <link rel="stylesheet" href="assets/css/room-intel.css">
+  <link rel="stylesheet" href="assets/css/room-perf.css">
 </head>
 <body>
   <a class="skip" href="#main">Skip to the plant</a>
   <div id="toast-root" aria-live="polite" aria-atomic="false"></div>
-  <div class="boot" id="boot" aria-hidden="true"><span class="logo-mark"></span><p>Starting the twin of Plant EG-01…</p></div>
+  <div class="boot" id="boot" aria-hidden="true"><span class="logo-mark"></span><p>Starting Plant EG-01…</p></div>
 
   <!-- SIDEBAR -->
   <aside class="side" id="side">
-    <a class="logo side-logo" href="./"><span class="logo-mark" aria-hidden="true"></span><span><span class="logo-word">Digital Factory</span><span class="side-cap">Plant EG-01 · Fictional plant</span></span></a>
+    <a class="logo side-logo" href="./"><span class="logo-mark" aria-hidden="true"></span><span><span class="logo-word">Digital Factory</span><span class="side-cap">Plant EG-01 · TV plant · fictional</span></span></a>
     <nav class="nav" aria-label="Views">
       <div class="nav-label">Operate</div>
       <a href="#command" data-view="command"><span data-icon="dashboard"></span>Command room</a>
@@ -80,7 +83,7 @@
       <b>Time machine</b>
       <input type="range" id="tmRange" min="0" max="0" value="0" step="1" aria-label="Replay position" aria-describedby="tmLabel">
       <span class="tm-label" id="tmLabel">--:--</span>
-      <button type="button" class="btn btn-secondary btn-sm" id="tmBranch" title="Play options forward from this moment">Branch from here</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="tmBranch" title="Compare options on the plant now">Open the What-if lab</button>
       <button type="button" class="btn btn-primary btn-sm" id="tmLive">Back to live</button>
     </div>
 
@@ -100,337 +103,19 @@
         <a class="ro" href="#agents"><span class="ro-v" id="kSaved">—</span><span class="ro-l">Value from agent decisions</span><span class="ro-s" id="kSavedS">verified against the twin</span><span class="ro-t" id="kSavedT"></span></a>
       </section>
 
-      <!-- COMMAND ROOM -->
-      <section class="view" id="view-command">
-        <div class="cmd-grid">
-          <div class="card mimic">
-            <div class="card-head">
-              <div><h2 class="h3">Plant mimic</h2><p class="muted small">The twin from above, live. Select any machine, buffer, vehicle, truck or utility.</p></div>
-              <div class="tools">
-                <div class="seg-tabs sm" id="ovl" role="group" aria-label="Overlay">
-                  <button type="button" class="seg active" data-ovl="status" aria-pressed="true">Status</button>
-                  <button type="button" class="seg" data-ovl="flow" aria-pressed="false">Flow</button>
-                  <button type="button" class="seg" data-ovl="energy" aria-pressed="false">Energy</button>
-                  <button type="button" class="seg" data-ovl="quality" aria-pressed="false">Quality</button>
-                  <button type="button" class="seg" data-ovl="people" aria-pressed="false">People</button>
-                </div>
-              </div>
-            </div>
-            <div class="mimic-wrap">
-              <canvas id="floor" role="img" aria-label="Plan view of Plant EG-01. The value stream below and the detail panel give the same information without a pointer."></canvas>
-              <div class="mimic-zoom" role="group" aria-label="Zoom">
-                <button type="button" class="btn-icon" data-zoom="in" aria-label="Zoom in"><span data-icon="plus"></span></button>
-                <button type="button" class="btn-icon" data-zoom="out" aria-label="Zoom out"><span data-icon="minus"></span></button>
-                <button type="button" class="btn-icon" data-zoom="fit" aria-label="Whole plant"><span data-icon="maximize"></span></button>
-              </div>
-              <label class="mimic-zone"><span class="sr-only">Go to an area</span>
-                <select id="zoneSel"><option value="">Whole plant</option></select>
-              </label>
-            </div>
-            <p class="legend" id="floorLegend"></p>
-          </div>
-          <aside class="card insp" id="insp" aria-label="Details" tabindex="-1">
-            <div id="inspBody"></div>
-          </aside>
-        </div>
-
-        <section class="card vs" aria-labelledby="vsH">
-          <div class="card-head"><div><h2 class="h3" id="vsH">Value stream</h2><p class="muted small">Boards to shipped orders. Each step shows its state, its rate and what waits in front of it.</p></div></div>
-          <ol class="vs-steps" id="vstream"></ol>
-        </section>
-
-        <div class="cmd-row">
-          <section class="card" aria-labelledby="needsH">
-            <div class="card-head"><div><h2 class="h3" id="needsH">Needs you</h2><p class="muted small">Agent recommendations waiting for a person</p></div><span class="count" id="needsN">0</span></div>
-            <div class="cases" id="needs"></div>
-          </section>
-          <section class="card" aria-labelledby="workH">
-            <div class="card-head"><div><h2 class="h3" id="workH">Agents at work</h2><p class="muted small">Every step an agent takes, as it takes it</p></div><a class="link-btn" href="#agents">All cases</a></div>
-            <div class="cases" id="working"></div>
-          </section>
-          <section class="card" aria-labelledby="incH">
-            <div class="card-head"><div><h2 class="h3" id="incH">Alarms</h2><p class="muted small" id="alSumS">ISA-18.2 grouping by first-out cause</p></div><a class="link-btn" href="#alarms">All alarms</a></div>
-            <div id="alarmSum"></div>
-          </section>
-        </div>
-
-        <div class="cmd-row two">
-          <section class="card" aria-labelledby="evH">
-            <div class="card-head"><div><h2 class="h3" id="evH">Event stream</h2><p class="muted small">MES, PLC, AGV, ERP, EMS and the agents</p></div>
-              <div class="seg-tabs sm" id="evFilter" role="group" aria-label="Filter events">
-                <button type="button" class="seg active" data-f="all" aria-pressed="true">All</button>
-                <button type="button" class="seg" data-f="warn" aria-pressed="false">Warnings</button>
-                <button type="button" class="seg" data-f="agents" aria-pressed="false">Decisions</button>
-              </div>
-            </div>
-            <ol class="events" id="events"></ol>
-          </section>
-          <section class="card" aria-labelledby="ordH">
-            <div class="card-head"><div><h2 class="h3" id="ordH">Orders today</h2><p class="muted small">Ready time from the current rate; the planning agent runs full futures</p></div></div>
-            <div class="table-wrap"><table class="tbl" id="orders"></table></div>
-          </section>
-        </div>
-      </section>
-
-      <!-- ALARMS -->
-      <section class="view" id="view-alarms" hidden>
-        <div class="stats" id="alKpis"></div>
-        <div class="alarm-grid">
-          <section class="card" aria-labelledby="inc2H">
-            <div class="card-head"><div><h2 class="h3" id="inc2H">Incidents</h2><p class="muted small">Consequential alarms folded under their first-out cause</p></div></div>
-            <div id="incidents" class="incidents"></div>
-          </section>
-          <section class="card" aria-labelledby="alListH">
-            <div class="card-head">
-              <div><h2 class="h3" id="alListH">Alarm list</h2><p class="muted small">Priority 1 is the most urgent. Shelving hides an alarm for 20 minutes and is logged.</p></div>
-              <div class="row-gap">
-                <div class="seg-tabs sm" id="alarmFilter" role="group" aria-label="Filter alarms">
-                  <button type="button" class="seg active" data-f="all" aria-pressed="true">All</button>
-                  <button type="button" class="seg" data-f="p12" aria-pressed="false">Priority 1–2</button>
-                  <button type="button" class="seg" data-f="unack" aria-pressed="false">Not acknowledged</button>
-                  <button type="button" class="seg" data-f="shelved" aria-pressed="false">Shelved</button>
-                </div>
-                <button type="button" class="btn btn-secondary btn-sm" id="ackAll">Acknowledge all</button>
-              </div>
-            </div>
-            <div class="table-wrap"><table class="tbl alarms" id="alarmTable"></table></div>
-          </section>
-        </div>
-        <section class="card" aria-labelledby="alRateH">
-          <div class="card-head"><div><h2 class="h3" id="alRateH">Alarm rate this shift</h2><p class="muted small">Alarms raised per 10 minutes. Above 10 is a flood (ISA-18.2); a manageable rate is about one.</p></div></div>
-          <div class="vz-box" id="alRate"></div>
-        </section>
-      </section>
-
-      <!-- CONTROL -->
-      <section class="view" id="view-control" hidden>
-        <p class="notice notice-warning"><span data-icon="lock"></span><span>Every change is played forward on the twin first, needs your confirmation and goes to the audit trail. In a real plant this panel follows your control and safety rules.</span></p>
-        <div class="controls-grid" id="controls"></div>
-        <section class="card" aria-labelledby="auditH">
-          <div class="card-head"><div><h2 class="h3" id="auditH">Audit trail</h2><p class="muted small">People and agents, every change</p></div></div>
-          <div class="table-wrap"><table class="tbl" id="audit"></table></div>
-        </section>
-      </section>
-
-      <!-- AGENTS -->
-      <section class="view" id="view-agents" hidden>
-        <p class="lede">Six agents and a plant orchestrator work on the live twin. Each one <b>detects</b> from the plant's own data, <b>investigates</b> with tools, <b>simulates</b> every option on forks of the plant, <b>decides</b> inside its autonomy and the plant policy, <b>acts</b> through the same commands a person uses, then <b>verifies</b> the outcome against its prediction.</p>
-        <div class="crew" id="crew"></div>
-        <div class="agents-grid">
-          <section class="card" aria-labelledby="boardH">
-            <div class="card-head"><div><h2 class="h3" id="boardH">Case board</h2><p class="muted small">Open a case for its evidence, futures and trace</p></div>
-              <div class="seg-tabs sm" id="caseFilter" role="group" aria-label="Filter cases">
-                <button type="button" class="seg active" data-f="open" aria-pressed="true">Open</button>
-                <button type="button" class="seg" data-f="waiting" aria-pressed="false">Waiting</button>
-                <button type="button" class="seg" data-f="closed" aria-pressed="false">Closed</button>
-                <button type="button" class="seg" data-f="all" aria-pressed="false">All</button>
-              </div>
-            </div>
-            <div class="cases board" id="board"></div>
-          </section>
-          <section class="card" aria-labelledby="polH">
-            <div class="card-head"><div><h2 class="h3" id="polH">Plant policy</h2><p class="muted small">The most an agent may do on its own, per kind of action</p></div></div>
-            <div class="table-wrap"><table class="tbl" id="policy"></table></div>
-          </section>
-        </div>
-        <section class="card" aria-labelledby="ledH">
-          <div class="card-head"><div><h2 class="h3" id="ledH">Decision ledger</h2><p class="muted small">What was decided, by whom, under which rule, the value the futures predicted and what verification found</p></div></div>
-          <div class="table-wrap"><table class="tbl" id="ledger"></table></div>
-        </section>
-        <section class="card" aria-labelledby="memH">
-          <div class="card-head"><div><h2 class="h3" id="memH">Case memory</h2><p class="muted small">Past cases the agents match against; closed cases from today are added</p></div></div>
-          <ol class="memory" id="memory"></ol>
-        </section>
-      </section>
-
-      <!-- PREDICTIONS -->
-      <section class="view" id="view-predict" hidden>
-        <section class="card" aria-labelledby="fcH">
-          <div class="card-head"><div><h2 class="h3" id="fcH">End-of-shift output</h2><p class="muted small" id="fcS">Packed units, actual so far and the simulated futures to 14:00</p></div><button type="button" class="btn btn-secondary btn-sm" id="fcRun"><span data-icon="refresh"></span>Run futures now</button></div>
-          <div class="vz-box tall" id="fcChart"></div>
-          <div class="stats" id="fcNums"></div>
-        </section>
-        <div class="pred-grid">
-          <section class="card" aria-labelledby="rulH">
-            <div class="card-head"><div><h2 class="h3" id="rulH">Remaining useful life</h2><p class="muted small">Rotating machines, from the vibration trend to zone D (7.1 mm/s)</p></div></div>
-            <div class="table-wrap"><table class="tbl" id="rul"></table></div>
-          </section>
-          <section class="card" aria-labelledby="ordFH">
-            <div class="card-head"><div><h2 class="h3" id="ordFH">Orders at risk</h2><p class="muted small">Ready time against the due time</p></div></div>
-            <div id="ordRisk" class="rows"></div>
-          </section>
-          <section class="card" aria-labelledby="stockH">
-            <div class="card-head"><div><h2 class="h3" id="stockH">Material runway</h2><p class="muted small">How long each buffer lasts at the current rate, and the next delivery</p></div></div>
-            <div class="table-wrap"><table class="tbl" id="runway"></table></div>
-          </section>
-          <section class="card" aria-labelledby="demH">
-            <div class="card-head"><div><h2 class="h3" id="demH">Demand this 15-minute interval</h2><p class="muted small">Projected average against the contract</p></div></div>
-            <div id="demand"></div>
-          </section>
-        </div>
-      </section>
-
-      <!-- ROOT CAUSE -->
-      <section class="view" id="view-rootcause" hidden>
-        <div class="rc-grid">
-          <section class="card" aria-labelledby="rcListH">
-            <div class="card-head"><div><h2 class="h3" id="rcListH">Cases</h2><p class="muted small">Choose one to see its cause path</p></div></div>
-            <div class="rc-list" id="rcList"></div>
-          </section>
-          <div class="col">
-            <section class="card" aria-labelledby="rcPathH">
-              <div class="card-head"><div><h2 class="h3" id="rcPathH">Cause path</h2><p class="muted small" id="rcPathS">From the first cause to what it reaches</p></div></div>
-              <ol class="path" id="rcPath"></ol>
-              <div id="rcBody"></div>
-            </section>
-            <section class="card" aria-labelledby="genH">
-              <div class="card-head"><div><h2 class="h3" id="genH">Genealogy</h2><p class="muted small">Any serial: parts, lots, every station it passed and who worked on it</p></div></div>
-              <form class="gen-form" id="genForm" role="search" autocomplete="off">
-                <label class="sr-only" for="genIn">Serial number</label>
-                <input class="input" id="genIn" type="search" spellcheck="false" placeholder="e.g. TV26-…">
-                <button class="btn btn-primary btn-sm" type="submit">Trace</button>
-                <button class="btn btn-secondary btn-sm" type="button" id="genLatest">Latest reject</button>
-              </form>
-              <div id="genOut"></div>
-            </section>
-          </div>
-        </div>
-      </section>
-
-      <!-- WHAT-IF LAB -->
-      <section class="view" id="view-simulator" hidden>
-        <div class="lab">
-          <section class="card lab-in" aria-labelledby="labH">
-            <div class="card-head"><div><h2 class="h3" id="labH">Build the futures</h2><p class="muted small" id="labFrom">From the live plant, now</p></div></div>
-            <fieldset class="lab-opts" id="labOpts"><legend>Options to compare with doing nothing (up to 3)</legend></fieldset>
-            <div class="lab-set">
-              <label class="field"><span>Look ahead</span>
-                <select id="labH2"><option value="1800">30 minutes</option><option value="3600" selected>1 hour</option><option value="7200">2 hours</option></select></label>
-              <label class="field"><span>Futures per option</span>
-                <select id="labSeeds"><option value="3">3</option><option value="6" selected>6</option><option value="10">10</option></select></label>
-            </div>
-            <button type="button" class="btn btn-primary" id="labRun"><span data-icon="play"></span>Play the futures</button>
-            <p class="muted small" id="labNote">Each future copies the plant and differs only in its random draws: micro-stops, failures, defects. Runs in background workers.</p>
-          </section>
-          <section class="card lab-out" aria-labelledby="labOutH" aria-live="polite">
-            <div class="card-head"><div><h2 class="h3" id="labOutH">Outcome</h2><p class="muted small" id="labOutS">Choose options and play the futures</p></div><span class="chip chip-neutral" id="labVerdict">—</span></div>
-            <div class="vz-box tall" id="labChart"></div>
-            <div class="table-wrap"><table class="tbl" id="labTable"></table></div>
-          </section>
-        </div>
-      </section>
-
-      <!-- DRILLS -->
-      <section class="view" id="view-scenarios" hidden>
-        <div class="card sc-head">
-          <div><h2 class="h3">Drills on the twin</h2><p class="muted">Start a real-world event and watch the agents detect, investigate, simulate and act. Nothing touches a real plant.</p></div>
-          <div class="row-gap">
-            <button type="button" class="btn btn-secondary" id="ff10"><span data-icon="skip"></span>Skip 10 min</button>
-            <button type="button" class="btn btn-secondary" id="resetSim"><span data-icon="refresh"></span>New shift</button>
-          </div>
-        </div>
-        <div class="scenarios" id="scenarios"></div>
-      </section>
-
-      <!-- LEADERSHIP -->
-      <section class="view" id="view-leadership" hidden>
-        <div class="lead-top">
-          <section class="card hero-card" aria-labelledby="healthH">
-            <div class="card-head"><div><h2 class="h3" id="healthH">Plant health</h2><p class="muted small">OEE, yield, open alarms, machine risk and orders</p></div></div>
-            <p class="hero"><b id="health">—</b><span>of 100</span></p>
-            <div id="healthParts" class="parts"></div>
-          </section>
-          <section class="card" aria-labelledby="oeeH">
-            <div class="card-head"><div><h2 class="h3" id="oeeH">OEE by line</h2><p class="muted small">Availability × performance × quality, 30-minute window</p></div></div>
-            <div class="table-wrap"><table class="tbl" id="league"></table></div>
-          </section>
-          <section class="card" aria-labelledby="valH">
-            <div class="card-head"><div><h2 class="h3" id="valH">Value today</h2><p class="muted small">Sample cost model, EGP</p></div></div>
-            <div id="value" class="money"></div>
-          </section>
-        </div>
-        <div class="lead-mid">
-          <section class="card" aria-labelledby="trendH">
-            <div class="card-head"><div><h2 class="h3" id="trendH">Plant OEE</h2><p class="muted small">Last 15 simulated minutes, sampled every 5 seconds</p></div></div>
-            <div class="vz-box" id="oeeTrend"></div>
-          </section>
-          <section class="card" aria-labelledby="apprH">
-            <div class="card-head"><div><h2 class="h3" id="apprH">Decisions waiting</h2><p class="muted small">Ranked by value against doing nothing</p></div></div>
-            <div class="cases" id="approvals"></div>
-          </section>
-        </div>
-        <section class="card" aria-labelledby="loss">
-          <div class="card-head"><div><h2 class="h3" id="loss">Where time went today</h2><p class="muted small">Minutes lost per line since the model started, by reason</p></div></div>
-          <div class="vz-box" id="losses"></div>
-        </section>
-      </section>
-
-      <!-- MAINTENANCE -->
-      <section class="view" id="view-maintenance" hidden>
-        <div class="maint-grid">
-          <section class="card" aria-labelledby="machH">
-            <div class="card-head"><div><h2 class="h3" id="machH">Machine health</h2><p class="muted small">Health index, vibration and remaining life. Select a machine.</p></div></div>
-            <div class="machines" id="machines"></div>
-          </section>
-          <div class="col">
-            <section class="card" aria-labelledby="vibH">
-              <div class="card-head"><div><h2 class="h3" id="vibH">Vibration</h2><p class="muted small" id="vibS">RMS velocity, mm/s · ISO 10816 zones</p></div><span id="vibChip"></span></div>
-              <div class="vz-box" id="vibChart"></div>
-            </section>
-            <section class="card" aria-labelledby="techH">
-              <div class="card-head"><div><h2 class="h3" id="techH">Technicians and work orders</h2></div></div>
-              <div id="techs" class="rows"></div>
-              <ol class="events small-ev" id="workOrders"></ol>
-            </section>
-          </div>
-        </div>
-      </section>
-
-      <!-- QUALITY -->
-      <section class="view" id="view-quality" hidden>
-        <div class="stats" id="qKpis"></div>
-        <div class="q-grid">
-          <section class="card" aria-labelledby="pchH">
-            <div class="card-head"><div><h2 class="h3" id="pchH">AOI p-chart</h2><p class="muted small">Reject share per 40 boards with 3-sigma control limits</p></div>
-              <div class="seg-tabs sm" id="pLine" role="group" aria-label="SMT line"><button type="button" class="seg active" data-l="L1" aria-pressed="true">SMT Line 1</button><button type="button" class="seg" data-l="L2" aria-pressed="false">SMT Line 2</button></div>
-            </div>
-            <div class="vz-box" id="pchart"></div>
-          </section>
-          <section class="card" aria-labelledby="parH">
-            <div class="card-head"><div><h2 class="h3" id="parH">Defects today</h2><p class="muted small">AOI and final test, by code</p></div></div>
-            <div id="pareto"></div>
-          </section>
-        </div>
-        <div class="q-grid">
-          <section class="card" aria-labelledby="lotH">
-            <div class="card-head"><div><h2 class="h3" id="lotH">TV test by panel lot</h2><p class="muted small">Last 40 minutes. A lot is flagged when its failures are unlikely by chance (binomial test).</p></div></div>
-            <div class="table-wrap"><table class="tbl" id="lots"></table></div>
-          </section>
-          <section class="card" aria-labelledby="detH">
-            <div class="card-head"><div><h2 class="h3" id="detH">Latest rejects</h2><p class="muted small">Select a serial for its genealogy</p></div></div>
-            <ol class="events" id="rejects"></ol>
-          </section>
-        </div>
-      </section>
-
-      <!-- ENERGY -->
-      <section class="view" id="view-energy" hidden>
-        <div class="stats" id="eKpis"></div>
-        <section class="card" aria-labelledby="kwH">
-          <div class="card-head"><div><h2 class="h3" id="kwH">Plant power</h2><p class="muted small">kW, last 15 simulated minutes, with the contract demand</p></div><span id="tariff"></span></div>
-          <div class="vz-box" id="kwChart"></div>
-        </section>
-        <div class="e-grid">
-          <section class="card" aria-labelledby="ivH">
-            <div class="card-head"><div><h2 class="h3" id="ivH">15-minute demand intervals</h2><p class="muted small">The utility bills the highest 15-minute average above the contract</p></div></div>
-            <div class="vz-box" id="intervals"></div>
-          </section>
-          <section class="card" aria-labelledby="assetH">
-            <div class="card-head"><div><h2 class="h3" id="assetH">Loads</h2><p class="muted small">Utilities and the biggest machines now</p></div></div>
-            <div id="loads" class="rows"></div>
-          </section>
-        </div>
-      </section>
+      <!-- VIEWS: each one is drawn by its script from Plant EG-01 (command.js, floor.js, ops.js, intel.js, perf.js) -->
+      <section class="view" id="view-command"></section>
+      <section class="view" id="view-alarms" hidden></section>
+      <section class="view" id="view-control" hidden></section>
+      <section class="view" id="view-agents" hidden></section>
+      <section class="view" id="view-predict" hidden></section>
+      <section class="view" id="view-rootcause" hidden></section>
+      <section class="view" id="view-simulator" hidden></section>
+      <section class="view" id="view-scenarios" hidden></section>
+      <section class="view" id="view-leadership" hidden></section>
+      <section class="view" id="view-maintenance" hidden></section>
+      <section class="view" id="view-quality" hidden></section>
+      <section class="view" id="view-energy" hidden></section>
     </main>
   </div>
 
@@ -449,11 +134,9 @@
 
   <script src="assets/kit/icons.js"></script>
   <script src="assets/js/theme.js"></script>
-  <script src="assets/js/twin/engine.js"></script>
-  <script src="assets/js/twin/whatif.js"></script>
-  <script src="assets/js/twin/hub.js"></script>
-  <script src="assets/js/agents/agents.js"></script>
-  <script src="assets/js/agents/cases-ui.js"></script>
+  <script src="assets/js/plant/engine.js"></script>
+  <script src="assets/js/plant/erp.js"></script>
+  <script src="assets/js/plant/agents.js"></script>
   <script src="assets/js/room/core.js"></script>
   <script src="assets/js/room/viz.js"></script>
   <script src="assets/js/room/floor.js"></script>
@@ -461,9 +144,8 @@
   <script src="assets/js/room/ops.js"></script>
   <script src="assets/js/room/intel.js"></script>
   <script src="assets/js/room/perf.js"></script>
-  <script src="assets/js/room/timemachine.js"></script>
   <script src="assets/js/room/briefing.js"></script>
-  <script src="assets/js/agents/copilot.js"></script>
+  <script src="assets/js/room/copilot.js"></script>
   <script src="assets/js/room/main.js"></script>
 </body>
 </html>

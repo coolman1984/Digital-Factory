@@ -1524,6 +1524,10 @@
       run, step, trigger, apply, findUnit, route, receive, later, truckArrive, workOrder,
       ext(name, fn) { ext[name] = fn; },
       // machine commands from the HMI; the page checks the interlocks before it calls this
+      // ISA-18.2 alarm handling from the command room: acknowledge, acknowledge all, shelve for a while (logged)
+      ackAlarm(key, who = 'You') { const a = P.alarms.find(x => x.key === key); if (!a || a.state === 'ack') return; a.state = 'ack'; a.ackBy = who; a.ackAt = P.t; audit(who, 'Acknowledged alarm', a.msg); emit('alarms'); },
+      ackAll(who = 'You') { let n = 0; for (const a of P.alarms) if (a.state !== 'ack' && !(a.shelvedTo > P.t)) { a.state = 'ack'; a.ackBy = who; a.ackAt = P.t; n++; } if (n) audit(who, 'Acknowledged all alarms', `${n} alarms`); emit('alarms'); return n; },
+      shelveAlarm(key, min = 20, who = 'You') { const a = P.alarms.find(x => x.key === key); if (!a) return; a.shelvedTo = P.t + min * 60; audit(who, 'Shelved alarm', `${a.msg} · ${min} min`); emit('alarms'); },
       hmi(id, cmd, who = 'You') {
         const s = P.byId[id]; if (!s) return;
         const L = P.lines[s.line], where = `${s.name}${L ? ' (' + L.name + ')' : ''}`;
