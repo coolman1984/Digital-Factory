@@ -503,7 +503,7 @@
       if (!L.stations.length || L.kind === 'injection') continue;
       const s0 = L.stations[0], el = mk('lb-line', L.name, 'line:' + L.id); lineLabels[L.id] = el;
       const off = L.kind === 'smd' ? 1.4 : 2.6;
-      V.label(el, () => [s0.x - s0.w / 2 - off - (L.kind === 'press' ? 2.8 : 0), 0.2, s0.z], L.kind === 'main' ? 1 : d => d < 150);
+      V.label(el, () => [s0.x - s0.w / 2 - off - (L.kind === 'press' ? 2.8 : 0), 0.2, s0.z], L.kind === 'main' ? 1 : L.kind === 'cushion' ? 2 : d => d < 110);
     }
     for (const [id, r] of Object.entries(V.ROOMV)) { const d = X.DEPTS.find(x => x.id === id); const el = mk('lb-room', d ? d.name : id, 'dept:' + id); roomLabels[id] = el; V.label(el, () => [r.x, 3.4, r.z], d2 => d2 < 260); }
     for (const [id, t] of [['SAP-PP', 'SAP'], ['GMES', 'GMES'], ['WMS', 'WMS'], ['PLM', 'PLM']]) { const p = V.sysPos(id); const el = mk('lb-sys', t, 'sys:' + (id === 'SAP-PP' ? 'SAP-PP' : id)); V.label(el, () => [p[0], 3.2, p[2]], d => d < 90); }
@@ -590,6 +590,81 @@
   $$('.pl-speed [data-speed]').forEach(b => b.addEventListener('click', () => setSpeed(+b.dataset.speed)));
   addEventListener('themechange', e => { if (V) V.setTheme(e.detail); });
 
+  /* ---------------- walk the floor, fly-through, cameras, x-ray, the plant map ---------------- */
+  const navBtns = $$('.pl-nav3d [data-nav]');
+  const syncNav = () => { if (!V) return; const st = { walk: V.walking, cine: V.cinematic, cctv: V.cctv, xray: V.xray }; navBtns.forEach(b => b.setAttribute('aria-pressed', String(!!st[b.dataset.nav]))); };
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  navBtns.forEach(b => b.addEventListener('click', () => {
+    if (!V) return;
+    const n = b.dataset.nav;
+    if (n === 'walk') { if (V.walking) V.setWalk(false); else { const r = sel && V.refInfo(sel); V.setWalk(true, r ? [r.x, r.z + (r.d || 2) / 2 + 2] : null); } }
+    if (n === 'cine') V.setCinematic(!V.cinematic);
+    if (n === 'cctv') V.setCctv(!V.cctv);
+    if (n === 'xray') V.setXray(!V.xray);
+    syncNav();
+  }));
+  const walkHint = $('#walkHint'), joy = $('#joy');
+  if (V) V.on((t, d) => {
+    if (t === 'walk') {
+      syncNav();
+      walkHint.hidden = !d; joy.hidden = !d || !coarse;
+      walkHint.textContent = coarse ? 'Drag the view to look around · use the pad to walk · select Walk again to leave' : 'Click the view to look with the mouse · W A S D or arrows to walk · Shift to run · Esc twice to leave';
+      if (d) toast('Walking the floor at eye height. Machines and conveyors block the way, as on the real floor.', 'info');
+    }
+    if (t === 'cinematic' || t === 'cctv') syncNav();
+  });
+  // touch pad for walking on phones and tablets
+  { let id = null; const knob = joy.querySelector('i');
+    const set = e => { const r = joy.getBoundingClientRect(); let x = (e.clientX - r.left - r.width / 2) / (r.width / 2), y = (e.clientY - r.top - r.height / 2) / (r.height / 2); const m = Math.hypot(x, y); if (m > 1) { x /= m; y /= m; } knob.style.transform = `translate(${x * 28}px, ${y * 28}px)`; V.walkJoy(x, y); };
+    joy.addEventListener('pointerdown', e => { id = e.pointerId; joy.setPointerCapture(id); set(e); });
+    joy.addEventListener('pointermove', e => { if (e.pointerId === id) set(e); });
+    const end = () => { id = null; knob.style.transform = ''; if (V) V.walkJoy(0, 0); };
+    joy.addEventListener('pointerup', end); joy.addEventListener('pointercancel', end); }
+  // CCTV captions sit over the camera tiles the 3D view draws
+  const cctvBox = $('#cctvLabels');
+  function cctvTick() {
+    if (!V || !V.cctv) { if (cctvBox.childElementCount) cctvBox.innerHTML = ''; return; }
+    const rects = V.cctvRects();
+    if (cctvBox.childElementCount !== rects.length) cctvBox.innerHTML = rects.map(() => '<div class="cam"><b></b><span></span></div>').join('');
+    rects.forEach((R, i) => { const el = cctvBox.children[i]; el.style.cssText = `left:${R.x}px;top:${R.y}px;width:${R.w}px;height:${R.h}px`; el.querySelector('b').textContent = R.c.name; el.querySelector('span').textContent = clockS(P.t); });
+  }
+  // the plant map: zones, lines and aisles drawn once; vehicles, alarms and the camera drawn live
+  const mini = $('#minimap'), mctx = mini.getContext('2d');
+  const MW = P.layout.W, MD = P.layout.D;
+  let miniBase = null;
+  function miniBaseDraw() {
+    const c = document.createElement('canvas'); c.width = mini.width * 2; c.height = mini.height * 2; const g = c.getContext('2d'); g.scale(2 * mini.width / MW, 2 * mini.height / MD);
+    const css = getComputedStyle(document.body), ink = css.getPropertyValue('--text-3').trim() || '#646B78', line = css.getPropertyValue('--border').trim() || '#ccc', bg = css.getPropertyValue('--surface').trim() || '#fff';
+    g.fillStyle = bg; g.fillRect(0, 0, MW, MD);
+    g.fillStyle = line; for (const z of P.layout.ZONES) g.fillRect(z.x0, z.z0, z.x1 - z.x0, z.z1 - z.z0);
+    g.fillStyle = bg; for (const A of P.layout.AISLES) { const h = A.a[1] === A.b[1]; g.fillRect(Math.min(A.a[0], A.b[0]) - (h ? 0 : 1.2), Math.min(A.a[1], A.b[1]) - (h ? 1.2 : 0), h ? Math.abs(A.b[0] - A.a[0]) : 2.4, h ? 2.4 : Math.abs(A.b[1] - A.a[1])); }
+    g.fillStyle = ink; for (const s of P.stations) g.fillRect(s.x - s.w / 2, s.z - s.d / 2, s.w, s.d);
+    miniBase = c;
+  }
+  function miniTick() {
+    if (!V || mode !== '3d') return;
+    if (!miniBase) miniBaseDraw();
+    const w = mini.width, h = mini.height, kx = w / MW, kz = h / MD;
+    mctx.clearRect(0, 0, w, h); mctx.drawImage(miniBase, 0, 0, w, h);
+    const css = getComputedStyle(document.body);
+    mctx.fillStyle = css.getPropertyValue('--danger').trim() || '#E5383B';
+    for (const s of P.stations) if (s.state === 'down') { mctx.fillRect(s.x * kx - 2.5, s.z * kz - 2.5, 5, 5); }
+    mctx.fillStyle = css.getPropertyValue('--warning').trim() || '#E08A00';
+    for (const s of P.stations) if (s.state === 'starved' || s.state === 'changeover') mctx.fillRect(s.x * kx - 1.5, s.z * kz - 1.5, 3, 3);
+    mctx.fillStyle = css.getPropertyValue('--text').trim() || '#111';
+    for (const a of P.agvs.concat(P.tuggers, P.forklifts)) mctx.fillRect(a.x * kx - 1, a.z * kz - 1, 2, 2);
+    const c = V.camPos();
+    mctx.save(); mctx.translate(c.x * kx, c.z * kz); mctx.rotate(c.yaw);
+    mctx.fillStyle = css.getPropertyValue('--brand-2').trim() || '#2189FF';
+    mctx.beginPath(); mctx.moveTo(0, -7); mctx.lineTo(5, 5); mctx.lineTo(0, 2.5); mctx.lineTo(-5, 5); mctx.closePath(); mctx.fill(); mctx.restore();
+  }
+  mini.addEventListener('click', e => {
+    if (!V) return;
+    const r = mini.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * MW, z = (e.clientY - r.top) / r.height * MD;
+    if (V.walking) V.walkTo(x, z); else V.view([x, z, 70]);
+  });
+  addEventListener('themechange', () => { miniBase = null; });
+
   /* ---------------- drills ---------------- */
   const drills = $('#drills'), drillBtn = $('#drillBtn');
   drills.innerHTML = `<p class="menu-h">Start a real-world drill. Watch the cause travel through the lines, the stores and the offices, and the departments respond.</p>` + E.SCENARIOS.map(s => `<button type="button" class="drill" data-drill="${s.id}"><b>${esc(s.title)}</b><span>${esc(s.what)}</span><small>${esc(s.area)} · ${esc(s.chain)}</small></button>`).join('')
@@ -659,6 +734,8 @@
     if (e.target.closest('input, textarea')) { if (e.key === 'Escape') e.target.blur(); return; }
     if (embed && ['ArrowRight', 'ArrowLeft', 'PageDown', 'PageUp', 'f', 'F', 'n', 'N', 'b', 'B'].includes(e.key)) { e.preventDefault(); parent.postMessage({ dfDeckKey: e.key }, location.origin); return; }
     if (e.target.closest('[role="tab"]') && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) return;
+    // while walking the floor the keys move the walker; Escape (after leaving the mouse look) ends the walk
+    if (V && V.walking) { if (e.key === 'Escape' && document.pointerLockElement !== $('#gl')) V.setWalk(false); return; }
     if (e.key === ' ' && !e.target.closest('button')) { e.preventDefault(); setSpeed(P.paused ? 1 : 0); }
     else if (e.key === '1') setSpeed(1); else if (e.key === '2') setSpeed(4); else if (e.key === '3') setSpeed(16);
     else if (e.key === 't' || e.key === 'T') window.Theme && Theme.toggle();
@@ -678,13 +755,14 @@
   }
 
   /* ---------------- the frame loop ---------------- */
-  let last = performance.now(), acc = 0, accR = 0;
+  let last = performance.now(), acc = 0, accR = 0, frameN = 0;
   function frame(now) {
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
     E.run(dt);
     if (mode === '3d' && V) V.render(dt); else views.tick(dt);
     acc += dt; accR += dt;
-    if (acc > 0.5) { acc = 0; kpis(); vstream(); labelsTick(); }
+    if (acc > 0.5) { acc = 0; kpis(); vstream(); labelsTick(); cctvTick(); }
+    if (mode === '3d' && (frameN++ % 6 === 0)) miniTick();
     if (accR > 1) { accR = 0; render(); if (mode !== '3d') views.render(); }
     requestAnimationFrame(frame);
   }

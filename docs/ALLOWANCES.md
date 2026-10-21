@@ -16,7 +16,7 @@ Findings from the design checks that stay on purpose, with the reason. Everythin
 | Aphoristic cadence | guide | Short definitional sentences are the register of a glossary and a reference book. |
 | Long-page probe timeout | guide | The QA probe walks every element of a 290 KB book; run it with a longer CDP timeout (0 FAIL at 390 / 820 / 1440, light and dark). |
 | 13px secondary labels | live plant: readout sub-lines, value stream, 3D labels | The same operator-screen density as the command room; every primary number is 18–28px and every control is 44px on touch. |
-| Page weight about 1.4 MB | live plant | three.js (548 KB, bundled once, works offline), the brand fonts and the plant, SAP and view scripts; the 3D view needs it. Gzip on GitHub Pages brings the transfer to about a third. |
+| Page weight about 1.7 MB; slow largest paint in headless QA | live plant | three.js with its post-processing, environment and control add-ons (820 KB, 235 KB gzipped), the brand fonts and the plant, SAP and view scripts. The QA browser renders WebGL in software, so its LCP (5–9 s) is far above a real GPU; the engine warm-up takes about 1.5 s of it. |
 | Em dashes in readouts | live plant | Used only as the "no value yet" placeholder in readouts, not in prose. |
 
 | Footnote numbers under 14px | website: superscript source markers | Superscripts are footnote markers; the sources they point to are 14px. |
