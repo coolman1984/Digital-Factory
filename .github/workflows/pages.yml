@@ -1,34 +1,28 @@
-name: Publish to GitHub Pages
-
-# Copies the site to the gh-pages branch, which GitHub Pages serves
-# (Settings → Pages → Source: "Deploy from a branch", branch gh-pages, folder /).
+name: Deploy to GitHub Pages
 on:
   push:
-    branches: ["main"]
+    branches: [main]
   workflow_dispatch:
-
 permissions:
-  contents: write
-
+  contents: read
+  pages: write
+  id-token: write
 concurrency:
   group: pages
   cancel-in-progress: true
-
 jobs:
-  publish:
+  deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Push site to gh-pages
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan gh-pages-publish
-          # publish the site only: leave out CI, design tooling and project notes
-          for d in .github .claude design-pipeline CLAUDE.md PRODUCT.md DESIGN.md; do
-            git rm -r -q --cached --ignore-unmatch "$d"; rm -rf "$d"
-          done
-          touch .nojekyll
-          git add -A
-          git commit -q -m "Publish site from ${GITHUB_SHA::7}"
-          git push -f origin HEAD:gh-pages
+      - name: Build site
+        run: mkdir -p _site && cp -r index.html app.html deck.html guide.html plant.html assets _site/ && touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
