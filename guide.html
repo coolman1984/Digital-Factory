@@ -378,6 +378,7 @@
             <li><b>By area:</b> الإنذارات المفتوحة مجمعة حسب الخط أو المنطقة؛ وأقدمها هو السبب الأول المحتمل، مع رابط القرار المرتبط إن وجد.</li>
             <li><b>Alarm list:</b> <a class="t" data-term="priority">الأولوية</a> والوقت والرسالة (رابط إلى الماكينة) والمنطقة والحالة، مع <span class="ui">Acknowledge</span> و<span class="ui">Shelve</span> (تأجيل 20 دقيقة) و<span class="ui">Acknowledge all</span>. وكل <a class="t" data-term="ack">إقرار</a> أو <a class="t" data-term="shelve">تأجيل</a> يُسجل في سجل التدقيق باسمك.</li>
             <li><b>Alarm rate this shift:</b> عدد الإنذارات كل 10 دقائق مع خط الفيضان.</li>
+            <li><b>Spoken alerts</b> (المفتاح <kbd>V</kbd>): <a class="t" data-term="andon">أندون</a> صوتي ينطق الإنذارات الجديدة بالأولوية 1–2 والقرارات العاجلة بلغة الصفحة، بصوت المتصفح نفسه ودون خادم. ويكون متوقفًا افتراضيًا، ولا يقرأ ما كان مفتوحًا قبل تشغيله. وإذا لم يكن على الجهاز صوت عربي، يُنطق التنبيه بالإنجليزية.</li>
           </ul>
         </div>
         <div class="en" lang="en" dir="ltr">
@@ -387,6 +388,7 @@
             <li><b>By area:</b> open alarms grouped by line or area; the oldest is the likely first-out, with a link to the related decision when there is one.</li>
             <li><b>Alarm list:</b> <a class="t" data-term="priority">priority</a>, time, message (a link to the machine), area and state, with <span class="ui">Acknowledge</span>, <span class="ui">Shelve</span> (20 minutes) and <span class="ui">Acknowledge all</span>. Every <a class="t" data-term="ack">acknowledgement</a> or <a class="t" data-term="shelve">shelving</a> goes to the audit trail under your name.</li>
             <li><b>Alarm rate this shift:</b> alarms per 10 minutes with the flood line.</li>
+            <li><b>Spoken alerts</b> (key <kbd>V</kbd>): a voice <a class="t" data-term="andon">andon</a> that says new priority 1–2 alarms and urgent decisions out loud in the page language, with the browser's own voice and no server. Off by default; what was already open when it is switched on is not read out. A device without an Arabic voice says the alert in English.</li>
           </ul>
         </div>
       </div></div>
@@ -490,6 +492,7 @@
             <li><b>Main lines:</b> الخطوط الستة من الأضعف إلى الأقوى: الحالة والإنتاج والفعالية وعواملها A وP وQ.</li>
             <li><b>Value today:</b> الإيراد المشحون، والمساهمة، وقيمة القرارات، وإعادة العمل، والمخزون على الأرضية (نموذج تكلفة تجريبي بالجنيه).</li>
             <li><b>Plant OEE and output</b> و<b>Decisions waiting</b> و<b>Where time went</b>: دقائق التوقف والتوقفات القصيرة وتغيير الموديل والصيانة لكل خط.</li>
+            <li><b>Lighthouse scorecard:</b> المصنع مقيسًا مباشرة على الأبعاد الخمسة التي تقيّم بها <a class="t" data-term="wef">شبكة المصانع المنارة</a> التابعة للمنتدى الاقتصادي العالمي: الإنتاجية (الفعالية والأجهزة لكل ساعة عمل مشغل)، ومرونة سلسلة الإمداد (المخاطر غير المغطاة والطلبيات المتوقع تأخرها وعدد المحاكاة)، والاستدامة (الطاقة والكربون لكل جهاز والذروة مقابل التعاقد)، والتركيز على العميل (التسليم في الموعد وبالكامل، والعيوب لكل مليون، وطلبيات الخدمة المؤجلة)، والمواهب (المشغلون المعتمدون، والمدربون على خط آخر، والشهادات المنتهية). لكل بعد حالته (بمستوى المنارة، أو قريب، أو فجوة)، وما تفعله المصانع المنارة، والخطوة التالية هنا مع زر يفتح الشاشة المعنية. ويُحسب الكربون بمعامل توضيحي للشبكة قدره 0.47 كجم مكافئ ثاني أكسيد الكربون لكل كيلوواط ساعة.</li>
           </ul>
         </div>
         <div class="en" lang="en" dir="ltr">
@@ -499,6 +502,7 @@
             <li><b>Main lines:</b> the six lines from weakest to strongest: state, output, OEE and its factors A, P and Q.</li>
             <li><b>Value today:</b> revenue shipped, contribution, value from decisions, rework and scrap, inventory on the floor (sample cost model, EGP).</li>
             <li><b>Plant OEE and output</b>, <b>Decisions waiting</b> and <b>Where time went</b>: minutes stopped, short-stopped, in changeover or planned work, per line.</li>
+            <li><b>Lighthouse scorecard:</b> the plant measured live on the five dimensions the World Economic Forum's <a class="t" data-term="wef">Global Lighthouse Network</a> assesses: productivity (OEE and TVs per operator hour), supply-chain resilience (uncovered risks, orders forecast late, simulations run), sustainability (energy and carbon per TV, the peak against the contract), customer centricity (on time in full, defects per million, service back orders) and talent (certified operators, cross-trained, certificates expired). Each shows where it stands (lighthouse level, close or gap), what lighthouse sites do, and the next step here with a button to the screen behind it. Carbon uses a sample grid factor of 0.47 kg CO₂e per kWh.</li>
           </ul>
         </div>
       </div></div>
@@ -529,10 +533,12 @@
         <div class="ar" lang="ar" dir="rtl">
           <h3>11 · الطاقة (Energy)</h3>
           <p>القدرة الآن، والمتوسط كل 15 دقيقة، والذروة المتوقعة مقابل عقد 4,000 kW، والطاقة منذ 09:12 ولكل تلفزيون، وحالة تقليم الذروة. ثم منحنى القدرة مع خط العقد، و<b>Power by area</b> (الخطوط الرئيسية، LCM، SMD، الحقن، الكبس والطلاء، الفوم، المرافق، الإضاءة والمكاتب)، و<b>Loads</b>: أكبر الأحمال الآن.</p>
+                  <p><b>Energy and carbon per TV:</b> الكيلوواط ساعة والكيلوجرامات من مكافئ ثاني أكسيد الكربون لكل جهاز منذ بدء النموذج، مع الإجمالي وعدد الأجهزة المصنعة، بمعامل توضيحي للشبكة قدره 0.47 كجم لكل كيلوواط ساعة.</p>
         </div>
         <div class="en" lang="en" dir="ltr">
           <h3>11 · Energy</h3>
           <p>Power now, the 15-minute average, the forecast peak against the 4,000 kW contract, energy since 09:12 and per TV, and peak shaving. Then the power chart with the contract line, <b>Power by area</b> (main lines, LCM, SMD, injection, press and coating, cushions, utilities, lighting and offices), and <b>Loads</b>: the biggest loads now.</p>
+                  <p><b>Energy and carbon per TV:</b> kilowatt-hours and kilograms of CO₂e per TV since the model started, with the totals and the TVs made, using a sample grid factor of 0.47 kg CO₂e per kWh.</p>
         </div>
       </div></div>
 
