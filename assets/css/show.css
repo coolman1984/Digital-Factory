@@ -1,0 +1,33 @@
+/* Digital Factory — customer show (assets/js/room/show.js): the light on the part being explained, and the caption */
+.sh-spot {
+  position: fixed; z-index: 1700; pointer-events: none; border-radius: 18px;
+  box-shadow: 0 0 0 200vmax rgba(8, 12, 20, .52), 0 0 0 2px var(--brand-2, #2D5BFF), 0 0 28px 4px rgba(45, 91, 255, .45);
+  transition: left .5s var(--ease-out, ease), top .5s var(--ease-out, ease), width .5s var(--ease-out, ease), height .5s var(--ease-out, ease);
+}
+.sh-cap {
+  position: fixed; z-index: 1800; left: 50%; bottom: 20px; transform: translateX(-50%);
+  width: min(620px, calc(100vw - 32px)); max-height: calc(100vh - 120px); overflow: auto;
+  padding: 18px 20px 14px; border-radius: 20px; background: var(--surface); color: var(--text);
+  border: 1px solid var(--border-strong); box-shadow: 0 24px 60px rgba(0, 0, 0, .35);
+}
+.sh-cap .sh-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sh-cap .sh-n { font-size: 13px; font-weight: 700; letter-spacing: .02em; color: var(--brand-text, var(--brand)); }
+.sh-cap .sh-x { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--text-2); font-size: 20px; line-height: 1; cursor: pointer; }
+.sh-cap h2 { margin: 6px 0 6px; font-size: 22px; line-height: 1.25; }
+.sh-cap p { margin: 0; color: var(--text-2); font-size: 15px; line-height: 1.6; }
+.sh-cap .sh-extra { margin-top: 12px; padding: 12px; border-radius: 14px; background: var(--surface-2); max-height: 38vh; overflow: auto; font-size: 14px; }
+.sh-cap .sh-extra .cs-btns { display: none; }   /* the show approves in its next step */
+.sh-cap .sh-end { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.sh-cap .sh-bar { height: 3px; margin: 14px 0 12px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+.sh-cap .sh-bar i { display: block; height: 100%; width: 100%; background: var(--brand-2, var(--brand)); transform-origin: left; animation: sh-fill linear forwards; }
+.sh-cap[dir="rtl"] .sh-bar i { transform-origin: right; }
+.sh-cap.paused .sh-bar i { animation-play-state: paused; }
+.sh-cap .sh-nav { display: flex; justify-content: flex-end; gap: 8px; }
+@keyframes sh-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+body.showing .dg-fab, body.showing .dg-panel { display: none; }
+@media (prefers-reduced-motion: reduce) { .sh-spot { transition: none; } .sh-cap .sh-bar i { animation: none; transform: scaleX(1); } }
+@media (max-width: 600px) { .sh-cap { bottom: 12px; padding: 14px 14px 12px; } .sh-cap h2 { font-size: 19px; } }
+.sh-cap.up { bottom: auto; top: 76px; }
+/* room for the show button in the top bar: below 960 px the copilot keeps only its icon and Send to deck stays on its key; phones present from a laptop */
+@media (max-width: 960px) { #btnCopilot .hide-sm { display: none; } #pinBtn, .topbar .crumb { display: none; } }   /* P still pins a moment; the view title is in the page heading */
+@media (max-width: 600px) { #showBtn { display: none; } }

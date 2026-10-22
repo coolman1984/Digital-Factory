@@ -289,3 +289,13 @@ DFI18N.add({
     ['^Main-line OEE ([\\d.]+%): (.+)\\. Open GMES · lines and select a line for its loss tree\\.$', 'فعالية خطوط التجميع $1: $2. افتح «GMES · الخطوط» واختر خطًا لترى شجرة خسائره.']
   ]
 });
+DFI18N.add({ exact: { 'Person': 'شخص', 'Forklift': 'رافعة شوكية', 'AGV': 'مركبة ذاتية', 'No safety glasses': 'دون نظارات سلامة', 'Milk run': 'قطار إمداد', 'Chassis': 'الهيكل' } });
+DFI18N.add({
+  exact: { 'fictional TV plant': 'مصنع تلفزيونات افتراضي', 'simulated': 'محاكاة', 'boards an hour': 'لوحة في الساعة', 'SAP and GMES in sync': 'SAP وGMES متزامنان' },
+  patterns: [['^last message ([\\d:]+)$', 'آخر رسالة $1'], ['^(\\d+) to decide$', '$1 بانتظار القرار'], ['^Next if nobody acts: (.+) in$', 'التالي إن لم يتدخل أحد: $1 خلال'], ['^; (.+) in$', '؛ $1 خلال']]
+});
+DFI18N.add({ patterns: [
+  ['^Logistics agent sent (\\S+) on a hot run: (\\d+) (\\S+) to (.+)$', 'أرسل وكيل اللوجستيات $1 في توريد عاجل: $2 من $3 إلى $4'],
+  ['^Moment ([\\d:]+) sent to the presentation briefing$', 'أُرسلت لحظة $1 إلى إحاطة العرض التقديمي']
+] });
+DFI18N.add({ patterns: [['^(Main line \\d) and (Main line \\d)$', '$1 و$2'], ['^(.+): done\\. Logged as (AUD-\\d+)\\.$', '$1: تم التنفيذ، وسُجّل برقم $2.']] });

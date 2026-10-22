@@ -117,31 +117,41 @@
       g.strokeStyle = 'rgba(0,0,0,0.22)'; g.lineWidth = 2; g.strokeRect(0, 0, w, h);
     });
     floorTex.wrapS = floorTex.wrapT = T.RepeatWrapping; floorTex.repeat.set((L.W + 140) / 6, (L.D + 120) / 6); floorTex.colorSpace = T.SRGBColorSpace;
-    const hmiTex = cv(256, 160, (g, w, h) => {
+    // words painted in the plant (signs, floor names, screens) follow the page language; Arabic is set right to left
+    const tt = t => (window.DFI18N && DFI18N.ar() && DFI18N.t(t)) || t;
+    const isAr = t => /[\u0600-\u06FF]/.test(t);
+    const FONT = "Inter, 'IBM Plex Sans Arabic', Arial";
+    function say(g, text, x, y, w) { if (isAr(text)) { g.direction = 'rtl'; g.textAlign = 'right'; g.fillText(text, w - x, y); g.direction = 'ltr'; g.textAlign = 'left'; } else g.fillText(text, x, y); }
+    const hmiDraw = (g, w, h) => {
       g.fillStyle = '#0B1220'; g.fillRect(0, 0, w, h); g.fillStyle = '#1E3A6E'; g.fillRect(0, 0, w, 22);
-      g.fillStyle = '#9FC1FF'; g.font = 'bold 13px Inter, Arial'; g.fillText('GMES · STATION', 8, 15);
+      g.fillStyle = '#9FC1FF'; g.font = `bold 13px ${FONT}`; say(g, tt('GMES · STATION'), 8, 15, w);
       for (let i = 0; i < 4; i++) { g.fillStyle = '#16233A'; g.fillRect(10, 34 + i * 28, 140, 18); g.fillStyle = ['#3DDC97', '#7FB2FF', '#3DDC97', '#7FB2FF'][i]; g.fillRect(10, 34 + i * 28, 60 + i * 18, 18); }
       g.strokeStyle = '#7FB2FF'; g.lineWidth = 2; g.beginPath(); for (let x = 0; x < 80; x++) g.lineTo(165 + x, 120 - Math.sin(x / 9) * 18 - x * 0.3); g.stroke();
-    });
+    };
+    const hmiTex = cv(256, 160, hmiDraw);
     const patternTex = cv(256, 144, (g) => {
       ['#C0C0C0', '#C0C000', '#00C0C0', '#00C000', '#C000C0', '#C00000', '#0000C0'].forEach((b, i) => { g.fillStyle = b; g.fillRect(i * 256 / 7, 0, 256 / 7 + 1, 104); });
       const grd = g.createLinearGradient(0, 0, 256, 0); grd.addColorStop(0, '#000'); grd.addColorStop(1, '#fff'); g.fillStyle = grd; g.fillRect(0, 104, 256, 40);
     });
-    const sopTex = cv(512, 256, (g, w, h) => {
-      g.fillStyle = '#0B1220'; g.fillRect(0, 0, w, h); g.fillStyle = '#9FC1FF'; g.font = 'bold 22px Inter, Arial'; g.fillText('S&OP · 12 WEEKS', 18, 34);
+    const sopDraw = (g, w, h) => {
+      g.fillStyle = '#0B1220'; g.fillRect(0, 0, w, h); g.fillStyle = '#9FC1FF'; g.font = `bold 22px ${FONT}`; say(g, tt('S&OP · 12 WEEKS'), 18, 34, w);
       for (let i = 0; i < 12; i++) { const v = 60 + Math.sin(i * 0.9) * 30 + (i === 4 || i === 5 ? 50 : 0); g.fillStyle = '#2A4A80'; g.fillRect(24 + i * 38, h - 24 - v, 24, v); }
       g.strokeStyle = '#E8EEFF'; g.lineWidth = 3; g.beginPath(); for (let i = 0; i < 12; i++) g.lineTo(36 + i * 38, h - 40 - (70 + Math.sin(i * 0.9) * 26 + (i === 4 || i === 5 ? 64 : 0))); g.stroke();
-    });
+    };
+    const sopTex = cv(512, 256, sopDraw);
+    // English names are set in capitals; a translated name keeps its own letters
+    const caps = t => { const a = tt(t); return isAr(a) ? a : a.toUpperCase(); };
     function signTex(text, sub) {
       return cv(512, 96, (g, w, h) => {
         g.fillStyle = '#10151E'; g.fillRect(0, 0, w, h); g.fillStyle = '#2D5BFF'; g.fillRect(0, 0, 10, h);
-        g.fillStyle = '#FFFFFF'; g.font = 'bold 40px Inter, Arial'; g.fillText(text, 28, 50);
-        if (sub) { g.fillStyle = '#9AA6B8'; g.font = '600 24px Inter, Arial'; g.fillText(sub, 30, 82); }
+        g.fillStyle = '#FFFFFF'; g.font = `bold 40px ${FONT}`; say(g, caps(text), 28, 50, w);
+        if (sub) { g.fillStyle = '#9AA6B8'; g.font = `600 24px ${FONT}`; say(g, caps(sub), 30, 82, w); }
       });
     }
     function floorWord(text) {
-      return cv(1024, 160, (g, w, h) => { g.clearRect(0, 0, w, h); g.fillStyle = 'rgba(255,255,255,0.9)'; g.font = '800 92px Inter, Arial'; g.textBaseline = 'middle'; g.fillText(text.toUpperCase(), 10, h / 2); });
+      return cv(1024, 160, (g, w, h) => { g.clearRect(0, 0, w, h); g.fillStyle = 'rgba(255,255,255,0.9)'; g.font = `800 92px ${FONT}`; g.textBaseline = 'middle'; say(g, caps(text), 10, h / 2, w); });
     }
+    const signSub = Ln => (Ln.kind === 'press' ? `Chassis ${Ln.size}"` : Ln.kind === 'smd' && Ln.model ? 'PBA ' + Ln.model.slice(1) : Ln.model && E.MODELS[Ln.model] ? E.MODELS[Ln.model].name : '');
 
     /* ---------------- materials (rethemed in place) ---------------- */
     const std = (c, o = {}) => new T.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.6, metalness: 0 }, o));
@@ -255,6 +265,7 @@
       const g = new T.PlaneGeometry(w, d); g.rotateX(-Math.PI / 2); g.translate(z.x0 + w / 2, 0.006, z.z0 + d / 2); push('zone', g);
       // the zone's name painted on the floor
       const word = new T.Mesh(new T.PlaneGeometry(Math.min(w - 4, 30), Math.min(w - 4, 30) * 0.156), new T.MeshBasicMaterial({ map: floorWord(z.name), transparent: true, opacity: theme === 'dark' ? 0.22 : 0.55, depthWrite: false }));
+      word.userData.zoneName = z.name;
       word.rotation.x = -Math.PI / 2; word.position.set(z.x0 + 2 + Math.min(w - 4, 30) / 2, 0.02, z.z1 - 2.2); word.raycast = () => {}; word.userData.floorWord = true; world.add(word);
     }
     // walkway edges: white lines either side of every aisle
@@ -493,7 +504,7 @@
       if (Ln.kind === 'main' || Ln.kind === 'lcm' || Ln.kind === 'press' || Ln.kind === 'smd') {
         const sw = Ln.kind === 'smd' ? 3.2 : 4.2, sh = sw * 0.1875;
         const sx = x0 - 1.2, sy = Ln.kind === 'smd' ? 2.9 : 4.0;
-        const mat = new T.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: signTex(Ln.name.toUpperCase(), Ln.kind === 'press' ? `CHASSIS ${Ln.size}"` : Ln.model ? (E.MODELS[Ln.model] ? E.MODELS[Ln.model].name : '') : ''), emissiveIntensity: 0.9 });
+        const mat = new T.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: signTex(Ln.name, signSub(Ln)), emissiveIntensity: 0.9 });
         const sign = new T.Mesh(new T.PlaneGeometry(sw, sh), mat); sign.position.set(sx + sw / 2, sy, z - (Ln.kind === 'smd' ? 1.4 : 2.4)); sign.raycast = () => {}; world.add(sign);
         const back = new T.Mesh(new T.BoxGeometry(sw + 0.06, sh + 0.06, 0.05), M.frame); back.position.copy(sign.position); back.position.z -= 0.04; back.raycast = () => {}; world.add(back);
         sbox('frame', 0.03, ROOF - sy, 0.03, sx + 0.2, sy, sign.position.z); sbox('frame', 0.03, ROOF - sy, 0.03, sx + sw - 0.2, sy, sign.position.z);
@@ -1072,12 +1083,18 @@
       for (const a of P.agvs.concat(P.tuggers, P.forklifts)) if (a.path) add(a.path, () => 0.06, 2, 2.6);
       chev.count = i; chev.instanceMatrix.needsUpdate = true;
     }
-    function updateSigns() {
-      for (const sg of SIGNS) if (sg.L.model !== sg.model && sg.L.kind !== 'press') {
+    function updateSigns(all) {
+      for (const sg of SIGNS) if (all || (sg.L.model !== sg.model && sg.L.kind !== 'press')) {
         sg.model = sg.L.model; const old = sg.mat.emissiveMap;
-        sg.mat.emissiveMap = signTex(sg.L.name.toUpperCase(), sg.L.kind === 'smd' ? 'PBA ' + sg.L.model.slice(1) : E.MODELS[sg.L.model].name); sg.mat.needsUpdate = true; old.dispose();
+        sg.mat.emissiveMap = signTex(sg.L.name, signSub(sg.L)); sg.mat.needsUpdate = true; old.dispose();
       }
     }
+    // a new language repaints every sign, floor name and screen in the plant
+    addEventListener('langchange', () => {
+      updateSigns(true);
+      world.traverse(o => { if (o.userData.zoneName) { const old = o.material.map; o.material.map = floorWord(o.userData.zoneName); o.material.needsUpdate = true; old.dispose(); } });
+      for (const [k, draw, w, h] of [['hmi', hmiDraw, 256, 160], ['sop', sopDraw, 512, 256]]) { const old = M[k].emissiveMap; M[k].emissiveMap = cv(w, h, draw); M[k].needsUpdate = true; old.dispose(); }
+    });
 
     /* ---------------- selection ---------------- */
     let selRef = null, follow = false;

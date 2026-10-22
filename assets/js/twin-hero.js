@@ -16,6 +16,10 @@
   };
   palette();
   addEventListener('themechange', () => { palette(); views.forEach(v => v.draw()); });
+  // labels drawn on the canvas follow the page language
+  const tt = t => (window.DFI18N && DFI18N.ar() && DFI18N.t(t)) || t;
+  const FONT = "600 13px Inter, 'IBM Plex Sans Arabic', system-ui, sans-serif";
+  addEventListener('langchange', () => views.forEach(v => v.draw()));
 
   /* one line model shared by every view: stations as fractions of the line length */
   const STATIONS = [
@@ -85,8 +89,8 @@
       ctx.strokeStyle = C.text2; ctx.fillStyle = C.text2; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(L, dy - 8); ctx.lineTo(L, dy + 8); ctx.moveTo(R, dy - 8); ctx.lineTo(R, dy + 8); ctx.moveTo(L, dy); ctx.lineTo(R, dy); ctx.stroke();
       for (const [x, s] of [[L, 1], [R, -1]]) { ctx.beginPath(); ctx.moveTo(x, dy); ctx.lineTo(x + 8 * s, dy - 4); ctx.lineTo(x + 8 * s, dy + 4); ctx.fill(); }
-      ctx.font = '600 13px Inter, system-ui, sans-serif'; ctx.textAlign = 'center';
-      const lbl = 'SMD line 4  ·  board line  ·  38.4 m';
+      ctx.font = FONT; ctx.textAlign = 'center';
+      const lbl = tt('SMD line 4 · board line · 38.4 m').replace(/ · /g, '  ·  ');
       const lw = ctx.measureText(lbl).width + 20;
       ctx.fillStyle = C.bg; ctx.fillRect((L + R) / 2 - lw / 2, dy - 10, lw, 20);
       ctx.fillStyle = C.text2; ctx.fillText(lbl, (L + R) / 2, dy + 4.5);
@@ -113,7 +117,7 @@
         ctx.stroke();
         ctx.fillStyle = s.warn ? C.warn : C.ok;
         ctx.beginPath(); ctx.arc(sx + sw / 2, top - 12, 5, 0, 7); ctx.fill();
-        if (w >= 700) { ctx.fillStyle = C.text; ctx.font = '600 13px Inter, system-ui, sans-serif'; ctx.fillText(s.id, sx + sw / 2, y + 48); }
+        if (w >= 700) { ctx.fillStyle = C.text; ctx.font = FONT; ctx.fillText(tt(s.id), sx + sw / 2, y + 48); }
         if (s.warn) { // reticle around the machine at risk
           const p = 14, a = 12, x0 = sx - p, y0 = top - 26, x1 = sx + sw + p, y1 = y + 30;
           ctx.strokeStyle = C.warn; ctx.lineWidth = 2; ctx.beginPath();

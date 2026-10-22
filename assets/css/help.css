@@ -89,3 +89,5 @@ html[data-i18n-wait] body { opacity: 0; }
 /* the presentation's icon bar keeps the language button as small as its neighbours */
 .controls .lang-btn .ll { display: none; }
 .controls .lang-btn { min-width: 40px; justify-content: center; }
+/* in Arabic the room's menu sits on the right, so on a narrow screen it slides out to the right */
+@media (max-width: 960px) { html[dir="rtl"] .side:not(.open) { transform: translateX(100%); } }
