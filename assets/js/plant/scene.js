@@ -376,6 +376,9 @@
         b('frame', w - 0.06, 0.12, d - 0.06, x, 0, z);
         b(o.k || 'paint', w, h - 0.12, d, x, 0.12, z, { r: 0.06 });
         b('dark', w + 0.01, 0.025, d + 0.01, x, h * 0.62, z);
+        b('stripe', w + 0.012, 0.035, d + 0.012, x, h - 0.16, z);
+        for (let i = 0; i < 5; i++) b('dark', 0.012, 0.03, d * 0.36, x + w / 2 + 0.004, h * 0.25 + i * 0.06, z);
+        for (const [fx, fz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) c('steel', 0.035, 0.06, x + fx * (w / 2 - 0.12), 0, z + fz * (d / 2 - 0.12), { seg: 10 });
         if (o.hmi !== false) { b('dark', 0.5, 0.36, 0.05, x + w * 0.28, h * 0.5, z + d / 2 + 0.03); splane('hmi', 0.44, 0.3, X0 + x + w * 0.28, h * 0.5 + 0.18, Z0 + z + d / 2 + 0.06); }
       };
       const fence = (w, d, h = 2.0) => {
@@ -399,17 +402,32 @@
         case 'printer': case 'spi': case 'aoi':
           cabinet(W, H * 0.7, D);
           b('glass', W * 0.96, H * 0.28, D * 0.94, 0, H * 0.7, 0, { r: 0.04 });
-          if (s.kind === 'printer') ANIM.gantry.push({ s, y: H * 0.72, len: D * 0.8, amp: W * 0.34, rate: 1.6 });
-          else c('dark', 0.13, 0.22, 0, H * 0.84, 0);
+          for (const pz of [-1, 1]) b('alu', W + 0.3, 0.05, 0.06, 0, H * 0.48, pz * D * 0.18);   // the board conveyor rails, through the machine
+          if (s.kind === 'printer') {
+            ANIM.gantry.push({ s, y: H * 0.72, len: D * 0.8, amp: W * 0.34, rate: 1.6 });
+            b('steel', W * 0.7, 0.02, D * 0.62, 0, H * 0.56, 0); b('frame', W * 0.74, 0.04, 0.05, 0, H * 0.56, -D * 0.33); b('frame', W * 0.74, 0.04, 0.05, 0, H * 0.56, D * 0.33);
+            c('paint2', 0.06, 0.3, W * 0.36, H * 0.82, -D * 0.3, { rz: Math.PI / 2 }); c('dark', 0.065, 0.06, W * 0.52, H * 0.82, -D * 0.3, { rz: Math.PI / 2 });
+          } else { c('dark', 0.13, 0.22, 0, H * 0.84, 0); c('fixture', 0.16, 0.02, 0, H * 0.83, 0); b('alu', W * 0.6, 0.06, 0.08, 0, H * 0.94, 0); }
           break;
         case 'mounter':
           cabinet(W, H * 0.58, D);
           b('glass', W * 0.98, H * 0.36, D * 0.96, 0, H * 0.58, 0, { r: 0.08 });
           for (const pz of [-1, 1]) b('frame', W, 0.06, 0.06, 0, H * 0.94, pz * D * 0.46);
           for (const sz of [-1, 1]) {
+            // a feeder trolley: the bank, a row of tape feeders and their reels standing in a holder
             b('paint2', W * 0.9, H * 0.4, 0.36, 0, 0.2, sz * (D / 2 + 0.18), { r: 0.03 });
-            for (let i = 0; i < 6; i++) c('dark', 0.13, 0.04, -W * 0.36 + i * W * 0.145, H * 0.66, sz * (D / 2 + 0.22), { rx: Math.PI / 2 });
+            for (const px of [-1, 1]) c('rubber', 0.05, 0.04, px * W * 0.4, 0.05, sz * (D / 2 + 0.18), { rx: Math.PI / 2, seg: 12 });
+            for (let i = 0; i < 16; i++) b('dark', 0.035, 0.08, 0.32, -W * 0.42 + i * W * 0.056, H * 0.6, sz * (D / 2 + 0.05));
+            for (let i = 0; i < 12; i++) {
+              const rx = -W * 0.4 + i * W * 0.073;
+              c(i % 3 ? 'dark' : 'stripe', 0.13, 0.025, rx, H * 0.7, sz * (D / 2 + 0.22), { rx: Math.PI / 2, seg: 20 });
+              c('alu', 0.035, 0.03, rx, H * 0.7, sz * (D / 2 + 0.22), { rx: Math.PI / 2, seg: 10 });
+            }
+            b('frame', W * 0.92, 0.04, 0.06, 0, H * 0.58, sz * (D / 2 + 0.36));
           }
+          for (const pz of [-1, 1]) b('alu', W + 0.3, 0.05, 0.06, 0, H * 0.52, pz * D * 0.12);
+          for (const px of [-1, 1]) b('frame', 0.06, H * 0.36, 0.06, px * W * 0.49, H * 0.58, -D * 0.48), b('frame', 0.06, H * 0.36, 0.06, px * W * 0.49, H * 0.58, D * 0.48);
+          b('dark', 0.36, 0.08, 0.2, -W * 0.36, H * 0.6, -D * 0.25);   // the nozzle changer
           ANIM.gantry.push({ s, y: H * 0.86, len: D * 0.86, amp: W * 0.3, rate: 2.1 });
           break;
         case 'reflow':
@@ -418,6 +436,9 @@
           b('paint2', W * 0.84, H * 0.3, D * 0.96, 0, 0.14 + H * 0.5, 0, { r: 0.1 });
           for (let i = 0; i < 8; i++) { c('dark', 0.16, 0.04, -W * 0.36 + i * W * 0.103, 0.14 + H * 0.8, 0); ANIM.fan.push({ s, x: X0 - W * 0.36 + i * W * 0.103, y: 0.14 + H * 0.84, z: Z0 }); }
           b('alu', W * 0.08, H * 0.42, D * 0.75, -W * 0.46, 0.14, 0); b('alu', W * 0.08, H * 0.42, D * 0.75, W * 0.46, 0.14, 0);
+          for (const px of [-W * 0.3, W * 0.22]) { c('alu', 0.13, 0.9, px, 0.14 + H * 0.8, -D * 0.25, { seg: 16 }); c('alu', 0.1, 1.2, px + 0.6, 0.14 + H * 0.8 + 0.85, -D * 0.25, { rz: Math.PI / 2, seg: 14 }); }
+          for (const sx of [-1, 1]) { b('alu', 0.7, 0.05, D * 0.5, sx * (W / 2 + 0.3), H * 0.5, 0); for (const pz of [-1, 1]) b('frame', 0.05, H * 0.5, 0.05, sx * (W / 2 + 0.55), 0, pz * D * 0.2); }
+          b('dark', W * 0.6, 0.12, 0.04, 0, 0.14 + H * 0.36, D / 2 + 0.01); splane('screen', W * 0.58, 0.1, X0, 0.14 + H * 0.36 + 0.06, Z0 + D / 2 + 0.035);
           b('dark', 0.5, 0.32, 0.05, W * 0.3, H * 0.42, D / 2 + 0.03); splane('hmi', 0.44, 0.28, X0 + W * 0.3, H * 0.42 + 0.16, Z0 + D / 2 + 0.06);
           break;
         case 'writer':
@@ -493,6 +514,12 @@
           b('glass', W * 0.38, 1.5, 0.04, -W * 0.27, 0.99, D / 2 + 0.05);
           b('frame', 0.08, 1.4, 0.08, -W * 0.46, 1.5, 0); b('frame', 0.08, 1.4, 0.08, -W * 0.08, 1.5, 0); b('frame', W * 0.42, 0.1, 0.1, -W * 0.27, 2.85, 0);
           b('rack', 0.9, 0.9, 0.9, -W * 0.27, 0, D / 2 + 0.75);
+          for (const pz of [-0.34, 0.34]) for (const py of [1.25, 2.3]) for (const px of [-W * 0.47, -W * 0.07]) c('dark', 0.1, 0.1, px, py, pz * D, { rz: Math.PI / 2, seg: 6 });
+          b('stripe', 0.22, 1.05, D * 0.64, -W * 0.3, 1.2, 0, { r: 0.02 }); b('paint2', 0.22, 1.05, D * 0.64, -W * 0.22, 1.2, 0, { r: 0.02 });
+          c('steel', 0.06, 0.35, -W * 0.03, 1.5, 0, { rz: Math.PI / 2 });
+          b('rubber', 1.6, 0.05, 0.45, -W * 0.27, 0.6, -D / 2 - 0.4); for (const px of [-0.7, 0.7]) b('frame', 0.05, 0.6, 0.4, -W * 0.27 + px, 0, -D / 2 - 0.4);
+          for (let i = 0; i < 3; i++) c('steel', 0.035, W * 0.3, W * 0.2, 0.4 + i * 0.12, -D / 2 - 0.05, { rz: Math.PI / 2, seg: 8 });
+          b('paint2', 0.7, 1.9, 0.5, W / 2 + 0.45, 0, -D * 0.2, { r: 0.04 }); b('dark', 0.5, 0.6, 0.02, W / 2 + 0.45, 1.0, -D * 0.2 + 0.26);
           b('dark', 0.55, 0.4, 0.06, W * 0.36, 1.4, D / 2 + 0.03); splane('hmi', 0.5, 0.34, X0 + W * 0.36, 1.6, Z0 + D / 2 + 0.07);
           ANIM.platen.push({ s, x: X0 - W * 0.27, y: 1.05, z: Z0, w: 0.24, h: 1.4, d: D * 0.82, amp: W * 0.11 });
           ANIM.gantry.push({ s, y: 2.75, len: 0.3, amp: W * 0.12, rate: 1.1, offX: -W * 0.27 });
@@ -507,6 +534,11 @@
           b('steel', 1.4, 0.3, 1.4, -W / 2 - 1.4, 0, 0); c('steel', 0.7, 0.95, -W / 2 - 1.4, 1.0, 0, { rx: Math.PI / 2, seg: 28 }); c('dark', 0.3, 1.0, -W / 2 - 1.4, 1.0, 0, { rx: Math.PI / 2 });
           b('paint2', 0.9, 1.0, 0.8, -W / 2 - 0.3, 0.14, 0, { r: 0.04 });
           b('dark', 0.55, 0.4, 0.06, W * 0.2, 1.4, D / 2 + 0.03); splane('hmi', 0.5, 0.34, X0 + W * 0.2, 1.6, Z0 + D / 2 + 0.07);
+          b('steel', W - 1.6, 0.35, D * 0.7, 0, 0.84, 0); b('dark', W - 1.8, 0.25, D * 0.62, 0, 1.19, 0);   // the lower die
+          for (const px of [-1, 1]) { b('frame', 0.07, 2.4, 0.07, px * (W / 2 - 0.75), 0.84, D * 0.47); c('lamp', 0.02, 2.2, px * (W / 2 - 0.75), 0.95, D * 0.47 + 0.04, { seg: 6 }); }
+          c('safety', 0.82, 0.36, W * 0.3, 4.6, D * 0.5 + 0.05, { rx: Math.PI / 2, seg: 28, open: true });
+          for (let i = 0; i < 12; i++) b('steel', 0.4, 0.03, 0.06, W / 2 + 0.25, 0.4 + i * 0.36, -D * 0.38); for (const pz of [-0.3, -0.46]) b('steel', 0.04, 4.6, 0.04, W / 2 + 0.25 + (pz + 0.38) * 3, 0, -D * 0.38);
+          for (let i = 0; i < 4; i++) c('steel', 0.12, D * 0.6, -W / 2 - 0.7, 0.9 + (i % 2) * 0.26, 0, { rx: Math.PI / 2, seg: 14 });
           ANIM.ram.push({ s, x: X0, y: 1.3, z: Z0, w: W - 1.4, h: 0.55, d: D * 0.78, amp: 1.0 });
           break;
         case 'oven':

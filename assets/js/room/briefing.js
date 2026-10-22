@@ -34,7 +34,7 @@
     return {
       v: 1, src: embed ? 'embed' : 'app', at: Date.now(), clock: E.clock(P.t), shift: 'A', plant: 'Plant EG-01',
       oee: k.oee || 0, fpy: k.fpy || 0, units: k.units || 0, plan: k.plan || 0,
-      fc: { prob: k.prob || 0, p10: Math.round((k.fcst || 0) - 1.28 * spread), p50: Math.round(k.fcst || 0), p90: Math.round((k.fcst || 0) + 1.28 * spread), plan: k.planEnd || 0 },
+      fc: { prob: k.prob || 0, p10: k.p10 ?? Math.round((k.fcst || 0) - 1.28 * spread), p50: Math.round(k.fcst || 0), p90: k.p90 ?? Math.round((k.fcst || 0) + 1.28 * spread), plan: k.planEnd || 0 },
       alarms: { open: open.length, unack: open.filter(a => a.state !== 'ack').length, urgent: open.filter(a => a.prio <= 2).length },
       incidents,
       decisions: waiting.map(c => ({ title: c.title, body: (c.why && c.why[0]) || '', agent: c.agentName, risk: Math.max(0, Math.round(c.base && c.best ? (c.best.f.margin - c.base.f.margin) + (c.base.f.revDelayed - c.best.f.revDelayed) * 0.08 : 0)), action: c.best ? c.best.label : '' })),
