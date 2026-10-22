@@ -19,4 +19,4 @@ node .claude/skills/web-design-pipeline/scripts/qa.mjs index.html app.html deck.
 node .claude/skills/web-design-pipeline/scripts/qa.mjs guide.html --theme-key df-theme   # long page: its probe can exceed the 30 s CDP timeout
 .claude/skills/impeccable/scripts/impeccable detect index.html app.html deck.html guide.html plant.html assets/css
 ```
-Recorded design allowances: `docs/ALLOWANCES.md`. The reusable installer lives in `design-pipeline/`.
+Recorded design allowances: `docs/ALLOWANCES.md`. Plant studio roadmap (agents and hand editing the 3D layout): `docs/PLANT-STUDIO.md`. The reusable installer lives in `design-pipeline/`.
