@@ -9,7 +9,7 @@
   const DF = window.DF; if (!DF) return;
   const $ = s => document.querySelector(s);
   const ar = () => document.documentElement.lang === 'ar';
-  const T = (en, a) => (ar() ? a : en);
+  const T = (en, a) => (ar() ? (window.DFI18N && DFI18N.agree ? DFI18N.agree(a) : a) : en);   // Arabic counts agree with what they count (i18n.js)
   const tr = s => (ar() && window.DFI18N && DFI18N.t(s)) || s;
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const n0 = v => Math.round(v).toLocaleString('en-US');
@@ -150,7 +150,7 @@
     const crew = A.AGENTS.map(a => { const mine = pic.open.filter(c => c.owner === a.id).length; return `<li class="${mine ? 'busy' : ''}"><b>${esc(tr(a.name))}</b><span>${mine ? T(`${mine} proposal${mine > 1 ? 's' : ''} waiting`, `${mine} اقتراح بانتظار القرار`) : T('watching', 'يراقب')}</span></li>`; }).join('');
     const html = `<div class="ap-head card">
         <div class="ap-intro"><h2 class="h3">${T('Autopilot: the Orchestrator leads the agents', 'التشغيل الذاتي: الوكيل القائد يقود الوكلاء')}</h2>
-          <p class="muted">${T('The nine agents watch their areas and propose; the Orchestrator sees the whole plant, chooses which problem comes first, weighs every simulated option against plant-wide rules, decides, explains why, and checks the result ten plant minutes later. Everything is in the audit trail as "Orchestrator".', 'يراقب الوكلاء التسعة مناطقهم ويقترحون، ويرى الوكيل القائد المصنع كله، فيختار أي مشكلة أولًا، ويزن كل خيار محاكى مقابل قواعد المصنع، ويقرر، ويشرح السبب، ثم يتحقق من النتيجة بعد 10 دقائق من وقت المصنع. وكل ما يفعله مسجل في سجل التدقيق باسم «Orchestrator».')}</p>
+          <p class="muted">${T('The nine agents watch their areas and propose; the Orchestrator sees the whole plant, chooses which problem comes first, weighs every simulated option against plant-wide rules, decides, explains why, and checks the result ten plant minutes later. Everything is in the audit trail as "Orchestrator".', 'يراقب الوكلاء التسعة مناطقهم ويقترحون، ويرى الوكيل القائد المصنع كله، فيختار أي مشكلة أولًا، ويزن كل خيار محاكى مقابل قواعد المصنع، ويقرر، ويشرح السبب، ثم يتحقق من النتيجة بعد 10 دقائق من وقت المصنع. وكل ما يفعله مسجل في سجل التدقيق باسم «الوكيل القائد».')}</p>
           <p class="ap-rules"><b>${T('Rules it decides by', 'القواعد التي يقرر بها')}</b> ${T(`1 safety first · 2 orders first (up to ${money(ORDERS_FIRST)} more to keep an order on time) · 3 the lowest total cost over the forecast · 4 reversible first when it costs within 15% more`, `1 السلامة أولًا · 2 الطلبيات أولًا (حتى ${money(ORDERS_FIRST)} إضافية لإبقاء طلبية في موعدها) · 3 أقل تكلفة إجمالية على مدى التوقع · 4 القابل للتراجع أولًا إذا كانت تكلفته أعلى بما لا يتجاوز 15%`)}</p></div>
         <div class="ap-ctl">
           <button type="button" class="btn ${on ? 'btn-secondary' : 'btn-primary'}" data-ap="toggle">${on ? T('Stop autopilot', 'أوقف التشغيل الذاتي') : T('Start autopilot', 'ابدأ التشغيل الذاتي')}</button>

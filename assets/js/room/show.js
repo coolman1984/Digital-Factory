@@ -40,7 +40,7 @@
       b: s('Six main TV lines and every line that feeds them, in one room. These numbers come from the plant every second: TVs packed against plan, the forecast for 14:00, OEE, yield, alarms and the money the decisions saved.', 'ستة خطوط رئيسية لتجميع التلفزيونات وكل خط يغذيها، في غرفة واحدة. هذه الأرقام تأتي من المصنع كل ثانية: الأجهزة المعبأة مقابل الخطة، وتوقع الساعة 14:00، والفعالية، والعائد، والإنذارات، والمال الذي وفّرته القرارات.'),
       v: s('One version of the truth for the plant manager, the engineers and the operators: no morning report, no arguing about numbers.', 'نسخة واحدة من الحقيقة لمدير المصنع والمهندسين والمشغلين: لا تقرير صباحي ولا خلاف على الأرقام.') },
     { view: 'command', at: '#floor', t: s('Every machine, store and vehicle', 'كل ماكينة ومخزن ومركبة'),
-      b: s('The plant from above. Green runs, amber is slow or waiting for material, red is stopped. The trains and AGVs you see moving carry the parts to the lines right now.', 'المصنع من أعلى. الأخضر يعمل، والكهرماني بطيء أو ينتظر المواد، والأحمر متوقف. والقطارات والمركبات الذاتية التي تتحرك أمامك تنقل القطع إلى الخطوط الآن.'),
+      b: s('The plant from above. Green runs, amber is slow or waiting for material, red is stopped. The trains and AGVs you see moving carry the parts to the lines right now.', 'المصنع من أعلى. الأخضر يعمل، والكهرماني بطيء أو ينتظر المواد، والأحمر متوقف. والقطارات والمركبات الموجهة آليًا التي تتحرك أمامك تنقل القطع إلى الخطوط الآن.'),
       v: s('You see a stop the second it happens and exactly where, instead of hearing about it at the end of the shift.', 'ترى التوقف لحظة حدوثه ومكانه بالضبط، بدلًا من أن تسمع عنه في نهاية الوردية.') },
     { view: 'command', at: '#vstream', t: s('From the stores to the truck', 'من المخزن إلى الشاحنة'),
       b: s('The value stream reads the plant left to right. Each step shows its state, its rate and what waits in front of it.', 'يقرأ مسار القيمة المصنع من البداية إلى النهاية، وتُظهر كل خطوة حالتها ومعدلها وما ينتظر أمامها.'),
@@ -116,7 +116,7 @@
   function paint() {
     const st = STEPS[i], extra = st.extra ? st.extra() : '';
     cap.dir = ar() ? 'rtl' : 'ltr'; cap.lang = ar() ? 'ar' : 'en';
-    const T = (en, a) => (ar() ? a : en);
+    const T = (en, a) => (ar() ? (window.DFI18N && DFI18N.agree ? DFI18N.agree(a) : a) : en);   // Arabic counts agree with what they count (i18n.js)
     cap.innerHTML = `<div class="sh-top"><span class="sh-n">${T('Customer show', 'عرض للعميل')} · ${i + 1} / ${STEPS.length}</span>
         <button type="button" class="sh-x" data-sh="stop" aria-label="${T('End the show', 'أنهِ العرض')}">×</button></div>
       <h2>${esc(L(st.t))}</h2><p>${esc(L(st.b))}</p>

@@ -9,7 +9,7 @@
   const ar = () => document.documentElement.lang === 'ar';
   const L = x => (x == null ? '' : typeof x === 'string' ? x : (ar() ? x.ar : x.en) || x.en || '');
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const T = (en, a) => (ar() ? a : en);
+  const T = (en, a) => (ar() ? (window.DFI18N && DFI18N.agree ? DFI18N.agree(a) : a) : en);   // Arabic counts agree with what they count (i18n.js)
   let H = null, tab = 'screen', open = false, explain = false, lastSug = [];
 
   /* ---------- the button and the panel ---------- */

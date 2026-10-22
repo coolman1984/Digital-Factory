@@ -727,3 +727,4 @@ body.studio #minimap { display: none; }
 .st-sw { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--text-2); }
 .st-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-inline-end: 6px; background: var(--text-3); vertical-align: middle; }
 .st-dot.on { background: var(--success); }
+body:not(.st-admin) .lb-who, body:not(.st-admin) .lb-studio::before, body:not(.st-admin) .st-o::before { display: none !important; }   /* agents and authors: admin only */

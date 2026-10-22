@@ -16,13 +16,19 @@
   const S = PL.V.studio, T = S.T, E = PL.E, P = E.P, L = P.layout;
   const $ = s => document.querySelector(s);
   const ar = () => document.documentElement.lang === 'ar';
-  const TT = (en, a) => (ar() ? a : en);
+  const TT = (en, a) => (ar() ? (window.DFI18N && DFI18N.agree ? DFI18N.agree(a) : a) : en);
   const tr = s => (ar() && window.DFI18N && DFI18N.t(s)) || s;
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const r1 = v => Math.round(v * 10) / 10, snap = v => Math.round(v * 2) / 2;
   const MODEL = 'claude-opus-5-5', SDK = 'assets/vendor/anthropic/anthropic.iife.min.js', KEY = 'df-claude-key', SAVE = 'df-studio';
   const FILE = 'studio/layout.json', FORMAT = 'df-studio/2';
   const QS = new URLSearchParams(location.search);
+  // admin mode: agents, authors, revisions, the bridge and the layout file are for the programme's owner, never for a guest.
+  // Turned on with ?admin=1 (off with ?admin=0) or Ctrl+Shift+A, and remembered in this browser.
+  const ADMIN = 'df-admin';
+  const isAdmin = () => { try { return localStorage.getItem(ADMIN) === '1'; } catch (e) { return false; } };
+  const setAdmin = v => { try { v ? localStorage.setItem(ADMIN, '1') : localStorage.removeItem(ADMIN); } catch (e) { /* storage unavailable */ } document.body.classList.toggle('st-admin', !!v); };
+  if (QS.has('admin')) setAdmin(QS.get('admin') !== '0'); else document.body.classList.toggle('st-admin', isAdmin());
 
   /* ---------- what can be placed ---------- */
   const KINDS = {
@@ -37,6 +43,7 @@
   const ZONES = L.ZONES;
   const zoneName = z => tr(z.name);
   const kindName = k => TT(KINDS[k].en, KINDS[k].ar);
+  const nm = o => o.label || `${kindName(o.kind)} ${String(o.id).replace(/^D/, '')}`;
 
   /* ---------- who changes the layer: each author has a colour ---------- */
   const COLORS = { you: '#2D5BFF', claude: '#D97757', 'claude-code': '#C15F3C', codex: '#10A37F', file: '#7A5AF8' };
@@ -91,7 +98,7 @@
     for (const s of P.stations) if (meet(box, [s.x - s.w / 2, s.z - s.d / 2, s.x + s.w / 2, s.z + s.d / 2])) { out.push(TT(`machine ${s.name} (${s.line})`, `الماكينة ${tr(s.name)} (${s.line})`)); if (out.length > 3) break; }
     if (P.fgSlots.some(f => meet(box, [f.x - 1.15, f.z - 0.75, f.x + 1.15, f.z + 0.75]))) out.push(TT('the finished-goods racks', 'رفوف المنتجات التامة'));
     for (const A of L.AISLES) { const h = A.a[1] === A.b[1], a = h ? [Math.min(A.a[0], A.b[0]), A.a[1] - 1.5, Math.max(A.a[0], A.b[0]), A.a[1] + 1.5] : [A.a[0] - 1.5, Math.min(A.a[1], A.b[1]), A.a[0] + 1.5, Math.max(A.a[1], A.b[1])]; if (meet(box, a)) { out.push(TT('an aisle', 'ممر')); break; } }
-    for (const x of objs) if (x.id !== o.id && x.kind !== 'zone' && x.kind !== 'marker' && meet(box, fp(x))) out.push(TT(`design object ${x.label || x.id}`, `عنصر التصميم ${x.label || x.id}`));
+    for (const x of objs) if (x.id !== o.id && x.kind !== 'zone' && x.kind !== 'marker' && meet(box, fp(x))) out.push(TT(`${nm(x)}`, `«${nm(x)}»`));
     if (box[0] < 0 || box[1] < 0 || box[2] > L.W || box[3] > L.D) out.push(TT('the plant walls', 'جدران المصنع'));
     return out;
   }
@@ -196,7 +203,7 @@
     for (const o of objs) {
       let el = lbs.get(o.id);
       if (!el) { el = document.createElement('div'); el.className = 'lb lb-studio'; el.dataset.noI18n = ''; labelsEl && labelsEl.append(el); lbs.set(o.id, el); const id = o.id; PL.V.label(el, () => { const x = get(id); return x ? [x.x, (x.kind === 'zone' ? 0.5 : x.h + 0.9), x.z] : null; }, () => true); }
-      el.textContent = o.label || `${kindName(o.kind)} ${o.id}`;
+      el.textContent = nm(o);
       el.classList.toggle('on', o.id === sel);
       el.style.setProperty('--who', colorOf(o.by || 'you'));
     }
@@ -225,7 +232,7 @@
   function tagFor(by) {
     let el = tags.get(by); if (el) return el;
     el = document.createElement('div'); el.className = 'lb lb-who'; el.dataset.noI18n = ''; labelsEl && labelsEl.append(el); tags.set(by, el);
-    PL.V.label(el, () => { const p = present.get(by); const o = p && p.id && get(p.id); if (!o || performance.now() - p.at > 4500 || by === 'you') return null; return [o.x, (o.kind === 'zone' ? 1.6 : o.h + 2.2), o.z]; }, () => true);
+    PL.V.label(el, () => { const p = present.get(by); const o = p && p.id && get(p.id); if (!o || performance.now() - p.at > 4500 || by === 'you' || !isAdmin()) return null; return [o.x, (o.kind === 'zone' ? 1.6 : o.h + 2.2), o.z]; }, () => true);
     return el;
   }
   const VERB = { add: ['placed', 'أضاف'], update: ['moved', 'عدّل'], remove: ['removed', 'حذف'], replace: ['updated the layout', 'حدّث المخطط'], undo: ['undid', 'تراجع'], redo: ['redid', 'أعاد'], clear: ['cleared', 'مسح'] };
@@ -274,7 +281,7 @@
       const by = String(q.by || 'agent').slice(0, 40);
       if (!open && q.op !== 'read') setOpen(true);
       let res; try { res = apply(Object.assign({}, q.args || {}, { op: q.op, by, baseRev: q.baseRev })); } catch (e) { res = { ok: false, error: String(e && e.message || e), rev }; }
-      if (res && res.ok && WRITES.has(q.op)) logChat('agent', `${whoName(by)} · ${q.op}${q.args && q.args.id ? ' ' + q.args.id : res.object ? ' ' + res.object.id : ''}${q.args && q.args.why ? ' — ' + q.args.why : ''}`, colorOf(by));
+      if (res && res.ok && WRITES.has(q.op) && isAdmin()) logChat('agent', `${whoName(by)} · ${q.op}${q.args && q.args.id ? ' ' + q.args.id : res.object ? ' ' + res.object.id : ''}${q.args && q.args.why ? ' — ' + q.args.why : ''}`, colorOf(by));
       if (res && res.ok && q.op === 'add' && res.object) lookAt({ id: res.object.id });
       ws.send(JSON.stringify({ id: q.id, result: res }));
     };
@@ -304,15 +311,15 @@
     if (/^(undo|تراجع|رجوع|ارجع)/i.test(low)) return A({ op: 'undo' }).ok ? TT('Undone.', 'تم التراجع.') : TT('Nothing of yours to undo.', 'لا يوجد تعديل لك للتراجع عنه.');
     if (/^(redo|أعد|اعد)/i.test(low)) return A({ op: 'redo' }).ok ? TT('Redone.', 'تمت الإعادة.') : TT('Nothing to redo.', 'لا شيء لإعادته.');
     if (/(clear|delete|remove) (all|everything)|امسح الكل|احذف الكل|شيل الكل|امسح كل/i.test(s)) { const r = A({ op: 'clear' }); return TT(`Removed ${r.removed} design objects.`, `حُذف ${r.removed} من عناصر التصميم.`); }
-    if (/^(delete|remove|احذف|امسح|شيل)/i.test(low)) { const t = target() || (objs[objs.length - 1] || {}).id; if (!t) return TT('There is nothing to delete.', 'لا يوجد ما يُحذف.'); const r = A({ op: 'remove', id: t }); return r.ok ? TT(`Deleted ${t}.`, `حُذف ${t}.`) : r.message || r.error; }
+    if (/^(delete|remove|احذف|امسح|شيل)/i.test(low)) { const t = target() || (objs[objs.length - 1] || {}).id; if (!t) return TT('There is nothing to delete.', 'لا يوجد ما يُحذف.'); const name = get(t) ? nm(get(t)) : t; const r = A({ op: 'remove', id: t }); return r.ok ? TT(`Deleted ${name}.`, `حُذفت «${name}».`) : r.message || r.error; }
     if (/^(move|shift|حرك|حرّك|انقل|زح|زحزح)/i.test(low)) {
-      const o = get(target()); if (!o) return TT('Select an object first, or name it (for example D3).', 'اختر عنصرًا أولًا، أو اذكر اسمه (مثل D3).');
+      const o = get(target()); if (!o) return TT('Select an object first.', 'اختر عنصرًا أولًا.');
       const dist = num || 2, dir = /left|west|يسار|غرب/i.test(s) ? [-1, 0] : /right|east|يمين|شرق/i.test(s) ? [1, 0] : /up|north|فوق|شمال/i.test(s) ? [0, -1] : /down|south|تحت|جنوب/i.test(s) ? [0, 1] : null;
-      if (zone) { const sp = freeSpot(zone, o.w, o.d, o.kind); if (!sp) return TT('No free space of that size there.', 'لا توجد مساحة خالية بهذا الحجم هناك.'); const r = A({ op: 'update', id: o.id, x: sp.x, z: sp.z }); lookAt({ id: o.id }); return TT(`Moved ${o.id} into ${ZONES.find(z => z.id === zone).name}.`, `نُقل ${o.id} إلى ${zoneName(ZONES.find(z => z.id === zone))}.`) + clashText(r.clashes); }
+      if (zone) { const sp = freeSpot(zone, o.w, o.d, o.kind); if (!sp) return TT('No free space of that size there.', 'لا توجد مساحة خالية بهذا الحجم هناك.'); const r = A({ op: 'update', id: o.id, x: sp.x, z: sp.z }); lookAt({ id: o.id }); return TT(`Moved ${nm(o)} into ${ZONES.find(z => z.id === zone).name}.`, `نُقلت «${nm(o)}» إلى ${zoneName(ZONES.find(z => z.id === zone))}.`) + clashText(r.clashes); }
       if (!dir) return TT('Which way? Left, right, up or down, and how many metres.', 'في أي اتجاه؟ يمين أو يسار أو فوق أو تحت، وكم مترًا.');
-      const r = A({ op: 'update', id: o.id, x: o.x + dir[0] * dist, z: o.z + dir[1] * dist }); return TT(`Moved ${o.id} ${dist} m.`, `حُرّك ${o.id} مسافة ${dist} م.`) + clashText(r.clashes);
+      const r = A({ op: 'update', id: o.id, x: o.x + dir[0] * dist, z: o.z + dir[1] * dist }); return TT(`Moved ${nm(o)} ${dist} m.`, `حُرّكت «${nm(o)}» مسافة ${dist} م.`) + clashText(r.clashes);
     }
-    if (/^(rotate|turn|لف|دور|دوّر|اقلب)/i.test(low)) { const o = get(target()); if (!o) return TT('Select an object first.', 'اختر عنصرًا أولًا.'); const deg = (/(\d+)\s*(°|deg|درجة)?/i.exec(s.replace(/\bD\d+\b/i, '')) || [])[1] || 90; const r = A({ op: 'update', id: o.id, rot: (o.rot + +deg) % 360 }); return TT(`Turned ${o.id} by ${deg}°.`, `دُوّر ${o.id} بمقدار ${deg}°.`) + clashText(r.clashes); }
+    if (/^(rotate|turn|لف|دور|دوّر|اقلب)/i.test(low)) { const o = get(target()); if (!o) return TT('Select an object first.', 'اختر عنصرًا أولًا.'); const deg = (/(\d+)\s*(°|deg|درجة)?/i.exec(s.replace(/\bD\d+\b/i, '')) || [])[1] || 90; const r = A({ op: 'update', id: o.id, rot: (o.rot + +deg) % 360 }); return TT(`Turned ${nm(o)} by ${deg}°.`, `دُوّرت «${nm(o)}» بزاوية ${deg}°.`) + clashText(r.clashes); }
     if (/^(go|show|zoom|look|فرجني|وريني|اعرض|روح|اذهب|انتقل)/i.test(low) && zone) { lookAt({ zone }); return TT(`Showing ${ZONES.find(z => z.id === zone).name}.`, `يعرض ${zoneName(ZONES.find(z => z.id === zone))}.`); }
     if (/(add|create|put|place|build|new|أضف|ضيف|ضع|حط|اعمل|ابني|أنشئ|انشئ|عايز)/i.test(s) && kind) {
       const k = KINDS[kind], z = zone || 'fg', out = []; let last = null;
@@ -320,7 +327,7 @@
         const w = kind === 'conveyor' || kind === 'rack' || kind === 'wall' || kind === 'zone' ? (num || k.w) : k.w, d = kind === 'zone' && num ? num * 0.6 : k.d;
         const sp = freeSpot(z, w, d, kind); if (!sp) { out.push(TT('No more free space there.', 'لا توجد مساحة خالية أخرى هناك.')); break; }
         const r = A({ op: 'add', kind, x: sp.x, z: sp.z, w, d, label: label ? (count > 1 ? `${label} ${i + 1}` : label) : '' }); last = r.object;
-        out.push(TT(`Added ${k.en.toLowerCase()} ${r.object.id} in ${ZONES.find(x => x.id === z).name} at ${r.object.x}, ${r.object.z} (${w} × ${d} m).`, `أُضيف ${k.ar} ${r.object.id} في ${zoneName(ZONES.find(x => x.id === z))} عند ${r.object.x}، ${r.object.z} (${w} × ${d} م).`));
+        out.push(TT(`Added ${nm(r.object).toLowerCase()} in ${ZONES.find(x => x.id === z).name} (${w} × ${d} m).`, `أُضيفت «${nm(r.object)}» في ${zoneName(ZONES.find(x => x.id === z))} (${w} × ${d} م).`));
       }
       if (!zone) out.push(TT('No area was named, so it went to finished goods and shipping. Say "in the injection hall", for example.', 'لم تُذكر منطقة، فوُضع في المنتجات التامة والشحن. قل مثلًا «في صالة الحقن».'));
       if (count > 1 || !last) lookAt({ zone: z }); else lookAt({ id: last.id });
@@ -346,7 +353,7 @@ Rules:
     const num = d => ({ type: 'number', description: d }), str = d => ({ type: 'string', description: d });
     const kind = { type: 'string', enum: Object.keys(KINDS), description: 'What to place' };
     const base = num('The rev from read_scene or from your last change'), why = str('One short reason for this change');
-    const tool = (name, op, description, schema) => SDKm.betaTool({ name, description, inputSchema: schema, run: async inp => { try { const i = inp || {}; const r = apply(Object.assign({}, i, { op, by: 'claude', baseRev: i.base_rev })); if (r && r.ok && WRITES.has(op)) logChat('tool', `${op}${i.id ? ' ' + i.id : r.object ? ' ' + r.object.id : ''}`); return JSON.stringify(r); } catch (e) { return JSON.stringify({ ok: false, error: String(e && e.message || e) }); } } });
+    const tool = (name, op, description, schema) => SDKm.betaTool({ name, description, inputSchema: schema, run: async inp => { try { const i = inp || {}; const r = apply(Object.assign({}, i, { op, by: 'claude', baseRev: i.base_rev })); if (r && r.ok && WRITES.has(op) && isAdmin()) logChat('tool', `${op}${i.id ? ' ' + i.id : r.object ? ' ' + r.object.id : ''}`); return JSON.stringify(r); } catch (e) { return JSON.stringify({ ok: false, error: String(e && e.message || e) }); } } });
     const list = [
       tool('read_scene', 'read', 'The current rev, the plant size, its areas (zones with bounds), its production lines, the kinds you can place with default sizes, every design object with its clashes and author, and the recent changes. Call before you start and whenever a change comes back stale.', sch({})),
       tool('find_free_spot', 'find_free_spot', 'A free place of the given footprint inside an area, clear of machines, racks, aisles and design objects; null when none fits.', sch({ zone: str('Zone id from read_scene'), w: num('Width along x, m'), d: num('Depth along z, m'), kind }, ['zone', 'w', 'd'])),
@@ -409,26 +416,27 @@ Rules:
     panel.dir = ar() ? 'rtl' : 'ltr'; panel.lang = ar() ? 'ar' : 'en';
     const field = (f, l, v, t = 'number', step = '0.5') => `<label>${l}<input data-f="${f}" type="${t}" ${t === 'number' ? `step="${step}"` : ''} value="${esc(v)}"></label>`;
     const who = [...new Set(['you'].concat(agents, [...present.entries()].filter(([b, p]) => b !== 'you' && performance.now() - p.at < 120000).map(([b]) => b)))];
-    const lastUndo = undoS[undoS.length - 1];
+    const lastUndo = undoS[undoS.length - 1], admin = isAdmin();
     const focus = document.activeElement && panel.contains(document.activeElement) ? document.activeElement.name || document.activeElement.dataset.f : null;
     const qv = (panel.querySelector('input[name="q"]') || {}).value || '';
-    panel.innerHTML = `<div class="st-head"><div><h2>${TT('Plant studio', 'استوديو المصنع')}</h2><p>${TT('Design layout changes by talking to the plant, by hand, or through your coding agents. The design layer never changes the simulation.', 'صمّم تغييرات المخطط بالحديث مع المصنع أو بيدك أو عبر وكلاء البرمجة. طبقة التصميم لا تغيّر المحاكاة.')}</p></div><button type="button" class="st-x" data-st="close" aria-label="${TT('Close the studio', 'أغلق الاستوديو')}">×</button></div>
-      <div class="st-who" aria-label="${TT('Working on the layer', 'يعمل على الطبقة')}">${who.map(b => `<span class="st-p" style="--who:${colorOf(b)}">${esc(whoName(b))}</span>`).join('')}<span class="st-rev">${TT('Revision', 'المراجعة')} ${rev}</span></div>
+    panel.innerHTML = `<div class="st-head"><div><h2>${TT('Plant studio', 'استوديو المصنع')}</h2><p>${TT('Design layout changes by describing them or by hand, and see each one in the live plant. The design layer never changes production.', 'صمّم تغييرات المخطط بوصفها أو بيدك، وشاهد كل تغيير في المصنع الحي. طبقة التصميم لا تؤثر في الإنتاج.')}</p></div><button type="button" class="st-x" data-st="close" aria-label="${TT('Close the studio', 'أغلق الاستوديو')}">×</button></div>
+      ${admin ? `<div class="st-who" aria-label="${TT('Working on the layer', 'يعمل على الطبقة')}">${who.map(b => `<span class="st-p" style="--who:${colorOf(b)}">${esc(whoName(b))}</span>`).join('')}<span class="st-rev">${TT('Revision', 'المراجعة')} ${rev}</span></div>` : ''}
       <div class="st-log" aria-live="polite"></div>
       <form class="st-ask"><input name="q" autocomplete="off" placeholder="${TT('e.g. add 3 racks in the shipping area', 'مثال: أضف 3 رفوف في منطقة الشحن')}" aria-label="${TT('Describe a change', 'صِف التغيير')}"><button class="btn btn-primary btn-sm" type="submit">${TT('Do it', 'نفّذ')}</button></form>
-      <div class="st-sel">${o ? `<p class="st-k">${TT('Selected', 'المحدد')} · ${o.id} · ${kindName(o.kind)} <span class="st-by" style="--who:${colorOf(o.by || 'you')}">${esc(whoName(o.by || 'you'))}</span></p>
+      <div class="st-sel">${o ? `<p class="st-k">${TT('Selected', 'المحدد')} · ${esc(nm(o))}${admin ? ` · ${o.id} <span class="st-by" style="--who:${colorOf(o.by || 'you')}">${esc(whoName(o.by || 'you'))}</span>` : ''}</p>
         <div class="st-f">${field('label', TT('Label', 'الاسم'), o.label, 'text')}${field('w', TT('Width m', 'العرض م'), o.w)}${field('d', TT('Depth m', 'العمق م'), o.d)}${o.kind !== 'zone' ? field('h', TT('Height m', 'الارتفاع م'), o.h) : ''}${field('rot', TT('Turn °', 'الدوران °'), o.rot, 'number', '15')}${field('color', TT('Colour', 'اللون'), o.color, 'color')}</div>
         ${cl.length ? `<p class="st-warn">${esc(TT('Overlaps ', 'يتداخل مع ') + cl.join(ar() ? '، ' : ', '))}</p>` : `<p class="st-ok">${TT('Clear of machines, racks and aisles.', 'خالٍ من التداخل مع الماكينات والرفوف والممرات.')}</p>`}
         <p class="quiet small">${TT('Drag it on the floor · arrows nudge 0.5 m · R turns 15° · Delete removes', 'اسحبه على الأرض · الأسهم تحرك 0.5 م · R يدوّر 15° · Delete يحذف')}</p>` : `<p class="quiet small">${TT('Select a design object in the 3D view to move or edit it.', 'اختر عنصر تصميم في العرض ثلاثي الأبعاد لتحريكه أو تعديله.')}</p>`}</div>
-      <div class="st-list">${objs.length ? objs.map(x => `<button type="button" class="st-o ${x.id === sel ? 'on' : ''}" data-st-sel="${x.id}" style="--who:${colorOf(x.by || 'you')}"><b>${x.id}</b> ${esc(x.label || kindName(x.kind))}${clashes(x).length ? ' ⚠' : ''}</button>`).join('') : `<p class="quiet small">${TT('No design objects yet.', 'لا توجد عناصر تصميم بعد.')}</p>`}</div>
+      <div class="st-list">${objs.length ? objs.map(x => `<button type="button" class="st-o ${x.id === sel ? 'on' : ''}" data-st-sel="${x.id}" style="--who:${colorOf(x.by || 'you')}">${esc(nm(x))}${clashes(x).length ? ' ⚠' : ''}</button>`).join('') : `<p class="quiet small">${TT('No design objects yet.', 'لا توجد عناصر تصميم بعد.')}</p>`}</div>
       <div class="st-chips">${[TT('Add 2 robot cells in the main assembly hall', 'أضف 2 خلية روبوت في صالة التجميع'), TT('Add a 20 m conveyor in shipping', 'أضف سيرًا ناقلًا 20 متر في الشحن'), TT('Add a rack in the service parts area', 'أضف رفًا في مخزن قطع الغيار')].map(t => `<button type="button" class="chip" data-st-say="${esc(t)}">${esc(t)}</button>`).join('')}</div>
-      <div class="st-links">
+      ${admin ? `<div class="st-links"><p class="st-k">${TT('Admin settings · visible only to you', 'إعدادات المسؤول · تظهر لك وحدك')}</p>
         <p class="st-mode">${keyed ? TT('Claude edits the layer with your key (set in the command room copilot).', 'يحرر Claude الطبقة بمفتاحك (المضبوط في المساعد الذكي بغرفة التحكم).') : TT('Local assistant, no key: simple commands. Add your Anthropic key in the command room copilot for free-form design.', 'مساعد محلي دون مفتاح: أوامر بسيطة. أضف مفتاح Anthropic في المساعد الذكي بغرفة التحكم لتصميم حر.')}</p>
         <p class="st-mode">${PORT ? (wsState === 'on' ? `<span class="st-dot on"></span>${TT(`Connected to the agent bridge${agents.length ? ': ' + agents.map(whoName).join(', ') : ', no agent yet'}.`, `متصل بجسر الوكلاء${agents.length ? ': ' + agents.map(whoName).join('، ') : '، لا يوجد وكيل بعد'}.`)}` : `<span class="st-dot"></span>${TT('Looking for the agent bridge on port ' + PORT + '…', 'يبحث عن جسر الوكلاء على المنفذ ' + PORT + '…')}`) : TT('Coding agents: run tools/studio-bridge and open this page from it, or let them edit studio/layout.json.', 'وكلاء البرمجة: شغّل tools/studio-bridge وافتح الصفحة منه، أو دعهم يعدّلون studio/layout.json.')}</p>
         <label class="st-sw"><input type="checkbox" data-st="follow" ${follow ? 'checked' : ''}> ${TT('Follow the layout file', 'تابع ملف المخطط')}</label>${follow && fileState ? `<p class="st-mode">${esc(fileState)}</p>` : ''}
-      </div>
+        <p class="st-mode">${TT('Ctrl+Shift+A hides these settings again.', 'Ctrl+Shift+A يخفي هذه الإعدادات مجددًا.')}</p>
+      </div>` : ''}
       <div class="st-foot">
-        <button type="button" class="btn btn-secondary btn-sm" data-st="undo" ${lastUndo ? '' : 'disabled'} title="${lastUndo ? esc(TT('Undo the last change by ', 'تراجع عن آخر تعديل من ') + whoName(lastUndo.by)) : ''}">${TT('Undo', 'تراجع')}${lastUndo && lastUndo.by !== 'you' ? ` · ${esc(whoName(lastUndo.by))}` : ''}</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-st="undo" ${lastUndo ? '' : 'disabled'} title="${lastUndo ? esc(admin ? TT('Undo the last change by ', 'تراجع عن آخر تعديل من ') + whoName(lastUndo.by) : TT('Undo the last change', 'تراجع عن آخر تعديل')) : ''}">${TT('Undo', 'تراجع')}${admin && lastUndo && lastUndo.by !== 'you' ? ` · ${esc(whoName(lastUndo.by))}` : ''}</button>
         <button type="button" class="btn btn-secondary btn-sm" data-st="redo" ${redoS.length ? '' : 'disabled'}>${TT('Redo', 'إعادة')}</button>
         <button type="button" class="btn btn-secondary btn-sm" data-st="export">${TT('Export', 'تصدير')}</button>
         <label class="btn btn-secondary btn-sm st-imp">${TT('Import', 'استيراد')}<input type="file" accept="application/json,.json" data-st="import" hidden></label>
@@ -488,6 +496,7 @@ Rules:
   host.addEventListener('pointerup', endDrag, true); host.addEventListener('pointercancel', endDrag, true);
   addEventListener('keydown', e => {
     if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.isContentEditable) return;
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') { e.preventDefault(); setAdmin(!isAdmin()); sync(); paintTags(); paint(); return; }
     if ((e.key === 'd' || e.key === 'D') && !e.ctrlKey && !e.metaKey && !e.altKey && !PL.V.walking && (!document.body.dataset.mode || document.body.dataset.mode === '3d')) { setOpen(!open); return; }
     if (!open) return;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); A(e.shiftKey ? { op: 'redo' } : { op: 'undo' }); return; }

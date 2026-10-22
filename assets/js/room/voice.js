@@ -6,7 +6,7 @@
   const DF = window.DF; if (!DF || !('speechSynthesis' in window)) return;
   const KEY = 'df-voice';
   const ar = () => document.documentElement.lang === 'ar';
-  const T = (en, a) => (ar() ? a : en);
+  const T = (en, a) => (ar() ? (window.DFI18N && DFI18N.agree ? DFI18N.agree(a) : a) : en);   // Arabic counts agree with what they count (i18n.js)
   const tr = s => (ar() && window.DFI18N && DFI18N.t(s)) || s;
   let on = false; try { on = localStorage.getItem(KEY) === '1'; } catch (e) { /* storage unavailable */ }
   const said = new Set();

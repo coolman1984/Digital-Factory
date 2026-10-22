@@ -24,6 +24,43 @@
     if (lang === 'ar' && started) schedule(document.body);
   }
   const norm = s => s.replace(/\s+/g, ' ').trim();
+  /* Arabic counts agree with what they count: 1 دقيقة → دقيقة واحدة, 2 → دقيقتان (خلال دقيقتين), 3–10 → دقائق,
+     11–99 → دقيقةً, 100, 1,000 → دقيقة. Each noun: singular, dual (nominative, after a word), plural, singular after 11–99,
+     feminine. Times (0:00), decimals and codes are left as they are. */
+  const NOUNS = [
+    ['دقيقة', 'دقيقتان', 'دقيقتين', 'دقائق', 'دقيقة', 1], ['ساعة', 'ساعتان', 'ساعتين', 'ساعات', 'ساعة', 1], ['ثانية', 'ثانيتان', 'ثانيتين', 'ثوانٍ', 'ثانية', 1],
+    ['يوم', 'يومان', 'يومين', 'أيام', 'يومًا', 0], ['أسبوع', 'أسبوعان', 'أسبوعين', 'أسابيع', 'أسبوعًا', 0], ['شهر', 'شهران', 'شهرين', 'أشهر', 'شهرًا', 0],
+    ['خيار', 'خياران', 'خيارين', 'خيارات', 'خيارًا', 0], ['قرار', 'قراران', 'قرارين', 'قرارات', 'قرارًا', 0], ['جهاز', 'جهازان', 'جهازين', 'أجهزة', 'جهازًا', 0],
+    ['مشغل', 'مشغلان', 'مشغلَين', 'مشغلين', 'مشغلًا', 0], ['طلبية', 'طلبيتان', 'طلبيتين', 'طلبيات', 'طلبية', 1], ['دفعة', 'دفعتان', 'دفعتين', 'دفعات', 'دفعة', 1],
+    ['لوحة', 'لوحتان', 'لوحتين', 'لوحات', 'لوحة', 1], ['منصة', 'منصتان', 'منصتين', 'منصات', 'منصة', 1], ['شاحنة', 'شاحنتان', 'شاحنتين', 'شاحنات', 'شاحنة', 1],
+    ['إنذار', 'إنذاران', 'إنذارين', 'إنذارات', 'إنذارًا', 0], ['وحدة', 'وحدتان', 'وحدتين', 'وحدات', 'وحدة', 1], ['ماكينة', 'ماكينتان', 'ماكينتين', 'ماكينات', 'ماكينة', 1],
+    ['خط', 'خطان', 'خطين', 'خطوط', 'خطًا', 0], ['مركبة', 'مركبتان', 'مركبتين', 'مركبات', 'مركبة', 1], ['قطار', 'قطاران', 'قطارين', 'قطارات', 'قطارًا', 0],
+    ['رافعة', 'رافعتان', 'رافعتين', 'رافعات', 'رافعة', 1], ['شحنة', 'شحنتان', 'شحنتين', 'شحنات', 'شحنة', 1], ['دورة', 'دورتان', 'دورتين', 'دورات', 'دورة', 1],
+    ['توقع', 'توقعان', 'توقعين', 'توقعات', 'توقعًا', 0], ['استثناء', 'استثناءان', 'استثناءين', 'استثناءات', 'استثناءً', 0], ['توريد', 'توريدان', 'توريدين', 'توريدات', 'توريدًا', 0],
+    ['إشارة', 'إشارتان', 'إشارتين', 'إشارات', 'إشارة', 1], ['مرة', 'مرتان', 'مرتين', 'مرات', 'مرة', 1], ['محطة', 'محطتان', 'محطتين', 'محطات', 'محطة', 1],
+    ['نقطة', 'نقطتان', 'نقطتين', 'نقاط', 'نقطة', 1], ['كرتونة', 'كرتونتان', 'كرتونتين', 'كراتين', 'كرتونة', 1], ['قطعة', 'قطعتان', 'قطعتين', 'قطع', 'قطعة', 1],
+    ['حاوية', 'حاويتان', 'حاويتين', 'حاويات', 'حاوية', 1], ['رسالة', 'رسالتان', 'رسالتين', 'رسائل', 'رسالة', 1], ['عيب', 'عيبان', 'عيبين', 'عيوب', 'عيبًا', 0],
+    ['وكيل', 'وكيلان', 'وكيلين', 'وكلاء', 'وكيلًا', 0], ['فني', 'فنيان', 'فنيين', 'فنيين', 'فنيًا', 0], ['مهمة', 'مهمتان', 'مهمتين', 'مهام', 'مهمة', 1],
+    ['حدث', 'حدثان', 'حدثين', 'أحداث', 'حدثًا', 0], ['تمرين', 'تمرينان', 'تمرينين', 'تمارين', 'تمرينًا', 0], ['خطوة', 'خطوتان', 'خطوتين', 'خطوات', 'خطوة', 1],
+    ['محاكاة', 'محاكاتان', 'محاكاتين', 'محاكاة', 'محاكاة', 1], ['عميل', 'عميلان', 'عميلين', 'عملاء', 'عميلًا', 0], ['طقم', 'طقمان', 'طقمين', 'أطقم', 'طقمًا', 0]
+  ];
+  const FORM = new Map(); NOUNS.forEach(n => n.slice(0, 5).forEach(f => { if (!FORM.has(f)) FORM.set(f, n); }));
+  FORM.set('جهازا', NOUNS.find(n => n[0] === 'جهاز')); FORM.set('مشغلا', NOUNS.find(n => n[0] === 'مشغل'));
+  const NOUN_RE = new RegExp(`(^|[\\s(«،؛])([+−-]?)(\\d{1,3}(?:,\\d{3})+|\\d+)(?![\\d.,:]\\d)(\\s+)(${[...FORM.keys()].sort((a, b) => b.length - a.length).join('|')})(?![\\u0621-\\u064A])`, 'g');
+  function countOf(sign, num, sp, w, before) {
+    const n = NOUNS.length && FORM.get(w); if (!n) return null;
+    const v = +num.replace(/,/g, ''), afterWord = /[ء-ي]\s*$/.test(before) && !/(^|\s)(هناك|يوجد|توجد|تبقى|تبقّى|بقي|بقيت|المتبقي|المتبقية|الإجمالي)\s*$/.test(before);
+    if (sign) return `${sign}${num}${sp}${v === 1 ? n[0] : v === 2 ? n[0] : v % 100 >= 3 && v % 100 <= 10 ? n[3] : v % 100 >= 11 ? n[4] : n[0]}`;
+    if (v === 1) return `${n[0]} ${n[5] ? 'واحدة' : 'واحد'}`;
+    if (v === 2) return afterWord ? n[2] : n[1];
+    const m = v % 100;
+    return `${num}${sp}${m >= 3 && m <= 10 ? n[3] : m >= 11 ? n[4] : n[0]}`;
+  }
+  function agree(s) {
+    if (!s || !/\d/.test(s)) return s;
+    s = s.replace(/خلال 0:00 دقيقة/g, 'خلال أقل من دقيقة');
+    return s.replace(NOUN_RE, (all, lead, sign, num, sp, w, off, str) => { const r = countOf(sign, num, sp, w, str.slice(0, off) + lead); return r == null ? all : lead + r; });
+  }
   // the Arabic for one string, or null when there is none (the English then stays)
   function tr(s, depth = 0) {
     const k = norm(s);
@@ -33,7 +70,8 @@
     if (out == null && depth < 5) {
       for (const [re, tpl] of pats) {
         const m = re.exec(k); if (!m) continue;
-        let hit = /[\u0600-\u06FF]/.test(tpl);
+        // a template counts as Arabic only for real words: a lone connector (و) or a comma (،) needs a translated part as well
+        let hit = /[\u0621-\u064A]{2,}/.test(tpl.replace(/\$\d/g, ''));
         out = tpl.replace(/\$(\d)/g, (_, i) => { const c = m[+i] || ''; if (c === k) return c; let t = tr(c, depth + 1); if (t == null && /^[a-z]/.test(c)) t = tr(c[0].toUpperCase() + c.slice(1), depth + 1); if (t == null && lower.has(c.toLowerCase())) t = lower.get(c.toLowerCase()); if (t == null) return c; hit = true; return t; });
         if (!hit) { out = null; continue; }   // a general shape whose parts are all unknown gives way to the next pattern
         break;
@@ -53,6 +91,7 @@
       const sent = k.split(/(?<=[.!?])\s+(?=[A-Z0-9“"(+−-])/);
       if (sent.length > 1) { const t = sent.map(p => tr(p, depth + 1)); if (t.every(x => x != null)) out = t.join(' '); }
     }
+    if (depth === 0 && out != null) out = agree(out);
     if (cache.size > 20000) cache.clear();
     cache.set(k, out);
     return out;
@@ -60,7 +99,7 @@
 
   /* ---------- the page ---------- */
   const ATTRS = ['title', 'aria-label', 'placeholder', 'alt'];
-  const SKIP = 'script,style,textarea,code,pre,[data-no-i18n],[contenteditable="true"],.ar,[lang="ar"]:not(html),.ws';
+  const SKIP = 'script,style,textarea,code,pre,[data-no-i18n],[contenteditable="true"],.ar,[lang="ar"]:not(html),.ws,.df-term';   // a term mark keeps the letters it marks
   const done = new Map();      // text node → { en, ar } while it shows Arabic
   const attrDone = new Map();  // element → { attr: { en, ar } }
   let lang = read() === 'ar' ? 'ar' : 'en', started = false;
@@ -129,7 +168,7 @@
     if (src.length > 1500) return false;
     const t = exact.get(src); if (t == null) return false;
     if (!blockDone.has(el)) blockDone.set(el, el.innerHTML);
-    if (/</.test(t)) el.innerHTML = t; else el.textContent = t;
+    if (/</.test(t)) el.innerHTML = agree(t); else el.textContent = agree(t);
     return true;
   }
   function walk(n) {
@@ -226,6 +265,6 @@
   // every open page and the deck's embedded demo follow the choice
   addEventListener('storage', e => { if (e.key === KEY && e.newValue) set(e.newValue, false); });
 
-  window.DFI18N = { add, t: tr, set, get lang() { return lang; }, ar: () => lang === 'ar' };
+  window.DFI18N = { add, t: tr, agree, set, get lang() { return lang; }, ar: () => lang === 'ar' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else queueMicrotask(start);
 })();

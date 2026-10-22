@@ -9,15 +9,15 @@ DFI18N.add({
     'Command room': 'غرفة التحكم', 'Presentation': 'العرض التقديمي', 'Reference guide': 'الدليل المرجعي', 'Live demo': 'العرض الحي', 'How it works': 'آلية العمل', 'The plan': 'الخطة',
     'or': 'أو', 'and': 'و', 'line': 'الخط', 'every second': 'كل ثانية', 'of': 'من', 'to': 'إلى', 'at': 'عند', 'in': 'في', 'now': 'الآن', 'today': 'اليوم', 'none': 'لا شيء', '—': '—',
     'Close': 'إغلاق', 'Open': 'فتح', 'Cancel': 'إلغاء', 'Back': 'رجوع', 'Next': 'التالي', 'Previous': 'السابق', 'Done': 'تم', 'Yes': 'نعم', 'No': 'لا', 'More': 'المزيد', 'Less': 'أقل',
-    'Approve': 'اعتماد', 'Decline': 'رفض', 'Reject': 'رفض', 'Dismiss': 'تجاهل', 'Apply': 'تطبيق', 'Undo': 'تراجع', 'Show': 'اعرض', 'Hide': 'إخفاء', 'Clear': 'مسح', 'Search': 'بحث', 'Find': 'بحث',
+    'Approve': 'اعتماد', 'Decline': 'رفض', 'Reject': 'رفض', 'Dismiss': 'تجاهل', 'Apply': 'تطبيق', 'Undo': 'تراجع', 'Show': 'عرض', 'Hide': 'إخفاء', 'Clear': 'مسح', 'Search': 'بحث', 'Find': 'بحث',
     'Play': 'تشغيل', 'Pause': 'إيقاف مؤقت', 'Resume': 'استئناف', 'Stop': 'إيقاف', 'Start': 'بدء', 'Reset': 'إعادة الضبط', 'Send': 'إرسال', 'Live': 'مباشر', 'Replay': 'إعادة عرض', 'Paused': 'متوقف مؤقتًا',
-    'Running': 'يعمل', 'Stopped': 'متوقف', 'Idle': 'خامل', 'Starved': 'متوقف لنقص المواد', 'Blocked': 'متوقف لامتلاء المخرج', 'Changeover': 'تغيير الموديل',
-    'Running slow': 'يعمل ببطء', 'Short stop': 'توقف قصير', 'Planned maintenance': 'صيانة مخططة', 'Tripped': 'مفصول', 'Attention': 'يحتاج إلى انتباه', 'Interrupted': 'متقطع',
-    'Healthy': 'سليم', 'Warning': 'تحذير', 'Critical': 'حرج', 'OK': 'سليم', 'Fault': 'عطل', 'Parked': 'متوقف في موقفه', 'Charging': 'يشحن', 'Driving': 'يتحرك', 'Waiting': 'ينتظر', 'Open ': 'مفتوح',
-    'running': 'يعمل', 'stopped': 'متوقف', 'idle': 'خامل', 'starved': 'متوقف لنقص المواد', 'blocked': 'متوقف لامتلاء المخرج', 'changeover': 'تغيير الموديل', 'down': 'متوقف', 'warn': 'تحذير', 'maint': 'صيانة', 'micro': 'توقف قصير',
+    'Running': 'يعمل', 'Stopped': 'متوقف', 'Idle': 'خامل', 'Starved': 'متوقف لنقص المواد', 'Blocked': 'متوقف لامتلاء المرحلة التالية', 'Changeover': 'تغيير الموديل',
+    'Running slow': 'يعمل ببطء', 'Short stop': 'توقف قصير', 'Planned maintenance': 'صيانة مخططة', 'Tripped': 'مفصول', 'Attention': 'يستدعي الانتباه', 'Interrupted': 'متقطع',
+    'Healthy': 'سليم', 'Warning': 'تحذير', 'Critical': 'حرج', 'OK': 'سليم', 'Fault': 'عطل', 'Parked': 'في الموقف', 'Charging': 'يشحن', 'Driving': 'في مهمة', 'Waiting': 'ينتظر', 'Open ': 'مفتوح',
+    'running': 'يعمل', 'stopped': 'متوقف', 'idle': 'خامل', 'starved': 'متوقف لنقص المواد', 'blocked': 'متوقف لامتلاء المرحلة التالية', 'changeover': 'تغيير الموديل', 'down': 'متوقف', 'warn': 'تحذير', 'maint': 'صيانة', 'micro': 'توقف قصير',
     'Shift A': 'الوردية A', 'Shift B': 'الوردية B', 'Shift C': 'الوردية C', 'Shift A · 06–14': 'الوردية A · 06–14', 'Shift B · 14–22': 'الوردية B · 14–22', 'Shift C · 22–06': 'الوردية C · 22–06',
     'simulated': 'بيانات محاكاة', 'simulated plant data': 'بيانات مصنع محاكاة', 'Plant data is simulated.': 'بيانات المصنع محاكاة.', 'Sample readouts': 'قراءات توضيحية',
-    'Line OEE': 'فعالية الخط OEE', 'Guided tour': 'جولة إرشادية', 'Run a drill': 'شغّل تمرينًا', 'Drills': 'التمارين', 'Drill': 'تمرين',
+    'Line OEE': 'فعالية الخط OEE', 'Guided tour': 'جولة إرشادية', 'Run a drill': 'تشغيل تمرين', 'Drills': 'التمارين', 'Drill': 'تمرين',
     'Time machine': 'آلة الزمن', 'AI agents': 'وكلاء الذكاء الاصطناعي', 'Copilot': 'المساعد الذكي', 'Ask copilot': 'اسأل المساعد الذكي', 'Ask the copilot': 'اسأل المساعد الذكي',
     'Alarms': 'الإنذارات', 'Control': 'التحكم', 'Predictions': 'التنبؤات', 'Root cause': 'السبب الجذري', 'What-if lab': 'مختبر ماذا لو', 'What-if': 'ماذا لو',
     'Leadership': 'القيادة', 'Maintenance': 'الصيانة', 'Quality': 'الجودة', 'Energy': 'الطاقة', 'Agents': 'الوكلاء', 'Decisions': 'القرارات', 'Value stream': 'مسار القيمة',
@@ -32,24 +32,26 @@ DFI18N.add({
     'Main line 1': 'خط التجميع الرئيسي 1', 'Main line 2': 'خط التجميع الرئيسي 2', 'Main line 3': 'خط التجميع الرئيسي 3', 'Main line 4': 'خط التجميع الرئيسي 4', 'Main line 5': 'خط التجميع الرئيسي 5', 'Main line 6': 'خط التجميع الرئيسي 6',
     'Import warehouse': 'مخزن المواد المستوردة', 'Local supermarket': 'سوبر ماركت الموردين المحليين', 'Local-vendor supermarket': 'سوبر ماركت الموردين المحليين', 'SMD and PBA hall': 'صالة SMD وPBA', 'Injection moulding': 'الحقن', 'Injection': 'الحقن',
     'Main assembly lines': 'خطوط التجميع الرئيسية', 'Press and coating': 'الكبس والطلاء', 'Shipping': 'الشحن', 'Finished goods and shipping': 'المنتجات التامة والشحن', 'Offices and SAP': 'المكاتب وSAP', 'Service parts': 'قطع الغيار', 'Service-parts warehouse': 'مخزن قطع الغيار', 'Utilities': 'المرافق', 'Utilities, maintenance and QA lab': 'المرافق والصيانة ومختبر الجودة', 'Cushioning and sub-assembly': 'الوسائد والتجميع الفرعي', 'Whole plant': 'المصنع كله',
-    'Loader': 'مُلقِّم المجلات', 'Unloader': 'مُفرِّغ المجلات', 'Printer': 'طابعة معجون اللحام', 'SPI': 'SPI', 'Mounter A': 'ماكينة التركيب A', 'Mounter B': 'ماكينة التركيب B', 'Mounter C': 'ماكينة التركيب C', 'Reflow': 'فرن إعادة الصهر', 'AOI': 'AOI', 'SW download': 'تحميل البرمجيات', 'ICT': 'ICT',
+    'Loader': 'مُلقِّم المجلات', 'Unloader': 'مُفرِّغ المجلات', 'Printer': 'طابعة معجون اللحام', 'SPI': 'SPI', 'Mounter A': 'ماكينة التركيب A', 'Mounter B': 'ماكينة التركيب B', 'Mounter C': 'ماكينة التركيب C', 'Reflow': 'فرن إعادة الصهر', 'AOI': 'AOI', 'SW download': 'محطة تحميل البرمجيات', 'ICT': 'ICT',
     'LCM input': 'مدخل وحدات LCM', 'PBA and SMPS': 'تركيب اللوحة ومصدر الطاقة', 'Back cover': 'الغطاء الخلفي', 'Screw and stand': 'تثبيت القاعدة', 'Function test': 'الاختبار الوظيفي', 'Aging': 'اختبار التعتيق', 'White balance': 'موازنة اللون الأبيض', 'Final QA': 'فحص الجودة النهائي', 'Packing': 'التعبئة', 'Palletizer': 'وحدة الرصّ على المنصات',
     'Module bonding': 'لصق الوحدة', 'Backlight assembly': 'تجميع الإضاءة الخلفية', 'Lighting test': 'اختبار الإضاءة', 'Cell attach': 'تثبيت الخلية',
     'Press': 'المكبس', 'Coating': 'الطلاء', 'Coating oven': 'فرن الطلاء', 'Sub-assembly': 'التجميع الفرعي', 'Cushion': 'الوسائد', 'Injection machine': 'ماكينة الحقن',
-    'AGV': 'المركبة الذاتية AGV', 'Forklift': 'رافعة شوكية', 'Milk run': 'قطار الإمداد', 'Dock': 'الرصيف'
+    'AGV': 'مركبة موجهة آليًا AGV', 'Forklift': 'رافعة شوكية', 'Milk run': 'قطار الإمداد', 'Dock': 'الرصيف'
   },
   patterns: [
     ['^EGP ([\\d.,]+)M$', '$1 مليون جنيه'], ['^EGP ([\\d.,]+)k$', '$1 ألف جنيه'], ['^EGP ([\\d.,]+)$', '$1 جنيه'],
     ['^([+−-])EGP ([\\d.,]+)M$', '$1$2 مليون جنيه'], ['^([+−-])EGP ([\\d.,]+)k$', '$1$2 ألف جنيه'], ['^([+−-])EGP ([\\d.,]+)$', '$1$2 جنيه'],
     ['^([\\d.,]+) min$', '$1 دقيقة'], ['^([\\d.,:]+) min$', '$1 دقيقة'], ['^([\\d.,]+) s$', '$1 ثانية'], ['^([\\d.,]+) h$', '$1 ساعة'], ['^([\\d.,]+) hours?$', '$1 ساعة'], ['^([\\d.,]+) minutes?$', '$1 دقيقة'], ['^([\\d.,]+) days?$', '$1 يوم'], ['^([\\d.,]+) weeks?$', '$1 أسبوع'],
-    ['^([\\d.,]+) TVs$', '$1 جهاز تلفزيون'], ['^([\\d.,]+) units$', '$1 وحدة'], ['^([\\d.,]+) alarms$', '$1 إنذارات'], ['^1 alarm$', 'إنذار واحد'], ['^([\\d.,]+) pallets$', '$1 منصة'], ['^([\\d.,]+) trucks$', '$1 شاحنة'], ['^([\\d.,]+) lots$', '$1 دفعات'], ['^([\\d.,]+) boards$', '$1 لوحة'],
+    ['^([\\d.,]+) TVs$', '$1 جهاز تلفزيون'], ['^([\\d.,]+) units$', '$1 وحدة'], ['^([\\d.,]+) alarms$', '$1 إنذار'], ['^1 alarm$', 'إنذار واحد'], ['^([\\d.,]+) pallets$', '$1 منصة'], ['^([\\d.,]+) trucks$', '$1 شاحنة'], ['^([\\d.,]+) lots$', '$1 دفعة'], ['^([\\d.,]+) boards$', '$1 لوحة'],
     ['^([\\d.,]+)/h$', '$1 في الساعة'], ['^([\\d.,]+) an hour$', '$1 في الساعة'], ['^([\\d.,]+) a day$', '$1 في اليوم'],
     ['^Plant time (.+)$', 'وقت المصنع $1'], ['^plant time (.+)$', 'وقت المصنع $1'],
     ['^Main line (\\d)$', 'خط التجميع الرئيسي $1'], ['^SMD line (\\d)$', 'خط SMD $1'], ['^LCM line (\\d)$', 'خط LCM $1'], ['^Press line (\\d)$', 'خط الكبس $1'], ['^Cushion machine (\\d)$', 'ماكينة الوسائد $1'], ['^Cushion line (\\d)$', 'خط الوسائد $1'],
     ['^Injection machine (IM\\d+)$', 'ماكينة الحقن $1'], ['^Dock (\\d)$', 'الرصيف $1'], ['^Milk run (T\\d)$', 'قطار الإمداد $1'], ['^Import door (\\d)$', 'باب الاستيراد $1'], ['^Vendor door (\\d)$', 'باب الموردين $1'],
-    ['^(.+) \\((Main line \\d|SMD line \\d|LCM line \\d|Press line \\d|Cushion machine \\d)\\)$', '$1 ($2)'],
+    ['^([^()]+) \\((Main line \\d|SMD line \\d|LCM line \\d|Press line \\d|Cushion machine \\d)\\)$', '$1 ($2)'],
     ['^(.+), (Main line \\d|SMD line \\d|LCM line \\d|Press line \\d)$', '$1، $2'],
     ['^(.+) · (.+)$', '$1 · $2']
   ]
 });
 DFI18N.add({ exact: { 'board line': 'خط اللوحات', 'GMES · STATION': 'GMES · المحطة', 'S&OP · 12 WEEKS': 'تخطيط المبيعات والعمليات · 12 أسبوعًا' }, patterns: [['^([\\d.]+) m$', '$1 م']] });
+DFI18N.add({ patterns: [['^· ([\\d.,]+)/h$', '· $1 في الساعة'], ['^· ([\\d.,]+) TVs/h$', '· $1 جهاز في الساعة']] });
+DFI18N.add({ patterns: [['^([\\d.]+)k$', '$1 ألف']] });
