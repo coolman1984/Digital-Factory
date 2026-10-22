@@ -1464,12 +1464,12 @@
     function label(el, getPos, tier) { labels.push({ el, getPos, tier }); }
     // labels never sit on top of each other: the more important one wins (selection and alerts first, then systems,
     // departments, lines, zones, stations, vehicles) and the others hide until the camera moves closer
-    const RANK = [['lb-sel', 0], ['lb-pill', 1], ['lb-sys', 2], ['lb-room', 3], ['lb-line', 4], ['lb-zone', 5], ['lb-st', 6], ['lb-agv', 7]];
+    const RANK = [['lb-sel', 0], ['lb-studio', 1], ['lb-pill', 1], ['lb-sys', 2], ['lb-room', 3], ['lb-line', 4], ['lb-zone', 5], ['lb-st', 6], ['lb-agv', 7]];
     const rankOf = el => { for (const [c, r] of RANK) if (el.classList.contains(c)) return r; return 8; };
     const ANCHOR = { 'lb-zone': [0.5, 0.5], 'lb-line': [1, 0.5] };
     let measureAt = 0, blocks = [];
     // the controls that float over the 3D view (area menu, tools, legend, drill button, map, captions): no label goes under them
-    const OVER = '.pl-views, .pl-tools > *, .pl-overlay, .pl-legend, .pl-drill > *, .pl-nav3d, #minimap, .pl-caption, .pl-hud, #hud';
+    const OVER = '.pl-views, .pl-tools > *, .st-panel, .pl-overlay, .pl-legend, .pl-drill > *, .pl-nav3d, #minimap, .pl-caption, .pl-hud, #hud';
     function measureBlocks() {
       const host = canvas.getBoundingClientRect();
       blocks = [...canvas.parentElement.querySelectorAll(OVER)].filter(el => !el.hidden && el.offsetParent).map(el => {
@@ -1574,6 +1574,8 @@
       THREE: T, scene, camera, controls, renderer, ROOMV, BV, CCTV,
       on(fn) { listeners.push(fn); },
       render, resize, select, view, flyTo: info => flyTo(info), refInfo, label, posOfRef, sysPos,
+      // the plant studio (studio.js) draws its own design layer into the same scene and picks points on the floor
+      studio: { T, world, camera, controls, canvas, groundAt(cx, cy) { const r = canvas.getBoundingClientRect(); ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera); const p = new T.Vector3(); return ray.ray.intersectPlane(new T.Plane(new T.Vector3(0, 1, 0), 0), p) ? p : null; }, pick(cx, cy, objs) { const r = canvas.getBoundingClientRect(); ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera); const h = ray.intersectObjects(objs, true)[0]; return h ? h.object : null; }, lookAt(x, z, d) { view([x, z, d || 60]); } },
       setOverlay(m) { overlay = m; emit('overlay', m); },
       get overlay() { return overlay; },
       setTheme(t) { theme = t === 'dark' ? 'dark' : 'light'; applyTheme(); },
