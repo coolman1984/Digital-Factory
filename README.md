@@ -19,6 +19,10 @@ All plant data is simulated. Plant EG-01 is fictional; no real company or city i
 **Guide** button on every page (or `?`) explains the current screen, every control and decision, and suggests the next step from
 the live plant; its explain mode describes any control under the pointer.
 
+**Two levels.** The LCM hall and the offices stand on a deck 5.4 m up, with the injection, panel and press stores on
+mezzanines over their pick faces; stairs, passenger lifts and material lifts connect the floors, and inclined belts bring
+the panel modules down to the main lines. Walk mode climbs stairs, rides lifts and routes across both levels.
+
 **Plant studio.** Over the 3D plant, Studio (or `D`) opens a design layer: type what to change in Arabic or English, or drag
 objects by hand. With an Anthropic key Claude edits the layer through tools and reads the scene before every change; every
 object is checked for clashes with machines, racks and aisles, with undo, redo and JSON export.
