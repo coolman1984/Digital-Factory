@@ -16,7 +16,7 @@
       dark: 0x23272E, steel: 0xA9B1BC, alu: 0xC8CED6, rubber: 0x2B2F36, glass: 0xC9D8E6, rack: 0x5E6B7C, beam: 0x8A95A3,
       pcb: 0x2F6B4F, tv: 0x111317, carton: 0xC9A37A, pallet: 0xB98F60, tray: 0xCDD3DA, person: 0x2E3A4F, skin: 0xC8A58A, tech: 0x1565D8, office: 0x5C6778,
       agv: 0xF2F4F6, stripe: 0x1428A0, truck: 0xF0F2F4, cab: 0x4A5260, mag: 0x5C6573, plastic: 0x24282F, desk: 0xD9D4CC, carpet: 0x737C88,
-      wall: 0xE9ECEF, pkt: 0x2D5BFF, net: 0x1428A0, env: 0.38, hemi: [0xFFFFFF, 0x8A929D, 0.55], sun: 2.6, amb: 0.04, exp: 0.95, bloom: 0.3, fixture: 2.2
+      wall: 0xE9ECEF, pkt: 0x2D5BFF, net: 0x1428A0, env: 0.44, hemi: [0xFFFFFF, 0x8A929D, 0.55], sun: 2.6, amb: 0.04, exp: 0.95, bloom: 0.3, fixture: 2.2
     },
     dark: {
       bg: 0x07090D, fog: 0x07090D, floor: 0x24282F, floorLine: 0x59616D, zone: 0x2C3139, paint: 0x7D8590, paint2: 0x5B636E, frame: 0x1A1D23,
@@ -66,9 +66,22 @@
     let moved = false;
     controls.target.copy(CENTER); camera.position.copy(HOME);
 
-    // image-based light from a neutral studio room, plus sky light and a sun for shadows
+    // image-based light from a studio of soft light panels (long high-bay strips overhead, a cool key, a warm rim, a low fill),
+    // the way product renderers light a scene: metal, paint and glass pick up clean, readable reflections. Plus sky light and a sun.
+    function lightformers() {
+      const s = new T.Scene(), PI = Math.PI;
+      const room = new T.Mesh(new T.BoxGeometry(64, 32, 64), new T.MeshBasicMaterial({ color: 0x4A5059, side: T.BackSide })); room.position.y = 11; s.add(room);
+      const ground = new T.Mesh(new T.PlaneGeometry(64, 64), new T.MeshBasicMaterial({ color: 0x23262B })); ground.rotation.x = -PI / 2; ground.position.y = -4.9; s.add(ground);
+      const panel = (w, h, x, y, z, rx, ry, k, col = 0xffffff) => { const m = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshBasicMaterial({ color: new T.Color(col).multiplyScalar(k), side: T.DoubleSide })); m.position.set(x, y, z); m.rotation.set(rx, ry, 0); s.add(m); };
+      for (const x of [-14, -4.5, 4.5, 14]) panel(2.4, 46, x, 26.5, 0, PI / 2, 0, 5.5);
+      panel(18, 11, -31, 11, -6, 0, PI / 2, 3.2, 0xEEF4FF);
+      panel(14, 9, 31, 9, 9, 0, -PI / 2, 2.2, 0xFFE6C8);
+      panel(34, 5, 0, 4.5, -31, 0, 0, 1.6, 0xDCE6FF);
+      panel(20, 4, 0, 2.5, 31, 0, PI, 1.1);
+      return s;
+    }
     const pmrem = new T.PMREMGenerator(renderer);
-    scene.environment = pmrem.fromScene(new T.RoomEnvironment(), 0.04).texture;
+    scene.environment = pmrem.fromScene(lightformers(), 0.02).texture;
     const hemi = new T.HemisphereLight(C.hemi[0], C.hemi[1], C.hemi[2]); scene.add(hemi);
     const amb = new T.AmbientLight(0xffffff, C.amb); scene.add(amb);
     const sun = new T.DirectionalLight(0xfff6ea, C.sun);
@@ -155,17 +168,19 @@
 
     /* ---------------- materials (rethemed in place) ---------------- */
     const std = (c, o = {}) => new T.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.6, metalness: 0 }, o));
+    // physical materials where a clear coat shows: painted machine housings, screens, vehicles and the epoxy floor
+    const phys = (c, o = {}) => new T.MeshPhysicalMaterial(Object.assign({ color: c, roughness: 0.5, metalness: 0 }, o));
     const M = {
-      floor: std(C.floor, { map: floorTex, roughness: 0.42, metalness: 0.0 }),
+      floor: phys(C.floor, { map: floorTex, roughness: 0.42, metalness: 0.0, clearcoat: 0.32, clearcoatRoughness: 0.32 }),
       zone: std(C.zone, { roughness: 0.5, transparent: true, opacity: 0.55, depthWrite: false }),
       floorLine: new T.MeshBasicMaterial({ color: C.floorLine }),
-      paint: std(C.paint, { roughness: 0.38, metalness: 0.05 }), paint2: std(C.paint2, { roughness: 0.45 }),
+      paint: phys(C.paint, { roughness: 0.36, metalness: 0.05, clearcoat: 0.6, clearcoatRoughness: 0.2 }), paint2: std(C.paint2, { roughness: 0.45 }),
       frame: std(C.frame, { roughness: 0.55, metalness: 0.2 }), dark: std(C.dark, { roughness: 0.5, metalness: 0.2 }),
       steel: std(C.steel, { roughness: 0.32, metalness: 0.85 }), alu: std(C.alu, { roughness: 0.28, metalness: 0.9 }),
       rubber: std(C.rubber, { roughness: 0.85 }), rack: std(C.rack, { roughness: 0.5, metalness: 0.4 }), beam: std(C.beam, { roughness: 0.5, metalness: 0.6 }),
-      glass: std(C.glass, { roughness: 0.04, metalness: 0.1, transparent: true, opacity: 0.12, depthWrite: false, envMapIntensity: 1.8 }),
-      pcb: std(C.pcb, { roughness: 0.4 }), tv: std(C.tv, { roughness: 0.18, metalness: 0.3 }), carton: std(C.carton, { roughness: 0.9 }), pallet: std(C.pallet, { roughness: 0.85 }),
-      tray: std(C.tray, { roughness: 0.5 }), agv: std(C.agv, { roughness: 0.35 }), stripe: std(C.stripe, { roughness: 0.4 }), truck: std(C.truck, { roughness: 0.4, metalness: 0.2 }),
+      glass: phys(C.glass, { roughness: 0.03, metalness: 0, ior: 1.5, specularIntensity: 1, transparent: true, opacity: 0.14, depthWrite: false, envMapIntensity: 2 }),
+      pcb: std(C.pcb, { roughness: 0.4 }), tv: phys(C.tv, { roughness: 0.18, metalness: 0.3, clearcoat: 1, clearcoatRoughness: 0.05 }), carton: std(C.carton, { roughness: 0.9 }), pallet: std(C.pallet, { roughness: 0.85 }),
+      tray: std(C.tray, { roughness: 0.5 }), agv: phys(C.agv, { roughness: 0.32, clearcoat: 0.7, clearcoatRoughness: 0.15 }), stripe: std(C.stripe, { roughness: 0.4 }), truck: phys(C.truck, { roughness: 0.38, metalness: 0.2, clearcoat: 0.8, clearcoatRoughness: 0.12 }),
       cab: std(C.cab, { roughness: 0.4, metalness: 0.3 }), mag: std(C.mag, { roughness: 0.5 }), plastic: std(C.plastic, { roughness: 0.35 }), desk: std(C.desk, { roughness: 0.5 }),
       carpet: std(C.carpet, { roughness: 1 }), wall: std(C.wall, { roughness: 0.7 }), load: std(0xffffff, { roughness: 0.7 }), skin: std(C.skin, { roughness: 0.7 }),
       person: std(0xffffff, { roughness: 0.8 }),
@@ -1464,7 +1479,7 @@
     function label(el, getPos, tier) { labels.push({ el, getPos, tier }); }
     // labels never sit on top of each other: the more important one wins (selection and alerts first, then systems,
     // departments, lines, zones, stations, vehicles) and the others hide until the camera moves closer
-    const RANK = [['lb-sel', 0], ['lb-studio', 1], ['lb-pill', 1], ['lb-sys', 2], ['lb-room', 3], ['lb-line', 4], ['lb-zone', 5], ['lb-st', 6], ['lb-agv', 7]];
+    const RANK = [['lb-who', 0], ['lb-sel', 0], ['lb-studio', 1], ['lb-pill', 1], ['lb-sys', 2], ['lb-room', 3], ['lb-line', 4], ['lb-zone', 5], ['lb-st', 6], ['lb-agv', 7]];
     const rankOf = el => { for (const [c, r] of RANK) if (el.classList.contains(c)) return r; return 8; };
     const ANCHOR = { 'lb-zone': [0.5, 0.5], 'lb-line': [1, 0.5] };
     let measureAt = 0, blocks = [];
@@ -1531,6 +1546,7 @@
       scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
       emit('quality', quality);
     }
+    const frameFns = [];   // per-frame hooks for layers drawn by other modules (the plant studio)
     function render(dt) {
       const t0 = performance.now();
       stepFly(); stepCinematic(dt); stepWalk(dt);
@@ -1546,6 +1562,7 @@
       M.roof.opacity = ro; M.lights.opacity = ro; M.roof.visible = M.lights.visible = ro > 0.02; M.roof.depthWrite = ro > 0.98;
       renderer.setScissorTest(false); renderer.setViewport(0, 0, Wd, Ht);
       if (renderer.shadowMap.enabled && frames % 3 === 0) renderer.shadowMap.needsUpdate = true;
+      for (const f of frameFns) f(dt);
       if (composer) composer.render(dt); else renderer.render(scene, camera);
       // CCTV feeds: one camera redrawn per frame, the rest keep their last image
       if (cctvOn) {
@@ -1575,7 +1592,7 @@
       on(fn) { listeners.push(fn); },
       render, resize, select, view, flyTo: info => flyTo(info), refInfo, label, posOfRef, sysPos,
       // the plant studio (studio.js) draws its own design layer into the same scene and picks points on the floor
-      studio: { T, world, camera, controls, canvas, groundAt(cx, cy) { const r = canvas.getBoundingClientRect(); ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera); const p = new T.Vector3(); return ray.ray.intersectPlane(new T.Plane(new T.Vector3(0, 1, 0), 0), p) ? p : null; }, pick(cx, cy, objs) { const r = canvas.getBoundingClientRect(); ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera); const h = ray.intersectObjects(objs, true)[0]; return h ? h.object : null; }, lookAt(x, z, d) { view([x, z, d || 60]); } },
+      studio: { T, world, camera, controls, canvas, groundAt(cx, cy) { const r = canvas.getBoundingClientRect(); ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera); const p = new T.Vector3(); return ray.ray.intersectPlane(new T.Plane(new T.Vector3(0, 1, 0), 0), p) ? p : null; }, pick(cx, cy, objs) { const r = canvas.getBoundingClientRect(); ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera); const h = ray.intersectObjects(objs, true)[0]; return h ? h.object : null; }, lookAt(x, z, d) { view([x, z, d || 60]); }, onFrame(fn) { frameFns.push(fn); } },
       setOverlay(m) { overlay = m; emit('overlay', m); },
       get overlay() { return overlay; },
       setTheme(t) { theme = t === 'dark' ? 'dark' : 'light'; applyTheme(); },
