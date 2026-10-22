@@ -105,17 +105,7 @@
       // aisles
       ctx.strokeStyle = alpha(C.text3, 0.16); ctx.lineWidth = Math.max(1, s * 2.4); ctx.lineCap = 'butt';
       for (const A of L.AISLES) { ctx.beginPath(); ctx.moveTo(SX(A.a[0]), SZ(A.a[1])); ctx.lineTo(SX(A.b[0]), SZ(A.b[1])); ctx.stroke(); }
-      // hall names, top-left inside each hall
-      ctx.font = `600 ${fs}px ${C.font}`; ctx.textAlign = 'left'; ctx.fillStyle = C.text3;
-      for (const zn of L.ZONES) {
-        const room = (zn.x1 - zn.x0) * s - 8;
-        let name = tt(zn.name);
-        if (ctx.measureText(name).width > room) name = name.split(/[ ,]/)[0];
-        // above the hall wall where the aisle leaves room, inside it along the plant's north wall
-        const y = zn.z0 > 5 && s * 4 > fs + 2 ? SZ(zn.z0) - fs * 0.7 : SZ(zn.z0) + fs * 0.9;
-        if (ctx.measureText(name).width <= room) ctx.fillText(name, SX(zn.x0) + 3, y);
-        hit('zone:' + zn.id, zn.x0, zn.z0, zn.x1, zn.z1);
-      }
+      for (const zn of L.ZONES) hit('zone:' + zn.id, zn.x0, zn.z0, zn.x1, zn.z1);
 
       // conveyors and the units on them
       const showUnits = s > 2.2;
@@ -164,17 +154,39 @@
         }
         hit('st:' + st.id, x0 - 0.3, z0 - 0.3, x0 + st.w + 0.3, z0 + st.d + 0.3);
       }
-      // line names, at the start of each line
-      ctx.font = `700 ${clamp(s * 1.7, 9, 13)}px ${C.font}`; ctx.textAlign = 'right';
-      for (const Ln of Object.values(P.lines)) {
-        if (Ln.kind === 'injection' || Ln.kind === 'cushion' || !Ln.stations.length) continue;
-        const st0 = Ln.stations[0], lbl = Ln.kind === 'main' ? Ln.id : Ln.kind === 'lcm' ? 'LCM ' + Ln.id.slice(3) : Ln.kind === 'smd' ? 'SMD ' + Ln.id.slice(3) : Ln.kind === 'press' ? 'PR ' + Ln.id.slice(2) : Ln.id;
-        const col = stColor(Ln.state);
-        ctx.fillStyle = col || C.text2;
-        const x = st0.x - st0.w / 2 - 1;
-        if (s > 2.4 || Ln.kind === 'main') ctx.fillText(lbl, SX(x), SZ(st0.z));
-        hit('line:' + Ln.id, x - 6, st0.z - 1.6, x, st0.z + 1.6);
+      // line names, always inside the line's own hall, in the first free place: in front of the first station, after the last
+      // one, or else above (or, when the top row has no room, below) the first station, the same side for every line of a hall,
+      // so a name never crosses a wall, an aisle, another line or another name
+      const lf = clamp(s * 1.7, 9, 13), taken = [];
+      ctx.font = `700 ${lf}px ${C.font}`; ctx.textBaseline = 'middle';
+      const named = Object.values(P.lines).filter(Ln => Ln.kind !== 'injection' && Ln.kind !== 'cushion' && Ln.stations.length);
+      const lbl = Ln => (Ln.kind === 'main' ? Ln.id : Ln.kind === 'lcm' ? 'LCM ' + Ln.id.slice(3) : Ln.kind === 'smd' ? 'SMD ' + Ln.id.slice(3) : Ln.kind === 'press' ? 'PR ' + Ln.id.slice(2) : Ln.id);
+      const plan = named.map(Ln => {
+        const st0 = Ln.stations[0], stN = Ln.stations[Ln.stations.length - 1], t = lbl(Ln), tw = ctx.measureText(t).width;
+        const zn = L.ZONES.find(z => st0.x >= z.x0 && st0.x <= z.x1 && st0.z >= z.z0 && st0.z <= z.z1);
+        const x0 = zn ? SX(zn.x0) + 4 : -Infinity, x1 = zn ? SX(zn.x1) - 4 : Infinity, start = SX(st0.x - st0.w / 2) - 3, end = SX(stN.x + stN.w / 2) + 3;
+        // after the last station only where no conveyor carries on (LCM lines cross into the main lines, main lines end at the palletizer)
+        const where = start - tw >= x0 ? 'before' : (Ln.kind === 'smd' || Ln.kind === 'press') && end + tw <= x1 ? 'after' : 'stack';
+        const up = SZ(st0.z - st0.d / 2) - lf * 0.6 - 2, down = SZ(st0.z + st0.d / 2) + lf * 0.6 + 2;
+        return { Ln, st0, t, tw, zn, x0, start, end, where, up, down, top: zn ? SZ(zn.z0) + lf * 0.6 + 3 : -Infinity };
+      });
+      taken.length = 0;
+      const below = new Set(plan.filter(q => q.where === 'stack' && q.up < q.top).map(q => q.zn));
+      for (const q of plan) {
+        if (!(s > 2.4 || q.Ln.kind === 'main')) continue;
+        const col = stColor(q.Ln.state) || C.text2, y = SZ(q.st0.z);
+        ctx.fillStyle = col;
+        if (q.where === 'before') { ctx.textAlign = 'right'; ctx.fillText(q.t, q.start, y); taken.push([q.start - q.tw, y - lf / 2, q.start, y + lf / 2]); }
+        else if (q.where === 'after') { ctx.textAlign = 'left'; ctx.fillText(q.t, q.end, y); taken.push([q.end, y - lf / 2, q.end + q.tw, y + lf / 2]); }
+        else {
+          const lx = Math.max(q.x0, q.start + 3), ly = below.has(q.zn) ? q.down : q.up;
+          taken.push([lx - 2, ly - lf / 2, lx + q.tw + 2, ly + lf / 2]);
+          ctx.fillStyle = C.surface; ctx.fillRect(lx - 2, ly - lf * 0.55, q.tw + 4, lf * 1.1);
+          ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.fillText(q.t, lx, ly);
+        }
       }
+      for (const q of plan) { const x = q.st0.x - q.st0.w / 2 - 1; hit('line:' + q.Ln.id, x - 6, q.st0.z - 1.6, x, q.st0.z + 1.6); }
+      ctx.textBaseline = 'middle';
 
       // stores, silos and line-side stock: fill gauges at their place on the floor
       const gauge = (ref, x, z, w, h, k, low, out) => {
@@ -264,6 +276,25 @@
       }
       if (showPeople) for (const st of P.stations) if (st.manual && st.crew && st.crew.some(q => !q.present)) {
         ctx.strokeStyle = C.warn; ctx.lineWidth = 2; ctx.setLineDash([3, 3]); rrect(SX(st.x - st.w / 2) - 3, SZ(st.z - st.d / 2) - 3, st.w * s + 6, st.d * s + 6, 4); ctx.stroke(); ctx.setLineDash([]);
+      }
+
+      // never on a wall or an aisle
+      // never on a wall or an aisle; a name too long for its hall is shortened to its first word, or left out
+      ctx.font = `600 ${fs}px ${C.font}`; ctx.textBaseline = 'middle';
+      for (const zn of L.ZONES) {
+        const room = (zn.x1 - zn.x0) * s - 12;
+        // the full name, then its first word, in the first corner of the hall (top right, top left, bottom right, bottom left)
+        // that no line name uses; when every corner is taken the name is left out rather than covering a line
+        const full = tt(zn.name), hy = fs * 0.6;
+        for (const name of [full, full.split(/[ ,،]/)[0]]) {
+          const tw = ctx.measureText(name).width; if (tw > room) continue;
+          const spots = [[SX(zn.x1) - 5 - tw, SZ(zn.z0) + 4 + hy], [SX(zn.x0) + 5, SZ(zn.z0) + 4 + hy], [SX(zn.x1) - 5 - tw, SZ(zn.z1) - 4 - hy], [SX(zn.x0) + 5, SZ(zn.z1) - 4 - hy]];
+          const at = spots.find(([x, y]) => !taken.some(r => x - 3 < r[2] && x + tw + 3 > r[0] && y - hy < r[3] && y + hy > r[1]));
+          if (!at) continue;
+          ctx.fillStyle = C.surface; ctx.fillRect(at[0] - 3, at[1] - hy, tw + 6, hy * 2);
+          ctx.fillStyle = C.text3; ctx.textAlign = 'left'; ctx.fillText(name, at[0], at[1]);
+          break;
+        }
       }
 
       // selection and hover outlines
