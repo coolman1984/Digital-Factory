@@ -8,7 +8,7 @@
   const DF = window.DF; if (!DF) return;
   const $ = s => document.querySelector(s);
   const ar = () => document.documentElement.lang === 'ar';
-  const T = (en, a) => (ar() ? a : en);
+  const T = (en, a) => (ar() ? (window.DFI18N && DFI18N.agree ? DFI18N.agree(a) : a) : en);   // Arabic counts agree with what they count (i18n.js)
   const n0 = v => Math.round(v).toLocaleString('en-US'), p0 = v => Math.round(v * 100) + '%', p1 = v => (v * 100).toFixed(1) + '%';
   const GRID = 0.47;   // kg CO2e per kWh, a sample factor for a gas-heavy grid
   const P = () => DF.P, E = () => DF.E, X = () => DF.X || (window.Room && Room.X), AG = () => DF.AG;
