@@ -14,6 +14,11 @@ Static web app: no install, no server, works offline. Light and dark themes, bui
 
 All plant data is simulated. Plant EG-01 is fictional; no real company or city is named for it.
 
+**Arabic and English everywhere.** Every page switches between formal right-to-left Arabic and English (the ع / EN button or the
+`L` key; the choice is shared by all pages). Technical words carry a dotted underline that opens a card from the glossary, and a
+**Guide** button on every page (or `?`) explains the current screen, every control and decision, and suggests the next step from
+the live plant; its explain mode describes any control under the pointer.
+
 ## Presenting
 
 **Presentation** (`deck.html`): `←` `→` or a clicker · `T` light / dark · `F` full screen · `N` speaker notes · `B` live briefing.
@@ -67,12 +72,14 @@ Open `index.html` in a browser, or serve the folder: `python3 -m http.server`.
 
 ```
 assets/kit/       Brand UI kit: brand-ui.css, fonts.css (Inter, IBM Plex Sans Arabic), icons.js
-assets/css/       theme.css (tokens, theme, motion) · site.css · app.css · deck.css · guide.css
+assets/css/       theme.css (tokens, theme, motion) · site.css · app.css · deck.css · guide.css · help.css (Arabic, term cards, page guide)
 assets/js/        theme.js · motion.js · deck.js
                   twin-hero.js (SMD line 4 drawn live on the website and title slide) · site.js
                   briefing.js (the deck's live briefing) · review.js (time-window review and PowerPoint export) · guide.js · guide-terms.js (glossary and icon list for the guide)
 assets/img/       open-licence factory photos, credits in assets/img/CREDITS.md
 assets/js/plant/  engine (unit-level plant model) · erp (SAP, GMES, S&OP, MRP, departments) · agents (AI crew, flow-model forecast) · scene (three.js view) · views2d (2D tabs) · ui (panels, drills, tour) · recorder + record-page (flight recorder) · sample-shift.worker
+assets/js/i18n/   i18n.js (translates the page in place, RTL, the language button) · ar-common · ar-site · ar-deck · ar-plant · ar-room (dictionaries)
+assets/js/help/   terms.js (dotted-underline term cards) · coach.js (the page guide and explain mode) · index · app · plant · deck (each page's guide)
 assets/vendor/    three.js r170, bundled once (see assets/vendor/three/README.md)
 assets/js/room/   the command room on the plant model: core · viz (SVG charts) · floor (plant mimic and detail panel) · command (value stream,
                   decisions) · ops (alarms, control) · intel (agents, predictions, root cause, what-if lab, drills) · perf (leadership,

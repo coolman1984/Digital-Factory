@@ -15,7 +15,7 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const icon = n => (typeof Icons !== 'undefined' ? Icons.get(n) : '');
   const read = () => { try { return localStorage.getItem(KEY); } catch (e) { return null; } };
-  const save = v => { try { localStorage.setItem(KEY, v); } catch (e) { /* storage unavailable */ } };
+  const save = v => { try { localStorage.setItem(KEY, v); localStorage.setItem('df-lang', v); } catch (e) { /* storage unavailable */ } };   // the other pages follow the same choice
   const lang = () => root.dataset.lang;
   const pick = (en, ar) => lang() === 'en' ? en : ar;
 

@@ -21,7 +21,8 @@
       for (const n of [...node.childNodes]) {
         if (n.nodeType === 3) {
           const parts = n.textContent.split(/(\s+)/);
-          const frag = document.createDocumentFragment();
+          // the words of one text run stay together in a .ws span that keeps the text, so a translation can replace them
+          const frag = document.createElement('span'); frag.className = 'ws'; frag.dataset.text = n.textContent;
           for (const p of parts) {
             if (!p) continue;
             if (/^\s+$/.test(p)) { frag.append(' '); continue; }

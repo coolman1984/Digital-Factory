@@ -1,0 +1,91 @@
+/* Digital Factory — Arabic layout, the term cards and the page guide (assets/js/i18n/i18n.js, assets/js/help/*.js). */
+
+/* ---------- Arabic: type and direction ---------- */
+html[lang="ar"] body { font-family: var(--font-ar); letter-spacing: 0; }
+html[lang="ar"] :is(h1, h2, h3, h4, .h1, .h2, .h3) { letter-spacing: 0; line-height: 1.3; }
+html[lang="ar"] :is(p, li, dd, td) { line-height: 1.75; }
+/* charts, the 3D view, the plant map and codes keep their own direction */
+html[dir="rtl"] :is(svg, canvas, .pl-mini, .ltr, kbd, code, [data-ltr]) { direction: ltr; }
+html[dir="rtl"] :is(input[type="time"], input[type="number"], input[type="range"]) { direction: ltr; }
+/* arrows that mean "next" point the reading way */
+html[dir="rtl"] :is([data-icon="arrowRight"], [data-icon="arrowLeft"], [data-icon="chevronRight"], [data-icon="chevronLeft"]) svg { transform: scaleX(-1); }
+
+/* the language switch beside the theme switch */
+.lang-btn { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.lang-btn .lg { font-family: var(--font-ar); font-weight: 700; font-size: 1.05em; line-height: 1; }
+.lang-btn .lg[lang="en"], .lang-btn .ll[lang="en"] { font-family: Inter, system-ui, sans-serif; font-size: 13px; letter-spacing: .02em; }
+.lang-btn .ll[lang="ar"] { font-family: var(--font-ar); }
+@media (max-width: 900px) { .lang-btn .ll { display: none; } .lang-btn { min-width: 44px; justify-content: center; } }
+
+/* ---------- technical terms: a fine dotted line, and a card on hover or focus ---------- */
+.df-term { text-decoration: underline dotted; text-decoration-color: color-mix(in srgb, var(--brand-2) 70%, transparent); text-decoration-thickness: 1.5px; text-underline-offset: 3px; cursor: help; border-radius: 3px; }
+.df-term:hover, .df-term:focus-visible { text-decoration-color: var(--brand-2); background: color-mix(in srgb, var(--brand-2) 10%, transparent); outline: none; }
+.df-card { position: fixed; z-index: 2000; width: min(380px, calc(100vw - 24px)); max-height: min(70vh, 520px); overflow: auto; padding: 16px 18px 14px; border-radius: 16px; background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); box-shadow: var(--shadow-lg, 0 18px 50px rgba(0,0,0,.22)); font-size: 14px; line-height: 1.55; opacity: 0; transform: translateY(4px); transition: opacity .14s ease, transform .14s ease; pointer-events: auto; }
+.df-card.on { opacity: 1; transform: none; }
+.df-card[hidden] { display: none; }
+.df-card .dc-h { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin-bottom: 8px; }
+.df-card .dc-abbr { font-size: 19px; font-weight: 800; letter-spacing: -.01em; }
+.df-card .dc-full { color: var(--text-2); font-weight: 600; }
+.df-card .dc-ar { font-family: var(--font-ar); color: var(--brand-text); font-weight: 700; }
+.df-card .dc-letters { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 0 0 10px; padding: 0; list-style: none; font-size: 13px; color: var(--text-2); direction: ltr; }
+.df-card .dc-letters b { color: var(--brand-text); font-weight: 800; }
+.df-card .dc-sec { margin-top: 10px; }
+.df-card .dc-sec b.k { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); margin-bottom: 2px; }
+html[lang="ar"] .df-card .dc-sec b.k { text-transform: none; letter-spacing: 0; font-size: 13px; }
+.df-card .dc-sec p { margin: 0; }
+.df-card .dc-more { display: inline-block; margin-top: 12px; font-weight: 650; color: var(--brand-text); }
+.df-card .dc-cat { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); margin-inline-start: auto; }
+html[lang="ar"] .df-card { font-family: var(--font-ar); line-height: 1.8; }
+
+/* ---------- the page guide ---------- */
+.dg-fab { position: fixed; inset-inline-end: 16px; bottom: 16px; z-index: 1500; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px 0 12px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; box-shadow: var(--shadow-md, 0 6px 18px rgba(0,0,0,.14)); }
+.dg-fab:hover { border-color: var(--brand-2); }
+.dg-fab .dg-dot { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--brand); color: #fff; font-weight: 800; font-size: 14px; }
+[data-theme="dark"] .dg-fab .dg-dot { background: var(--brand-2); color: #06142B; }
+.dg-fab .dg-n { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #B4232A; color: #fff; font-size: 12px; font-weight: 700; display: grid; place-items: center; }
+.dg-fab .dg-n[hidden] { display: none; }
+body.embed .dg-fab { display: none; }
+.dg-panel { position: fixed; inset-inline-end: 16px; bottom: 72px; z-index: 1600; width: min(420px, calc(100vw - 32px)); max-height: min(78vh, 760px); display: flex; flex-direction: column; border-radius: 20px; background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); box-shadow: var(--shadow-lg, 0 18px 50px rgba(0,0,0,.22)); overflow: hidden; }
+.dg-panel[hidden] { display: none; }
+.dg-head { display: flex; align-items: flex-start; gap: 10px; padding: 16px 18px 10px; border-bottom: 1px solid var(--border); }
+.dg-head h2 { font-size: 18px; font-weight: 800; letter-spacing: -.01em; margin: 0; }
+.dg-head p { margin: 4px 0 0; font-size: 13.5px; color: var(--text-2); line-height: 1.5; }
+.dg-x { margin-inline-start: auto; flex: none; width: 40px; height: 40px; border-radius: 10px; border: 0; background: transparent; color: var(--text-2); cursor: pointer; font-size: 20px; line-height: 1; }
+.dg-x:hover { background: var(--surface-2); color: var(--text); }
+.dg-tabs { display: flex; gap: 4px; padding: 8px 12px 0; }
+.dg-tabs button { flex: 1; min-height: 40px; border: 0; border-radius: 10px; background: transparent; color: var(--text-2); font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
+.dg-tabs button[aria-selected="true"] { background: var(--brand-soft); color: var(--brand-text); }
+.dg-body { overflow: auto; padding: 12px 18px 18px; font-size: 14.5px; line-height: 1.6; }
+html[lang="ar"] .dg-body { line-height: 1.85; }
+.dg-body h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); margin: 16px 0 6px; font-weight: 700; }
+html[lang="ar"] .dg-body h3 { text-transform: none; letter-spacing: 0; font-size: 14px; }
+.dg-body h3:first-child { margin-top: 4px; }
+.dg-body ul, .dg-body ol { margin: 0; padding-inline-start: 20px; }
+.dg-body li { margin: 4px 0; }
+.dg-body p { margin: 0 0 6px; }
+.dg-sug { display: flex; flex-direction: column; gap: 8px; }
+.dg-sug button, .dg-sug div { text-align: start; display: block; width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-size: 14px; line-height: 1.5; }
+.dg-sug button { cursor: pointer; }
+.dg-sug button:hover { border-color: var(--brand-2); }
+.dg-sug button b::after { content: " →"; color: var(--brand-text); }
+html[dir="rtl"] .dg-sug button b::after { content: " ←"; }
+.dg-ctl { display: grid; gap: 8px; }
+.dg-ctl > div { padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+.dg-ctl b { display: block; }
+.dg-ctl span { color: var(--text-2); font-size: 13.5px; }
+.dg-switch { display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-top: 1px solid var(--border); font-size: 14px; }
+.dg-switch input { width: 20px; height: 20px; accent-color: var(--brand-2); }
+.dg-switch label { display: flex; align-items: center; gap: 10px; cursor: pointer; min-height: 40px; }
+/* explain mode: what a control does, on hover */
+body.dg-explain [data-dg] { outline: 1.5px dashed color-mix(in srgb, var(--brand-2) 70%, transparent); outline-offset: 2px; }
+.dg-tip { position: fixed; z-index: 2100; width: min(320px, calc(100vw - 24px)); padding: 12px 14px; border-radius: 14px; background: var(--text); color: var(--bg); font-size: 13.5px; line-height: 1.55; pointer-events: none; box-shadow: var(--shadow-lg, 0 12px 40px rgba(0,0,0,.25)); }
+.dg-tip[hidden] { display: none; }
+.dg-tip b { display: block; font-size: 14.5px; margin-bottom: 3px; }
+.dg-tip span { display: block; opacity: .82; margin-top: 4px; }
+html[lang="ar"] :is(.dg-tip, .dg-panel, .dg-fab) { font-family: var(--font-ar); }
+@media (max-width: 600px) { .dg-panel { inset-inline: 12px; width: auto; bottom: 68px; } .dg-fab .dg-l { display: none; } .dg-fab { padding: 0 9px; } }
+@media (prefers-reduced-motion: reduce) { .df-card { transition: none; } }
+html[data-i18n-wait] body { opacity: 0; }
+/* the presentation's icon bar keeps the language button as small as its neighbours */
+.controls .lang-btn .ll { display: none; }
+.controls .lang-btn { min-width: 40px; justify-content: center; }
