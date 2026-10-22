@@ -13,6 +13,8 @@
   const lerp = (a, b, k) => a + (b - a) * k;
   const KINDN = { loader: 'Magazine loader', unloader: 'Magazine unloader', printer: 'Solder paste printer', spi: 'Solder paste inspection', mounter: 'Pick-and-place mounter', reflow: 'Reflow oven, 8 zones', aoi: 'Automated optical inspection', writer: 'Software download (firmware writer)', ict: 'In-circuit and function test', lcmload: 'Open-cell loading robot', blu: 'Backlight assembly (manual)', bond: 'Module bonding', lighting: 'Lighting test', robot: 'Robot cell', bench: 'Manual workstation', fct: 'Function test', aging: 'Aging rack, 20 minutes powered', wb: 'White-balance camera', qa: 'Final QA booth', packer: 'Packing station', palletizer: 'Palletizing robot', injection: 'Injection moulding machine', press: 'Stamping press', oven: 'Powder-coating oven', subassy: 'Chassis sub-assembly (manual)', cushion: 'EPS cushion moulding', repair: 'Repair bench' };
   DF.KINDN = KINDN;
+  // words drawn on the canvas follow the page language, like the rest of the page
+  const tt = s => (window.DFI18N && DFI18N.ar() && DFI18N.t(s)) || s;
   function polyAt(p, s) {
     for (let i = 1; i < p.length; i++) {
       const d = Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]);
@@ -31,7 +33,7 @@
       Object.assign(C, {
         bg: v('--bg'), surface: v('--surface'), s2: v('--surface-2'), s3: v('--surface-3'), border: v('--border'), strong: v('--border-strong'),
         text: v('--text'), text2: v('--text-2'), text3: v('--text-3'), brand: v('--brand-2'), warn: v('--warning'), bad: v('--danger'), maint: v('--indigo'),
-        font: v('--font') || 'Inter, system-ui, sans-serif'
+        font: (v('--font') || 'Inter, system-ui, sans-serif') + ", 'IBM Plex Sans Arabic'"
       });
     }
     palette();
@@ -107,7 +109,7 @@
       ctx.font = `600 ${fs}px ${C.font}`; ctx.textAlign = 'left'; ctx.fillStyle = C.text3;
       for (const zn of L.ZONES) {
         const room = (zn.x1 - zn.x0) * s - 8;
-        let name = zn.name;
+        let name = tt(zn.name);
         if (ctx.measureText(name).width > room) name = name.split(/[ ,]/)[0];
         // above the hall wall where the aisle leaves room, inside it along the plant's north wall
         const y = zn.z0 > 5 && s * 4 > fs + 2 ? SZ(zn.z0) - fs * 0.7 : SZ(zn.z0) + fs * 0.9;
@@ -157,7 +159,7 @@
         }
         if (s > 9 && pw > 26) {
           ctx.fillStyle = col && overlay === 'status' ? C.text : C.text2; ctx.font = `500 ${Math.min(11, s * 0.8)}px ${C.font}`; ctx.textAlign = 'center';
-          const nm = st.name.length * 5.6 > pw + 14 ? st.name.split(' ')[0] : st.name;
+          const sn = tt(st.name), nm = sn.length * 5.6 > pw + 14 ? sn.split(' ')[0] : sn;
           ctx.fillText(nm, px + pw / 2, pz - 6);
         }
         hit('st:' + st.id, x0 - 0.3, z0 - 0.3, x0 + st.w + 0.3, z0 + st.d + 0.3);
@@ -277,7 +279,7 @@
       }
       if (o.replay) {
         ctx.fillStyle = alpha(C.warn, 0.92); ctx.font = `700 12px ${C.font}`; ctx.textAlign = 'left';
-        rrect(10, 10, 158, 26, 13); ctx.fill(); ctx.fillStyle = '#111'; ctx.fillText(`Replay · ${DF.E.clockS(P.t)}`, 22, 23.5);
+        rrect(10, 10, 158, 26, 13); ctx.fill(); ctx.fillStyle = '#111'; ctx.fillText(`${tt('Replay')} · ${DF.E.clockS(P.t)}`, 22, 23.5);
       }
     }
 

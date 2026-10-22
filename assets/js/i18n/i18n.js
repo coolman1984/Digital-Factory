@@ -12,13 +12,13 @@
   const save = v => { try { localStorage.setItem(KEY, v); localStorage.setItem('df-guide-lang', v); } catch (e) { /* storage unavailable */ } };
 
   /* ---------- dictionaries ---------- */
-  const exact = new Map(), pats = [], cache = new Map();
+  const exact = new Map(), lower = new Map(), pats = [], cache = new Map();
   function add(o) {
-    for (const k in (o.exact || {})) exact.set(k, o.exact[k]);
+    for (const k in (o.exact || {})) { exact.set(k, o.exact[k]); lower.set(k.toLowerCase(), o.exact[k]); }
     for (const [src, tpl, fl] of (o.patterns || [])) {
-      try { pats.push([new RegExp(src, fl || ''), tpl, /[A-Za-z]{2}/.test(src.replace(/\(\?<[=!][^)]*\)|\\[a-zA-Z]|\[[^\]]*\]/g, ''))]); } catch (e) { console.warn('i18n: bad pattern', src); }
+      try { pats.push([new RegExp(src, fl || ''), tpl, (src.replace(/\(\?<[=!][^)]*\)|\\[a-zA-Z]|\[[^\]]*\]/g, '').match(/[A-Za-z]/g) || []).length]); } catch (e) { console.warn('i18n: bad pattern', src); }
     }
-    // shapes with words in them come first; bare shapes such as "a · b" or "a (b)" only when nothing more specific fits
+    // the most specific shapes (the most fixed words) come first; bare shapes such as "a · b" or "a (b)" only when nothing else fits
     pats.sort((a, b) => b[2] - a[2]);
     cache.clear();
     if (lang === 'ar' && started) schedule(document.body);
@@ -34,7 +34,7 @@
       for (const [re, tpl] of pats) {
         const m = re.exec(k); if (!m) continue;
         let hit = /[\u0600-\u06FF]/.test(tpl);
-        out = tpl.replace(/\$(\d)/g, (_, i) => { const c = m[+i] || ''; if (c === k) return c; let t = tr(c, depth + 1); if (t == null && /^[a-z]/.test(c)) t = tr(c[0].toUpperCase() + c.slice(1), depth + 1); if (t == null) return c; hit = true; return t; });
+        out = tpl.replace(/\$(\d)/g, (_, i) => { const c = m[+i] || ''; if (c === k) return c; let t = tr(c, depth + 1); if (t == null && /^[a-z]/.test(c)) t = tr(c[0].toUpperCase() + c.slice(1), depth + 1); if (t == null && lower.has(c.toLowerCase())) t = lower.get(c.toLowerCase()); if (t == null) return c; hit = true; return t; });
         if (!hit) { out = null; continue; }   // a general shape whose parts are all unknown gives way to the next pattern
         break;
       }

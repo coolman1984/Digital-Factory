@@ -3,6 +3,8 @@
    tour and the serial search. The page owns the frame loop. All plant data is simulated. */
 (function () {
   'use strict';
+  // labels the camera AI draws follow the page language
+  const cvT = t => (window.DFI18N && DFI18N.ar() && DFI18N.t(t)) || t;
   const $ = s => document.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const { esc, icon, fmt, pct, STATE, SCLS, chip, link, bar, refFromFocus, recCards, spark } = PlantViews.H;
@@ -833,7 +835,7 @@
     const near = new Set();
     // a person closer than 0.8 m is the driver on board; 0.8 to 3 m from a moving forklift is a near miss
     for (const f of veh) if (f.k === 'Forklift') for (const q of ppl) { const d = Math.hypot(f.x - q.x, f.z - q.z); if (d >= 0.8 && d < 3) { near.add(q); near.add(f); f.near = q; f.nd = d; } }
-    vx.lineWidth = 1.5; vx.font = '600 11px Inter, system-ui, sans-serif'; vx.textBaseline = 'bottom';
+    vx.lineWidth = 1.5; vx.font = "600 11px Inter, 'IBM Plex Sans Arabic', system-ui, sans-serif"; vx.textBaseline = 'bottom';
     for (const R of V.cctvRects()) {
       const cam = R.c.cam, tags = []; let people = 0, vehicles = 0, alert = '';
       vx.save(); vx.beginPath(); vx.rect(R.x, R.y, R.w, R.h); vx.clip();
@@ -847,7 +849,7 @@
         if (!ok || x1 < R.x || x0 > R.x + R.w || y1 < R.y || y0 > R.y + R.h || (x1 - x0) * (y1 - y0) < 12) continue;
         const bad = near.has(e) || e.noPpe, col = bad ? '#FF4D4F' : e.k === 'Person' ? '#3DDC84' : '#FFC53D';
         vx.strokeStyle = col; vx.strokeRect(x0, y0, x1 - x0, y1 - y0);
-        tags.push({ bad, col, x0, y0, big: y1 - y0, t: `${e.k === 'Person' ? (e.noPpe ? 'No safety glasses' : 'Person') : e.k + ' ' + e.id} ${(0.9 + hashU(e.id + R.c.id) * 0.09).toFixed(2)}` });
+        tags.push({ bad, col, x0, y0, big: y1 - y0, t: `${e.k === 'Person' ? cvT(e.noPpe ? 'No safety glasses' : 'Person') : cvT(e.k) + ' ' + e.id} ${(0.9 + hashU(e.id + R.c.id) * 0.09).toFixed(2)}` });
         if (e.k === 'Person') people++; else vehicles++;
         if (e.k === 'Forklift' && e.near) {
           alert = `near miss ${e.nd.toFixed(1)} m`;

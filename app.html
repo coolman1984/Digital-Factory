@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="assets/css/room-floor.css">
   <link rel="stylesheet" href="assets/css/room-intel.css">
   <link rel="stylesheet" href="assets/css/room-perf.css">
+  <link rel="stylesheet" href="assets/css/show.css">
   <link rel="stylesheet" href="assets/css/help.css">
   <script>try{if((localStorage.getItem('df-lang')||localStorage.getItem('df-guide-lang'))==='ar'){var r=document.documentElement;r.lang='ar';r.dir='rtl';r.setAttribute('data-i18n-wait','');setTimeout(function(){r.removeAttribute('data-i18n-wait')},1200)}}catch(e){}</script>
 </head>
@@ -72,6 +73,7 @@
         </div>
       </div>
       <div class="tb-right">
+        <button type="button" class="btn btn-secondary btn-sm" id="showBtn" title="Customer show: a guided run through the plant (S)"><span data-icon="play"></span><span class="hide-lg">Customer show</span></button>
         <button type="button" class="btn btn-secondary btn-sm hide-sm" id="pinBtn" aria-label="Send to deck" title="Send this moment to the presentation (P)"><span data-icon="tv"></span><span class="hide-lg">Send to deck</span></button>
         <button type="button" class="btn btn-secondary btn-sm" id="tmBtn" aria-label="Time machine" aria-expanded="false" aria-controls="tm" title="Time machine (M)"><span data-icon="history"></span><span class="hide-lg">Time machine</span></button>
         <button type="button" class="btn btn-secondary btn-sm theme-btn" data-theme-toggle title="Light / dark (T)"><span class="ti"></span><span class="tl hide-lg">Light</span></button>
@@ -491,6 +493,7 @@
   <script src="assets/js/room/briefing.js"></script>
   <script src="assets/js/room/copilot.js"></script>
   <script src="assets/js/room/main.js"></script>
+  <script src="assets/js/room/show.js"></script>
   <script src="assets/js/i18n/i18n.js"></script>
   <script src="assets/js/i18n/ar-common.js"></script>
   <script src="assets/js/i18n/ar-plant.js"></script>
