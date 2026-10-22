@@ -55,3 +55,4 @@ DFI18N.add({
 DFI18N.add({ exact: { 'board line': 'خط اللوحات', 'GMES · STATION': 'GMES · المحطة', 'S&OP · 12 WEEKS': 'تخطيط المبيعات والعمليات · 12 أسبوعًا' }, patterns: [['^([\\d.]+) m$', '$1 م']] });
 DFI18N.add({ patterns: [['^· ([\\d.,]+)/h$', '· $1 في الساعة'], ['^· ([\\d.,]+) TVs/h$', '· $1 جهاز في الساعة']] });
 DFI18N.add({ patterns: [['^([\\d.]+)k$', '$1 ألف']] });
+DFI18N.add({ exact: { 'TV plant': 'مصنع التلفزيونات', 'Level 2': 'الدور الثاني', 'Ground floor': 'الدور الأرضي' } });

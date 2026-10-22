@@ -197,16 +197,42 @@
       sel: new T.MeshBasicMaterial({ color: S.info, side: T.DoubleSide, toneMapped: false }),
       route: new T.LineBasicMaterial({ color: S.info, transparent: true, opacity: 0.9 }),
       pkt: new T.MeshBasicMaterial({ color: C.pkt, toneMapped: false }), net: new T.LineBasicMaterial({ color: C.net, transparent: true, opacity: 0.4 }),
-      hit: new T.MeshBasicMaterial({ visible: false })
+      hit: new T.MeshBasicMaterial({ visible: false }),
+      slab: phys(C.floor, { roughness: 0.42, clearcoat: 0.3, clearcoatRoughness: 0.32 }), safety: phys(0xF2B705, { roughness: 0.4, clearcoat: 0.5 }),
+      hatW: std(0xffffff, { roughness: 0.32 }), vest: std(0xffffff, { roughness: 0.6 }), leaf: std(0x3E7D4F, { roughness: 0.8 })
     };
     const XRAY = ['paint', 'paint2', 'frame', 'wall', 'glass'];
+
+    /* ---------------- two levels ----------------
+       The LCM hall and the offices stand on a second floor (top at FL), on a concrete deck over columns; the cross aisles,
+       the vehicles and the pick faces stay on the ground floor below. The stores of the injection, panel and press parts
+       sit on mezzanines above their pick faces and come down on material lifts. People reach the floors by stairs and
+       lifts, the finished panel modules come down to the main lines on inclined belts. */
+    const FL = 5.4;
+    const AISLE_UNDER = [55, 69, 83, 97, 111];
+    const LV2 = [{ id: 'lcm', x0: 56, z0: 42, x1: 100.5, z1: 122.4, walk: true }, { id: 'office', x0: 207, z0: 2, x1: 262, z1: 37, walk: true }];
+    const inR = (r, x, z, m = 0) => x >= r.x0 - m && x <= r.x1 + m && z >= r.z0 - m && z <= r.z1 + m;
+    const lvStatic = (x, z) => (LV2.some(r => inR(r, x, z)) ? FL : 0);
+    // what stands at a point of the plan: upstairs, except on the ground-floor aisles that run under the LCM deck
+    const lvAt = (x, z) => { for (const r of LV2) if (inR(r, x, z)) return r.id === 'lcm' && AISLE_UNDER.some(a => Math.abs(z - a) < 1.7) ? 0 : FL; return 0; };
+    let liftNow = 0;   // FL while a mezzanine store is being built (everything it adds goes up), −1 while ground-floor parts are
+    const MEZZ = [];   // the mezzanine store decks, for labels
+    const mezzAt = (x, z) => (MEZZ.some(r => inR(r, x, z)) ? FL : 0);
+    function liftGeo(g) {
+      if (liftNow < 0) return g;
+      g.computeBoundingBox(); const b = g.boundingBox;
+      if (b.min.y > FL * 0.6 || b.max.y - b.min.y > 5) return g;
+      const up = liftNow || lvStatic((b.min.x + b.max.x) / 2, (b.min.z + b.max.z) / 2);
+      if (up) g.translate(0, up, 0);
+      return g;
+    }
 
     /* ---------------- static geometry, merged by material ---------------- */
     const BAG = {};
     const mtx = new T.Matrix4(), q = new T.Quaternion(), eul = new T.Euler(), pos = new T.Vector3(), scl = new T.Vector3(1, 1, 1);
     const place = (g, x, y, z, ry = 0, rx = 0, rz = 0) => { eul.set(rx, ry, rz); q.setFromEuler(eul); mtx.compose(pos.set(x, y, z), q, scl.set(1, 1, 1)); g.applyMatrix4(mtx); return g; };
     const strip = g => { for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal' && k !== 'uv') g.deleteAttribute(k); return g.index ? g : g; };
-    const push = (key, g) => { (BAG[key] = BAG[key] || []).push(strip(g)); };
+    const push = (key, g) => { (BAG[key] = BAG[key] || []).push(liftGeo(strip(g))); };
     // a box; rounded boxes for machine bodies so the light catches their edges
     function sbox(key, w, h, d, x, y, z, o = {}) {
       const r = o.r && !low ? Math.min(o.r, w / 2 - 0.001, h / 2 - 0.001, d / 2 - 0.001) : 0;
@@ -262,12 +288,13 @@
     const col = new T.Color();
     function put(m, x, y, z, sx = 1, sy = 1, sz = 1, ry = 0, rx = 0, rz = 0, ref, c) {
       const i = m.count; if (i >= m.instanceMatrix.count) return -1;
+      if (!m.userData.noLift && y < FL * 0.6) y += lvAt(x, z);
       eul.set(rx, ry, rz, 'YXZ'); q.setFromEuler(eul); mtx.compose(pos.set(x, y, z), q, scl.set(sx, sy, sz));
       m.setMatrixAt(i, mtx); if (ref !== undefined) m.userData.refs[i] = ref;
       if (c !== undefined && m.instanceColor) m.setColorAt(i, typeof c === 'number' ? col.set(c) : c);
       m.count = i + 1; return i;
     }
-    const putM = (m, matrix, c) => { const i = m.count; if (i >= m.instanceMatrix.count) return; m.setMatrixAt(i, matrix); if (c !== undefined && m.instanceColor) m.setColorAt(i, col.set(c)); m.count = i + 1; };
+    const putM = (m, matrix, c) => { const i = m.count; if (i >= m.instanceMatrix.count) return; const e = matrix.elements; if (e[13] < FL * 0.6) { const up = lvAt(e[12], e[14]); if (up) e[13] += up; } m.setMatrixAt(i, matrix); if (c !== undefined && m.instanceColor) m.setColorAt(i, col.set(c)); m.count = i + 1; };
     const done = (...ms) => ms.forEach(m => { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; });
     const unitBox = new T.BoxGeometry(1, 1, 1);
     const unitBoxB = new T.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
@@ -276,7 +303,7 @@
     const floor = new T.Mesh(new T.PlaneGeometry(L.W + 140, L.D + 120), M.floor);
     floor.rotation.x = -Math.PI / 2; floor.position.set(L.W / 2, -0.01, L.D / 2); floor.receiveShadow = true; world.add(floor);
     for (const z of L.ZONES) {
-      const w = z.x1 - z.x0, d = z.z1 - z.z0;
+      const x1 = z.id === 'lcm' ? LV2[0].x1 : z.x1, w = x1 - z.x0, d = z.z1 - z.z0;
       const g = new T.PlaneGeometry(w, d); g.rotateX(-Math.PI / 2); g.translate(z.x0 + w / 2, 0.006, z.z0 + d / 2); push('zone', g);
       // the zone's name painted on the floor
       const word = new T.Mesh(new T.PlaneGeometry(Math.min(w - 4, 30), Math.min(w - 4, 30) * 0.156), new T.MeshBasicMaterial({ map: floorWord(z.name), transparent: true, opacity: theme === 'dark' ? 0.22 : 0.55, depthWrite: false }));
@@ -531,8 +558,21 @@
     const segBase = sg => { const k = sg.from && P.lines[sg.from.line] ? P.lines[sg.from.line].kind : 'main'; return k === 'smd' ? 0.9 : k === 'lcm' ? 0.85 : 0.8; };
     const segW = sg => { const k = sg.from && P.lines[sg.from.line] ? P.lines[sg.from.line].kind : 'main'; return k === 'smd' ? 0.4 : 1.25; };
     const BR = 3.2, RAMP = 4;
+    const lcmSeg = sg => !!(sg.from && P.lines[sg.from.line] && P.lines[sg.from.line].kind === 'lcm');
+    const DROP = 100;   // where the belt from an LCM line starts down from the deck toward the main line
     function segY(sg, x) {
       const y0 = segBase(sg);
+      if (lcmSeg(sg)) {
+        const top = FL + y0;
+        if (!sg.bridge) return top;
+        // the finished module goes down an inclined belt, over the aisle, onto the main line's LCM input
+        const a = sg.bridge[0], b2 = sg.bridge[1];
+        if (x <= DROP) return top;
+        if (x < a) return top + (BR - top) * (x - DROP) / (a - DROP);
+        if (x <= b2) return BR;
+        if (x < b2 + RAMP) return BR + (y0 - BR) * (x - b2) / RAMP;
+        return y0;
+      }
       if (!sg.bridge) return y0;
       const a = sg.bridge[0], b2 = sg.bridge[1];
       if (x < a - RAMP || x > b2 + RAMP) return y0;
@@ -546,7 +586,7 @@
       for (let i = 1; i < sg.path.length; i++) {
         const a = sg.path[i - 1], c2 = sg.path[i];
         const xs = [a[0]];
-        if (sg.bridge) for (const k of [sg.bridge[0] - RAMP, sg.bridge[0], sg.bridge[1], sg.bridge[1] + RAMP]) if (k > Math.min(a[0], c2[0]) && k < Math.max(a[0], c2[0])) xs.push(k);
+        if (sg.bridge) for (const k of [lcmSeg(sg) ? DROP : sg.bridge[0] - RAMP, sg.bridge[0], sg.bridge[1], sg.bridge[1] + RAMP]) if (k > Math.min(a[0], c2[0]) && k < Math.max(a[0], c2[0])) xs.push(k);
         xs.push(c2[0]);
         for (let j = 1; j < xs.length; j++) {
           const x0 = xs[j - 1], x1 = xs[j];
@@ -559,8 +599,8 @@
           for (const s of [-1, 1]) { const rail = new T.BoxGeometry(len, 0.14, 0.05); rail.rotateZ(pitch); rail.rotateY(-ang); rail.translate(mx - Math.sin(ang) * s * w / 2, my - 0.08, mz + Math.cos(ang) * s * w / 2); push('alu', rail); }
           BELTS.push({ x0, x1, z0, z1, y0, y1, w });
           for (let k = 0; k <= Math.floor(len / 2.4); k++) {
-            const t = Math.min(1, (k * 2.4 + 0.4) / len), yy = y0 + (y1 - y0) * t;
-            sbox('frame', 0.06, yy - 0.16, w * 0.9, x0 + (x1 - x0) * t, 0, z0 + (z1 - z0) * t, { ry: -ang });
+            const t = Math.min(1, (k * 2.4 + 0.4) / len), yy = y0 + (y1 - y0) * t, px = x0 + (x1 - x0) * t, pz = z0 + (z1 - z0) * t, base = lvStatic(px, pz);
+            sbox('frame', 0.06, yy - 0.16 - base, w * 0.9, px, base, pz, { ry: -ang });
           }
         }
       }
@@ -586,6 +626,8 @@
     const POS = L.POS;
     for (const id in POS) {
       const [x, z] = POS[id];
+      const mezz = id.startsWith('INJ:') || id.startsWith('PRS:') || id.startsWith('IMP:OC-');
+      liftNow = mezz ? FL : 0;
       if (id.startsWith('IMP:')) rackBlock(id, x, z + (z < 19 ? -2.6 : 2.6), 5.2, 4.6, 3, 2, 2, 'pallet');
       else if (id.startsWith('LOC:')) rackBlock(id, x, z + (z < 22 ? -2.6 : 2.6), 6.4, 4.6, 3, 2, 2, 'pallet');
       else if (id.startsWith('INJ:')) rackBlock(id, x + 2.2, z, 2.0, 9.6, 3, 1, 6, 'bin');
@@ -595,6 +637,8 @@
       else if (id === 'HALL:COIL') rackBlock(id, x - 1.5, z - 0.8, 5.0, 1.6, 1, 4, 1, 'floor');
       else if (id === 'HALL:PWD') rackBlock(id, x, z - 0.8, 4.0, 1.6, 1, 4, 1, 'floor');
       else if (id === 'HALL:BRK') rackBlock(id, x - 3.5, z - 0.8, 3.0, 1.4, 2, 3, 1, 'bin');
+      liftNow = 0;
+      if (mezz && BV[id]) { BV[id].lift = FL; for (const sl of BV[id].slots) sl.y += FL; }
     }
     const SILOV = {};
     for (const [id, x, z, r, h] of [['SILO:RESIN', 26.4, 43.6, 1.7, 7.2], ['SILO:EPS', 152, 130.6, 1.8, 6.2]]) {
@@ -685,7 +729,118 @@
       }
     }
     { sbox('paint2', 3.2, 0.9, 1.2, 252, 0, 160, { r: 0.04 }); sbox('carton', 0.6, 0.4, 0.5, 251.5, 0.9, 160); }
+
+    /* ---------------- level 2: decks, columns, railings, stairs, lifts, material lifts, the lobby ---------------- */
+    // people go up by stairs (a straight flight from xb on the ground to xt on the deck) and by lifts
+    const STAIRS = [{ r: 'lcm', xb: 58.6, xt: 69.6, z: 51.5, w: 2.2 }, { r: 'lcm', xb: 96.8, xt: 85.8, z: 107.5, w: 2.2 }, { r: 'office', xb: 259.4, xt: 248.4, z: 19, w: 2.4 }];
+    const LIFTS = [{ r: 'lcm', x: 73.8, z: 51.5, s: 2.6 }, { r: 'lcm', x: 82.4, z: 107.5, s: 2.6 }, { r: 'office', x: 211.4, z: 19, s: 2.6 }];
+    const MEZZCOL = [], LIFTV = [], VRC = [];
+    let LOBBY = null;
+    // material lifts beside the LCM line-side racks: totes go up through the deck
+    for (let i = 1; i <= 6; i++) { const b = BV['LS:LCM' + i + ':OC']; if (b) VRC.push({ x: b.x + 5.5, z: b.z - 0.2, r: 'lcm' }); }
+    {
+      liftNow = -1;
+      const rail = (x0, z0, x1, z1) => {
+        const len = Math.hypot(x1 - x0, z1 - z0); if (len < 0.3) return;
+        const ang = Math.atan2(z1 - z0, x1 - x0), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+        sbox('steel', len, 0.05, 0.05, cx, FL + 1.05, cz, { ry: -ang }); sbox('glass', len, 0.86, 0.02, cx, FL + 0.16, cz, { ry: -ang }); sbox('safety', len, 0.12, 0.04, cx, FL, cz, { ry: -ang });
+        for (let k = 0; k <= Math.floor(len / 1.8); k++) { const t = Math.min(1, k * 1.8 / len); sbox('steel', 0.05, 1.08, 0.05, x0 + (x1 - x0) * t, FL, z0 + (z1 - z0) * t); }
+      };
+      // a deck with holes over the stairs and lifts, cut into rectangles
+      const deck = (r, holes, th) => {
+        const xs = [...new Set([r.x0, r.x1].concat(...holes.map(h => [h.x0, h.x1])))].sort((a, b2) => a - b2), zs = [...new Set([r.z0, r.z1].concat(...holes.map(h => [h.z0, h.z1])))].sort((a, b2) => a - b2);
+        for (let i = 1; i < xs.length; i++) for (let j = 1; j < zs.length; j++) {
+          const cx = (xs[i - 1] + xs[i]) / 2, cz = (zs[j - 1] + zs[j]) / 2;
+          if (holes.some(h => cx > h.x0 && cx < h.x1 && cz > h.z0 && cz < h.z1)) continue;
+          sbox('slab', xs[i] - xs[i - 1], th, zs[j] - zs[j - 1], cx, FL - th, cz);
+        }
+        // a yellow band on the deck edge, seen from the floor below
+        for (const [w, d, x, z] of [[r.x1 - r.x0, 0.03, (r.x0 + r.x1) / 2, r.z0], [r.x1 - r.x0, 0.03, (r.x0 + r.x1) / 2, r.z1], [0.03, r.z1 - r.z0, r.x0, (r.z0 + r.z1) / 2], [0.03, r.z1 - r.z0, r.x1, (r.z0 + r.z1) / 2]]) sbox('safety', w, 0.1, d, x, FL - th * 0.6, z);
+      };
+      for (const r of LV2) {
+        const holes = STAIRS.filter(st => st.r === r.id).map(st => ({ x0: Math.min(st.xb, st.xt), x1: Math.max(st.xb, st.xt), z0: st.z - st.w / 2 - 0.15, z1: st.z + st.w / 2 + 0.15 }))
+          .concat(LIFTS.filter(l => l.r === r.id).map(l => ({ x0: l.x - l.s / 2, x1: l.x + l.s / 2, z0: l.z - l.s / 2, z1: l.z + l.s / 2 })))
+          .concat(VRC.filter(v => v.r === r.id).map(v => ({ x0: v.x - 0.95, x1: v.x + 0.95, z0: v.z - 0.95, z1: v.z + 0.95 })));
+        deck(r, holes, 0.38);
+        // the railing round the deck: open where the inclined belts leave the LCM deck
+        const gapsE = r.id === 'lcm' ? P.segs.filter(sg => lcmSeg(sg) && sg.bridge).map(sg => sg.path[0][1]) : [];
+        const side = (x0, z0, x1, z1, gaps) => { if (!gaps.length) return rail(x0, z0, x1, z1); let a = z0; for (const g of gaps.sort((p2, q2) => p2 - q2)) { rail(x0, a, x1, g - 1.0); a = g + 1.0; } rail(x0, a, x1, z1); };
+        rail(r.x0, r.z0, r.x1, r.z0); rail(r.x0, r.z1, r.x1, r.z1); rail(r.x0, r.z0, r.x0, r.z1); side(r.x1, r.z0, r.x1, r.z1, gapsE);
+        // railings round the stair openings, open at the top of the flight
+        for (const st of STAIRS.filter(s2 => s2.r === r.id)) { const z0 = st.z - st.w / 2 - 0.15, z1 = st.z + st.w / 2 + 0.15; rail(st.xb, z0, st.xt, z0); rail(st.xb, z1, st.xt, z1); rail(st.xb, z0, st.xb, z1); }
+        // columns under the deck on a 12 × 10.5 m grid, clear of the aisles, the stairs, the lifts and the pick points
+        const xs = []; for (let x = r.x0 + 1.4; x < r.x1 - 1; x += 11.5) xs.push(x); xs.push(r.x1 - 0.5);
+        const zs = []; for (let z = r.z0 + 1.2; z < r.z1 - 1; z += 10.5) zs.push(z); zs.push(r.z1 - 0.5);
+        for (const x of xs) for (const z of zs) {
+          if (nearAisle(x, z) || holes.some(h => x > h.x0 - 1.2 && x < h.x1 + 1.2 && z > h.z0 - 1.2 && z < h.z1 + 1.2) || Object.values(L.STOPS).some(p2 => Math.hypot(p2.x - x, p2.z - z) < 3) || [...colAt].some(c => { const [cx, cz] = c.split(',').map(Number); return Math.hypot(cx - x, cz - z) < 3; })) continue;
+          sbox('beam', 0.42, FL - 0.38, 0.42, x, 0, z); sbox('frame', 0.75, 0.1, 0.75, x, 0, z); MEZZCOL.push([x, z]);
+        }
+        // lights under the deck
+        for (let x = r.x0 + 6; x < r.x1 - 2; x += 12) for (let z = r.z0 + 5; z < r.z1 - 2; z += 10.5) sbox('fixture', 1.1, 0.03, 0.4, x, FL - 0.44, z);
+      }
+      // stairs: steel stringers, chequer-plate treads, handrails and a landing at the foot
+      for (const st of STAIRS) {
+        const run = Math.abs(st.xt - st.xb), dir = Math.sign(st.xt - st.xb), n = 30, tread = run / n, rise = FL / n;
+        for (let i = 0; i < n; i++) sbox('paint2', tread + 0.02, 0.05, st.w, st.xb + dir * (i + 0.5) * tread, (i + 1) * rise - 0.05, st.z);
+        const len = Math.hypot(run, FL), pitch = Math.atan2(FL, run) * dir;
+        for (const sz of [-1, 1]) {
+          const g = new T.BoxGeometry(len, 0.32, 0.08); g.rotateZ(pitch); g.translate((st.xb + st.xt) / 2, FL / 2 - 0.1, st.z + sz * st.w / 2); push('steel', g);
+          const h = new T.CylinderGeometry(0.025, 0.025, len, 8); h.rotateZ(Math.PI / 2 + pitch); h.translate((st.xb + st.xt) / 2, FL / 2 + 0.95, st.z + sz * (st.w / 2 + 0.05)); push('steel', h);
+          for (let i = 0; i <= n; i += 5) sbox('steel', 0.04, 0.95, 0.04, st.xb + dir * i * tread, i * rise, st.z + sz * (st.w / 2 + 0.05));
+        }
+        sbox('safety', 0.08, 0.01, st.w, st.xb - dir * 0.05, 0.005, st.z);
+      }
+      // passenger lifts: glass shafts on steel corner posts, with a cab that travels
+      for (const l of LIFTS) {
+        const h = FL + 3.4, a = l.s / 2;
+        for (const [px, pz] of [[-a, -a], [a, -a], [-a, a], [a, a]]) sbox('steel', 0.14, h, 0.14, l.x + px, 0, l.z + pz);
+        for (const sz of [-1, 1]) sbox('glass', l.s, h - 0.2, 0.04, l.x, 0.1, l.z + sz * a);
+        sbox('frame', l.s + 0.2, 0.3, l.s + 0.2, l.x, h, l.z);
+        const cab = new T.Group();
+        const fl = new T.Mesh(new T.BoxGeometry(l.s - 0.3, 0.12, l.s - 0.3), M.steel); fl.position.y = 0.06; cab.add(fl);
+        const ceil = new T.Mesh(new T.BoxGeometry(l.s - 0.3, 0.1, l.s - 0.3), M.paint); ceil.position.y = 2.45; cab.add(ceil);
+        const lamp = new T.Mesh(new T.BoxGeometry(l.s - 0.9, 0.02, 0.5), M.white); lamp.position.y = 2.39; cab.add(lamp);
+        for (const sz of [-1, 1]) { const wl = new T.Mesh(new T.BoxGeometry(l.s - 0.3, 2.4, 0.05), M.paint); wl.position.set(0, 1.25, sz * (l.s / 2 - 0.2)); cab.add(wl); }
+        cab.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.raycast = () => {}; } });
+        cab.position.set(l.x, 0, l.z); cab.userData.ground = true; world.add(cab);
+        LIFTV.push({ l, cab, y: 0, ph: LIFTV.length * 5 });
+      }
+      // the mezzanine stores: a deck on columns over the pick face, a railing, and a material lift at one end
+      const groups = {};
+      for (const id in BV) if (BV[id].lift) { const k = id.startsWith('INJ:') ? 'INJ' : id.startsWith('PRS:') ? 'PRS' : id; (groups[k] = groups[k] || []).push(BV[id]); }
+      for (const k in groups) {
+        const g = groups[k], r = { x0: Math.min(...g.map(b => b.x - b.w / 2)) - 0.6, x1: Math.max(...g.map(b => b.x + b.w / 2)) + 0.6, z0: Math.min(...g.map(b => b.z - b.d / 2)) - 0.6, z1: Math.max(...g.map(b => b.z + b.d / 2)) + 0.6 };
+        MEZZ.push(r);
+        sbox('slab', r.x1 - r.x0, 0.3, r.z1 - r.z0, (r.x0 + r.x1) / 2, FL - 0.3, (r.z0 + r.z1) / 2);
+        rail(r.x0, r.z0, r.x1, r.z0); rail(r.x0, r.z1, r.x1, r.z1); rail(r.x0, r.z0, r.x0, r.z1); rail(r.x1, r.z0, r.x1, r.z1);
+        const long = r.x1 - r.x0 > r.z1 - r.z0;
+        const L2 = long ? r.x1 - r.x0 : r.z1 - r.z0, n = Math.max(1, Math.round(L2 / 6));
+        for (let i = 0; i <= n; i++) for (const e of [0, 1]) { const t = i / n; const x = long ? r.x0 + 0.2 + (L2 - 0.4) * t : (e ? r.x1 - 0.2 : r.x0 + 0.2), z = long ? (e ? r.z1 - 0.2 : r.z0 + 0.2) : r.z0 + 0.2 + (L2 - 0.4) * t; sbox('beam', 0.24, FL - 0.3, 0.24, x, 0, z); MEZZCOL.push([x, z]); }
+        sbox('safety', r.x1 - r.x0, 0.1, 0.03, (r.x0 + r.x1) / 2, FL - 0.2, r.z0); sbox('safety', r.x1 - r.x0, 0.1, 0.03, (r.x0 + r.x1) / 2, FL - 0.2, r.z1);
+        VRC.push(long ? { x: r.x0 - 1.3, z: (r.z0 + r.z1) / 2 } : { x: (r.x0 + r.x1) / 2, z: r.z1 + 1.3 });
+      }
+      for (const v of VRC) {
+        for (const [px, pz] of [[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]]) sbox('steel', 0.09, FL + 1.6, 0.09, v.x + px, 0, v.z + pz);
+        sbox('safety', 1.8, 0.12, 1.8, v.x, FL + 1.6, v.z); sbox('glass', 1.7, 2.0, 0.03, v.x, 0, v.z + 0.85);
+        const car = new T.Group();
+        const pl = new T.Mesh(new T.BoxGeometry(1.4, 0.08, 1.4), M.steel); car.add(pl);
+        const tote = new T.Mesh(new T.BoxGeometry(0.9, 0.45, 0.7).translate(0, 0.27, 0), M.mag); car.add(tote);
+        car.traverse(o => { if (o.isMesh) { o.castShadow = true; o.raycast = () => {}; } });
+        car.position.set(v.x, 0.1, v.z); car.userData.ground = true; world.add(car); v.car = car; v.ph = Math.random() * 6;
+      }
+      // the lobby under the offices: reception, seating, plants and the plant's name on the wall
+      sbox('paint', 6.4, 1.05, 1.1, 232, 0, 13, { r: 0.12 }); sbox('desk', 6.8, 0.06, 1.4, 232, 1.05, 13, { r: 0.03 }); sbox('stripe', 6.42, 0.06, 1.12, 232, 0.7, 13);
+      for (const [x, z] of [[220, 24], [226, 24], [238, 24], [244, 24]]) { sbox('plastic', 2.2, 0.42, 0.9, x, 0, z, { r: 0.12 }); sbox('plastic', 2.2, 0.5, 0.2, x, 0.42, z + 0.4, { r: 0.08 }); }
+      for (const [x, z] of [[214, 8], [250, 8], [214, 30], [250, 30], [226, 30], [238, 30]]) { scyl('dark', 0.35, 0.6, x, 0, z, { r2: 0.28 }); push('leaf', place(new T.IcosahedronGeometry(0.62, 1), x, 1.25, z)); }
+      liftNow = 0;
+      const wall = new T.Mesh(new T.PlaneGeometry(14, 2.6), new T.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: signTex('Plant EG-01', 'Digital Factory · TV plant'), emissiveIntensity: 0.9 }));
+      wall.position.set(232, 2.6, 3.2); wall.userData.ground = true; wall.raycast = () => {}; world.add(wall);
+      const lobbyScreen = new T.Mesh(new T.PlaneGeometry(5.2, 2.9), M.sop); lobbyScreen.position.set(250, 2.2, 3.25); lobbyScreen.userData.ground = true; lobbyScreen.raycast = () => {}; world.add(lobbyScreen);
+      LOBBY = wall.material;
+    }
     finalize();
+    // what the floor plan put upstairs and was not merged above (signs, floor names) goes up too
+    for (const o of world.children) { if (o.isInstancedMesh || o === floor || o.userData.ground) continue; const p = o.position; if (p.y < FL * 0.6 && (p.x || p.z) && lvStatic(p.x, p.z)) p.y += FL; }
 
     /* ---------------- dynamic machine parts (instanced) ---------------- */
     const NST = P.stations.length;
@@ -824,8 +979,25 @@
     const TRK = new Map(), INB = new Map();
 
     /* ---------------- people (instanced) ---------------- */
-    const bodyI = inst(new T.CapsuleGeometry(0.2, 0.78, 4, 10), M.person, 900, { color: true, pick: true, shadow: true });
-    const headI = inst(new T.SphereGeometry(0.12, 12, 8), M.skin, 900, { shadow: true });
+    const bodyI = inst(new T.CapsuleGeometry(0.19, 0.42, 4, 12), M.person, 900, { color: true, pick: true, shadow: true });
+    const headI = inst(new T.SphereGeometry(0.115, 14, 10), M.skin, 900, { shadow: true });
+    const legI = inst(new T.CapsuleGeometry(0.075, 0.66, 3, 8).translate(0, -0.4, 0), M.dark, 1800, { shadow: true });   // pivots at the hip
+    const armI = inst(new T.CapsuleGeometry(0.058, 0.46, 3, 8).translate(0, -0.29, 0), M.person, 1800, { color: true, shadow: true });   // pivots at the shoulder
+    const hatI = inst(new T.SphereGeometry(0.14, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), M.hatW, 900, { color: true, shadow: true });
+    const vestI = inst(new T.CylinderGeometry(0.205, 0.2, 0.34, 14, 1, true), M.vest, 900, { color: true });
+    for (const m of [bodyI, headI, legI, armI, hatI, vestI]) m.userData.noLift = true;   // people climb: their level is eased per person
+    const HAT = { Operator: 0xF2B705, 'Line leader': 0xFFFFFF, Technician: 0x1F6FEB, 'Rework technician': 0xF2B705, 'Milk-run driver': 0xFFFFFF, 'Forklift driver': 0xFFFFFF, office: 0xFFFFFF };
+    const VEST = { Operator: 0xC6F432, 'Line leader': 0xFF7A1A, Technician: 0xFF7A1A, 'Rework technician': 0xC6F432, 'Milk-run driver': 0xC6F432, 'Forklift driver': 0xC6F432 };
+    function person(x, y, z, h, swing, tc, role, ref, seated) {
+      const c = Math.cos(h), s2 = Math.sin(h), px = -s2, pz = c;   // across the body
+      const hip = seated ? 0.5 : 0.86 + Math.abs(swing) * 0.02;
+      if (!seated) for (const sd of [-1, 1]) put(legI, x + px * sd * 0.1, y + hip, z + pz * sd * 0.1, 1, 1, 1, -h, 0, sd * swing * 0.55);
+      put(bodyI, x, y + hip + 0.34, z, 1, 1, 1, -h, 0, 0, ref, tc);
+      if (VEST[role]) put(vestI, x, y + hip + 0.32, z, 1, 1, 1, -h, 0, 0, undefined, VEST[role]);
+      for (const sd of [-1, 1]) put(armI, x + px * sd * 0.25, y + hip + 0.6, z + pz * sd * 0.25, 1, 1, 1, -h, sd * 0.08, seated ? 0.9 : -sd * swing * 0.45, undefined, tc);
+      put(headI, x, y + hip + 0.85, z);
+      put(hatI, x, y + hip + 0.88, z, 1, 1, 1, -h, 0, 0, undefined, HAT[role] || 0xF2B705);
+    }
     const OFFICE = [];
     {
       let k = 0;
@@ -842,11 +1014,11 @@
     let pktSkip = 0;
     function posOfRef(ref) {
       if (!ref) return null;
-      if (P.byId[ref]) { const s = P.byId[ref]; return [s.x, (SV.get(ref) || { top: 2 }).top + 0.6, s.z]; }
+      if (P.byId[ref]) { const s = P.byId[ref]; return [s.x, (SV.get(ref) || { top: 2 }).top + 0.6 + lvStatic(s.x, s.z), s.z]; }
       if (ref.startsWith('order:')) { const o = P.orders.find(o2 => o2.id === ref.slice(6)); if (o && o.truck) return [o.truck.dock.x - 1, 3, o.truck.dock.z]; return [234, 2, 82]; }
       if (ref.startsWith('svc:')) return [234, 2, 146];
-      if (ref.startsWith('mrp:') || ref === 'sop') return [ROOMV.planning.x, 2, ROOMV.planning.z];
-      if (BV[ref]) return [BV[ref].x, BV[ref].h + 0.4, BV[ref].z];
+      if (ref.startsWith('mrp:') || ref === 'sop') return [ROOMV.planning.x, 2 + FL, ROOMV.planning.z];
+      if (BV[ref]) return [BV[ref].x, BV[ref].h + 0.4 + (BV[ref].lift || lvStatic(BV[ref].x, BV[ref].z)), BV[ref].z];
       return null;
     }
     const sysPos = id => {
@@ -906,7 +1078,7 @@
       hemi.color.set(C.hemi[0]); hemi.groundColor.set(C.hemi[1]); hemi.intensity = C.hemi[2]; sun.intensity = C.sun; amb.intensity = C.amb;
       renderer.toneMappingExposure = C.exp;
       for (const k of ['floor', 'zone', 'paint', 'paint2', 'frame', 'dark', 'steel', 'alu', 'rubber', 'rack', 'beam', 'glass', 'pcb', 'tv', 'carton', 'pallet', 'tray', 'agv', 'stripe', 'truck', 'cab', 'mag', 'plastic', 'desk', 'carpet', 'wall', 'skin']) M[k].color.set(C[k]);
-      M.floorLine.color.set(C.floorLine); M.fixture.emissiveIntensity = C.fixture; M.lights.emissiveIntensity = C.fixture; M.roof.color.set(C.beam);
+      M.floorLine.color.set(C.floorLine); M.slab.color.set(C.floor); M.fixture.emissiveIntensity = C.fixture; M.lights.emissiveIntensity = C.fixture; M.roof.color.set(C.beam);
       M.sel.color.set(S.info); M.route.color.set(S.info); chev.material.color.set(S.info); M.pkt.color.set(C.pkt); M.net.color.set(C.net);
       world.traverse(o => { if (o.userData && o.userData.floorWord) o.material.opacity = theme === 'dark' ? 0.22 : 0.55; });
       if (bloom) bloom.strength = C.bloom;
@@ -1053,20 +1225,23 @@
         else { v.g.rotation.y = Math.PI / 2; v.g.position.set(d.x, 0, -0.6 - len / 2 - (1 - k) * 28); }
       }
       for (const [id, v] of INB) if (!P.inbound.some(t => t.id === id)) { world.remove(v.g); INB.delete(id); }
-      bodyI.count = headI.count = 0;
+      for (const m of [bodyI, headI, legI, armI, hatI, vestI]) m.count = 0;
       const tint = { Operator: C.person, 'Line leader': C.dark, Technician: C.tech, 'Rework technician': C.person, 'Milk-run driver': C.cab, 'Forklift driver': C.cab };
+      const dtm = Math.min(0.1, Math.max(0.001, tAnim - (updateMovers.t || tAnim))); updateMovers.t = tAnim;
       for (const p of P.people) {
         if (p.present === false) continue;
         const walking = !!p.path, ride = p.rides;
         if (ride && walk.ride === ride) continue;   // your seat while you ride along
-        const y = ride ? (ride.kind === 'forklift' ? 0.95 : 0.75) : 0;
-        const bob = walking ? Math.abs(Math.sin(tAnim * 9 + p.x)) * 0.05 : Math.sin(tAnim * 1.3 + p.x) * 0.01;
+        // heading from the way they move; the level eases, so a person climbing to the LCM deck rises instead of jumping
+        const dx = p.x - (p.px ?? p.x), dz = p.z - (p.pz ?? p.z); if (dx * dx + dz * dz > 1e-5) p.hd = Math.atan2(dz, dx); p.px = p.x; p.pz = p.z;
+        const want = ride ? 0 : lvAt(p.x, p.z); p.ly = p.ly === undefined ? want : p.ly + (want - p.ly) * Math.min(1, dtm * 1.6);
         const tc = overlay === 'people' && p.cover ? S.warn : tint[p.role] || C.person;
-        put(bodyI, p.x, y + 0.6 + bob, p.z, 1, ride ? 0.7 : 1, 1, 0, 0, 0, 'person:' + p.id, tc);
-        put(headI, p.x, y + (ride ? 1.1 : 1.32) + bob, p.z);
+        if (ride) { put(bodyI, p.x, (ride.kind === 'forklift' ? 0.95 : 0.75) + 0.5, p.z, 1, 0.8, 1, 0, 0, 0, 'person:' + p.id, tc); put(headI, p.x, (ride.kind === 'forklift' ? 0.95 : 0.75) + 1.0, p.z); put(hatI, p.x, (ride.kind === 'forklift' ? 0.95 : 0.75) + 1.03, p.z, 1, 1, 1, 0, 0, 0, undefined, 0xFFFFFF); continue; }
+        const swing = walking ? Math.sin(tAnim * 7.5 + p.x * 3) : 0;
+        person(p.x, p.ly, p.z, p.hd || 0, swing, tc, p.role, 'person:' + p.id, false);
       }
-      for (const o of OFFICE) { put(bodyI, o.x, 0.5, o.z, 1, 0.82, 1, 0, 0, 0, 'dept:' + o.dept, C.office); put(headI, o.x, 1.18 + Math.sin(tAnim * 0.8 + o.x) * 0.01, o.z); }
-      done(bodyI, headI);
+      for (const o of OFFICE) person(o.x, FL, o.z, Math.PI, 0, C.office, 'office', 'dept:' + o.dept, true);
+      done(bodyI, headI, legI, armI, hatI, vestI);
     }
     function updatePackets(dt) {
       pktI.count = 0;
@@ -1107,6 +1282,7 @@
     // a new language repaints every sign, floor name and screen in the plant
     addEventListener('langchange', () => {
       updateSigns(true);
+      if (LOBBY) { const old = LOBBY.emissiveMap; LOBBY.emissiveMap = signTex('Plant EG-01', 'Digital Factory · TV plant'); LOBBY.needsUpdate = true; old.dispose(); }
       world.traverse(o => { if (o.userData.zoneName) { const old = o.material.map; o.material.map = floorWord(o.userData.zoneName); o.material.needsUpdate = true; old.dispose(); } });
       for (const [k, draw, w, h] of [['hmi', hmiDraw, 256, 160], ['sop', sopDraw, 512, 256]]) { const old = M[k].emissiveMap; M[k].emissiveMap = cv(w, h, draw); M[k].needsUpdate = true; old.dispose(); }
     });
@@ -1116,19 +1292,19 @@
     function refInfo(ref) {
       if (!ref) return null;
       const [k, id] = ref.split(/:(.+)/);
-      if (k === 'st') { const s = P.byId[id]; return s && { x: s.x, y: 0, z: s.z, w: s.w, d: s.d, h: s.h, r: Math.max(s.w, s.d, 3) }; }
+      if (k === 'st') { const s = P.byId[id]; return s && { x: s.x, y: lvStatic(s.x, s.z), lv: lvStatic(s.x, s.z), z: s.z, w: s.w, d: s.d, h: s.h, r: Math.max(s.w, s.d, 3) }; }
       if (k === 'agv' || k === 'tug' || k === 'fl') { const a = P.agvs.concat(P.tuggers, P.forklifts).find(a2 => a2.id === id); return a && { x: a.x, y: 0, z: a.z, w: k === 'tug' ? 2 : 1.6, d: 1.2, h: 1.5, r: 3, moving: true }; }
-      if (k === 'person') { const p = P.people.find(p2 => p2.id === id); return p && { x: p.x, y: 0, z: p.z, w: 0.8, d: 0.8, h: 1.6, r: 1.5, moving: true }; }
+      if (k === 'person') { const p = P.people.find(p2 => p2.id === id); return p && { x: p.x, y: p.ly || 0, lv: p.ly || 0, z: p.z, w: 0.8, d: 0.8, h: 1.6, r: 1.5, moving: true }; }
       if (k === 'truck') { const t = P.trucks.find(t2 => t2.id === id); return t && { x: L.W + 6.6 + (1 - t.k) * 34, y: 0, z: t.dock.z, w: 15, d: 3, h: 3, r: 9, moving: true }; }
       if (k === 'inbound') { const v = INB.get(id); return v ? { x: v.g.position.x, y: 0, z: v.g.position.z, w: 13, d: 3, h: 3, r: 9 } : { x: 6, y: 0, z: 18, w: 8, d: 8, h: 3, r: 12 }; }
-      if (k === 'buf') { const v = BV[id]; return v && { x: v.x, y: 0, z: v.z, w: v.w, d: v.d, h: v.h, r: Math.max(v.w, v.d, 3) }; }
+      if (k === 'buf') { const v = BV[id], up = v && (v.lift || lvStatic(v.x, v.z)); return v && { x: v.x, y: up, lv: up, z: v.z, w: v.w, d: v.d, h: v.h, r: Math.max(v.w, v.d, 3) }; }
       if (k === 'util') { const v = BV['util:' + id]; return v && { x: v.x, y: 0, z: v.z, w: v.w, d: v.d, h: v.h, r: 5 }; }
-      if (k === 'dept') { const r = ROOMV[id]; return r && { x: r.x, y: 0, z: r.z, w: r.w, d: r.d, h: 3, r: 9 }; }
+      if (k === 'dept') { const r = ROOMV[id]; return r && { x: r.x, y: FL, lv: FL, z: r.z, w: r.w, d: r.d, h: 3, r: 9 }; }
       if (k === 'sys') { const p = sysPos(id); return { x: p[0], y: 0, z: p[2], w: 1.6, d: 1.6, h: 2.4, r: 4 }; }
-      if (k === 'unit') { const u = E.findUnit(id); const p = u && unitPos.get(u); if (p) return { x: p[0], y: p[1], z: p[2], w: 1.8, d: 1.4, h: 0.6, r: 2, moving: true }; return u ? locOf(u) : null; }
+      if (k === 'unit') { const u = E.findUnit(id); const p = u && unitPos.get(u); if (p) { const up = p[1] < FL * 0.6 ? lvAt(p[0], p[2]) : 0; return { x: p[0], y: p[1] + up, lv: up || (p[1] > FL * 0.6 ? FL : 0), z: p[2], w: 1.8, d: 1.4, h: 0.6, r: 2, moving: true }; } return u ? locOf(u) : null; }
       if (k === 'pal') { const p = P.pallets.find(p2 => p2.id === id); const at = p && unitPos.get(p); return at && { x: at[0], y: 0, z: at[2], w: 1.6, d: 1.4, h: 1.6, r: 2, moving: true }; }
       if (k === 'zone') { const z = L.ZONES.find(z2 => z2.id === id); return z && { x: (z.x0 + z.x1) / 2, y: 0, z: (z.z0 + z.z1) / 2, w: z.x1 - z.x0, d: z.z1 - z.z0, h: 1, r: Math.max(z.x1 - z.x0, z.z1 - z.z0) * 0.6, zone: z }; }
-      if (k === 'line') { const Ln = P.lines[id]; if (!Ln || !Ln.stations.length) return null; const xs = Ln.stations.map(s => s.x), x0 = Math.min(...xs), x1 = Math.max(...xs), zs = Ln.stations.map(s => s.z); const z0 = Math.min(...zs), z1 = Math.max(...zs); return { x: (x0 + x1) / 2, y: 0, z: (z0 + z1) / 2, w: x1 - x0 + 6, d: z1 - z0 + 5, h: 2, r: (x1 - x0) * 0.42 + 4 }; }
+      if (k === 'line') { const Ln = P.lines[id]; if (!Ln || !Ln.stations.length) return null; const xs = Ln.stations.map(s => s.x), x0 = Math.min(...xs), x1 = Math.max(...xs), zs = Ln.stations.map(s => s.z); const z0 = Math.min(...zs), z1 = Math.max(...zs), up = lvStatic((x0 + x1) / 2, (z0 + z1) / 2); return { x: (x0 + x1) / 2, y: up, lv: up, z: (z0 + z1) / 2, w: x1 - x0 + 6, d: z1 - z0 + 5, h: 2, r: (x1 - x0) * 0.42 + 4 }; }
       if (k === 'order') { const o = P.orders.find(o2 => o2.id === id); if (o && o.truck) return refInfo('truck:' + o.truck.id); return { x: 234, y: 0, z: 82, w: 54, d: 78, h: 1, r: 40 }; }
       return null;
     }
@@ -1152,7 +1328,7 @@
       if (!selRef) return;
       const info = refInfo(selRef);
       if (!info) { reticle.visible = false; return; }
-      reticle.visible = true; reticle.position.set(info.x, 0.05, info.z);
+      reticle.visible = true; reticle.position.set(info.x, 0.05 + (info.lv || 0), info.z);
       if (Math.abs(info.w - retW) > 0.01 || Math.abs(info.d - retD) > 0.01) setReticle(info);
       const [k, id] = selRef.split(/:(.+)/);
       const mover = (k === 'agv' || k === 'fl' || k === 'tug') ? P.agvs.concat(P.tuggers, P.forklifts).find(a => a.id === id) : null;
@@ -1166,7 +1342,7 @@
     function flyTo(info, dist) {
       moved = true;
       const r = dist || Math.max(14, (info.r || 4) * 3.4);
-      const to = new T.Vector3(info.x, (info.y || 0) * 0.5 + 0.6, info.z);
+      const to = new T.Vector3(info.x, (info.lv || 0) + ((info.y || 0) - (info.lv || 0)) * 0.5 + 0.6, info.z);
       const dir = camera.position.clone().sub(controls.target).normalize();
       if (dir.y < 0.42) { dir.y = 0.5; dir.normalize(); }
       if (dir.y > 0.86) { dir.y = 0.72; dir.normalize(); }
@@ -1208,14 +1384,26 @@
 
     /* ---------------- walk the floor: first person at eye height, with collision ---------------- */
     const GRID = 0.5, GW = Math.ceil((L.W + 4) / GRID), GD = Math.ceil((L.D + 4) / GRID);
-    const solid = new Uint8Array(GW * GD);
-    const block = (x0, z0, x1, z1) => { for (let gx = Math.max(0, Math.floor(x0 / GRID)); gx <= Math.min(GW - 1, Math.floor(x1 / GRID)); gx++) for (let gz = Math.max(0, Math.floor(z0 / GRID)); gz <= Math.min(GD - 1, Math.floor(z1 / GRID)); gz++) solid[gz * GW + gx] = 1; };
-    for (const s of P.stations) block(s.x - s.w / 2 - 0.1, s.z - s.d / 2 - 0.1, s.x + s.w / 2 + 0.1, s.z + s.d / 2 + 0.1);
-    for (const id in BV) { const b = BV[id]; if (b.kind === 'room' || b.kind === 'conv' || b.kind === 'util') { if (b.kind === 'util') block(b.x - 2.5, b.z - 1.4, b.x + 2.5, b.z + 1.4); continue; } block(b.x - b.w / 2, b.z - b.d / 2, b.x + b.w / 2, b.z + b.d / 2); }
-    for (const bl of BELTS) if (Math.min(bl.y0, bl.y1) < 2) block(Math.min(bl.x0, bl.x1), Math.min(bl.z0, bl.z1) - bl.w / 2, Math.max(bl.x0, bl.x1), Math.max(bl.z0, bl.z1) + bl.w / 2);
-    for (const k of colAt) { const [x, z] = k.split(',').map(Number); block(x - 0.3, z - 0.3, x + 0.3, z + 0.3); }
-    const free = (x, z) => x > 0.6 && z > 0.6 && x < L.W - 0.6 && z < L.D - 0.6 && !solid[Math.floor(z / GRID) * GW + Math.floor(x / GRID)];
-    const walk = { on: false, x: 107, z: 40, yaw: 0, pitch: -0.05, keys: new Set(), vx: 0, vz: 0, joy: [0, 0], look: null,
+    // two walking grids: the ground floor, and the decks upstairs (everything off a deck is a drop, so it is solid)
+    const solid = new Uint8Array(GW * GD), solid2 = new Uint8Array(GW * GD).fill(1);
+    const blockIn = (arr, x0, z0, x1, z1, v = 1) => { for (let gx = Math.max(0, Math.floor(x0 / GRID)); gx <= Math.min(GW - 1, Math.floor(x1 / GRID)); gx++) for (let gz = Math.max(0, Math.floor(z0 / GRID)); gz <= Math.min(GD - 1, Math.floor(z1 / GRID)); gz++) arr[gz * GW + gx] = v; };
+    const block = (x0, z0, x1, z1) => blockIn(solid, x0, z0, x1, z1), block2 = (x0, z0, x1, z1) => blockIn(solid2, x0, z0, x1, z1);
+    for (const r of LV2) if (r.walk) blockIn(solid2, r.x0 + 0.35, r.z0 + 0.35, r.x1 - 0.35, r.z1 - 0.35, 0);
+    for (const s of P.stations) (lvStatic(s.x, s.z) ? block2 : block)(s.x - s.w / 2 - 0.1, s.z - s.d / 2 - 0.1, s.x + s.w / 2 + 0.1, s.z + s.d / 2 + 0.1);
+    for (const id in BV) { const b = BV[id]; if (b.kind === 'room' || b.kind === 'conv' || b.kind === 'util') { if (b.kind === 'util') block(b.x - 2.5, b.z - 1.4, b.x + 2.5, b.z + 1.4); continue; } if (b.lift) continue; (lvStatic(b.x, b.z) ? block2 : block)(b.x - b.w / 2, b.z - b.d / 2, b.x + b.w / 2, b.z + b.d / 2); }
+    for (const bl of BELTS) { const lo = Math.min(bl.y0, bl.y1), box = [Math.min(bl.x0, bl.x1), Math.min(bl.z0, bl.z1) - bl.w / 2, Math.max(bl.x0, bl.x1), Math.max(bl.z0, bl.z1) + bl.w / 2]; if (lo < 2) block(...box); else if (lo >= FL) block2(...box); }
+    for (const k of colAt) { const [x, z] = k.split(',').map(Number); block(x - 0.3, z - 0.3, x + 0.3, z + 0.3); block2(x - 0.3, z - 0.3, x + 0.3, z + 0.3); }
+    for (const [x, z] of MEZZCOL) block(x - 0.3, z - 0.3, x + 0.3, z + 0.3);
+    for (const v of VRC) { block(v.x - 0.95, v.z - 0.95, v.x + 0.95, v.z + 0.95); block2(v.x - 0.95, v.z - 0.95, v.x + 0.95, v.z + 0.95); }
+    // a flight of stairs is entered only at its foot (ground) or its head (deck): the rest of its footprint is solid on both
+    for (const st of STAIRS) { const x0 = Math.min(st.xb, st.xt) + 0.6, x1 = Math.max(st.xb, st.xt) - 0.6; block(x0, st.z - st.w / 2 - 0.2, x1, st.z + st.w / 2 + 0.2); block2(x0, st.z - st.w / 2 - 0.2, x1, st.z + st.w / 2 + 0.2); }
+    // a lift is open at both ends of its cab; its glass sides are solid
+    for (const l of LIFTS) for (const sz of [-1, 1]) { block(l.x - l.s / 2, l.z + sz * l.s / 2 - 0.15, l.x + l.s / 2, l.z + sz * l.s / 2 + 0.15); block2(l.x - l.s / 2, l.z + sz * l.s / 2 - 0.15, l.x + l.s / 2, l.z + sz * l.s / 2 + 0.15); }
+    let curLv = 0;   // 0 the ground floor, 1 a deck
+    const free = (x, z, lv = curLv) => x > 0.6 && z > 0.6 && x < L.W - 0.6 && z < L.D - 0.6 && !(lv ? solid2 : solid)[Math.floor(z / GRID) * GW + Math.floor(x / GRID)];
+    const stairAt = (x, z) => { for (const st of STAIRS) { if (x >= Math.min(st.xb, st.xt) && x <= Math.max(st.xb, st.xt) && Math.abs(z - st.z) <= st.w / 2 - 0.15) return { st, t: Math.abs(x - st.xb) / Math.abs(st.xt - st.xb) }; } return null; };
+    const liftAt = (x, z) => LIFTS.find(l => Math.abs(x - l.x) < l.s / 2 - 0.25 && Math.abs(z - l.z) < l.s / 2 - 0.3);
+    const walk = { on: false, x: 107, z: 40, y: 0, ty: 0, st: null, lift: null, liftT: 0, liftDone: null, run: false, yaw: 0, pitch: -0.05, keys: new Set(), vx: 0, vz: 0, joy: [0, 0], look: null,
       guide: null, guideRef: null, guideLine: null, auto: false, ride: null, rideH: 0, lookRef: null, lookT: 0, warnT: 0 };
     const EYE = 1.68, FOV_ORBIT = camera.fov, FOV_WALK = 64;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1224,10 +1412,17 @@
     const vhalf = a => (a.kind === 'tugger' ? 2.9 : a.kind === 'forklift' ? 1.3 : 0.85);
     // distance from a floor point to a vehicle's body (a segment along its heading, about 1.2 m wide)
     const vdist = (a, x, z) => { const c = Math.cos(a.h), s2 = Math.sin(a.h), dx = x - a.x, dz = z - a.z; const t = Math.max(-vhalf(a), Math.min(vhalf(a), dx * c + dz * s2)); return Math.hypot(dx - c * t, dz - s2 * t) - 0.6; };
-    const clear = (x, z) => free(x, z) && !VEHS().some(a => Math.abs(a.x - x) < 5 && Math.abs(a.z - z) < 5 && vdist(a, x, z) < 0.35);
-    function nearestFree(x, z) {
-      if (free(x, z)) return [x, z];
-      for (let r = 0.5; r < 14; r += 0.5) for (let i = 0; i < 24; i++) { const q = i / 24 * Math.PI * 2, px = x + Math.cos(q) * r, pz = z + Math.sin(q) * r; if (free(px, pz)) return [px, pz]; }
+    const clear = (x, z) => free(x, z) && (curLv === 1 || !VEHS().some(a => Math.abs(a.x - x) < 5 && Math.abs(a.z - z) < 5 && vdist(a, x, z) < 0.35));
+    // a step is allowed onto free floor of the level you are on; a flight of stairs only from its foot or its head, then along it
+    function canStep(nx, nz) {
+      const a = stairAt(nx, nz), here = stairAt(walk.x, walk.z);
+      if (a) return here ? here.st === a.st : (curLv ? a.t > 0.88 : a.t < 0.12);
+      if (here) return free(nx, nz, here.t > 0.5 ? 1 : 0);
+      return clear(nx, nz);
+    }
+    function nearestFree(x, z, lv = curLv) {
+      if (free(x, z, lv)) return [x, z];
+      for (let r = 0.5; r < 14; r += 0.5) for (let i = 0; i < 24; i++) { const q = i / 24 * Math.PI * 2, px = x + Math.cos(q) * r, pz = z + Math.sin(q) * r; if (free(px, pz, lv)) return [px, pz]; }
       return null;
     }
     function setWalk(v, at) {
@@ -1239,14 +1434,14 @@
         let p = at || [controls.target.x, controls.target.z];
         // start on the nearest free spot of an aisle
         if (!free(p[0], p[1])) { let best = null; for (const A of L.AISLES) { const h = A.a[1] === A.b[1]; const x = h ? Math.max(Math.min(A.a[0], A.b[0]), Math.min(Math.max(A.a[0], A.b[0]), p[0])) : A.a[0]; const z = h ? A.a[1] : Math.max(Math.min(A.a[1], A.b[1]), Math.min(Math.max(A.a[1], A.b[1]), p[1])); const d = Math.hypot(x - p[0], z - p[1]); if (free(x, z) && (!best || d < best.d)) best = { x, z, d }; } if (best) p = [best.x, best.z]; }
-        walk.x = p[0]; walk.z = p[1]; walk.vx = walk.vz = 0;
+        walk.x = p[0]; walk.z = p[1]; walk.vx = walk.vz = 0; curLv = 0; walk.y = walk.ty = 0; walk.st = walk.lift = null;
         const dir = controls.target.clone().sub(camera.position); walk.yaw = Math.atan2(dir.x, -dir.z); walk.pitch = -0.08;
         controls.enabled = false;
       } else {
         controls.enabled = true;
         const fwd = new T.Vector3(Math.sin(walk.yaw), 0, -Math.cos(walk.yaw));
         controls.target.set(walk.x + fwd.x * 8, 0.5, walk.z + fwd.z * 8);
-        camera.position.set(walk.x - fwd.x * 10, 9, walk.z - fwd.z * 10);
+        controls.target.y += walk.y; camera.position.set(walk.x - fwd.x * 10, 9 + walk.y, walk.z - fwd.z * 10);
         if (document.pointerLockElement === canvas) document.exitPointerLock();
         P.walker = null; walk.lookRef = null; emit('look', null); emit('walkwarn', null);
       }
@@ -1254,13 +1449,13 @@
     }
 
     /* a route on the floor to what you chose, along the free cells of the walking grid (A*, 8 directions, no corner cutting) */
-    function findPath(x0, z0, x1, z1) {
+    function findPath(x0, z0, x1, z1, lv = curLv) {
       const s0 = Math.floor(z0 / GRID) * GW + Math.floor(x0 / GRID), g = Math.floor(z1 / GRID) * GW + Math.floor(x1 / GRID);
       const gx = g % GW, gz = (g / GW) | 0, H = i => Math.hypot(i % GW - gx, ((i / GW) | 0) - gz);
       const cost = new Float32Array(GW * GD).fill(Infinity), from = new Int32Array(GW * GD).fill(-1), shut = new Uint8Array(GW * GD);
       const heap = [], push = (i, f) => { heap.push([f, i]); let c = heap.length - 1; while (c) { const p2 = (c - 1) >> 1; if (heap[p2][0] <= heap[c][0]) break; [heap[p2], heap[c]] = [heap[c], heap[p2]]; c = p2; } };
       const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let c = 0; for (;;) { const l = c * 2 + 1, r = l + 1; let m = c; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === c) break; [heap[m], heap[c]] = [heap[c], heap[m]]; c = m; } } return top[1]; };
-      const ok = (cx, cz) => cx > 1 && cz > 1 && cx < GW - 2 && cz < GD - 2 && !solid[cz * GW + cx];
+      const grid = lv ? solid2 : solid, ok = (cx, cz) => cx > 1 && cz > 1 && cx < GW - 2 && cz < GD - 2 && !grid[cz * GW + cx];
       cost[s0] = 0; push(s0, H(s0));
       let n = 0;
       while (heap.length && n++ < 260000) {
@@ -1277,10 +1472,10 @@
       const cells = []; for (let i = g; i >= 0; i = i === s0 ? -1 : from[i]) cells.unshift(i);
       const pts = cells.map(i => [(i % GW + 0.5) * GRID, (((i / GW) | 0) + 0.5) * GRID]);
       // keep only the turns that line of sight needs, so the walk is smooth
-      const sight = (a2, b2) => { const d = Math.hypot(b2[0] - a2[0], b2[1] - a2[1]), n2 = Math.ceil(d / (GRID * 0.5)); for (let k2 = 1; k2 < n2; k2++) { const t = k2 / n2; if (!free(a2[0] + (b2[0] - a2[0]) * t, a2[1] + (b2[1] - a2[1]) * t)) return false; } return true; };
+      const sight = (a2, b2) => { const d = Math.hypot(b2[0] - a2[0], b2[1] - a2[1]), n2 = Math.ceil(d / (GRID * 0.5)); for (let k2 = 1; k2 < n2; k2++) { const t = k2 / n2; if (!free(a2[0] + (b2[0] - a2[0]) * t, a2[1] + (b2[1] - a2[1]) * t, lv)) return false; } return true; };
       const out = [[x0, z0]]; let k = 0;
       while (k < pts.length - 1) { let j = pts.length - 1; while (j > k + 1 && !sight(out[out.length - 1], pts[j])) j--; out.push(pts[j]); k = j; }
-      return out;
+      return out.map(p => [p[0], p[1], lv]);
     }
     const GUIDE_M = new T.MeshBasicMaterial({ color: 0x2189FF, transparent: true, opacity: 0.8, side: T.DoubleSide, depthWrite: false });
     function clearGuide() { if (walk.guideLine) { world.remove(walk.guideLine); walk.guideLine.geometry.dispose(); walk.guideLine = null; } walk.guide = null; walk.guideRef = null; walk.auto = false; }
@@ -1288,10 +1483,12 @@
       if (walk.guideLine) { world.remove(walk.guideLine); walk.guideLine.geometry.dispose(); walk.guideLine = null; }
       const g = walk.guide; if (!g) return;
       // a ribbon on the floor, 40 cm wide, from where you stand to the spot in front of the target
-      const pts = [[walk.x, walk.z]].concat(g.pts.slice(g.i)), pos = [];
+      const pts = [[walk.x, walk.z, curLv]].concat(g.pts.slice(g.i)), pos = [];
+      const yOf = p => { const a = stairAt(p[0], p[1]); return (a ? FL * a.t : (p[2] || 0) * FL) + 0.035; };
       for (let i = 1; i < pts.length; i++) {
         const [x0, z0] = pts[i - 1], [x1, z1] = pts[i], l = Math.hypot(x1 - x0, z1 - z0) || 1, nx = -(z1 - z0) / l * 0.2, nz = (x1 - x0) / l * 0.2;
-        pos.push(x0 + nx, 0.035, z0 + nz, x0 - nx, 0.035, z0 - nz, x1 + nx, 0.035, z1 + nz, x0 - nx, 0.035, z0 - nz, x1 - nx, 0.035, z1 - nz, x1 + nx, 0.035, z1 + nz);
+        const y0 = yOf(pts[i - 1]), y1 = yOf(pts[i]);
+        pos.push(x0 + nx, y0, z0 + nz, x0 - nx, y0, z0 - nz, x1 + nx, y1, z1 + nz, x0 - nx, y0, z0 - nz, x1 - nx, y1, z1 - nz, x1 + nx, y1, z1 + nz);
       }
       const geo = new T.BufferGeometry(); geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
       walk.guideLine = new T.Mesh(geo, GUIDE_M); world.add(walk.guideLine);
@@ -1303,8 +1500,24 @@
       // stand in front of it: the free spot nearest to its edge on the walker's side
       const ex = Math.max(info.x - (info.w || 1) / 2 - 0.9, Math.min(info.x + (info.w || 1) / 2 + 0.9, walk.x));
       const ez = Math.max(info.z - (info.d || 1) / 2 - 0.9, Math.min(info.z + (info.d || 1) / 2 + 0.9, walk.z));
-      const goal = nearestFree(ex, ez) || nearestFree(info.x, info.z); if (!goal) return false;
-      const pts = findPath(walk.x, walk.z, goal[0], goal[1]); if (!pts) return false;
+      // a target on a deck is reached by the stairs: walk to the nearer flight, up (or down) it, then on
+      const tl = info.lv && LV2.some(r => r.walk && inR(r, info.x, info.z)) && lvAt(info.x, info.z) ? 1 : 0;
+      const goal = nearestFree(ex, ez, tl) || nearestFree(info.x, info.z, tl); if (!goal) return false;
+      let pts = null;
+      if (tl === curLv) pts = findPath(walk.x, walk.z, goal[0], goal[1], curLv);
+      else {
+        let best = null;
+        for (const st of STAIRS) {
+          const dir = Math.sign(st.xt - st.xb), foot = [st.xb - dir * 0.7, st.z], head = [st.xt + dir * 0.7, st.z];
+          const [a, b2] = curLv ? [head, foot] : [foot, head];
+          const p1 = findPath(walk.x, walk.z, a[0], a[1], curLv); if (!p1) continue;
+          const p2 = findPath(b2[0], b2[1], goal[0], goal[1], tl); if (!p2) continue;
+          const len = q2 => q2.reduce((m, p, i) => m + (i ? Math.hypot(p[0] - q2[i - 1][0], p[1] - q2[i - 1][1]) : 0), 0);
+          const all = p1.concat(p2), l2 = len(all); if (!best || l2 < best.l) best = { pts: all, l: l2 };
+        }
+        pts = best && best.pts;
+      }
+      if (!pts) return false;
       walk.guide = { pts, i: 1, target: [info.x, info.z] }; walk.guideRef = ref; walk.auto = auto;
       drawGuide(); emit('guide', { ref, m: pts.reduce((m, p, i) => m + (i ? Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0), 0) });
       return true;
@@ -1312,7 +1525,7 @@
     // ride along: sit in the cab of a forklift or milk-run train (or on top of an AGV) and look around while it works
     function rideOn(ref) {
       const [k, id] = String(ref || '').split(/:(.+)/);
-      const a = (k === 'agv' || k === 'fl' || k === 'tug') && VEHS().find(v => v.id === id); if (!a || !walk.on) return false;
+      const a = (k === 'agv' || k === 'fl' || k === 'tug') && VEHS().find(v => v.id === id); if (!a || !walk.on || curLv || walk.st) return false;
       clearGuide(); walk.ride = a; walk.rideH = a.h; walk.yaw = a.h + Math.PI / 2; walk.pitch = -0.12; P.walker = null;
       emit('ride', vref(a)); return true;
     }
@@ -1322,17 +1535,17 @@
       // step down beside the vehicle, on its right, onto free floor
       const sx = a.x - Math.sin(a.h) * 1.6, sz = a.z + Math.cos(a.h) * 1.6, p = nearestFree(sx, sz) || nearestFree(a.x, a.z);
       if (p) { walk.x = p[0]; walk.z = p[1]; }
-      walk.vx = walk.vz = 0; emit('ride', null);
+      walk.vx = walk.vz = 0; curLv = 0; walk.y = walk.ty = 0; emit('ride', null);
     }
     const wrap = v => Math.atan2(Math.sin(v), Math.cos(v));
     function stepFov(dt) {
-      const want = walk.on ? FOV_WALK : FOV_ORBIT;
+      const want = walk.on ? FOV_WALK + (walk.run && Math.hypot(walk.vx, walk.vz) > 2.6 ? 7 : 0) : FOV_ORBIT;
       if (Math.abs(camera.fov - want) > 0.05) { camera.fov += (want - camera.fov) * Math.min(1, dt * 5); camera.updateProjectionMatrix(); }
     }
     function stepWalk(dt) {
       stepFov(dt);
       if (!walk.on) return;
-      const k = walk.keys, run = k.has('ShiftLeft') || k.has('ShiftRight');
+      const k = walk.keys, run = k.has('ShiftLeft') || k.has('ShiftRight'); walk.run = run;
       let f = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0) - walk.joy[1];
       let s = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0) + walk.joy[0];
       if (k.has('KeyQ')) walk.yaw -= dt * 1.4; if (k.has('KeyE')) walk.yaw += dt * 1.4;
@@ -1365,21 +1578,38 @@
         }
       }
       if (g && frames % 10 === 0) drawGuide();
-      const sp = run ? 4.2 : walk.auto ? 2.2 : 1.9;
+      // a lift: stand still in the cab for a moment and it takes you to the other floor
+      if (walk.lift) { f = 0; s = 0; }
+      else {
+        const lf = liftAt(walk.x, walk.z);
+        if (lf && Math.hypot(walk.vx, walk.vz) < 0.2 && walk.liftDone !== lf) { walk.liftT += dt; if (walk.liftT > 0.9) { walk.lift = { l: lf, from: curLv, t: 0 }; walk.liftT = 0; } }
+        else { walk.liftT = 0; if (!lf) walk.liftDone = null; }
+      }
+      const sp = (run ? 4.2 : walk.auto ? 2.2 : 1.9) * (walk.st ? 0.75 : 1);
       // forward (sin yaw, −cos yaw) and right (cos yaw, sin yaw) on the floor
       const fx = Math.sin(walk.yaw), fz = -Math.cos(walk.yaw), rx = Math.cos(walk.yaw), rz = Math.sin(walk.yaw);
       const tx = (fx * f + rx * s) * sp, tz = (fz * f + rz * s) * sp;
       walk.vx += (tx - walk.vx) * Math.min(1, dt * 8); walk.vz += (tz - walk.vz) * Math.min(1, dt * 8);
       // machines, conveyors, columns and vehicles block the way; a vehicle that drives into you is the one that waits
       const nx = walk.x + walk.vx * dt, nz = walk.z + walk.vz * dt;
-      if (clear(nx, walk.z)) walk.x = nx; else walk.vx = 0;
-      if (clear(walk.x, nz)) walk.z = nz; else walk.vz = 0;
-      if (!free(walk.x, walk.z)) { const q = nearestFree(walk.x, walk.z); if (q) { walk.x = q[0]; walk.z = q[1]; } }
-      P.walker = { id: 'You', kind: 'person', x: walk.x, z: walk.z, h: 0, path: null, v: 0 };
-      const bob = !still && Math.hypot(walk.vx, walk.vz) > 0.3 ? Math.sin(tAnim * 9) * 0.025 : 0;
-      camera.position.set(walk.x, EYE + bob, walk.z);
+      if (canStep(nx, walk.z)) walk.x = nx; else walk.vx = 0;
+      if (canStep(walk.x, nz)) walk.z = nz; else walk.vz = 0;
+      const onSt = stairAt(walk.x, walk.z);
+      if (onSt) { walk.st = onSt.st; walk.ty = FL * onSt.t; curLv = onSt.t > 0.5 ? 1 : 0; }
+      else {
+        walk.st = null;
+        if (walk.lift) { const L2 = walk.lift; L2.t = Math.min(1, L2.t + dt / 3.4); const e = L2.t * L2.t * (3 - 2 * L2.t); walk.ty = FL * (L2.from ? 1 - e : e); walk.y = walk.ty; if (L2.t >= 1) { curLv = 1 - L2.from; walk.liftDone = L2.l; walk.lift = null; } }
+        else { walk.ty = curLv * FL; if (!free(walk.x, walk.z)) { const q = nearestFree(walk.x, walk.z); if (q) { walk.x = q[0]; walk.z = q[1]; } } }
+      }
+      walk.y += (walk.ty - walk.y) * Math.min(1, dt * 14);
+      P.walker = curLv || walk.st ? null : { id: 'You', kind: 'person', x: walk.x, z: walk.z, h: 0, path: null, v: 0 };
+      // a step rhythm in the camera, a little stronger running, and a slight sway
+      const spd = Math.hypot(walk.vx, walk.vz), bob = !still && spd > 0.3 ? Math.sin(tAnim * (run ? 11 : 9)) * (run ? 0.045 : 0.028) : 0;
+      const eyeY = walk.y + EYE + bob;
+      camera.position.set(walk.x, eyeY, walk.z);
       const cp = Math.cos(walk.pitch);
-      camera.lookAt(walk.x + Math.sin(walk.yaw) * cp, EYE + Math.sin(walk.pitch), walk.z - Math.cos(walk.yaw) * cp);
+      camera.lookAt(walk.x + Math.sin(walk.yaw) * cp, eyeY + Math.sin(walk.pitch), walk.z - Math.cos(walk.yaw) * cp);
+      if (!still && spd > 0.3) camera.rotateZ(Math.sin(tAnim * (run ? 5.5 : 4.5)) * (run ? 0.006 : 0.003));
       lookAround(dt);
     }
     // what is in the middle of the view (within 18 m), and any vehicle heading toward you
@@ -1476,7 +1706,10 @@
     /* ---------------- labels (HTML, projected) ---------------- */
     const labels = [];
     const tmp = new T.Vector3();
-    function label(el, getPos, tier) { labels.push({ el, getPos, tier }); }
+    function label(el, getPos, tier) {
+      const lift = () => { const p = getPos(); if (!p || p[1] > FL * 0.6 || el.classList.contains('lb-agv')) return p; const up = lvAt(p[0], p[2]) || mezzAt(p[0], p[2]); return up ? [p[0], p[1] + up, p[2]] : p; };
+      labels.push({ el, getPos: lift, tier });
+    }
     // labels never sit on top of each other: the more important one wins (selection and alerts first, then systems,
     // departments, lines, zones, stations, vehicles) and the others hide until the camera moves closer
     const RANK = [['lb-who', 0], ['lb-sel', 0], ['lb-studio', 1], ['lb-pill', 1], ['lb-sys', 2], ['lb-room', 3], ['lb-line', 4], ['lb-zone', 5], ['lb-st', 6], ['lb-agv', 7]];
@@ -1547,6 +1780,18 @@
       emit('quality', quality);
     }
     const frameFns = [];   // per-frame hooks for layers drawn by other modules (the plant studio)
+    // the lift cabs run between the floors (and wait on your floor when you walk near), the material lifts carry totes up
+    const ease3 = t => t * t * (3 - 2 * t);
+    function stepLevels() {
+      for (const lv of LIFTV) {
+        let y;
+        if (walk.on && walk.lift && walk.lift.l === lv.l) y = walk.y;
+        else if (walk.on && Math.hypot(walk.x - lv.l.x, walk.z - lv.l.z) < 7) y = lv.y + ((curLv * FL) - lv.y) * 0.04;
+        else { const t = (tAnim + lv.ph) % 18; y = t < 6 ? 0 : t < 9 ? FL * ease3((t - 6) / 3) : t < 15 ? FL : FL * (1 - ease3((t - 15) / 3)); }
+        lv.y = y; lv.cab.position.y = y;
+      }
+      for (const v of VRC) { const t = (tAnim * 0.9 + v.ph) % 14; v.car.position.y = 0.1 + (t < 4 ? 0 : t < 7 ? FL * ease3((t - 4) / 3) : t < 11 ? FL : FL * (1 - ease3((t - 11) / 3))); v.car.children[1].visible = t < 7 || t > 11.5; }
+    }
     function render(dt) {
       const t0 = performance.now();
       stepFly(); stepCinematic(dt); stepWalk(dt);
@@ -1562,6 +1807,7 @@
       M.roof.opacity = ro; M.lights.opacity = ro; M.roof.visible = M.lights.visible = ro > 0.02; M.roof.depthWrite = ro > 0.98;
       renderer.setScissorTest(false); renderer.setViewport(0, 0, Wd, Ht);
       if (renderer.shadowMap.enabled && frames % 3 === 0) renderer.shadowMap.needsUpdate = true;
+      stepLevels();
       for (const f of frameFns) f(dt);
       if (composer) composer.render(dt); else renderer.render(scene, camera);
       // CCTV feeds: one camera redrawn per frame, the rest keep their last image
