@@ -1467,7 +1467,15 @@
     const RANK = [['lb-sel', 0], ['lb-pill', 1], ['lb-sys', 2], ['lb-room', 3], ['lb-line', 4], ['lb-zone', 5], ['lb-st', 6], ['lb-agv', 7]];
     const rankOf = el => { for (const [c, r] of RANK) if (el.classList.contains(c)) return r; return 8; };
     const ANCHOR = { 'lb-zone': [0.5, 0.5], 'lb-line': [1, 0.5] };
-    let measureAt = 0;
+    let measureAt = 0, blocks = [];
+    // the controls that float over the 3D view (area menu, tools, legend, drill button, map, captions): no label goes under them
+    const OVER = '.pl-views, .pl-tools > *, .pl-overlay, .pl-legend, .pl-drill > *, .pl-nav3d, #minimap, .pl-caption, .pl-hud, #hud';
+    function measureBlocks() {
+      const host = canvas.getBoundingClientRect();
+      blocks = [...canvas.parentElement.querySelectorAll(OVER)].filter(el => !el.hidden && el.offsetParent).map(el => {
+        const r = el.getBoundingClientRect(); return [r.left - host.left - 4, r.top - host.top - 4, r.right - host.left + 4, r.bottom - host.top + 4];
+      }).filter(r => r[2] > r[0] && r[3] > r[1]);
+    }
     function projectLabels(w, h) {
       const dist = walk.on ? 20 : camera.position.distanceTo(controls.target);
       const cand = [];
@@ -1483,9 +1491,9 @@
       }
       // sizes are measured when a label first shows and about once a second after that (texts change)
       const now = performance.now(), remeasure = now - measureAt > 1000;
-      if (remeasure) measureAt = now;
+      if (remeasure) { measureAt = now; measureBlocks(); }
       cand.sort((a, b) => a.Lb.rank - b.Lb.rank || a.z - b.z);
-      const taken = [];
+      const taken = blocks.slice();
       for (const c of cand) {
         const Lb = c.Lb;
         if (Lb.w == null || (remeasure && Lb.shown === true)) { if (Lb.shown !== true) { Lb.el.style.display = ''; Lb.shown = true; } Lb.w = Lb.el.offsetWidth; Lb.h = Lb.el.offsetHeight; }
@@ -1494,7 +1502,8 @@
         const over = () => Lb.w > 0 && taken.some(t => r[0] < t[2] && r[2] > t[0] && r[1] < t[3] && r[3] > t[1]);
         // alerts are never hidden: one that lands on another stacks above it
         if (Lb.rank <= 1) for (let k = 0; k < 6 && over(); k++) { y0 -= Lb.h + 6; r = [x0 - 3, y0 - 3, x0 + Lb.w + 3, y0 + Lb.h + 3]; }
-        else if (over()) { Lb.el.style.display = 'none'; Lb.shown = false; continue; }
+        // a label still under a control, or pushed out of the view, waits until the camera moves (the alert is in the side panel too)
+        if (over() || r[1] < 0 || r[3] > h || r[0] < 0 || r[2] > w) { Lb.el.style.display = 'none'; Lb.shown = false; continue; }
         c.y = y0 + Lb.h * Lb.anchor[1];
         if (Lb.shown !== true) { Lb.el.style.display = ''; Lb.shown = true; }
         if (Lb.w > 0) taken.push(r);

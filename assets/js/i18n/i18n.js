@@ -29,7 +29,7 @@
     const k = norm(s);
     if (!k || !/[A-Za-z]/.test(k)) return null;
     if (cache.has(k)) return cache.get(k);
-    let out = exact.has(k) ? exact.get(k) : null;
+    let out = exact.has(k) ? exact.get(k) : lower.has(k.toLowerCase()) && k !== k.toUpperCase() ? lower.get(k.toLowerCase()) : null;
     if (out == null && depth < 5) {
       for (const [re, tpl] of pats) {
         const m = re.exec(k); if (!m) continue;

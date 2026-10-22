@@ -31,3 +31,23 @@ body.showing .dg-fab, body.showing .dg-panel { display: none; }
 /* room for the show button in the top bar: below 960 px the copilot keeps only its icon and Send to deck stays on its key; phones present from a laptop */
 @media (max-width: 960px) { #btnCopilot .hide-sm { display: none; } #pinBtn, .topbar .crumb { display: none; } }   /* P still pins a moment; the view title is in the page heading */
 @media (max-width: 600px) { #showBtn { display: none; } }
+
+/* lighthouse scorecard and energy per TV (assets/js/room/lighthouse.js) */
+.lh-card { margin-bottom: var(--gap, 16px); }
+.lh-card .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.lh-sum { font-weight: 700; font-size: 14px; color: var(--text-2); white-space: nowrap; }
+.lh-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 12px 0; }
+.lh-row { padding: 14px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border); border-inline-start: 1px solid var(--border); }
+.lh-row .lh-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px; margin-bottom: 8px; }
+.lh-row { min-width: 0; overflow-wrap: anywhere; }
+.lh-row p { margin: 6px 0 0; font-size: 14px; line-height: 1.55; color: var(--text-2); }
+.lh-row .lh-now { color: var(--text); }
+.lh-row .lh-k { display: block; font-size: 12px; font-weight: 700; color: var(--text-3); }
+.lh-st { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.lh-st.good { background: color-mix(in srgb, var(--success) 16%, transparent); color: var(--success-text, var(--success)); }
+.lh-st.watch { background: color-mix(in srgb, var(--warning) 18%, transparent); color: var(--warning-text, var(--warning)); }
+.lh-st.gap { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger-text, var(--danger)); }
+.lh-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 12px; }
+.lh-kpis > div { padding: 12px 14px; border-radius: 14px; background: var(--surface-2); }
+.lh-kpis b { display: block; font-size: 24px; font-variant-numeric: tabular-nums; }
+.lh-kpis span { font-size: 13px; color: var(--text-2); }

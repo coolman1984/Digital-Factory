@@ -299,3 +299,9 @@ DFI18N.add({ patterns: [
   ['^Moment ([\\d:]+) sent to the presentation briefing$', 'أُرسلت لحظة $1 إلى إحاطة العرض التقديمي']
 ] });
 DFI18N.add({ patterns: [['^(Main line \\d) and (Main line \\d)$', '$1 و$2'], ['^(.+): done\\. Logged as (AUD-\\d+)\\.$', '$1: تم التنفيذ، وسُجّل برقم $2.']] });
+/* the alert pills over the 3D plant: "<machine> · <state in small letters>" */
+DFI18N.add({ patterns: [
+  ['^(.+) · (running|running slow|idle|starved|blocked|stopped|planned maintenance|short stop|changeover|tripped)$', '$1 · $2', 'i'],
+  ['^(.+) · failure in ([\\d:]+ min|\\d+ h \\d+ min)$', '$1 · عطل خلال $2'],
+  ['^(.+) runs out of (\\S+) in$', 'ينفد $2 لدى $1 خلال']
+] });
