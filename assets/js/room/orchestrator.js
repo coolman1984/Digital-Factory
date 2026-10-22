@@ -72,7 +72,7 @@
     };
     log.unshift(e); if (log.length > 14) log.pop();
     // ten plant minutes on: did the plant run at the rate the forecast promised, and did the problem clear?
-    checks.push({ e, key: c.key, t0: DF.P.t, u0: k.units, rate: op.f.packed / Math.max(30, c.h) });
+    checks.push({ e, key: c.key, t0: DF.P.t, u0: k.today ?? k.units, rate: op.f.packed / Math.max(30, c.h) });
     lastDecision = performance.now();
     DF.refresh(true);
   }
@@ -80,7 +80,7 @@
     const P = DF.P;
     for (let i = checks.length - 1; i >= 0; i--) {
       const x = checks[i]; if (P.t - x.t0 < 600) continue;
-      const got = P.kpi.units - x.u0, want = x.rate * (P.t - x.t0) / 60, cleared = !P.recs.some(r => r.key === x.key);
+      const got = (P.kpi.today ?? P.kpi.units) - x.u0, want = x.rate * (P.t - x.t0) / 60, cleared = !P.recs.some(r => r.key === x.key);
       x.e.check = { got: Math.round(got), want: Math.round(want), ok: got >= want * 0.9, cleared };
       stats.verified++; if (x.e.check.ok) stats.kept++;
       checks.splice(i, 1);
@@ -158,7 +158,7 @@
           <p class="quiet small">${on ? T('Running at 4× · key A stops it', 'يعمل بسرعة 4× · المفتاح A يوقفه') : T('Key A starts it. The plant runs at 4×; when it stops, decisions go back to people.', 'المفتاح A يبدؤه. يعمل المصنع بسرعة 4×، وعند الإيقاف تعود القرارات إلى الأفراد.')}</p>
         </div></div>
       <div class="ap-tiles">
-        ${tile(n0(k.units || 0), T('TVs packed today', 'أجهزة معبأة اليوم'), T(`${behind >= 0 ? '+' : ''}${n0(behind)} against plan`, `${behind >= 0 ? '+' : ''}${n0(behind)} مقابل الخطة`), behind < -150 ? 'warn' : '')}
+        ${tile(n0(k.units || 0), T('TVs packed this shift', 'أجهزة معبأة في هذه الوردية'), T(`${behind >= 0 ? '+' : ''}${n0(behind)} against plan`, `${behind >= 0 ? '+' : ''}${n0(behind)} مقابل الخطة`), behind < -150 ? 'warn' : '')}
         ${tile(((k.oee || 0) * 100).toFixed(1) + '%', T('Main-line OEE', 'فعالية خطوط التجميع'), T('benchmark 85%', 'المعيار 85%'))}
         ${tile(pic.open.length, T('Proposals waiting', 'اقتراحات بانتظار القرار'), T(`${pic.risks.length} risks ahead`, `${pic.risks.length} مخاطر قادمة`), pic.open.length > 2 ? 'warn' : '')}
         ${tile(pic.late, T('Orders forecast late', 'طلبيات متوقع تأخرها'), '', pic.late ? 'bad' : '')}

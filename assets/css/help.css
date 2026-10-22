@@ -91,3 +91,4 @@ html[data-i18n-wait] body { opacity: 0; }
 .controls .lang-btn { min-width: 40px; justify-content: center; }
 /* in Arabic the room's menu sits on the right, so on a narrow screen it slides out to the right */
 @media (max-width: 960px) { html[dir="rtl"] .side:not(.open) { transform: translateX(100%); } }
+@media (max-width: 899px), (pointer: coarse) { .dg-x { width: 44px; height: 44px; } }

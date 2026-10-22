@@ -123,7 +123,7 @@
       const H8 = 8 * 3600, t0 = P.t, x = t => Math.max(0, Math.min(100, (t - t0) / H8 * 100));
       const late = new Set(H.AG && H.AG.base ? H.AG.base.lateList : []);
       const ticks = []; for (let h = Math.ceil(t0 / 3600); h * 3600 < t0 + H8; h++) ticks.push(`<span style="left:${x(h * 3600).toFixed(2)}%">${String(h % 24).padStart(2, '0')}:00</span>`);
-      const shiftEnd = 14 * 3600, sb = shiftEnd > t0 && shiftEnd < t0 + H8 ? `<i class="shift" style="left:${x(shiftEnd)}%" title="Shift B starts 14:00"></i>` : '';
+      const shiftEnd = P.kpi.shiftEnd || 14 * 3600, nextShift = { A: 'B', B: 'C', C: 'A' }[P.kpi.shift || 'A'], sb = shiftEnd > t0 && shiftEnd < t0 + H8 ? `<i class="shift" style="left:${x(shiftEnd)}%" title="Shift ${nextShift} starts ${clock(shiftEnd)}"></i>` : '';
       const D = H.AG ? H.AG.drafts() : null, dr = D && state.draft !== 'live' ? D.list.find(x => x.id === state.draft) : null;
       const rows = kind('main').map(L => {
         const bars = [], rk = dr && dr.mods.rate ? (dr.mods.rate.find(r => r.id === L.id) || { k: 1 }).k : 1, co = dr && dr.mods.co ? dr.mods.co.find(c => c.id === L.id) : null;

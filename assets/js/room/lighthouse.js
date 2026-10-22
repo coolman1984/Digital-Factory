@@ -16,7 +16,7 @@
   /* ---------- the numbers ---------- */
   function measure() {
     const p = P(), k = p.kpi, made = Object.values(p.made.byModel).reduce((a, b) => a + b, 0);
-    const shiftH = Math.max(0.25, (p.t - 6 * 3600) / 3600);   // the shift started at 06:00
+    const shiftH = Math.max(0.25, (p.t - (p.shift ? p.shift.start : 6 * 3600)) / 3600);   // since the shift began (06:00 for shift A)
     const ops = p.people.filter(x => x.role === 'Operator' || x.role === 'Line leader');
     const present = ops.filter(x => x.present).length || 1;
     const opsLv = p.people.filter(x => x.role === 'Operator');

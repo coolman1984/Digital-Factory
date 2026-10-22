@@ -167,7 +167,7 @@
     const parts = [];
     if (down.length) parts.push(`<b class="bad">${down.slice(0, 3).map(s => `${esc(s.name)} (${esc(line(s.line) ? line(s.line).name : s.id)})`).join(', ')}${down.length > 3 ? ` and ${down.length - 3} more` : ''} stopped.</b>`);
     if (P.preds[0] && P.preds[0].eta < 1800 && !P.preds[0].covered) parts.push(`${esc(P.preds[0].text)} in <b>${mins(P.preds[0].eta)}</b>.`);
-    if (!parts.length) parts.push(`Six main lines and ${Object.values(P.lines).filter(L => L.kind !== 'main' && L.kind !== 'injection').length} sub-lines running. <b>${fmt(P.kpi.units)}</b> TVs packed today against a plan of ${fmt(P.kpi.plan)}.`);
+    if (!parts.length) parts.push(`Six main lines and ${Object.values(P.lines).filter(L => L.kind !== 'main' && L.kind !== 'injection').length} sub-lines running. <b>${fmt(P.kpi.units)}</b> TVs packed this shift against a plan of ${fmt(P.kpi.plan)}.`);
     if (P.recs.length) parts.push(`${P.recs.length} ${P.recs.length === 1 ? 'decision is' : 'decisions are'} waiting${crit.length ? `, ${crit.length} urgent` : ''}.`);
     else parts.push('No decision waiting: the agents and the offices are watching every line, store and order.');
     return parts.join(' ');
@@ -472,7 +472,7 @@
     if (k === 'oee' || k === 'overview' || k === 'forecast') {
       const rows = mains.map(L => `<tr><td>${link('line:' + L.id, L.name)}<small>${esc(MODELS[L.model].name)}</small></td><td>${pct(L.avail, 0)}</td><td>${pct(L.perf, 0)}</td><td>${pct(L.qual, 1)}</td><td><b>${pct(L.oee)}</b></td></tr>`).join('');
       const byM = Object.values(MODELS).map(m => `<li><b>${esc(m.name)}</b><span>${fmt(P.base[m.id] + P.made.byModel[m.id])} packed · ${fmt(X.fgQty(m.id))} in finished goods</span></li>`).join('');
-      return head(k === 'forecast' ? 'Shift forecast' : 'Main-line performance', k === 'forecast' ? `End of shift A (14:00): <b>${fmt(P.kpi.fcst)}</b> forecast against a plan of ${fmt(P.kpi.planEnd)} · ${pct(P.kpi.prob, 0)} likely` : 'OEE = availability × performance × quality, last 30 minutes')
+      return head(k === 'forecast' ? 'Shift forecast' : 'Main-line performance', k === 'forecast' ? `End of shift ${P.shift ? P.shift.name : 'A'} (${E.clock(P.kpi.shiftEnd || 14 * 3600)}): <b>${fmt(P.kpi.fcst)}</b> forecast against a plan of ${fmt(P.kpi.planEnd)} · ${pct(P.kpi.prob, 0)} likely` : 'OEE = availability × performance × quality, last 30 minutes')
         + sect('By line', `<table class="tbl"><thead><tr><th>Line</th><th>Avail.</th><th>Perf.</th><th>Quality</th><th>OEE</th></tr></thead><tbody>${rows}</tbody></table>`)
         + sect('By model', `<ul class="li">${byM}</ul>`)
         + sect('Throughput', spark(P.hist.tph, { h: 70 }), 'TVs an hour') + sect('Work in process', kv([['TVs on the lines', fmt(P.kpi.wip)], ['Average lead time, panel to packed', mins(P.kpi.lead)]]));

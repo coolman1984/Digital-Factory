@@ -35,7 +35,9 @@
     return [p[0][0], p[0][1], 0];
   }
 
-  const START = 9 * 3600 + 12 * 60, SHIFT_START = 6 * 3600, SHIFT_END = 14 * 3600, HIST = 180;
+  const START = 9 * 3600 + 12 * 60, HIST = 180;
+  // three eight-hour shifts: A 06–14, B 14–22, C 22–06; the model starts in shift A and hands over on its own
+  let SHIFT_START = 6 * 3600, SHIFT_END = 14 * 3600;
   const W = 264, D = 168;
 
   /* ---------------- products ---------------- */
@@ -138,7 +140,7 @@
       stations: [], byId: {}, lines: {}, segs: [], bufs: {}, units: new Set(), archive: new Map(), archiveOrder: [],
       walker: null, agvs: [], tuggers: [], forklifts: [], people: [], techs: [], inbound: [], trucks: [], pallets: [], fgSlots: [], orders: [],
       events: [], alarms: [], recs: [], preds: [], audit: [], kpi: {}, hist: { t: [], kw: [], tph: [], oee: [], wip: [] },
-      scen: {}, energy: { kwh: 0 }, c0: START, wo: [], woSeq: 4180, audSeq: 30410, snaps: [], made: { tv: 0, byModel: { M43: 0, M55: 0, M65: 0, M75: 0 } },
+      scen: {}, energy: { kwh: 0 }, c0: START, wo: [], woSeq: 4180, audSeq: 30410, snaps: [], shift: { name: 'A', start: 6 * 3600, end: 14 * 3600, off: 0 }, shifts: [], made: { tv: 0, byModel: { M43: 0, M55: 0, M65: 0, M75: 0 } },
       base: { M43: 280, M55: 880, M65: 520, M75: 160 },     // TVs packed between 06:00 and the model start: about the demonstrated 700 an hour after a 30-minute start-up
       rejects: { rework: [], smtRepair: [] }, saved: 0, leads: [], nodes: [], edges: [], layout: {}, sw: {}, holds: new Set(), svc: { orders: [], shipped: 0 }
     };
@@ -1256,8 +1258,10 @@
       const k = P.kpi;
       const el = (P.t - SHIFT_START) / 3600;
       const mains = Object.values(P.lines).filter(L => L.kind === 'main');
-      let units = 0; for (const m in MODELS) units += P.base[m] + P.made.byModel[m];
-      k.units = units;
+      let today = 0; for (const m in MODELS) today += P.base[m] + P.made.byModel[m];
+      // packed this shift: what the day has packed less what the earlier shifts handed over
+      const units = today - P.shift.off;
+      k.today = today; k.units = units; k.shift = P.shift.name; k.shiftEnd = SHIFT_END;
       // the plan is loaded at demonstrated capacity: each main line's rated rate (3600 / takt) × the plan OEE (PLAN_OEE)
       const planRate = mains.reduce((a, L) => a + 3600 / MODELS[L.model].takt * PLAN_OEE, 0);
       k.planRate = planRate;
@@ -1520,8 +1524,23 @@
 
     /* ----- step ----- */
     let thinkSoon = false, acc1 = 0, acc2 = 0, acc5 = 0;
+    // the shift handover at 14:00 and 22:00 (and 06:00): the shift's result goes in the log and the record, the next
+    // shift starts its own count and its own plan; the forecast's bias samples restart with it
+    function handover() {
+      const k = P.kpi, names = { A: 'B', B: 'C', C: 'A' };
+      const done = { name: P.shift.name, start: SHIFT_START, end: SHIFT_END, units: k.units || 0, plan: k.planEnd || 0, oee: k.oee || 0, fpy: k.fpy || 0 };
+      P.shifts.push(done);
+      P.shift = { name: names[done.name], start: SHIFT_END, end: SHIFT_END + 8 * 3600, off: k.today || 0 };
+      SHIFT_START = P.shift.start; SHIFT_END = P.shift.end;
+      fcHist.length = 0; shiftForecast.last = -1e9;
+      const gap = done.units - done.plan;
+      log('GMES', `Shift ${done.name} closed: ${done.units.toLocaleString('en-US')} TVs packed against a plan of ${done.plan.toLocaleString('en-US')} (${gap >= 0 ? '+' : ''}${gap.toLocaleString('en-US')}) · shift ${P.shift.name} running`, gap >= 0 ? 'info' : 'warn');
+      audit('GMES', 'Shift handover', `Shift ${done.name} to shift ${P.shift.name} · ${done.units} of ${done.plan}`);
+      emit('shift');
+    }
     function step(dt) {
       P.t += dt;
+      if (P.t >= SHIFT_END) handover();
       for (let i = timers.length - 1; i >= 0; i--) if (timers[i].at <= P.t) { const f = timers[i].fn; timers.splice(i, 1); f(); }
       for (const sg of P.segs) {
         const v = sg.speed * (sg.from && P.lines[sg.from.line] ? P.lines[sg.from.line].speed : 1);

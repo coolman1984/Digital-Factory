@@ -426,7 +426,7 @@
     const preds = P.preds.slice().sort((a, b) => a.eta - b.eta).filter(p => !p.covered).slice(0, 3);
     return `<div class="plant-now"><p class="kind">Nothing selected</p><h3>The plant now</h3>
       <ul class="list">${mains.map(L => `<li><span>${link('line:' + L.id, L.name)} <small class="muted">${esc(M[L.model].name)}</small></span><span>${stChip(L.state)} · ${fmt(L.tph)}/h</span></li>`).join('')}</ul>
-      <p style="margin-top:12px"><b>${fmt(k.units)}</b> TVs packed against a plan of ${fmt(k.plan)}. Forecast ${fmt(k.fcst)} by 14:00 against ${fmt(k.planEnd)}.</p>
+      <p style="margin-top:12px"><b>${fmt(k.units)}</b> TVs packed against a plan of ${fmt(k.plan)}. Forecast ${fmt(k.fcst)} by ${clock(k.shiftEnd || 14 * 3600)} against ${fmt(k.planEnd)}.</p>
       <p>${down.length ? `Stopped or in planned work: ${down.slice(0, 4).map(s => link('st:' + s.id, `${s.name} (${lineOf(s.line) ? lineOf(s.line).name : s.line})`)).join(', ')}${down.length > 4 ? ` and ${down.length - 4} more` : ''}.` : 'No machine is stopped.'}</p>
       <p>${preds.length ? `Next if nobody acts: ${preds.map(p => `${esc(p.text)} in <b>${esc(mins(p.eta))}</b>`).join('; ')}.` : 'No stock-out or failure expected: every line-side stock has its next milk run or AGV planned.'}</p>
       <p class="small muted">Select anything on the mimic or a step of the value stream. ${fmt(k.wip)} TVs in process · ${fmt(P.agvs.length)} AGVs, ${fmt(P.tuggers.length)} milk-run trains, ${fmt(P.forklifts.length)} forklifts.</p></div>`;

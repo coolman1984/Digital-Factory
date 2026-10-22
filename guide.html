@@ -197,7 +197,7 @@
           <h3>ما الذي يحاكيه العرض، وكيف</h3>
           <p>يعمل العرض الحي دون خادم، ويحاكي مصنعًا كاملًا داخل المتصفح: المصنع EG-01، مصنع تلفزيونات من ستة <a class="t" data-term="lines">خطوط رئيسية</a> (ML1 إلى ML6)، يغذي كلًا منها خط <a class="t" data-term="lcm">LCM</a> لوحدات الشاشة، وخط <a class="t" data-term="smt">SMD</a> للوحات <a class="t" data-term="pba">PBA</a> مع تحميل البرنامج الثابت واختبارها، وماكينة <a class="t" data-term="cushion">فوم</a>، ومعها عشرون ماكينة <a class="t" data-term="injection">حقن</a> للأغطية الخلفية والقواعد، وستة خطوط <a class="t" data-term="press">كبس وطلاء وتجميع فرعي</a> للشاسيه. وفيه 196 محطة، وثماني مركبات موجهة، وخمسة قطارات <a class="t" data-term="milkrun">إمداد دوري</a>، وتسع رافعات شوكية، وستة أرصفة شحن، و171 فردًا على الأرضية، ومخازن الاستيراد والموردين المحليين، وأنظمة <a class="t" data-term="sap">SAP</a> و<a class="t" data-term="gmes">GMES</a> والإدارات، وتسعة وكلاء ذكاء اصطناعي. وتعرضه غرفة التحكم والمصنع ثلاثي الأبعاد معًا لأنهما يشغلان النموذج نفسه.</p>
           <h4>الزمن في المحاكاة</h4>
-          <p>يسير المصنع بالزمن الحقيقي، ويمكن إيقافه أو تسريعه 4× أو 16×. وتبدأ الجلسة عند 09:12 من <a class="t" data-term="shift">الوردية</a> A (06:00 إلى 14:00) بعد تسخين يملأ الخطوط والسيور والمخازن. والنموذج حتمي: البذرة نفسها تعطي الوردية نفسها، ولذلك تفتح الغرفة والمصنع ثلاثي الأبعاد على اللحظة نفسها.</p>
+          <p>يسير المصنع بالزمن الحقيقي، ويمكن إيقافه أو تسريعه 4× أو 16×. وتبدأ الجلسة عند 09:12 من <a class="t" data-term="shift">الوردية</a> A (06:00 إلى 14:00) بعد تسخين يملأ الخطوط والسيور والمخازن. وعند 14:00 تُسلَّم الوردية تلقائيًا: تُسجَّل نتيجة الوردية A في السجل وسجل التدقيق، ثم تبدأ الوردية B (14:00 إلى 22:00) بعدّاد جديد وخطة جديدة، وبعدها الوردية C (22:00 إلى 06:00). والنموذج حتمي: البذرة نفسها تعطي الوردية نفسها، ولذلك تفتح الغرفة والمصنع ثلاثي الأبعاد على اللحظة نفسها.</p>
           <h4>كيف تُحسب الأرقام</h4>
           <ul>
             <li><b>الفعالية الكلية لكل خط</b> = <a class="t" data-term="availability">الإتاحة</a> × <a class="t" data-term="performance">الأداء</a> × <a class="t" data-term="quality-factor">الجودة</a> في نافذة 30 دقيقة، محسوبة عند محطة القيد في الخط. وتأتي كل خسارة من أحداث النموذج: الأعطال، والتوقفات القصيرة، والتعطش، والانسداد، وتغيير الموديل، والوحدات المرفوضة. وفعالية المصنع متوسط الخطوط الرئيسية الستة مرجحًا بمعدلاتها.</li>
@@ -212,7 +212,7 @@
           <h3>What the demo simulates, and how</h3>
           <p>The live demo runs without a server and simulates a whole plant inside the browser: Plant EG-01, a TV plant of six <a class="t" data-term="lines">main lines</a> (ML1 to ML6), each fed by an <a class="t" data-term="lcm">LCM</a> line for panel modules, an <a class="t" data-term="smt">SMD</a> line for <a class="t" data-term="pba">PBA</a> boards with firmware download and test, and a <a class="t" data-term="cushion">cushion</a> machine, plus twenty <a class="t" data-term="injection">injection</a> machines for back covers and stands and six <a class="t" data-term="press">press, coating and sub-assembly</a> lines for chassis. It has 196 stations, eight AGVs, five <a class="t" data-term="milkrun">milk-run</a> trains, nine forklifts, six shipping docks, 171 people on the floor, the import and local-vendor stores, <a class="t" data-term="sap">SAP</a>, <a class="t" data-term="gmes">GMES</a> and the departments, and nine AI agents. The command room and the 3D plant both show it because they run the same model.</p>
           <h4>Time in the simulation</h4>
-          <p>The plant runs in real time and can be paused or sped up to 4× or 16×. The session starts at 09:12 in <a class="t" data-term="shift">shift</a> A (06:00 to 14:00), after a warm-up that fills the lines, conveyors and stores. The model is deterministic: the same seed gives the same shift, so the room and the 3D plant open on the same moment.</p>
+          <p>The plant runs in real time and can be paused or sped up to 4× or 16×. The session starts at 09:12 in <a class="t" data-term="shift">shift</a> A (06:00 to 14:00), after a warm-up that fills the lines, conveyors and stores. At 14:00 the shift hands over on its own: shift A's result goes into the event log and the audit trail, and shift B (14:00 to 22:00) starts its own count and its own plan, then shift C (22:00 to 06:00). The model is deterministic: the same seed gives the same shift, so the room and the 3D plant open on the same moment.</p>
           <h4>How the numbers are computed</h4>
           <ul>
             <li><b>OEE of each line</b> = <a class="t" data-term="availability">availability</a> × <a class="t" data-term="performance">performance</a> × <a class="t" data-term="quality-factor">quality</a> over 30 minutes, measured at the line's constraint station. Every loss comes from the model's events: breakdowns, short stops, starving, blocking, changeovers and rejected units. Plant OEE is the six main lines weighted by their rates.</li>
@@ -297,7 +297,7 @@
           <div class="tbl-wrap"><table class="tbl">
             <tr><th>القراءة</th><th>المعنى</th><th>متى يتغير لونها</th></tr>
             <tr><td>Plant OEE</td><td><a class="t" data-term="oee">الفعالية الكلية</a> للخطوط الرئيسية الستة في نافذة 30 دقيقة، مرجحة بمعدل كل خط، مع منحنى صغير.</td><td>كهرماني تحت 80%، وأحمر تحت 70%.</td></tr>
-            <tr><td>Packed today</td><td>التلفزيونات المعبأة منذ 06:00، وتحتها <a class="t" data-term="plan">الخطة</a> حتى الآن والفارق «ahead» أو «behind».</td><td>كهرماني إذا تأخر الإنتاج أكثر من 150 تلفزيونًا.</td></tr>
+            <tr><td>Packed this shift</td><td>التلفزيونات المعبأة منذ بداية الوردية (06:00 في الوردية A)، وتحتها <a class="t" data-term="plan">الخطة</a> حتى الآن والفارق «ahead» أو «behind».</td><td>كهرماني إذا تأخر الإنتاج أكثر من 150 تلفزيونًا.</td></tr>
             <tr><td>Chance to hit plan</td><td>فرصة بلوغ خطة 14:00 من <a class="t" data-term="forecast">التنبؤ</a>، وتحتها التنبؤ عند 14:00 والخطة، وعدد الطلبات المعرضة للخطر.</td><td>كهرماني تحت 80%، وأحمر تحت 50%.</td></tr>
             <tr><td>First-pass yield</td><td><a class="t" data-term="fpy">العائد من المرة الأولى</a> في الاختبار الوظيفي والفحص النهائي.</td><td>كهرماني تحت 98.5%، وأحمر تحت 97%.</td></tr>
             <tr><td>Active alarms</td><td>الإنذارات النشطة غير المؤجلة، وتحتها عدد غير المُقَر بها وعدد الأولويات 1–2.</td><td>كهرماني عند أي إنذار، وأحمر عند <span class="prio p1">P1</span> أو <span class="prio p2">P2</span>.</td></tr>
@@ -313,7 +313,7 @@
           <ul>
             <li><b>Breadcrumb:</b> “Plant EG-01”, then the screen.</li>
             <li><b>Status chip:</b> <span class="ui">Live</span>, or <span class="ui">Replay</span> during the time machine.</li>
-            <li><b>Clock:</b> plant time to the second, “Shift A” and a bar for how much of the <a class="t" data-term="shift">shift</a> (06:00 to 14:00) has passed. The model starts at 09:12.</li>
+            <li><b>Clock:</b> plant time to the second, the current shift (A, B or C) and a bar for how much of the <a class="t" data-term="shift">shift</a> has passed (shift A runs 06:00 to 14:00). The model starts at 09:12.</li>
             <li><b>Speed:</b> pause, 1×, 4× and 16×. Space switches between pause and 1×.</li>
             <li><span class="ui"><span data-icon="tv"></span>Send to deck</span> (<kbd>P</kbd>): pins this moment for the presentation's briefing (chapter 10).</li>
             <li><span class="ui"><span data-icon="history"></span>Time machine</span> (<kbd>M</kbd>): opens the time-machine bar.</li>
@@ -333,7 +333,7 @@
           <div class="tbl-wrap"><table class="tbl">
             <tr><th>Readout</th><th>Meaning</th><th>When it changes colour</th></tr>
             <tr><td>Plant OEE</td><td><a class="t" data-term="oee">OEE</a> of the six main lines over 30 minutes, weighted by each line's rate, with a sparkline.</td><td>Amber below 80%, red below 70%.</td></tr>
-            <tr><td>Packed today</td><td>TVs packed since 06:00, with the <a class="t" data-term="plan">plan</a> so far and the gap, “ahead” or “behind”.</td><td>Amber when more than 150 TVs behind.</td></tr>
+            <tr><td>Packed this shift</td><td>TVs packed since the shift began (06:00 in shift A), with the <a class="t" data-term="plan">plan</a> so far and the gap, “ahead” or “behind”.</td><td>Amber when more than 150 TVs behind.</td></tr>
             <tr><td>Chance to hit plan</td><td>The chance to reach the 14:00 plan from the <a class="t" data-term="forecast">forecast</a>, with the 14:00 forecast, the plan and how many orders are at risk.</td><td>Amber below 80%, red below 50%.</td></tr>
             <tr><td>First-pass yield</td><td><a class="t" data-term="fpy">First-pass yield</a> at function test and final QA.</td><td>Amber below 98.5%, red below 97%.</td></tr>
             <tr><td>Active alarms</td><td>Active alarms not shelved, with how many are not acknowledged and how many are priority 1–2.</td><td>Amber for any alarm, red for <span class="prio p1">P1</span> or <span class="prio p2">P2</span>.</td></tr>
@@ -451,7 +451,7 @@
         <div class="en" lang="en" dir="ltr">
           <h3>5 · Predictions</h3>
           <ul>
-            <li><b>The next two hours:</b> TVs packed today as the flow model forecasts them, against the plan line, then: TVs in the next two hours, the forecast at 14:00, the chance to hit plan, orders short, and minutes short of material. It runs every minute, or now with <span class="ui">Forecast now</span>.</li>
+            <li><b>The next two hours:</b> TVs packed this shift as the flow model forecasts them, against the plan line, then: TVs in the next two hours, the forecast at 14:00, the chance to hit plan, orders short, and minutes short of material. It runs every minute, or now with <span class="ui">Forecast now</span>.</li>
             <li><b>Remaining useful life:</b> machines whose health is falling, the time to the 22% failure point, and whether a repair is planned (<a class="t" data-term="rul">RUL</a>).</li>
             <li><b>Orders at risk:</b> orders due within two hours, “covered” or “short”.</li>
             <li><b>Material runway:</b> the line-side stock that runs out first and its next delivery (milk run or AGV).</li>
@@ -658,8 +658,8 @@
           <h4>شريط القراءات</h4>
           <div class="tbl-wrap"><table class="tbl">
             <tr><th>القراءة</th><th>المعنى</th></tr>
-            <tr><td>Packed today</td><td>أجهزة التلفزيون المغلفة منذ 06:00، والفارق عن الخطة، والمعدل في الساعة.</td></tr>
-            <tr><td>Shift forecast</td><td>الإنتاج المتوقع عند 14:00، وفرصة تحقيق الخطة.</td></tr>
+            <tr><td>Packed this shift</td><td>أجهزة التلفزيون المعبأة منذ بداية الوردية، والفارق عن الخطة، والمعدل في الساعة.</td></tr>
+            <tr><td>Shift forecast</td><td>الإنتاج المتوقع عند نهاية الوردية (14:00 في الوردية A)، وفرصة تحقيق الخطة.</td></tr>
             <tr><td>Main-line OEE</td><td><a class="t" data-term="oee">الفعالية الكلية</a> للخطوط الرئيسية الستة لآخر 30 دقيقة.</td></tr>
             <tr><td>First-pass yield</td><td><a class="t" data-term="fpy">العائد من المرة الأولى</a> في الاختبار الوظيفي والفحص النهائي، مع الفحص الوارد والحجز.</td></tr>
             <tr><td>Orders on time</td><td>نسبة الطلبات المشحونة في موعدها، والطلبات المفتوحة.</td></tr>
@@ -703,8 +703,8 @@
           <h4>Readouts</h4>
           <div class="tbl-wrap"><table class="tbl">
             <tr><th>Readout</th><th>Meaning</th></tr>
-            <tr><td>Packed today</td><td>TVs packed since 06:00, the gap to plan, and the rate an hour.</td></tr>
-            <tr><td>Shift forecast</td><td>Output expected at 14:00 and the chance to hit plan.</td></tr>
+            <tr><td>Packed this shift</td><td>TVs packed since the shift began (06:00 in shift A), the gap to plan, and the rate an hour.</td></tr>
+            <tr><td>Shift forecast</td><td>Output expected at the end of the shift (14:00 in shift A) and the chance to hit plan.</td></tr>
             <tr><td>Main-line OEE</td><td><a class="t" data-term="oee">OEE</a> of the six main lines over the last 30 minutes.</td></tr>
             <tr><td>First-pass yield</td><td><a class="t" data-term="fpy">First-pass yield</a> at function test and final QA, with incoming inspection and holds.</td></tr>
             <tr><td>Orders on time</td><td>Share of shipped orders that left on time, and open orders.</td></tr>

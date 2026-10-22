@@ -85,9 +85,9 @@
     const step = f.h / f.curve.length;
     const fc = [[0, k.units]].concat(f.curve.map((v, i) => [(i + 1) * step, k.units + v]));
     const plan = [[0, k.plan], [f.h, k.plan + planRate * f.h / 60]];
-    Viz.chart($('#fcChart'), { height: 260, label: 'TVs packed today: forecast and plan for the next two hours', x: { min: 0, max: f.h, fmt: v => clock(P.t + v * 60), name: 'Time' }, y: { fmt: v => Viz.compact(v), unit: 'TVs' },
+    Viz.chart($('#fcChart'), { height: 260, label: 'TVs packed this shift: forecast and plan for the next two hours', x: { min: 0, max: f.h, fmt: v => clock(P.t + v * 60), name: 'Time' }, y: { fmt: v => Viz.compact(v), unit: 'TVs' },
       series: [{ label: 'Forecast', cls: 'c1', pts: fc, end: true, endLabel: fmt(fc[fc.length - 1][1]) }, { label: 'Plan', cls: 'c3', dash: true, pts: plan, end: true, endLabel: 'plan ' + fmt(plan[1][1]) }] });
-    html($('#fcNums'), [[fmt(f.packed), 'TVs in the next 2 h', `plan pace ${fmt(planRate * 2)}`], [fmt(k.fcst), 'Forecast at 14:00', `plan ${fmt(k.planEnd)}`], [Math.round((k.prob || 0) * 100) + '%', 'Chance to hit plan', 'forecast against the 14:00 plan'], [fmt(f.late), 'Orders short', f.late ? f.lateList.join(', ') : 'every truck covered'], [fmt(f.starvedMin), 'Minutes short of material', 'summed over the models']].map(([v, l, s]) => `<div class="stat"><b>${esc(v)}</b><span>${esc(l)}</span><small>${esc(s)}</small></div>`).join(''));
+    html($('#fcNums'), [[fmt(f.packed), 'TVs in the next 2 h', `plan pace ${fmt(planRate * 2)}`], [fmt(k.fcst), `Forecast at ${clock(k.shiftEnd || 14 * 3600)}`, `plan ${fmt(k.planEnd)}`], [Math.round((k.prob || 0) * 100) + '%', 'Chance to hit plan', `forecast against the ${clock(k.shiftEnd || 14 * 3600)} plan`], [fmt(f.late), 'Orders short', f.late ? f.lateList.join(', ') : 'every truck covered'], [fmt(f.starvedMin), 'Minutes short of material', 'summed over the models']].map(([v, l, s]) => `<div class="stat"><b>${esc(v)}</b><span>${esc(l)}</span><small>${esc(s)}</small></div>`).join(''));
     $('#fcS').textContent = `TVs packed on the six main lines. Flow forecast run at ${clock(P.t)}; ${fmt(AG.stats.simulated)} forecasts so far today.`;
     // remaining useful life
     const wear = P.stations.filter(s => s.degrade > 0 && s.state !== 'down').map(s => ({ s, rul: (s.health - 22) / s.degrade })).sort((a, b) => a.rul - b.rul);

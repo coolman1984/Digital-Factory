@@ -671,7 +671,7 @@
         case 'svc': return { kpis: [['Service orders', X.svc.orders.length], ['Shipped', X.svc.shipped], ['Back orders', X.svc.backorders], ['PBA 55 in store', level(STORE.SVC['PBA-55'])]], recs };
         case 'hr': return { kpis: [['On the floor', h.present + ' of ' + h.ops], ['Absent', h.absent], ['Headcount', num(h.total)], ['Overtime today', (X.fin.overtimeH || 0) + ' h']], recs };
         case 'finance': return { kpis: [['Revenue today', egp(f.revenue)], ['Gross margin', Math.round(f.marginPct * 1000) / 10 + '%'], ['Inventory value', egp(f.total)], ['Protected by decisions', egp(f.saved)]], recs };
-        case 'production': return { kpis: [['Packed today', num(k.units || 0)], ['OEE', Math.round((k.oee || 0) * 100) + '%'], ['Lines running', mainLines().filter(L => L.state === 'run' || L.state === 'warn').length + ' of 6'], ['TVs in process', num(k.wip || 0)]], recs };
+        case 'production': return { kpis: [['Packed this shift', num(k.units || 0)], ['OEE', Math.round((k.oee || 0) * 100) + '%'], ['Lines running', mainLines().filter(L => L.state === 'run' || L.state === 'warn').length + ' of 6'], ['TVs in process', num(k.wip || 0)]], recs };
         case 'it': return { kpis: [['Messages a minute', Math.round(X.stats.perMin)], ['Interfaces up', '11 of 11'], ['Lines online', Object.keys(P.lines).length], ['Last SAP sync', E.clock(X.msgs[0] ? X.msgs[0].t : P.t)]], recs };
       }
       return { kpis: [], recs };

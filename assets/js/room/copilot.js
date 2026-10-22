@@ -132,7 +132,7 @@
   const T = {
     plant_overview() {
       const p = P(), k = p.kpi, M = E().MODELS;
-      return { time: E().clockS(p.t), packed: k.units, plan_so_far: k.plan, forecast_at_14: k.fcst, plan_at_14: k.planEnd, chance_to_hit_plan: +(k.prob || 0).toFixed(2), oee: +(k.oee || 0).toFixed(3), fpy: +(k.fpy || 0).toFixed(4), kw: Math.round(k.kw), tvs_in_process: k.wip, active_alarms: p.alarms.filter(a => !(a.shelvedTo > p.t)).length,
+      return { time: E().clockS(p.t), packed: k.units, plan_so_far: k.plan, shift: k.shift || 'A', shift_ends: E().clock(k.shiftEnd || 14 * 3600), forecast_at_shift_end: k.fcst, plan_at_shift_end: k.planEnd, chance_to_hit_plan: +(k.prob || 0).toFixed(2), oee: +(k.oee || 0).toFixed(3), fpy: +(k.fpy || 0).toFixed(4), kw: Math.round(k.kw), tvs_in_process: k.wip, active_alarms: p.alarms.filter(a => !(a.shelvedTo > p.t)).length,
         main_lines: MAINS.map(id => { const L = p.lines[id]; return { id, model: M[L.model].name, state: L.state, per_hour: Math.round(L.tph), oee: +L.oee.toFixed(3), speed: L.speed }; }),
         stopped_machines: p.stations.filter(s => s.state === 'down' || s.state === 'maint').map(s => `${s.id} (${s.why})`),
         decisions_waiting: (DF.waiting ? DF.waiting() : []).map(c => ({ key: c.key, title: c.title, recommended: c.best ? c.best.label : null })) };
@@ -214,7 +214,7 @@
       }
     } else if (/plan|forecast|hit|on track|الخطة|توقع/.test(t) && !line) {
       const o = tool('plant_overview');
-      out = `At ${o.time}, **${fmt(o.packed)}** TVs are packed against a plan of ${fmt(o.plan_so_far)} so far. The forecast reaches **${fmt(o.forecast_at_14)}** by 14:00 against ${fmt(o.plan_at_14)}: about a **${Math.round(o.chance_to_hit_plan * 100)}%** chance to hit it.\n\nMain-line OEE ${pct(o.oee)}, first-pass yield ${pct(o.fpy, 2)}. ${o.main_lines.filter(l => l.state !== 'run').map(l => `${lineName(l.id)} is ${DF.STATE[l.state] ? DF.STATE[l.state].toLowerCase() : l.state}`).join('; ') || 'All six main lines are running.'}`;
+      out = `At ${o.time}, **${fmt(o.packed)}** TVs are packed against a plan of ${fmt(o.plan_so_far)} so far. The forecast reaches **${fmt(o.forecast_at_shift_end)}** by ${o.shift_ends} against ${fmt(o.plan_at_shift_end)}: about a **${Math.round(o.chance_to_hit_plan * 100)}%** chance to hit it.\n\nMain-line OEE ${pct(o.oee)}, first-pass yield ${pct(o.fpy, 2)}. ${o.main_lines.filter(l => l.state !== 'run').map(l => `${lineName(l.id)} is ${DF.STATE[l.state] ? DF.STATE[l.state].toLowerCase() : l.state}`).join('; ') || 'All six main lines are running.'}`;
     } else if (/alarm|flood|إنذار|انذار/.test(t)) {
       const a = tool('alarms'), by = {};
       a.active.forEach(x => { by[x.area] = (by[x.area] || 0) + 1; });
@@ -259,7 +259,7 @@ How to work:
   function defs(SDKm) {
     const tool = (name, description, schema, run) => Object.assign(SDKm.betaTool({ name, description, inputSchema: schema, run: async inp => { try { const r = await run(inp || {}); return typeof r === 'string' ? r : JSON.stringify(r); } catch (e) { return bad(String(e && e.message || e)); } } }), { eager_input_streaming: true });
     const list = [
-      tool('plant_overview', 'Plant now: time, TVs packed against plan, the 14:00 forecast and the chance to hit it, OEE, yield, power, alarms, the six main lines, stopped machines and decisions waiting.', Sch({}), () => T.plant_overview()),
+      tool('plant_overview', 'Plant now: time, TVs packed against plan, the end-of-shift forecast and the chance to hit it, OEE, yield, power, alarms, the six main lines, stopped machines and decisions waiting.', Sch({}), () => T.plant_overview()),
       tool('line_status', 'One line: state, speed, OEE split into availability, performance and quality, rate, constraint station, its stations and line-side stock.', Sch({ line: str('ML1-ML6 main lines, LCM1-6, SMD1-6, PR1-6 press lines, CUS1-6 cushion machines, INJ injection') }, ['line']), i => (isStr(i.line) ? T.line_status({ line: i.line.toUpperCase() }) : bad('line is required'))),
       tool('station', 'One machine: state, reason, sensors, health, failure forecast, counts, power, speed, lockout and time lost by reason code.', Sch({ id: str('Station id, e.g. ML1-Packing, SMD4-MounterB, IM10, PR4-Coating, LCM2-Modulebonding') }, ['id']), i => (isStr(i.id) ? T.station({ id: i.id }) : bad('id is required'))),
       tool('alarms', 'Active alarms with priority (1 most urgent), area, time and state; alarms raised in the last 10 minutes.', Sch({}), () => T.alarms()),
