@@ -35,7 +35,7 @@
     cls('kUnits', gap < -150 ? 'warn' : '');
     html($('#kUnitsT'), Viz.spark(H.tph.slice(-60)));
     set('kFc', k.prob || 0, v => Math.round(v * 100) + '%');
-    $('#kFcS').textContent = `Forecast ${fmt(k.fcst)} by 14:00 · plan ${fmt(k.planEnd)}`;
+    $('#kFcS').textContent = `Forecast ${fmt(k.fcst)} by ${E.clock(k.shiftEnd || 14 * 3600)} · plan ${fmt(k.planEnd)}`;
     cls('kFc', (k.prob || 0) < 0.5 ? 'bad' : (k.prob || 0) < 0.8 ? 'warn' : '');
     html($('#kFcT'), AG.base ? `<span class="muted small">${AG.base.late ? AG.base.late + ' order' + (AG.base.late > 1 ? 's' : '') + ' at risk' : 'no order at risk'}</span>` : '');
     set('kFpy', k.fpy || 0, v => pct(v, 2));
@@ -56,9 +56,9 @@
     if (tm) s = `<span class="warn">Replaying ${E.clockS(P.t)}.</span> The plant waits until you go back to live.`;
     else if (P.recs.length) { const r = P.recs[0], c = AG.cards.get(r.key); s = `<span class="warn">${P.recs.length} decision${P.recs.length > 1 ? 's wait' : ' waits'} for you.</span> First: <b>${esc(r.title)}</b>${c && c.best ? `; the ${esc(c.agentName)} recommends ${esc(c.best.label.toLowerCase())}` : ''}.`; }
     else if (down.length) s = `<span class="bad">${esc(down[0].name)} on ${esc(P.lines[down[0].line] ? P.lines[down[0].line].name : down[0].line)} stopped</span>${down[0].why ? ': ' + esc(down[0].why) : ''}${down.length > 1 ? `, and ${down.length - 1} more` : ''}.`;
-    else s = `${mains.filter(L => L.state === 'run' || L.state === 'warn').length} of 6 main lines running. <b>${fmt(k.units)}</b> TVs packed against a plan of ${fmt(k.plan)}; ${Math.round((k.prob || 0) * 100)}% chance to reach ${fmt(k.planEnd)} by 14:00.`;
+    else s = `${mains.filter(L => L.state === 'run' || L.state === 'warn').length} of 6 main lines running. <b>${fmt(k.units)}</b> TVs packed against a plan of ${fmt(k.plan)}; ${Math.round((k.prob || 0) * 100)}% chance to reach ${fmt(k.planEnd)} by ${E.clock(k.shiftEnd || 14 * 3600)}.`;
     html($('#viewSay'), s);
-    $('#stamp').textContent = `${E.clockS(P.t)} · shift A · ${mains.map(L => M[L.model].name).filter((v, i, a) => a.indexOf(v) === i).join(', ')}`;
+    $('#stamp').textContent = `${E.clockS(P.t)} · shift ${P.shift ? P.shift.name : 'A'} · ${mains.map(L => M[L.model].name).filter((v, i, a) => a.indexOf(v) === i).join(', ')}`;
   };
 
   /* ---------------- the time machine: machine states, vehicles and readouts of the last 45 minutes ---------------- */
@@ -121,9 +121,9 @@
       acc = 0;
       DF.renderReadouts();
       $('#clock').textContent = E.clockS(P.t);
-      const k = (P.t - 6 * 3600) / (8 * 3600);
+      const sh = P.shift || { name: 'A', start: 6 * 3600 }, k = (P.t - sh.start) / (8 * 3600);
       $('#shiftBar').style.width = (Math.max(0, Math.min(1, k)) * 100).toFixed(1) + '%';
-      $('#shiftLabel').textContent = P.t < 14 * 3600 ? 'Shift A' : 'After shift A';
+      $('#shiftLabel').textContent = 'Shift ' + sh.name;
     }
     if (acc2 > 1) { acc2 = 0; DF.renderSay(); DF.refresh(); }
     requestAnimationFrame(frame);

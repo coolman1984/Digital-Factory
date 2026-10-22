@@ -364,3 +364,35 @@ DFI18N.add({
     ['^(.+?) delivered ([\\d,]+) (\\S+) · (.+) → line side · (\\d+)$', 'سلّم $1 كمية $2 من $3 · من $4 إلى جانب الخط · $5']
   ]
 });
+// shift handover, SAP confirmations, quality notes and the readouts left in English
+DFI18N.add({
+  exact: {
+    'Packed this shift': 'المعبأ في هذه الوردية', 'TVs packed this shift: forecast and plan for the next two hours': 'أجهزة التلفزيون المعبأة في هذه الوردية: التوقع والخطة للساعتين القادمتين',
+    'Shift handover': 'تسليم الوردية', 'shift B running': 'الوردية B قيد التشغيل', 'shift C running': 'الوردية C قيد التشغيل', 'shift A running': 'الوردية A قيد التشغيل',
+    'goods receipt 101': 'استلام بضاعة 101', 'Goods receipt 101': 'استلام بضاعة 101', 'Audio fail': 'عطل في الصوت', 'No backlight': 'لا توجد إضاءة خلفية', 'Scratch on bezel': 'خدش في الإطار الأمامي', 'Gap at back cover': 'فجوة عند الغطاء الخلفي',
+    'SMD line down': 'خط SMD متوقف', 'staged down': 'مخفَّض تدريجيًا', 'Forecast short': 'عجز متوقع', 'White balance': 'موازنة اللون الأبيض', 'White balance %': 'موازنة اللون الأبيض %', 'health index': 'مؤشر الحالة',
+    'Rework and final QA': 'إعادة التشغيل وفحص الجودة النهائي', 'Quality engineer': 'مهندس الجودة', 'Quality engineer, final QA': 'مهندس الجودة، فحص الجودة النهائي', 'Packing materials': 'مواد التعبئة',
+    'Operator handling at the station (5-why)': 'أسلوب تعامل المشغل عند المحطة (تحليل الأسباب الخمسة)', 'Work instruction updated; operators re-briefed': 'حُدِّثت تعليمات العمل وأُعيد توجيه المشغلين',
+    'Raised line speed': 'رفع سرعة الخط', 'No decision waiting': 'لا توجد قرارات معلّقة', 'shipped on time': 'شُحنت في موعدها',
+    'No decision waiting: the agents and the offices are watching every line, store and order.': 'لا توجد قرارات معلّقة: الوكلاء والإدارات يتابعون كل خط ومخزن وطلب.',
+    'Nothing to decide. Start a drill to see the departments and the agents at work.': 'لا يوجد ما يستدعي قرارًا. ابدأ تدريبًا لترى الإدارات والوكلاء أثناء العمل.',
+    'production order to GMES': 'أمر إنتاج إلى GMES', 'confirmation': 'تأكيد', 'goods movement': 'حركة بضاعة', 'sales or purchase order': 'أمر بيع أو شراء', 'transfer order': 'أمر نقل', 'vendor call-off': 'طلب سحب من المورد', 'goods issue': 'صرف بضاعة', 'PBA supermarket low': 'انخفاض مخزون السوبر ماركت PBA', 'Open cell load': 'تحميل الخلايا المفتوحة', 'No stock-out or failure expected. Every line-side stock has its next milk run or AGV planned.': 'لا يُتوقع نفاد مخزون أو عطل: لكل مخزون بجانب الخط رحلة إمداد أو مركبة موجهة آليًا مخططة.', 'No stock-out or failure expected. Every line-side stock has its next milk run or AGV planned and no machine shows a wear trend.': 'لا يُتوقع نفاد مخزون أو عطل: لكل مخزون بجانب الخط رحلة إمداد أو مركبة موجهة آليًا مخططة، ولا تظهر على أي ماكينة مؤشرات تآكل.', 'engineering change': 'تغيير هندسي'
+  },
+  patterns: [
+    ['^Shift ([ABC]) closed: ([\\d,]+) TVs packed against a plan of ([\\d,]+) \\(([+-][\\d,]+)\\)$', 'أُغلقت الوردية $1: عُبئ $2 جهازًا مقابل خطة قدرها $3 ($4)'],
+    ['^Shift ([ABC]) to shift ([ABC])$', 'من الوردية $1 إلى الوردية $2'], ['^Shift ([ABC]) starts ([\\d:]+)$', 'تبدأ الوردية $1 الساعة $2'],
+    ['^End of shift ([ABC]) \\(([\\d:]+)\\):$', 'نهاية الوردية $1 ($2):'], ['^Forecast at ([\\d:]+)$', 'التوقع عند $1'], ['^forecast against the ([\\d:]+) plan$', 'التوقع مقابل خطة الساعة $1'],
+    ['^(\\d+)% chance to reach ([\\d,]+) by ([\\d:]+)\\.$', 'احتمال $1% لبلوغ $2 بحلول $3.'], ['^Forecast ([\\d,]+) by ([\\d:]+) · plan ([\\d,]+)$', 'التوقع $1 بحلول $2 · الخطة $3'],
+    ['^Forecast ([\\d,]+) by ([\\d:]+) against ([\\d,]+)\\.$', 'التوقع $1 بحلول $2 مقابل $3.'],
+    ['^(\\d+) × (.+) confirmed$', 'تأكيد $1 × $2'], ['^(\\d+) components consumed$', 'استهلاك $1 مكوّن'], ['^([\\d,]+) (\\S+) to stock$', 'إدخال $1 من $2 إلى المخزون'],
+    ['^(\\d+) of (\\d+) loaded at (Dock \\d)$', 'تحميل $1 من $2 على $3'], ['^(\\S+) at Import door (\\d)$', '$1 عند بوابة الاستيراد $2'],
+    ['^(\\S+) is already bringing (\\S+) to (.+)$', '$1 في طريقها بالفعل لإحضار $2 إلى $3'], ['^(\\S+) is already bringing (\\S+)$', '$1 في طريقها بالفعل لإحضار $2'],
+    ['^Order (\\d+) \\((\\d+) × (.+)\\) is forecast short at ([\\d:]+)$', 'يُتوقع عجز في الطلب $1 ($2 × $3) عند $4'],
+    ['^More (.+), the model with the least cover$', 'زيادة إنتاج $1، الطراز الأقل تغطية بالمخزون'],
+    ['^(\\d+) options? simulated$', 'محاكاة $1 خيار'], ['^Raise (.+) to (\\d+)%$', 'رفع سرعة $1 إلى $2%'],
+    ['^Forecast peak ([\\d,]+) kW against the 4,000 kW contract\\.$', 'الذروة المتوقعة $1 كيلوواط مقابل قدرة تعاقدية 4,000 كيلوواط.'], ['^against the 4,000 kW contract\\. Peak shaving on until ([\\d:]+)\\.$', 'مقابل قدرة تعاقدية 4,000 كيلوواط. خفض الذروة مفعّل حتى $1.'],
+    ['^Peak shaving on until ([\\d:]+)\\.$', 'خفض الذروة مفعّل حتى $1.'], ['^(.+) speed raised to 108%$', 'رُفعت سرعة $1 إلى 108%'],
+    ['^PBA (\\d+) supermarket low$', 'انخفاض مخزون السوبر ماركت PBA $1'], ['^(\\d+) boards written with (\\S+) on (.+)$', 'برمجة $1 لوحة بالإصدار $2 على $3'],
+    ['^(\\S+) to (Open cell load|BLU assembly|Module bonding|Lighting test|Back cover|PBA and SMPS|Screw and stand|LCM input|Packing)$', '$1 إلى محطة $2'], ['^(.+) 100% → 108%$', '$1 من 100% إلى 108%']
+  ]
+});

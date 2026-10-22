@@ -27,7 +27,7 @@
     const best = c.best;
     return `<article class="cs-card sev-${sevOf(c.level)}" data-card="${esc(c.key)}">
       <header><p class="cs-who">${esc(c.agentName)} · ${esc(clock(c.at))}</p>${chip(c)}</header>
-      <h4><button type="button" class="cs-open" data-open-case="${esc(c.key)}">${esc(c.title)}</button></h4>
+      <h3 class="cs-t"><button type="button" class="cs-open" data-open-case="${esc(c.key)}">${esc(c.title)}</button></h3>
       ${best && !c.decided ? `<p class="cs-rec"><b>Recommend:</b> ${esc(best.label)}${best !== c.base ? ` · ${effect(c, best)} vs ${esc(c.base.label.toLowerCase())}` : ''} <small>${c.options.length} options simulated · ${Math.round(c.h / 60)} h</small></p>` : ''}
       ${c.decided ? `<p class="cs-out">${icon('checkCircle')} ${esc(c.decided.label)} · ${esc(c.decided.by)} · ${esc(c.decided.audit)}</p>` : ''}
       ${o.decide && !c.decided ? `<div class="cs-btns">${best ? `<button type="button" class="btn btn-primary btn-sm" data-decide="${esc(c.key)}" data-opt="${c.options.indexOf(best)}">${icon('check')}${best.id ? 'Approve' : esc(best.label)}</button>` : ''}<button type="button" class="btn btn-secondary btn-sm" data-open-case="${esc(c.key)}">Options</button>${c.autoAt && !c.veto ? `<button type="button" class="btn btn-ghost btn-sm" data-veto="${esc(c.key)}">Veto</button>` : ''}</div>` : ''}

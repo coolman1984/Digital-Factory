@@ -8,7 +8,7 @@
 .cs-card.st-closed { border-color: var(--border); background: transparent; }
 .cs-card header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .cs-who { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-2); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.cs-card h4 { margin: 6px 0 4px; font-size: 15.5px; line-height: 1.3; font-weight: 750; letter-spacing: -.01em; }
+.cs-card .cs-t { margin: 6px 0 4px; font-size: 15.5px; line-height: 1.3; font-weight: 750; letter-spacing: -.01em; }
 .cs-open { all: unset; cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--text-3) 50%, transparent); text-underline-offset: 3px; }
 .cs-open:hover { text-decoration-color: currentColor; }
 .cs-open:focus-visible { outline: 2px solid var(--brand-2); outline-offset: 2px; border-radius: 4px; }
@@ -167,3 +167,4 @@
 .cp-dots i:nth-child(2) { animation-delay: .15s; } .cp-dots i:nth-child(3) { animation-delay: .3s; }
 @keyframes cp-b { 0%, 80%, 100% { opacity: .3; } 40% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .cp-dots i { animation: none; opacity: .7; } }
+@media (max-width: 899px), (pointer: coarse) { .cs-open { min-height: 44px; display: inline-flex; align-items: center; } .cs-btns .btn { height: auto; min-height: 44px; } }

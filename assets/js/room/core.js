@@ -122,7 +122,7 @@ window.DF = (function () {
       if (h.startsWith('case:') || h.startsWith('card:')) { const id = h.slice(5); h = 'agents'; setTimeout(() => api.openCase && api.openCase(id), 0); }
       if (/^(st|line|buf|order|unit|util|agv|tug|fl):/.test(h)) { const r = h; h = 'command'; setTimeout(() => api.select && api.select(r), 0); }
       if (h === 'twin') h = 'command';
-      if (!$('#view-' + h)) h = 'command';
+      if (!/^[a-z][a-z0-9-]*$/.test(h) || !$('#view-' + h)) h = 'command';
       const changed = api.view !== h;
       api.view = h;
       $$('.view').forEach(v => { v.hidden = v.id !== 'view-' + h; });

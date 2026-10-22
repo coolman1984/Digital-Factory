@@ -84,7 +84,7 @@
     set('readouts', [
       cell(pct(s.oee), 'Plant OEE', s.oee >= 0.85 ? 'At benchmark (85%+)' : 'Below the 85% benchmark', s.oee >= 0.85 ? '' : s.oee >= 0.75 ? 'warn' : 'bad'),
       cell(fmt(s.units), 'Units today', `Plan ${fmt(s.plan)}`, s.units >= s.plan ? '' : 'warn'),
-      cell(prob + '%', 'Chance to hit plan', `P50 ${fmt(s.fc.p50)} at 14:00`, prob >= 80 ? '' : prob >= 50 ? 'warn' : 'bad'),
+      cell(prob + '%', 'Chance to hit plan', `P50 ${fmt(s.fc.p50)} at ${s.shiftEnd || '14:00'}`, prob >= 80 ? '' : prob >= 50 ? 'warn' : 'bad'),
       cell(pct(s.fpy), 'First-pass yield', 'AI vision and test', s.fpy > 0.985 ? '' : 'warn'),
       cell(String(s.alarms.open), 'Open alarms', `${s.incidents.length} incident${s.incidents.length === 1 ? '' : 's'} · ${s.alarms.unack} not acknowledged`, s.incidents.length ? 'bad' : s.alarms.urgent ? 'warn' : ''),
       cell(money(s.saved), 'Saved by AI today', s.atRisk ? `${money(s.atRisk)} at stake now` : 'Nothing at stake now', s.atRisk ? 'warn' : '')
