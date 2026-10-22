@@ -1,356 +1,192 @@
-/* Digital Factory — command room view: readouts, the plant mimic, the detail panel, the value stream, the cases that
-   need a person, the agents at work, the alarm summary, the event stream and today's orders. Simulated data. */
+/* Digital Factory — the command room view: the value stream of Plant EG-01, the decisions that need a person, the
+   agents at work, what happens next if nobody acts, the event stream and the orders to ship. Also the decision card
+   (DF.Dec) shared by every view: what the agent saw, the options it simulated on the two-hour forecast, what it
+   recommends, and the buttons a person uses to decide. Simulated data. */
 (function () {
   'use strict';
-  const { $, $$, esc, icon, fmt, pct, money, signed, link, toRef, stChip, SEV, STATE, html, tween } = DF;
-  const PE = window.PlantEngine;
-  const T = window.Twin;
-  const KINDN = { loader: 'Magazine loader', unloader: 'Magazine unloader', printer: 'Solder paste printer', spi: 'Solder paste inspection', mounter: 'Pick-and-place mounter', reflow: 'Reflow oven, 8 zones', aoi: 'Automated optical inspection', robot: 'Robot cell', bench: 'Manual workstation', bond: 'Display bonding', fct: 'Function tester', burnin: 'Burn-in racks', qc: 'Camera inspection booth', packer: 'Packing machine', palletizer: 'Palletizing robot', repair: 'Repair bench' };
-  DF.KINDN = KINDN;
+  const { $, $$, esc, icon, fmt, pct, link, toRef, stChip, SEV, html } = DF;
+  const mins = s => DF.E.mins(s), clock = t => DF.E.clock(t);
 
-  /* ---------------- readouts (every page) ---------------- */
-  DF.renderReadouts = function () {
-    const P = DF.world(), k = P.kpi, H = P.hist;
-    const set = (id, v, f) => tween($('#' + id), v, f);
-    const cls = (id, c) => { const el = $('#' + id).closest('.ro'); el.classList.toggle('warn', c === 'warn'); el.classList.toggle('bad', c === 'bad'); };
-    set('kOee', k.oee || 0, v => pct(v));
-    $('#kOeeS').textContent = (k.oee || 0) >= 0.85 ? 'At or above the 85% benchmark' : '30-minute window · benchmark 85%';
-    cls('kOee', (k.oee || 0) < 0.7 ? 'bad' : (k.oee || 0) < 0.8 ? 'warn' : '');
-    html($('#kOeeT'), Viz.spark(H.oee.slice(-60), { lo: 0.6, hi: 1 }));
-    set('kUnits', k.units || 0, fmt);
-    const gap = (k.units || 0) - (k.plan || 0);
-    $('#kUnitsS').textContent = `Plan ${fmt(k.plan)} · ${gap >= 0 ? fmt(gap) + ' ahead' : fmt(-gap) + ' behind'}`;
-    cls('kUnits', gap < -40 ? 'warn' : '');
-    html($('#kUnitsT'), Viz.spark(H.packed.slice(-60)));
-    const f = DF.forecastNow();
-    set('kFc', f.prob, v => Math.round(v * 100) + '%');
-    $('#kFcS').textContent = f.sim ? `P50 ${fmt(f.p50)} at 14:00 · plan ${fmt(f.plan)}` : `Estimate from the current rate · plan ${fmt(f.plan)}`;
-    cls('kFc', f.prob < 0.5 ? 'bad' : f.prob < 0.8 ? 'warn' : '');
-    html($('#kFcT'), f.sim ? `<span class="muted small">${f.n} futures</span>` : '');
-    set('kFpy', k.fpy || 0, v => pct(v));
-    cls('kFpy', (k.fpy || 1) < 0.97 ? 'bad' : (k.fpy || 1) < 0.985 ? 'warn' : '');
-    const open = P.alarms.filter(a => !(a.shelvedTo > P.t));
-    const unack = open.filter(a => a.state === 'active').length, urgent = open.filter(a => a.prio <= 2).length;
-    set('kAlarms', open.length, fmt);
-    $('#kAlarmsS').textContent = `${unack} not acknowledged · ${P.alarmStats.rate10} in 10 min${P.alarmStats.flood ? ' · flood' : ''}`;
-    cls('kAlarms', urgent ? 'bad' : open.length ? 'warn' : '');
-    const A = window.Agents.S;
-    set('kSaved', A.value, money);
-    const acts = A.agents.reduce((a, g) => a + g.actions, 0), ver = A.agents.reduce((a, g) => a + g.verified, 0), acc = A.agents.reduce((a, g) => a + g.accurate, 0);
-    $('#kSavedS').textContent = `${acts} action${acts === 1 ? '' : 's'} · ${ver ? Math.round(acc / ver * 100) + '% verified right' : 'verified against the twin'}`;
-    // badges
-    const nb = $('#navAlarms'); nb.hidden = !unack; nb.textContent = unack;
-    const wait = window.Agents.waiting().length, na = $('#navAgents'); na.hidden = !wait; na.textContent = wait;
-  };
+  /* ================= decision cards ================= */
+  const sevOf = l => (l === 'crit' ? 'crit' : l === 'warn' ? 'warn' : 'info');
+  function chip(c) {
+    const P = DF.P;
+    if (c.decided) return `<span class="cs-chip">${esc(c.decided.how === 'person' ? 'Decided' : 'Done by the agent')}</span>`;
+    if (c.autoAt && !c.veto && P.t < c.autoAt) return `<span class="cs-chip info">Goes ahead at ${esc(clock(c.autoAt))}</span>`;
+    return `<span class="cs-chip warn">Waiting for you</span>`;
+  }
+  const signed = n => (n > 0 ? '+' : n < 0 ? '−' : '±') + fmt(Math.abs(n));
+  function effect(c, op) {
+    const b = c.base && c.base.f, f = op.f;
+    if (!b || !f) return '';
+    const d = f.packed - b.packed, l = f.late - b.late;
+    return `<span class="${d > 0 ? 'pos' : d < 0 ? 'neg' : ''}">${signed(d)} TVs</span>${l ? ` · <span class="${l < 0 ? 'pos' : 'neg'}">${signed(l)} late order${Math.abs(l) > 1 ? 's' : ''}</span>` : ''}`;
+  }
+  // compact card for lists
+  function card(c, o = {}) {
+    const best = c.best;
+    return `<article class="cs-card sev-${sevOf(c.level)}" data-card="${esc(c.key)}">
+      <header><p class="cs-who">${esc(c.agentName)} · ${esc(clock(c.at))}</p>${chip(c)}</header>
+      <h4><button type="button" class="cs-open" data-open-case="${esc(c.key)}">${esc(c.title)}</button></h4>
+      ${best && !c.decided ? `<p class="cs-rec"><b>Recommend:</b> ${esc(best.label)}${best !== c.base ? ` · ${effect(c, best)} vs ${esc(c.base.label.toLowerCase())}` : ''} <small>${c.options.length} options simulated · ${Math.round(c.h / 60)} h</small></p>` : ''}
+      ${c.decided ? `<p class="cs-out">${icon('checkCircle')} ${esc(c.decided.label)} · ${esc(c.decided.by)} · ${esc(c.decided.audit)}</p>` : ''}
+      ${o.decide && !c.decided ? `<div class="cs-btns">${best ? `<button type="button" class="btn btn-primary btn-sm" data-decide="${esc(c.key)}" data-opt="${c.options.indexOf(best)}">${icon('check')}${best.id ? 'Approve' : esc(best.label)}</button>` : ''}<button type="button" class="btn btn-secondary btn-sm" data-open-case="${esc(c.key)}">Options</button>${c.autoAt && !c.veto ? `<button type="button" class="btn btn-ghost btn-sm" data-veto="${esc(c.key)}">Veto</button>` : ''}</div>` : ''}
+    </article>`;
+  }
+  // the comparison chart: TVs packed over the horizon, every option on the same snapshot
+  function compare(c) {
+    const ops = c.options.filter(op => op.f && op.f.curve && op.f.curve.length > 1);
+    if (ops.length < 2) return '';
+    const w = 300, h = 92, all = ops.flatMap(op => op.f.curve);
+    let lo = Math.min(...all), hi = Math.max(...all); if (hi - lo < 1) hi = lo + 1;
+    const n = ops[0].f.curve.length, X = i => (i / (n - 1)) * w, Y = v => h - 14 - ((v - lo) / (hi - lo)) * (h - 22);
+    const lines = ops.map(op => `<path class="${op === c.base ? 'base' : op === c.best ? 'best' : 'alt'}" d="${op.f.curve.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join('')}"/>`).join('');
+    return `<figure class="cs-cmp"><figcaption>TVs packed in the forecast · next ${Math.round(c.h / 60)} h</figcaption><svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">${lines}<text x="0" y="${h - 2}">now</text><text x="${w}" y="${h - 2}" text-anchor="end">+${Math.round(c.h / 60)} h</text></svg>
+      <p class="cs-cmp-l"><span class="best"><i></i>Recommended</span><span class="alt"><i></i>Other option</span><span class="base"><i></i>${esc(c.base.label)}</span></p></figure>`;
+  }
+  function options(c, pick) {
+    return `<ol class="cs-opts">${c.options.map((op, i) => {
+      const rec = op === c.best;
+      const title = `${esc(op.label)}${rec ? ' <em>Recommended</em>' : ''}`;
+      return `<li class="${rec ? 'rec' : ''} ${op === c.base ? 'base' : ''}">
+        <div class="cs-oh">${pick ? `<label><input type="radio" name="opt-${esc(c.key)}" value="${i}" ${rec ? 'checked' : ''}><span>${title}</span></label>` : `<span>${title}</span>`}
+          <b class="cs-eff">${op === c.base ? 'Baseline' : effect(c, op)}</b></div>
+        ${op.note ? `<p class="cs-why2">${esc(op.note)}</p>` : ''}
+        <p class="cs-om"><span>${fmt(op.f.packed)} TVs packed</span><span>${op.f.late} order${op.f.late === 1 ? '' : 's'} late</span>${op.f.revDelayed ? `<span>${esc(DF.X.egp(op.f.revDelayed))} revenue delayed</span>` : ''}${op.f.starvedMin ? `<span>${fmt(op.f.starvedMin)} min short of material</span>` : ''}<span>Cost ${esc(DF.X.egp(op.cost))}</span><span class="cs-pol">${op.reversible ? 'Can be undone' : 'Cannot be undone'}</span></p>
+      </li>`;
+    }).join('')}</ol>`;
+  }
+  function evidence(c) {
+    const ev = c.evidence || [];
+    if (!ev.length) return '';
+    return `<dl class="kv cs-kv">${ev.filter(e => !e.series).map(e => `<div><dt>${esc(e.label)}</dt><dd>${esc(e.value)}</dd></div>`).join('')}</dl>`
+      + ev.filter(e => e.series && e.series.length > 3).map(e => `<figure class="cs-ev"><figcaption>${esc(e.label)} · ${esc(e.value)}</figcaption>${Viz.spark(e.series, { w: 300, h: 48, limit: e.limit })}</figure>`).join('');
+  }
+  function detail(c) {
+    const P = DF.P;
+    return `<div class="cs-detail" data-card="${esc(c.key)}">
+      <p class="cs-who">${esc(c.agentName)} · ${esc(c.trigger)} ${chip(c)}</p>
+      <p class="cs-diag"><b>Confidence:</b> <span class="cs-conf"><i style="--w:${Math.round(c.confidence * 100)}%"></i><b>${Math.round(c.confidence * 100)}% sure</b></span></p>
+      ${c.decided ? `<div class="cs-verify ok"><p><b>Decided</b> · ${esc(c.decided.label)} · ${esc(c.decided.by)} · ${esc(clock(c.decided.t))} · ${esc(c.decided.audit)}</p></div>` : `<form class="cs-dec" data-card="${esc(c.key)}">
+        <p class="small">${c.autoAt && !c.veto && P.t < c.autoAt ? `Low risk and reversible: the agent goes ahead with the recommendation at <b>${esc(clock(c.autoAt))}</b> unless you decide or veto.` : 'Choose an option and confirm. It goes to the audit trail with your name.'}</p>
+        ${options(c, true)}
+        <div class="cs-btns"><button type="submit" class="btn btn-primary btn-sm">${icon('check')}Apply the chosen option</button>${c.autoAt && !c.veto ? `<button type="button" class="btn btn-secondary btn-sm" data-veto="${esc(c.key)}">Veto the automatic step</button>` : ''}</div></form>`}
+      ${c.decided ? `<section class="cs-sec"><h4>Options it simulated</h4>${options(c, false)}</section>` : ''}
+      ${compare(c)}
+      ${c.evidence && c.evidence.length ? `<section class="cs-sec"><h4>What the agent sees</h4>${evidence(c)}</section>` : ''}
+      ${c.why && c.why.length ? `<section class="cs-sec"><h4>Why</h4><ul class="cs-why-l">${c.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul></section>` : ''}
+      ${c.talk && c.talk.length ? `<section class="cs-sec"><h4>The agents discuss it</h4><ol class="cs-talk">${c.talk.map(t => `<li><b>${esc(t.from)}</b><span>${esc(t.text)}</span></li>`).join('')}</ol></section>` : ''}
+      <p class="quiet cs-note">The forecast is a flow model of the six main lines and everything feeding them. Money uses the plant's sample cost model in EGP.</p>
+    </div>`;
+  }
+  function decide(key, i, why) {
+    const c = DF.AG.cards.get(key); if (!c || c.decided) return;
+    const op = c.options[i]; if (!op) return;
+    const d = DF.AG.decide(c, op, 'You');
+    DF.toast(`${op.label}: done. Logged as ${d.audit}.`, 'success');
+    DF.refresh(true);
+  }
+  DF.Dec = { card, detail, decide, chip };
+  // decisions anywhere in the room
+  document.addEventListener('click', e => {
+    const d = e.target.closest('[data-decide]');
+    if (d) { decide(d.dataset.decide, +d.dataset.opt); return; }
+    const v = e.target.closest('[data-veto]');
+    if (v) { DF.AG.veto(v.dataset.veto); DF.toast('Vetoed: the agent waits for a person to decide.', 'info'); DF.refresh(true); if (DF.openCase && $('#caseDlg').open) DF.openCase(v.dataset.veto); return; }
+    const oc = e.target.closest('[data-open-case]');
+    if (oc && DF.openCase) DF.openCase(oc.dataset.openCase);
+  });
+  document.addEventListener('submit', e => {
+    const f = e.target.closest('.cs-dec'); if (!f) return;
+    e.preventDefault();
+    const key = f.dataset.card, pick = f.querySelector(`input[name="opt-${CSS.escape(key)}"]:checked`);
+    decide(key, pick ? +pick.value : 0);
+    if ($('#caseDlg').open) $('#caseDlg').close();
+  });
+  // the cards waiting for a person, most urgent first
+  DF.waiting = () => DF.P.recs.map(r => DF.AG.cards.get(r.key)).filter(c => c && !c.decided);
 
-  /* one sentence about the plant, at the top of every view */
-  DF.renderSay = function () {
-    const P = DF.world(), k = P.kpi;
-    const down = P.stations.filter(s => s.state === 'down' || s.state === 'maint');
-    const wait = window.Agents.waiting();
-    const flood = P.alarmStats.flood;
-    const f = DF.forecastNow();
-    let s;
-    if (DF.replay) s = `Replaying <b>${PE.clockS(P.t)}</b>. The live plant keeps running; this is the twin rebuilt from its own commands.`;
-    else if (flood) s = `<span class="bad">Alarm flood:</span> ${P.alarmStats.rate10} alarms in 10 minutes. The agents folded them under ${DF.incidents(P).filter(i => i.open).length || 1} first-out cause${DF.incidents(P).filter(i => i.open).length === 1 ? '' : 's'}.`;
-    else if (wait.length) { const c = wait.slice().sort((a, b) => (b.value || 0) - (a.value || 0))[0]; s = `<span class="warn">${wait.length} decision${wait.length > 1 ? 's wait' : ' waits'} for you.</span> First: <b>${esc(c.title)}</b>${c.value > 0 ? `, worth ${money(c.value)} against doing nothing` : ''}.`; }
-    else if (down.length) s = `<b>${esc(down[0].name)}</b> on ${esc(P.lines[down[0].line] ? P.lines[down[0].line].name : '')} is ${down[0].state === 'maint' ? 'in planned work' : '<span class="bad">stopped</span>'}: ${esc((down[0].why || '').toLowerCase())}.`;
-    else s = `All lines running. <b>${fmt(k.units)}</b> packed against a plan of ${fmt(k.plan)}; ${Math.round(f.prob * 100)}% chance to hit ${fmt(f.plan)} by 14:00${f.sim ? ` across ${f.n} simulated futures` : ''}.`;
-    html($('#viewSay'), s);
-    const host = window.Agents.host;
-    html($('#stamp'), `${esc(PE.clockS(P.t))} · shift A${T.peers || T.restored === 'tab' ? ' · in step with other tabs' : ''}<br>${host ? 'Agents run in this tab' : 'Agents run in another open tab'}`);
-  };
-
-  /* ---------------- the mimic ---------------- */
-  let F = null;
-  DF.initMimic = function () {
-    F = Floor.create($('#floor'));
-    DF.floor = F;
-    const zs = $('#zoneSel');
-    zs.innerHTML = '<option value="">Whole plant</option>' + T.E.P.layout.ZONES.map(z => `<option value="${z.id}">${esc(z.name)}</option>`).join('');
-    zs.onchange = () => F.zone(zs.value);
-    $$('[data-zoom]').forEach(b => { b.onclick = () => (b.dataset.zoom === 'fit' ? (F.fit(), zs.value = '') : F.zoom(b.dataset.zoom === 'in' ? 1.4 : 1 / 1.4)); });
-    $$('#ovl .seg').forEach(b => {
-      b.onclick = () => { $$('#ovl .seg').forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); }); F.setOverlay(b.dataset.ovl); legend(); };
-    });
-    F.on((t, d) => {
-      if (t === 'select') DF.select(d);
-      if (t === 'tip') {
-        if (!d) return Viz.hideTip();
-        const P = DF.world(), r = d.ref, [k, ...rest] = r.split(':'), id = rest.join(':');
-        let rows = [];
-        if (k === 'st' && P.byId[id]) { const s = P.byId[id]; rows = [{ value: STATE[s.state] || s.state, label: s.why || KINDN[s.kind] || '', cls: 'cm' }]; if (s.sens.vib) rows.push({ value: s.sens.vib.toFixed(1) + ' mm/s', label: 'vibration', cls: 'cm' }); }
-        else if (k === 'buf' && P.bufs[id]) { const b = P.bufs[id], lv = T.E.level(b); rows = [{ value: fmt(lv) + ' / ' + fmt(b.cap), label: b.unit || '', cls: 'cm' }]; const rw = T.E.runway(b); if (isFinite(rw)) rows.push({ value: PE.mins(rw), label: 'runway', cls: 'cm' }); }
-        else if (k === 'agv') { const a = P.agvs.find(x => x.id === id); if (a) rows = [{ value: a.fault ? 'Fault' : a.state, label: a.mission ? a.mission.buf.label : 'no mission', cls: a.fault ? 'bad' : 'cm' }, { value: Math.round(a.battery) + '%', label: 'battery', cls: 'cm' }]; }
-        else if (k === 'util') { const a = P.util.assets.find(x => x.id === id); if (a) rows = [{ value: Math.round(a.kw) + ' kW', label: a.on === false ? 'off' : 'on', cls: 'cm' }]; }
-        else if (k === 'order') { const o = P.orders.find(x => x.id === id); if (o) rows = [{ value: `${fmt(o.shipped + (o.truck ? o.truck.loaded || 0 : 0))} / ${fmt(o.qty)}`, label: 'loaded', cls: 'cm' }]; }
-        Viz.showTip(d.x, d.y, DF.refName(r), rows);
-      }
-    });
-    legend();
-  };
-  function legend() {
-    const o = F ? F.overlay : 'status';
-    const L = {
-      status: '<span><i></i>Normal</span><span><i class="warn"></i>Slow, starved or blocked</span><span><i class="bad"></i>Stopped</span><span><i class="maint"></i>Planned work or changeover</span><span><i class="dot"></i>Wearing</span>',
-      flow: '<span><i class="flow"></i>Units and routes</span><span><i class="warn"></i>Conveyor nearly full</span><span>Dashed lines: AGV routes</span>',
-      energy: '<span><i class="flow"></i>Darker means more kW</span><span>Utilities show kW now</span>',
-      quality: '<span><i class="warn"></i>Reject share 1–3%</span><span><i class="bad"></i>Above 3%</span>',
-      people: '<span><i class="flow" style="border-radius:50%"></i>Operators</span><span><i class="maint" style="border-radius:50%;border-style:solid;background:var(--indigo)"></i>Technicians</span><span><i class="bad" style="border-radius:50%"></i>Inside a robot cell</span>'
-    };
-    html($('#floorLegend'), L[o]);
-  }
-  DF.drawMimic = function () {
-    if (!F) return;
-    F.draw(DF.world(), { speed: T.speed, replay: !!DF.replay });
-  };
-
-  /* ---------------- selection and the detail panel ---------------- */
-  DF.select = function (ref, o = {}) {
-    DF.sel = ref || null;
-    if (F) F.select(DF.sel);
-    if (F && o.focus && ref) F.focus(DF.world(), ref, 3);
-    renderInspector(true);
-    vstream();
-    if (o.scroll && matchMedia('(max-width: 1200px)').matches) $('#insp').scrollIntoView({ behavior: DF.reduce ? 'auto' : 'smooth', block: 'start' });
-  };
-  function casesFor(ref) {
-    return window.Agents.S.cases.filter(c => c.state !== 'closed' && (c.ref === ref || (c.chain || []).includes(ref)));
-  }
-  const kv = list => `<dl class="kv">${list.filter(Boolean).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
-  function caseLinks(ref) {
-    const cs = casesFor(ref);
-    if (!cs.length) return '';
-    return `<section class="insp-sec"><h4>Open cases</h4>${cs.map(c => `<p class="small" style="margin:0 0 6px">${link('case:' + c.id, c.title)} · ${esc(CaseUI.agentName(c.agent))}</p>`).join('')}</section>`;
-  }
-  const acts = (ref, extra = '') => `<div class="acts">${extra}<a class="btn btn-secondary btn-sm" href="plant.html"><span data-icon="layers"></span>Open the 3D plant</a><button type="button" class="btn btn-secondary btn-sm" data-ask="${esc(ref)}"><span data-icon="sparkles"></span>Ask the copilot</button></div>`;
-  function plantNow(P) {
-    const k = P.kpi;
-    const lines = ['L1', 'L2', 'L3', 'L4', 'L5'].map(id => P.lines[id]);
-    const bn = DF.bottleneck(P);
-    const risky = P.stations.filter(s => s.degrade > 0 && s.state !== 'down').map(s => s.name);
-    const late = P.orders.filter(o => (o.state === 'open' || o.state === 'loading') && o.risk > 300);
-    return `<div class="plant-now"><p class="kind">Nothing selected</p><h3>The plant now</h3>
-      <p>${lines.map(l => `${link('line:' + l.id, l.name)} ${stChip(l.state === 'stopped' ? 'stopped' : l.state)}`).join('<br>')}</p>
-      <p>${bn ? `${bn.over > 1 ? '<span class="warn">Bottleneck:</span>' : 'Constraint:'} <b>${esc(bn.name)}</b> on ${esc(P.lines[bn.line].name)}, ${bn.ct.toFixed(0)} s a unit against a takt of ${T.E.TAKT[bn.line]} s${bn.over > 1 ? ', so the line runs below plan' : ''}.` : 'No assembly station is near its takt.'}</p>
-      <p>${risky.length ? `Wearing: <b>${esc(risky.join(', '))}</b>.` : 'No machine shows a wear trend.'} ${late.length ? `Orders at risk: <b>${late.map(o => esc(o.id)).join(', ')}</b>.` : 'Every open order is on time at the current rate.'}</p>
-      <p class="small muted">Select anything on the mimic or a step of the value stream. ${fmt(k.wip)} units in process · ${fmt(k.boards)} boards in the supermarket.</p></div>`;
-  }
-  function stationPanel(P, s) {
-    const L = P.lines[s.line];
-    const vib = s.hist.vib && s.hist.vib.length > 3;
-    const series = vib ? s.hist.vib : s.hist.kw;
-    const reg = vib ? window.Agents.linreg(s.hist.vib.slice(-36).filter(v => v > 0.6), 5 / 60) : null;
-    return `<div class="row-top"><div><p class="kind">${esc(KINDN[s.kind] || s.kind)} · ${L ? link('line:' + L.id, L.name) : 'Support'}</p><h3>${esc(s.name)}</h3></div></div>
-      <p>${stChip(s.state, s.why)} <span class="muted small">since ${esc(PE.clock(s.since))}</span></p>
-      ${kv([
-        ['Cycle now', `${(s.ctEma || 0).toFixed(1)} s <small>std ${s.base} s</small>`],
-        ['Made today', `${fmt(s.counters.made)} <small>${s.counters.bad ? fmt(s.counters.bad) + ' rejected' : 'no rejects'}</small>`],
-        s.kind !== 'bench' && s.kind !== 'burnin' && ['Health index', `${Math.round(s.health)} <small>/ 100</small>`],
-        s.sens.vib != null && ['Vibration', `${s.sens.vib.toFixed(2)} <small>mm/s${reg ? ` · ${reg.slope > 0 ? '+' : ''}${(reg.slope * 60).toFixed(1)}/h` : ''}</small>`],
-        s.sens.temp != null && ['Temperature', `${s.sens.temp.toFixed(1)} <small>°C</small>`],
-        ['Power', `${(s.kwNow || 0).toFixed(1)} <small>kW</small>`],
-        s.operator && ['Operator', esc(s.operator.name)],
-        s.tech && ['Technician', esc(s.tech.name)]
-      ])}
-      ${series && series.length > 3 ? `<section class="insp-sec"><h4>${vib ? 'Vibration, last 15 min (mm/s)' : 'Power, last 15 min (kW)'}</h4><div class="spark-wide">${Viz.spark(series.slice(-90), { w: 320, h: 56, limit: vib ? 4.5 : undefined })}</div></section>` : ''}
-      ${s.needs && s.needs.length ? `<section class="insp-sec"><h4>Material at this station</h4><ul class="list">${s.needs.map(n => { const b = n.b, lv = T.E.level(b); return `<li><span>${link('buf:' + b.id, b.label)}</span><span>${fmt(lv)} / ${fmt(b.cap)} · ${isFinite(T.E.runway(b)) ? PE.mins(T.E.runway(b)) : '—'}</span></li>`; }).join('')}</ul></section>` : ''}
-      ${caseLinks('st:' + s.id)}${acts('st:' + s.id)}`;
-  }
-  function linePanel(P, L) {
-    const bn = L.stations.filter(s => s.kind !== 'reflow' && s.kind !== 'burnin').sort((a, b) => (b.gapEma || b.ctEma || 0) - (a.gapEma || a.ctEma || 0))[0];
-    return `<p class="kind">${esc(L.sub)}</p><h3>${esc(L.name)}</h3><p>${stChip(L.stopped ? 'stopped' : L.state)}</p>
-      ${kv([['OEE', pct(L.oee)], ['Per hour', fmt(L.tph)], ['Availability', pct(L.avail)], ['Performance', pct(L.perf)], ['Quality', pct(L.qual, 2)], ['Speed', Math.round(L.speed * 100) + '%']])}
-      <section class="insp-sec"><h4>Stations</h4><ul class="list">${L.stations.map(s => `<li><span>${link('st:' + s.id, s.name)}${bn === s && L.id !== 'L5' ? ' <small class="muted">· slowest</small>' : ''}</span><span>${stChip(s.state)}</span></li>`).join('')}</ul></section>
-      ${caseLinks('line:' + L.id)}${acts('st:' + L.stations[0].id, `<a class="btn btn-secondary btn-sm" href="#control"><span data-icon="settings"></span>Control</a>`)}`;
-  }
-  function bufPanel(P, b) {
-    const lv = T.E.level(b), rw = T.E.runway(b), m = b.mission;
-    const at = b.station ? P.byId[b.station] : null;
-    return `<p class="kind">${b.sm ? 'Board supermarket' : b.rm ? 'Raw-material warehouse' : 'Line-side stock'}</p><h3>${esc(b.label)}</h3>
-      ${kv([['Level', `${fmt(lv)} <small>/ ${fmt(b.cap)} ${esc(b.unit || '')}</small>`], ['Runway', isFinite(rw) ? PE.mins(rw) : (b.rw ? PE.mins(b.rw) : 'Not being used')], !b.sm && !b.rm && ['Reorder at', fmt(b.rop)], at && ['Feeds', link('st:' + at.id, at.name)],
-        b.sm && ['At the lines', fmt(b.lineSide || 0)], b.sm && ['Demand', `${fmt(b.demand || 0)} <small>/ h</small>`]])}
-      <div style="margin-top:12px">${Viz.meter(lv / Math.max(1, b.cap), lv <= (b.rop || 0) ? 'warn' : '')}</div>
-      ${m ? `<section class="insp-sec"><h4>Delivery</h4><p class="small">${m.agv ? `${link('agv:' + m.agv.id, m.agv.id)}${m.agv.fault ? ' <span class="st bad"><i></i>faulted</span>' : ''} · ETA ${esc(PE.clock(m.eta || P.t))}` : 'Waiting for a free AGV'} · ${esc(m.reason || 'Kanban')}</p></section>` : ''}
-      ${b.lots && b.lots.length ? `<section class="insp-sec"><h4>Lots</h4><ul class="list">${b.lots.map(l => `<li><span>${esc(l.id)}</span><span>${fmt(l.qty)}${l.supplier ? ' · ' + esc(l.supplier) : ''}</span></li>`).join('')}</ul></section>` : ''}
-      ${caseLinks('buf:' + b.id)}${acts('buf:' + b.id)}`;
-  }
-  function agvPanel(P, a) {
-    const m = a.mission;
-    return `<p class="kind">Automated guided vehicle</p><h3>${esc(a.id)}</h3><p>${a.fault ? `<span class="st bad"><i></i>Fault · ${esc(a.fault)}</span>` : `<span class="st"><i></i>${esc(a.state)}</span>`}</p>
-      ${kv([['Battery', `${Math.round(a.battery)}%`], ['Distance today', `${a.km.toFixed(1)} <small>km</small>`], ['Mission', m ? `${esc(m.buf.label)} → ${esc(P.byId[m.buf.station] ? P.byId[m.buf.station].name : '')}` : 'None'], ['Load', a.load ? 'Carrying' : 'Empty']])}
-      ${caseLinks('agv:' + a.id)}${acts('agv:' + a.id)}`;
-  }
-  function orderPanel(P, o) {
-    const loaded = o.shipped + (o.truck ? o.truck.loaded || 0 : 0);
-    return `<p class="kind">${esc(o.customer)} · ${o.product === 'tv' ? 'TVs' : 'Smartphones'}</p><h3>Order ${esc(o.id)}</h3>
-      <p>${o.state === 'late' ? '<span class="st bad"><i></i>Shipped late</span>' : o.risk > 300 ? `<span class="st warn"><i></i>Heading ${esc(PE.mins(o.risk))} late</span>` : `<span class="st"><i></i>${esc(o.state)}</span>`}</p>
-      ${kv([['Quantity', fmt(o.qty)], ['Loaded', fmt(loaded)], ['Due', esc(PE.clock(o.due))], ['Ready at current rate', o.eta ? esc(PE.clock(o.eta)) : '—'], o.truck && ['Truck', esc(o.truck.dock ? o.truck.dock.id : '')]])}
-      ${caseLinks('order:' + o.id)}${acts('order:' + o.id)}`;
-  }
-  function utilPanel(P, a) {
-    const amb = P.util.ambient;
-    return `<p class="kind">Utilities</p><h3>${esc(a.name)}</h3><p><span class="st ${a.forced > P.t ? 'warn' : ''}"><i></i>${a.on === false ? 'Off' : 'On'}${a.forced > P.t ? ' · forced' : ''}${a.defer > P.t ? ' · start held' : ''}</span></p>
-      ${kv([['Power now', `${Math.round(a.kw)} <small>kW</small>`], ['Target', `${Math.round(a.target || a.kw)} <small>kW</small>`], ['Ambient', `${(amb || 0).toFixed(1)} <small>°C</small>`], ['Tariff', esc(P.energy.tariff)]])}
-      ${caseLinks('util:' + a.id)}${acts('util:' + a.id, '<a class="btn btn-secondary btn-sm" href="#energy"><span data-icon="live"></span>Energy</a>')}`;
-  }
-  function renderInspector(force) {
-    const el = $('#inspBody'); if (!el || DF.view !== 'command') return;
-    if (!force && el.contains(document.activeElement) && document.activeElement !== el) return;
-    const P = DF.world(), r = DF.sel;
-    let out = '';
-    if (r) {
-      const [k, ...rest] = r.split(':'); const id = rest.join(':');
-      if (k === 'st' && P.byId[id]) out = stationPanel(P, P.byId[id]);
-      else if (k === 'line' && P.lines[id]) out = linePanel(P, P.lines[id]);
-      else if (k === 'buf' && P.bufs[id]) out = bufPanel(P, P.bufs[id]);
-      else if (k === 'agv') { const a = P.agvs.find(x => x.id === id); if (a) out = agvPanel(P, a); }
-      else if (k === 'order') { const o = P.orders.find(x => x.id === id); if (o) out = orderPanel(P, o); }
-      else if (k === 'util') { const a = P.util.assets.find(x => x.id === id); if (a) out = utilPanel(P, a); }
-    }
-    if (!out) out = plantNow(P);
-    if (r) out = `<button type="button" class="link-btn small" data-clear style="align-self:flex-start;margin-bottom:6px">← The plant now</button>` + out;
-    html(el, out);
-    if (typeof Theme !== 'undefined') Theme.icons(el);
-  }
-  DF.renderInspector = renderInspector;
-
-  /* bottleneck: the assembly station furthest over its takt */
-  // the constraint: the assembly station whose own cycle (not its waiting) is closest to, or over, the takt
-  DF.bottleneck = function (P) {
-    let best = null;
-    for (const id of ['L3', 'L4']) for (const s of P.lines[id].stations) {
-      const Ls = P.lines[id].state;
-      if (Ls === 'down' || Ls === 'stopped' || P.lines[id].stopped || s.state === 'down' || s.state === 'maint') continue;
-      const ct = (s.ctEma || s.base) * (P.lines[id].speed ? 1 / P.lines[id].speed : 1), over = ct / T.E.TAKT[id];
-      if (!best || over > best.over) best = { id: s.id, name: s.name, line: id, ct, over };
-    }
-    if (best) best.over = best.over > 1 && best.over < 1.08 ? 1 : best.over;   // within 8% of takt is normal cycle variation
-    return best && best.over > 0.9 ? best : null;
-  };
-
-  /* ---------------- value stream ---------------- */
+  /* ================= the value stream ================= */
+  const RANK = { down: 4, tripped: 4, stopped: 4, maint: 3, changeover: 3, starved: 2, warn: 2, micro: 2, blocked: 1, idle: 1, run: 0 };
+  const worst = arr => arr.reduce((w, x) => ((RANK[x] || 0) > (RANK[w] || 0) ? x : w), 'run');
   function vstream() {
-    const P = DF.world(), el = $('#vstream'); if (!el) return;
-    const SM = P.bufs['SM:main'], SP = P.bufs['SM:power'];
-    const burn = P.byId['L5-Burnin'], qc = P.byId['L5-QC'], pack = P.byId['L5-Packing'];
-    const bn = DF.bottleneck(P);
-    const lineState = L => (L.stopped ? 'stopped' : L.state);
-    const nextOrder = P.orders.filter(o => o.state === 'open' || o.state === 'loading').sort((a, b) => a.due - b.due)[0];
-    const rackUsed = burn.rack ? burn.rack.filter(s => s.u).length : 0;
+    const P = DF.P, E = DF.E, el = $('#vstream'); if (!el) return;
+    const lines = k => Object.values(P.lines).filter(L => L.kind === k);
+    const sum = (arr, f) => arr.reduce((a, x) => a + f(x), 0);
+    const mains = lines('main'), smd = lines('smd'), lcm = lines('lcm'), press = lines('press'), inj = P.lines.INJ.stations;
+    const storeLow = Object.values(E.STORE.IMP).concat(Object.values(E.STORE.LOC)).filter(b => E.level(b) / b.cap < 0.12);
+    const fleet = P.agvs.concat(P.tuggers, P.forklifts), faults = fleet.filter(v => v.fault);
+    const lanes = Object.values(E.STORE.PBA).filter(b => isFinite(b.rw)).sort((a, b) => a.rw - b.rw);
+    const lane = lanes[0];
+    const test = P.stations.filter(s => /fct|aging|wb|qa/.test(s.kind) && P.lines[s.line].kind === 'main');
+    const pack = P.stations.filter(s => /packer|palletizer/.test(s.kind));
+    const pick = arr => arr.slice().sort((a, b) => (RANK[b.state] || 0) - (RANK[a.state] || 0))[0];
+    const next = P.orders.filter(o => o.state === 'open' || o.state === 'loading').sort((a, b) => a.due - b.due)[0];
+    const atRisk = DF.AG.base ? DF.AG.base.lateList.length : 0;
+    const bn = mains.filter(L => L.state === 'starved' || L.state === 'down');
     const steps = [
-      { ref: 'line:L1', name: 'SMT Line 1', st: lineState(P.lines.L1), num: fmt(P.lines.L1.tph), sub: 'main boards / h' },
-      { ref: 'line:L2', name: 'SMT Line 2', st: lineState(P.lines.L2), num: fmt(P.lines.L2.tph), sub: (P.lines.L2.prodOverride ? 'main' : 'power') + ' boards / h' },
-      { ref: 'buf:SM:main', name: 'Board supermarket', st: SM.items.length < 20 || SP.items.length < 20 ? 'warn' : 'run', num: `${fmt(SM.items.length)} · ${fmt(SP.items.length)}`, sub: `main · power · ${SM.rw ? PE.mins(SM.rw) : '—'} cover` },
-      { ref: 'line:L3', name: 'Final Assembly A', st: lineState(P.lines.L3), num: fmt(P.lines.L3.tph), sub: `TVs / h · takt ${T.E.TAKT.L3} s`, bn: bn && bn.line === 'L3' && bn.over > 1 },
-      { ref: 'line:L4', name: 'Final Assembly B', st: lineState(P.lines.L4), num: fmt(P.lines.L4.tph), sub: `phones / h · takt ${T.E.TAKT.L4} s`, bn: bn && bn.line === 'L4' && bn.over > 1 },
-      { ref: 'st:L5-Burnin', name: 'Burn-in', st: burn.state, num: `${rackUsed} / ${burn.rack ? burn.rack.length : 0}`, sub: 'rack slots in use' },
-      { ref: 'st:L5-QC', name: 'Final QC', st: qc.state, num: pct(P.kpi.fpy || 0), sub: 'first-pass yield' },
-      { ref: 'st:L5-Packing', name: 'Pack and pallet', st: pack.state, num: fmt(P.lines.L5.tph), sub: 'units / h' },
-      { ref: nextOrder ? 'order:' + nextOrder.id : 'line:L5', name: 'Shipping', st: nextOrder && nextOrder.risk > 300 ? 'warn' : 'run', num: nextOrder ? esc(PE.clock(nextOrder.due)) : '—', sub: nextOrder ? `next: ${esc(nextOrder.id)} · ${fmt(nextOrder.qty)}` : 'no open orders' }
+      { ref: 'zone:imp', name: 'Stores', st: storeLow.length ? 'warn' : 'run', num: storeLow.length ? `${storeLow.length} low` : 'OK', sub: 'import warehouse and local-vendor supermarket' },
+      { ref: faults.length ? (faults[0].kind === 'agv' ? 'agv:' : faults[0].kind === 'tugger' ? 'tug:' : 'fl:') + faults[0].id : 'tug:' + P.tuggers[0].id, name: 'Milk runs and AGVs', st: faults.length ? 'down' : 'run', num: `${fleet.filter(v => v.path).length} / ${fleet.length}`, sub: faults.length ? `${faults.length} vehicle fault${faults.length > 1 ? 's' : ''}` : 'vehicles moving' },
+      { ref: 'zone:smd', name: 'SMD and PBA', st: worst(smd.map(L => L.state)), num: fmt(sum(smd, L => L.tph)), sub: `boards an hour · ${smd.filter(L => L.state === 'run' || L.state === 'warn').length} of 6 lines` },
+      { ref: lane ? 'buf:' + lane.id : 'zone:smd', name: 'PBA supermarket', st: lane && lane.rw < 900 ? 'down' : lane && lane.rw < 2700 ? 'warn' : 'run', num: lane ? mins(lane.rw).replace(' min', '') : '—', sub: lane ? `lowest cover · ${lane.code}` : 'boards for the main lines' },
+      { ref: 'zone:lcm', name: 'LCM lines', st: worst(lcm.map(L => L.state)), num: fmt(sum(lcm, L => L.tph)), sub: 'panel modules an hour' },
+      { ref: 'line:INJ', name: 'Injection', st: worst(inj.filter(s => !s.spare).map(s => s.state)), num: `${inj.filter(s => s.state === 'run' || s.state === 'warn').length} / ${inj.length}`, sub: 'machines moulding' },
+      { ref: 'zone:press', name: 'Press and coating', st: worst(press.map(L => L.state)), num: fmt(sum(press, L => L.tph)), sub: 'chassis sets an hour' },
+      { ref: 'zone:main', name: 'Main assembly', st: worst(mains.map(L => L.state)), num: fmt(sum(mains, L => L.tph)), sub: `TVs an hour · ${mains.filter(L => L.state === 'run' || L.state === 'warn').length} of 6 lines`, bn: bn.length ? bn.map(L => L.id).join(', ') : '' },
+      { ref: 'st:' + pick(test).id, name: 'Test, aging and QA', st: worst(test.map(s => s.state)), num: pct(P.kpi.fpy || 0, 1), sub: 'first-pass yield' },
+      { ref: 'st:' + pick(pack).id, name: 'Pack and pallet', st: worst(pack.map(s => s.state)), num: fmt(DF.X.fgQty ? Object.keys(E.MODELS).reduce((a, m) => a + DF.X.fgQty(m), 0) : 0), sub: 'TVs in finished goods' },
+      { ref: next ? 'order:' + next.id : 'zone:fg', name: 'Shipping', st: atRisk ? 'warn' : 'run', num: next ? clock(next.due) : '—', sub: next ? `next: ${next.id} · ${fmt(next.qty)} TVs${atRisk ? ` · ${atRisk} at risk` : ''}` : 'no open orders' }
     ];
-    html(el, steps.map(s => `<li><button type="button" class="vs-step ${SEV(s.st) === 'bad' ? 'down' : ''} ${s.bn ? 'bn' : ''} ${DF.sel === s.ref ? 'sel' : ''}" data-ref="${esc(s.ref)}"><b>${esc(s.name)}</b>${stChip(s.st)}<span class="num">${s.num}</span><small>${s.sub}</small>${s.bn ? `<small class="bnl">Bottleneck · ${esc(bn.name)}</small>` : ''}</button></li>`).join(''));
+    html(el, steps.map(s => `<li><button type="button" class="vs-step ${SEV(s.st) === 'bad' ? 'down' : ''} ${s.bn ? 'bn' : ''} ${DF.sel === s.ref ? 'sel' : ''}" data-ref="${esc(s.ref)}"><b>${esc(s.name)}</b>${stChip(s.st)}<span class="num">${esc(s.num)}</span><small>${esc(s.sub)}</small>${s.bn ? `<small class="bnl">Held up: ${esc(s.bn)}</small>` : ''}</button></li>`).join(''));
   }
+  DF.vstream = vstream;
 
-  /* ---------------- cases ---------------- */
+  /* ================= needs you, agents at work, what happens next ================= */
   function needs() {
     const el = $('#needs'); if (!el) return;
-    const w = window.Agents.waiting().slice().sort((a, b) => (b.value || 0) - (a.value || 0));
+    const w = DF.waiting();
     const n = $('#needsN'); n.textContent = w.length; n.classList.toggle('on', w.length > 0);
-    if (el.contains(document.activeElement) && document.activeElement.closest('.cs-dec')) return;
-    html(el, w.length ? w.map(c => CaseUI.card(c, { decide: true, noLast: true })).join('') : '<p class="empty">Nothing waits for you. The agents are watching the plant and will ask when a decision is yours.</p>');
+    if (el.contains(document.activeElement) && document.activeElement.closest('.cs-btns')) return;
+    html(el, w.length ? w.map(c => card(c, { decide: true })).join('') : '<p class="empty">Nothing waits for you. Nine agents watch every line, store and order and will ask when a decision is yours. Start a drill to see them work.</p>');
     if (typeof Theme !== 'undefined') Theme.icons(el);
   }
   function working() {
     const el = $('#working'); if (!el) return;
-    const S = window.Agents.S;
-    const open = S.cases.filter(c => c.state !== 'closed' && c.state !== 'awaiting' && c.state !== 'advise');
-    const recent = S.cases.filter(c => c.state === 'closed').slice(0, Math.max(0, 3 - open.length));
-    html(el, open.length || recent.length ? open.concat(recent).map(c => CaseUI.card(c)).join('') : '<p class="empty">The crew is watching. Start a drill to see an agent work a case from detection to verification.</p>');
+    const F = DF.AG.feed.slice(0, 7);
+    html(el, F.length ? `<ol class="events small-ev">${F.map(e => `<li class="${esc(e.level)}"><time>${esc(e.time)}</time><span class="src">${esc(e.agent.replace(' agent', ''))}</span><span>${esc(e.text)}${e.ref ? ' ' + link(toRef(e.ref), '›') : ''}</span></li>`).join('')}</ol>` : '<p class="empty">The crew is watching. Start a drill to see an agent detect, simulate and recommend.</p>');
   }
-  DF.renderCases = function () { needs(); working(); };
-
-  /* ---------------- alarms: ISA-18.2 grouping ---------------- */
-  // first-out alarms (a stop, a trip, a person in a cell) gather the consequential alarms of their area raised within 4 minutes
-  DF.incidents = function (P) {
-    const alive = P.alarms.slice().sort((a, b) => a.t - b.t);
-    const first = alive.filter(a => a.prio === 1 || /\.DOWN$|GRID\.DIP|\.CELL$/.test(a.key));
-    const used = new Set();
-    const out = [];
-    for (const f of first) {
-      if (used.has(f)) continue;
-      const fc = window.Agents.caseOfAlarm(f.key);
-      const members = alive.filter(a => a !== f && !used.has(a) && ((fc && window.Agents.caseOfAlarm(a.key) === fc) || (a.area === f.area && a.t >= f.t - 20 && a.t - f.t < 240)));
-      members.forEach(m => used.add(m)); used.add(f);
-      const c = window.Agents.S.cases.find(x => x.state !== 'closed' && (x.ref === toRef(f.ref) || x.id === fc));
-      out.push({ open: true, first: f, members, case: c, title: f.msg, area: f.area });
-    }
-    const rest = alive.filter(a => !used.has(a));
-    return out.concat(rest.length ? [{ open: false, members: rest, title: 'Other alarms', area: '' }] : []);
-  };
-  const prio = a => `<span class="prio p${a.prio}" aria-label="Priority ${a.prio}">P${a.prio}</span>`;
-  DF.prio = prio;
-  function alarmSum() {
-    const el = $('#alarmSum'); if (!el) return;
-    const P = DF.world();
-    const inc = DF.incidents(P).filter(i => i.open);
-    const live = P.alarms.filter(a => !(a.shelvedTo > P.t));
-    const top = live.slice().sort((a, b) => a.prio - b.prio || b.t - a.t);
-    let h = '';
-    for (const i of inc.slice(0, 2)) h += `<div class="inc open"><div class="ih"><h3>${esc(i.title)}</h3><span class="n">${i.members.length + 1}<small>alarms</small></span></div><p>${i.members.length ? `${i.members.length} consequential alarm${i.members.length > 1 ? 's' : ''} folded under the first-out. ` : ''}${i.case ? `${link('case:' + i.case.id, i.case.id)} · ${esc(CaseUI.agentName(i.case.agent))}: ${esc(CaseUI.STATE[i.case.state] ? CaseUI.STATE[i.case.state][0] : i.case.state)}` : 'Waiting for an agent.'}</p></div>`;
-    const shown = new Set(inc.flatMap(i => [i.first, ...i.members]));
-    const others = top.filter(a => !shown.has(a)).slice(0, 5);
-    h += others.map(a => `<div class="al-row ${a.state === 'active' ? 'unack' : ''}">${prio(a)}<div class="msg">${esc(a.msg)}<small>${esc(a.area || '')}</small></div><time>${esc(a.time)}</time></div>`).join('');
-    if (!h) h = '<p class="empty">No active alarms. The alarm rate is inside the ISA-18.2 target.</p>';
-    html(el, h);
-    $('#alSumS').textContent = `${live.length} active · ${P.alarmStats.rate10} raised in 10 min${P.alarmStats.flood ? ' · flood' : ''}`;
+  function nextUp() {
+    const el = $('#nextUp'); if (!el) return;
+    const P = DF.P;
+    const preds = P.preds.slice().sort((a, b) => a.eta - b.eta).slice(0, 6);
+    html(el, preds.length ? preds.map(p => `<div class="rw ${p.covered ? '' : p.eta < 600 ? 'bad' : p.eta < 1800 ? 'warn' : ''}"><span>${link(toRef(p.ref), p.text)}</span><span class="v">in ${esc(mins(p.eta))}</span><small>${esc(p.sub)}${p.covered ? ' · repair planned' : ''}</small></div>`).join('')
+      : '<p class="empty">No stock-out or failure expected. Every line-side stock has its next milk run or AGV planned and no machine shows a wear trend.</p>');
   }
 
-  /* ---------------- events ---------------- */
+  /* ================= events and orders ================= */
   let evFilter = 'all';
   function events() {
     const el = $('#events'); if (!el) return;
-    const P = DF.world();
-    let list = P.events.slice(0, 60);
+    const P = DF.P;
+    let list = P.events.slice(0, 80);
     if (evFilter === 'warn') list = list.filter(e => e.level === 'warn' || e.level === 'crit');
-    if (evFilter === 'agents') list = P.audit.slice(0, 60).map(a => ({ id: a.id, time: a.time, src: a.who, msg: `${a.action}${a.detail ? ' · ' + a.detail : ''}`, level: /agent/i.test(a.who) ? 'agent' : 'info' }));
+    if (evFilter === 'agents') list = DF.AG.feed.slice(0, 60).map(e => ({ time: e.time, src: e.agent.replace(' agent', ''), msg: e.text, level: e.level, ref: e.ref }));
     html(el, list.slice(0, 40).map(e => `<li class="${esc(e.level)}"><time>${esc(e.time)}</time><span class="src">${esc(e.src)}</span><span>${esc(e.msg)}${e.ref ? ' ' + link(toRef(e.ref), '›') : ''}</span></li>`).join('') || '<li><span></span><span></span><span class="muted">No events yet.</span></li>');
   }
-
-  /* ---------------- orders ---------------- */
+  $$('#evFilter .seg').forEach(b => {
+    b.onclick = () => { evFilter = b.dataset.f; $$('#evFilter .seg').forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); }); events(); };
+  });
   function orders() {
     const el = $('#orders'); if (!el) return;
-    const P = DF.world();
-    const rows = P.orders.filter(o => o.state !== 'shipped' || P.t - (o.shippedAt || 0) < 3600).slice(0, 8);
-    html(el, `<thead><tr><th>Order</th><th>Customer</th><th class="num">Qty</th><th class="num">Due</th><th class="num">Ready</th><th>State</th></tr></thead><tbody>${rows.map(o => {
-      const st = o.state === 'shipped' ? '<span class="st"><i></i>Shipped</span>' : o.state === 'late' ? '<span class="st bad"><i></i>Shipped late</span>' : o.risk > 300 ? `<span class="st warn"><i></i>${esc(PE.mins(o.risk))} late</span>` : `<span class="st"><i></i>${o.state === 'loading' ? 'Loading' : 'On time'}</span>`;
-      return `<tr><td>${link('order:' + o.id, o.id)}</td><td>${esc(o.customer)}<small>${o.product === 'tv' ? 'TVs' : 'Phones'}</small></td><td class="num">${fmt(o.qty)}</td><td class="num">${esc(PE.clock(o.due))}</td><td class="num">${o.eta && o.state !== 'shipped' && o.state !== 'late' ? esc(PE.clock(o.eta)) : '—'}</td><td>${st}</td></tr>`;
+    const P = DF.P, M = DF.E.MODELS, late = DF.AG.base ? DF.AG.base.lateList : [];
+    const open = P.orders.filter(o => o.state === 'open' || o.state === 'loading').sort((a, b) => a.due - b.due).slice(0, 7);
+    const done = P.orders.filter(o => !(o.state === 'open' || o.state === 'loading') && P.t - (o.shippedAt || 0) < 3600).slice(-3).reverse();
+    const rows = open.concat(done);
+    html(el, `<thead><tr><th>Order</th><th>Customer</th><th class="num">TVs</th><th class="num">Due</th><th class="num">Loaded</th><th>State</th></tr></thead><tbody>${rows.map(o => {
+      const st = o.state === 'shipped' ? DF.tag('', 'Shipped') : o.state === 'late' ? DF.tag('bad', 'Shipped late') : o.state === 'partial' ? DF.tag('warn', 'Part-shipped') : late.includes(o.id) ? DF.tag('warn', 'Forecast short') : DF.tag('', o.state === 'loading' ? 'Loading' : 'On time');
+      return `<tr><td>${link('order:' + o.id, o.id)}</td><td>${esc(o.customer)}<small>${esc(o.channel || '')}</small></td><td class="num">${fmt(o.qty)}<small>${esc(M[o.model].name)}</small></td><td class="num">${esc(clock(o.due))}</td><td class="num">${o.truck ? `${fmt(o.truck.loaded)}<small>${esc(o.truck.dock.id)}</small>` : o.shipped ? fmt(o.shipped) : '—'}</td><td>${st}</td></tr>`;
     }).join('')}</tbody>`);
   }
 
-  DF.onView('command', force => { renderInspector(force); vstream(); needs(); working(); alarmSum(); events(); orders(); });
-
-  /* clicks inside the command room: refs, the detail panel, ask buttons, case links */
-  document.addEventListener('click', e => {
-    const r = e.target.closest('[data-ref]');
-    if (r) {
-      const ref = r.dataset.ref;
-      if (ref.startsWith('case:')) { DF.openCase(ref.slice(5)); return; }
-      if (ref.startsWith('unit:')) { DF.go('rootcause'); setTimeout(() => DF.trace && DF.trace(ref.slice(5)), 30); return; }
-      if (DF.view !== 'command') DF.go('command');
-      DF.select(ref, { focus: true, scroll: true });
-      return;
-    }
-    if (e.target.closest('[data-clear]')) { DF.select(null); if (F) F.fit(); return; }
-    const ask = e.target.closest('[data-ask]');
-    if (ask && window.Copilot) { Copilot.open(`Tell me about ${DF.refName(ask.dataset.ask)}: its state, what is driving it and what you would do.`); return; }
-    const oc = e.target.closest('[data-open-case]');
-    if (oc) DF.openCase(oc.dataset.openCase);
-  });
-  document.addEventListener('click', e => {
-    const b = e.target.closest('#evFilter .seg'); if (!b) return;
-    evFilter = b.dataset.f;
-    $$('#evFilter .seg').forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); });
-    events();
-  });
+  DF.onView('command', force => { DF.renderInspector(force); vstream(); needs(); working(); nextUp(); events(); orders(); });
 })();

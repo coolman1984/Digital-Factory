@@ -90,7 +90,7 @@
     <div class="cols c3 r d2">
       <div><h3>The opportunity</h3><p>Downtime, quality escapes and energy are the largest controllable costs on an electronics line. Most of the data needed to reduce them already exists on the floor.</p></div>
       <div><h3>The solution</h3><p>A live digital twin of the plant with AI that predicts failures, inspects every board, and recommends the next best action, built on top of existing systems.</p></div>
-      <div class="key"><h3>The decision</h3><p>Approve a 12-week pilot on one SMT line. Success criteria are agreed up front and measured by your own team.</p></div>
+      <div class="key"><h3>The decision</h3><p>Approve a 12-week pilot on one main assembly line and the SMD, LCM and injection lines that feed it. Success criteria are agreed up front and measured by your own team.</p></div>
     </div>
     <aside class="sn" hidden>This slide is the whole meeting in one page. Read the three titles: opportunity, solution, decision. Then say: "The rest of the presentation supports these three points." Senior leaders like the answer first.</aside>
   </section>
@@ -100,7 +100,7 @@
     <div class="lhs">
       <h2 class="r d1">Every machine already produces data. <span class="hl">Most decisions still use yesterday's numbers.</span></h2>
       <div class="cols c2 r d2">
-        <div><h3>Unplanned stops</h3><p>One failure on an SMT line stops assembly, test and shipping behind it.</p></div>
+        <div><h3>Unplanned stops</h3><p>One failure on an SMD line starves the main lines, packing and shipping behind it.</p></div>
         <div><h3>Quality escapes</h3><p>A defect found in the market costs far more than one caught on the line.</p></div>
         <div><h3>Energy costs</h3><p>Tariffs are rising, and export customers ask for CO₂ per unit.</p></div>
         <div><h3>Know-how at risk</h3><p>Expert judgement lives in people's heads and leaves at shift end.</p></div>
@@ -121,7 +121,7 @@
     </ol>
     <div class="cols c4 r d3">
       <div><h3>Digital twin</h3><p>Simulation across the whole chain, from materials warehousing to production and shipping.</p><p class="have">In the demo: live twin, time machine, what-if</p></div>
-      <div><h3>AI agents</h3><p>Agents for quality, production and logistics that plan and act toward goals.</p><p class="have">In the demo: six agents with an autonomy dial</p></div>
+      <div><h3>AI agents</h3><p>Agents for quality, production and logistics that plan and act toward goals.</p><p class="have">In the demo: nine agents with an autonomy dial</p></div>
       <div><h3>Safety AI</h3><p>Early detection of hazards and automatic prevention across environment, health and safety.</p><p class="have">In the demo: safety agent, 0.4 s response</p></div>
       <div><h3>Robotics</h3><p>Logistics, assembly and safety robots, with humanoids phased in over time.</p><p class="have">In the demo: AGVs dispatched by AI</p></div>
     </div>
@@ -162,7 +162,7 @@
     <h2 class="r d1">Four layers. <span class="hl">One clear picture of the plant.</span></h2>
     <p class="lead r d2">Nothing is replaced. Digital Factory sits on top of the machines, MES and ERP you already run.</p>
     <div class="cols c4 r d3">
-      <div><h3>Every signal</h3><ul><li>PLCs and SMT equipment</li><li>AOI, SPI and testers</li><li>Energy meters and AGVs</li><li>MES, ERP and CMMS</li></ul></div>
+      <div><h3>Every signal</h3><ul><li>PLCs and SMD equipment</li><li>AOI, SPI and testers</li><li>Energy meters and AGVs</li><li>MES, ERP and CMMS</li></ul></div>
       <div><h3>Live digital twin</h3><ul><li>Every line, station and unit</li><li>OEE, yield and takt, live</li><li>Floor to boardroom</li><li>Screens and mobile</li></ul></div>
       <div><h3>AI foresight</h3><ul><li>Remaining machine life</li><li>Vision defect detection</li><li>Root-cause analysis</li><li>Demand and energy forecasts</li></ul></div>
       <div><h3>Clear decisions</h3><ul><li>Actions ranked by value</li><li>Automatic work orders</li><li>What-if simulation</li><li>Production copilot</li></ul></div>
@@ -184,7 +184,7 @@
       </div>
     </div>
     <div class="demo-wrap r d2" id="demoWrap"><iframe id="demoFrame" title="Digital Factory live demo" data-src="app.html?embed=1"></iframe><iframe id="plantFrame" title="Plant EG-01 live in 3D" data-src="plant.html?embed=1" hidden></iframe></div>
-    <aside class="sn" hidden>The most important part. Open the demo full screen. (1) Show the command room and plant OEE. (2) Open Drills and start "Bearing wear on Mounter B", then set the speed to 16×. Within a minute the maintenance agent opens a case from the vibration trend alone: watch it read the history, recall a past case and play three options forward on copies of the plant. (3) When the case reaches "Needs you", open it: the cause, how sure the agent is, and each option's value against doing nothing across the futures. Let him press Approve himself, then watch the agent verify the result. (4) Open Leadership. (5) Open the copilot and ask "Will we hit the plan today?". (6) Switch to "Live plant 3D": the whole TV plant as a moving 3D model. Click any TV to show its passport, then run a drill and let him watch the AI agents simulate the options before they recommend one.</aside>
+    <aside class="sn" hidden>The most important part. Open the demo full screen. (1) Show the command room and plant OEE. (2) Open Drills and start "Short shots on injection machine IM10", then press Skip 10 min. The Quality agent traces the rejected back covers at final QA to IM10 through genealogy and simulates the options on the two-hour forecast. (3) Open AI agents and the decision: the evidence, how sure the agent is, the agents' discussion and each option's TVs and late orders. Let him press Apply himself; the audit ID appears at once. (4) Open Leadership. (5) Open the copilot and ask "Will we hit the plan today?". (6) Switch to "Live plant 3D": the whole TV plant as a moving 3D model. Click any TV to show its passport, then run a drill and let him watch the AI agents simulate the options before they recommend one.</aside>
   </section>
 
   <!-- CAPABILITIES: an index you can open -->
@@ -192,15 +192,15 @@
     <h2 class="r d1">Ten capabilities, working today. <span class="hl">Most plants have none of them.</span></h2>
     <ul class="caplist r d2">
       <li><a href="app.html#command" target="_blank" rel="noopener"><b>Command room</b><span>Every line and unit, live</span><i data-icon="arrowRight"></i></a></li>
-      <li><a href="app.html#agents" target="_blank" rel="noopener"><b>AI agent crew</b><span>Six agents, autonomy you control</span><i data-icon="arrowRight"></i></a></li>
-      <li><a href="app.html#alarms" target="_blank" rel="noopener"><b>Alarm flood → one cause</b><span>Dozens of alarms become one incident</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#agents" target="_blank" rel="noopener"><b>AI agent crew</b><span>Nine agents, autonomy you control</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#alarms" target="_blank" rel="noopener"><b>Alarms → one cause</b><span>Alarms grouped under their first-out</span><i data-icon="arrowRight"></i></a></li>
       <li><a href="app.html#predict" target="_blank" rel="noopener"><b>Shift forecast</b><span>Chance to hit plan, re-forecast all shift</span><i data-icon="arrowRight"></i></a></li>
       <li><a href="app.html#rootcause" target="_blank" rel="noopener"><b>Root-cause chains</b><span>From symptom to cause to cost</span><i data-icon="arrowRight"></i></a></li>
-      <li><a href="app.html#command" target="_blank" rel="noopener"><b>Time machine</b><span>Rebuild any recent moment exactly, then branch from it</span><i data-icon="arrowRight"></i></a></li>
-      <li><a href="app.html#scenarios" target="_blank" rel="noopener"><b>Drills</b><span>Twelve real-world drills on the twin</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#command" target="_blank" rel="noopener"><b>Time machine</b><span>Replay the last 45 minutes, then compare options</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#scenarios" target="_blank" rel="noopener"><b>Drills</b><span>Nine real-world drills on Plant EG-01</span><i data-icon="arrowRight"></i></a></li>
       <li><a href="app.html#control" target="_blank" rel="noopener"><b>Simulate before you act</b><span>See the result before any change</span><i data-icon="arrowRight"></i></a></li>
-      <li><a href="app.html#leadership" target="_blank" rel="noopener"><b>Leadership view</b><span>Decisions ranked by money at stake</span><i data-icon="arrowRight"></i></a></li>
-      <li><a href="app.html#simulator" target="_blank" rel="noopener"><b>What-if lab</b><span>Compare options on futures of the twin</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#leadership" target="_blank" rel="noopener"><b>Leadership view</b><span>Plant health and the decisions waiting</span><i data-icon="arrowRight"></i></a></li>
+      <li><a href="app.html#simulator" target="_blank" rel="noopener"><b>What-if lab</b><span>Compare options on the two-hour forecast</span><i data-icon="arrowRight"></i></a></li>
     </ul>
     <aside class="sn" hidden>Recap of what he just saw, one breath per tile. If he only remembers one: the agent crew with the autonomy dial. It puts his team in control of how much the AI does.</aside>
   </section>
@@ -229,7 +229,7 @@
       </ul>
     </div>
     <p class="src-note r d4">Source: McKinsey &amp; Company research on predictive maintenance. Results vary with the starting point.</p>
-    <aside class="sn" hidden>Link this to what he just saw in the demo. Ask: "How many hours of unplanned downtime do your SMT lines have per month?" Remember the number; you will type it into the business case in a few slides.</aside>
+    <aside class="sn" hidden>Link this to what he just saw in the demo. Ask: "How many hours of unplanned downtime do your SMD and main lines have per month?" Remember the number; you will type it into the business case in a few slides.</aside>
   </section>
 
   <!-- AI VISION: three figures -->
@@ -259,11 +259,11 @@
       <div>
         <h3>What-if simulation</h3>
         <p>Test a plan on the twin before committing people, overtime or capital.</p>
-        <ul class="asks"><li>Final Assembly B at 110%: is it worth it against doing nothing?</li><li>Change the worn bearing now, or slow the mounter until the break?</li><li>Hold a compressor and a chiller in the peak: what does it cost in output?</li></ul>
+        <ul class="asks"><li>Main line 6 at 108%: is it worth it against the live plan?</li><li>Change the worn bearing now, or wait until the PBA supermarket is fuller?</li><li>Move a main line to the model with the least cover: what does the changeover cost?</li></ul>
       </div>
     </div>
     <p class="lead r d3">The result: <b>morning meetings that make decisions, instead of meetings that collect numbers.</b></p>
-    <aside class="sn" hidden>This is about the manager himself, not only the engineers. If useful, open the What-if lab in the demo, tick "Final Assembly B to 110%" and play the futures: in a few seconds he sees what it earns against doing nothing, how sure that is, and what it costs in energy.</aside>
+    <aside class="sn" hidden>This is about the manager himself, not only the engineers. If useful, open the What-if lab in the demo, tick "Main line 6 to 108%" and simulate: in a second he sees how many TVs it adds over the next two hours and whether any order goes late.</aside>
   </section>
 
   <!-- ARCHITECTURE: the stack drawn as a section, floor at the bottom -->
@@ -314,7 +314,7 @@
   <section class="slide" data-id="plan">
     <h2 class="r d1">One line. Twelve weeks. <span class="hl">Proof on your own floor.</span></h2>
     <ol class="plan r d2">
-      <li style="--w:2" class="s1"><b>Connect</b><em>Weeks 1–2</em><span>Site walk, choose the pilot SMT line, read-only connection to machines and MES, agree the baseline.</span></li>
+      <li style="--w:2" class="s1"><b>Connect</b><em>Weeks 1–2</em><span>Site walk, choose the pilot main line and its feeding lines, read-only connection to machines and MES, agree the baseline.</span></li>
       <li style="--w:4" class="s2"><b>See</b><em>Weeks 3–6</em><span>Live twin of the pilot line. OEE, yield and energy on screens and mobile.</span></li>
       <li style="--w:4" class="s3"><b>Predict</b><em>Weeks 7–10</em><span>Predictive maintenance on critical machines, vision AI on AOI, copilot for the line team.</span></li>
       <li style="--w:2" class="s4"><b>Prove</b><em>Weeks 11–12</em><span>Results measured against the baseline and signed off by your team, with a plan to scale.</span></li>
@@ -339,7 +339,7 @@
         <div><h3>Local and on site</h3><p>Egyptian engineers next to your team, in your time zone, from day one.</p></div>
         <div><h3>Open, no lock-in</h3><p>Open standards. Your data, your models and your IP stay yours.</p></div>
         <div><h3>Paid for proof</h3><p>Pilot success criteria agreed up front and measured by your team.</p></div>
-        <div><h3>Built for electronics</h3><p>SMT, final assembly, test and pack. The twin speaks your line's language from day one.</p></div>
+        <div><h3>Built for electronics</h3><p>SMD, LCM, injection, final assembly, test and pack. The twin speaks your line's language from day one.</p></div>
       </div>
     </div>
     <figure class="photo r d2"><img src="assets/img/crew.jpg" width="1600" height="1067" alt="Two workers at a machine control panel"></figure>

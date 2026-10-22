@@ -1,173 +1,127 @@
-/* Digital Factory — command room performance views: leadership (health, OEE by line, value, losses), maintenance
-   (health, vibration against ISO 10816 zones, technicians, work orders), quality (p-chart, pareto, lots, rejects) and
-   energy (power, 15-minute demand intervals, loads). Simulated data; EGP figures use the sample cost model. */
+/* Digital Factory — the performance views of the command room, on Plant EG-01: leadership (plant health, the six
+   main lines, value today, where time went), maintenance (machine health, condition trends, technicians and SAP PM work
+   orders), quality (SPC with Nelson rules, defects, 8D nonconformance reports, rejects) and energy (demand against the
+   4,000 kW contract, power by area, loads). Simulated data. */
 (function () {
   'use strict';
-  const { $, $$, esc, fmt, pct, money, signed, link, html, clamp } = DF;
-  const PE = window.PlantEngine;
-  const T = window.Twin;
-  const A = window.Agents;
-  const seg = (sel, b) => $$(sel).forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); });
-  const lineOf = (P, s) => (P.lines[s.line] ? P.lines[s.line].name : 'Support');
+  const { $, $$, esc, fmt, pct, link, toRef, stChip, tag, html } = DF;
+  const mins = s => DF.E.mins(s), clock = t => DF.E.clock(t);
+  const seg = (sel, fn) => $$(sel + ' .seg').forEach(b => { b.onclick = () => { $$(sel + ' .seg').forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); }); fn(b); }; });
+  const mains = () => Object.values(DF.P.lines).filter(L => L.kind === 'main');
+  const stats = (el, rows) => html(el, rows.map(([v, l, s, c]) => `<div class="stat"><b class="${c || ''}">${esc(v)}</b><span>${esc(l)}</span><small>${esc(s)}</small></div>`).join(''));
+  const timeAxis = () => ({ min: DF.P.hist.t[0], max: DF.P.hist.t[DF.P.hist.t.length - 1], fmt: t => clock(t), name: 'Time' });
 
-  /* ---------------- plant health ---------------- */
-  DF.health = function (P) {
-    const k = P.kpi;
-    const live = P.alarms.filter(a => !(a.shelvedTo > P.t));
-    const urgent = live.filter(a => a.prio <= 2).length;
-    const worn = P.stations.filter(s => s.degrade > 0 && s.state !== 'down').length, down = P.stations.filter(s => s.state === 'down').length;
-    const open = P.orders.filter(o => o.state === 'open' || o.state === 'loading'), late = open.filter(o => o.risk > 300).length;
+  /* ================= leadership ================= */
+  function healthParts() {
+    const P = DF.P, k = P.kpi, open = P.alarms.filter(a => !(a.shelvedTo > P.t));
+    const wear = P.stations.filter(s => s.degrade > 0 && s.state !== 'down').length, down = P.stations.filter(s => s.state === 'down').length;
+    const base = DF.AG.base, due = P.orders.filter(o => (o.state === 'open' || o.state === 'loading') && o.due - P.t < 7200).length;
     const parts = [
-      { k: 'OEE', w: 30, v: clamp((k.oee || 0) / 0.85, 0, 1), txt: pct(k.oee || 0) },
-      { k: 'First-pass yield', w: 20, v: clamp(((k.fpy || 0.99) - 0.95) / 0.04, 0, 1), txt: pct(k.fpy || 0) },
-      { k: 'Alarms', w: 15, v: clamp(1 - urgent * 0.25 - P.alarmStats.rate10 / 20, 0, 1), txt: `${live.length} active · ${P.alarmStats.rate10} in 10 min` },
-      { k: 'Machine risk', w: 15, v: clamp(1 - worn * 0.3 - down * 0.45, 0, 1), txt: `${worn} wearing · ${down} stopped` },
-      { k: 'Orders on time', w: 20, v: open.length ? 1 - late / open.length : 1, txt: `${open.length - late} of ${open.length}` }
+      ['OEE', Math.min(30, (k.oee || 0) / 0.85 * 30), 30, pct(k.oee || 0)],
+      ['First-pass yield', Math.max(0, Math.min(20, ((k.fpy || 0) - 0.95) / 0.05 * 20)), 20, pct(k.fpy || 0, 2)],
+      ['Alarms', Math.max(0, 20 - 5 * open.filter(a => a.prio <= 2).length - open.length), 20, `${open.length} open`],
+      ['Machine risk', Math.max(0, 15 - 5 * wear - 5 * down), 15, `${wear} wearing · ${down} stopped`],
+      ['Orders', due ? 15 * (1 - (base ? base.late : 0) / due) : 15, 15, base && base.late ? `${base.late} of ${due} short` : 'all covered']
     ];
-    const score = Math.round(parts.reduce((a, p) => a + p.w * p.v, 0));
-    return { score, parts };
-  };
-
-  /* ---------------- leadership ---------------- */
+    return { parts, score: Math.round(parts.reduce((a, p) => a + p[1], 0)) };
+  }
+  DF.healthScore = () => healthParts().score;
+  function health() {
+    const { parts, score } = healthParts();
+    $('#health').textContent = score;
+    html($('#healthParts'), parts.map(([n, v, max, s]) => `<div class="pt"><span>${esc(n)} · <span class="muted">${esc(s)}</span></span><b>${Math.round(v)} / ${max}</b>${Viz.meter(v / max, v / max < 0.5 ? 'bad' : v / max < 0.8 ? 'warn' : '')}</div>`).join(''));
+  }
   function leadership() {
-    const E = DF.E(), P = E.P, W = E.W, k = P.kpi;
-    const h = DF.health(P);
-    DF.tween($('#health'), h.score, v => String(Math.round(v)));
-    html($('#healthParts'), h.parts.map(p => `<div class="pt"><span>${esc(p.k)} <span class="muted">· weight ${p.w}</span></span><b>${esc(p.txt)}</b>${Viz.meter(p.v, p.v < 0.5 ? 'bad' : p.v < 0.8 ? 'warn' : 'ok')}</div>`).join(''));
-    html($('#league'), `<thead><tr><th>Line</th><th class="num">OEE</th><th class="num">Avail.</th><th class="num">Perf.</th><th class="num">Quality</th><th class="num">Per hour</th><th>State</th></tr></thead><tbody>${['L1', 'L2', 'L3', 'L4', 'L5'].map(id => P.lines[id]).sort((a, b) => b.oee - a.oee).map(L => `<tr><td>${link('line:' + L.id, L.name)}<small>${esc(L.sub)}</small></td><td class="num">${pct(L.oee)}</td><td class="num">${pct(L.avail)}</td><td class="num">${pct(L.perf)}</td><td class="num">${pct(L.qual, 2)}</td><td class="num">${fmt(L.tph)}</td><td>${DF.stChip(L.stopped ? 'stopped' : L.state)}</td></tr>`).join('')}</tbody>`);
-    const waiting = A.waiting();
-    const atStake = waiting.reduce((a, c) => a + Math.max(0, c.value || 0), 0);
-    const S = W.stats;
-    html($('#value'), `<div class="stats">${[
-      DF.stat(money(A.S.value), 'Agent decisions, verified', `${A.S.agents.reduce((a, g) => a + g.actions, 0)} actions`, A.S.value > 0 ? 'ok' : ''),
-      DF.stat(money(atStake), 'Waiting for a decision', `${waiting.length} case${waiting.length === 1 ? '' : 's'}`, atStake ? 'warn' : ''),
-      DF.stat(money(P.energy.cost), 'Energy today', `${fmt(P.energy.kwh)} kWh`),
-      DF.stat(money(S.demandCost), 'Demand charge today', S.demandCost ? 'over the contract' : 'none', S.demandCost ? 'bad' : ''),
-      DF.stat(money(S.scrapCost + S.repairCost + S.smtRepairs * T.E.COST.smtRepair), 'Scrap and repairs today', `${fmt(S.failures)} breakdown${S.failures === 1 ? '' : 's'}`),
-      DF.stat(fmt(S.lateOrders), 'Orders shipped late', `${fmt(S.shipped)} shipped`, S.lateOrders ? 'bad' : '')
-    ].join('')}</div>`);
+    const P = DF.P, M = DF.E.MODELS, X = DF.X;
+    health();
+    html($('#league'), `<thead><tr><th>Line</th><th>State</th><th class="num">TVs / h</th><th class="num">OEE</th><th class="num">A</th><th class="num">P</th><th class="num">Q</th></tr></thead><tbody>${mains().sort((a, b) => a.oee - b.oee).map(L => `<tr><td>${link('line:' + L.id, L.name)}<small>${esc(M[L.model].name)}</small></td><td>${stChip(L.state)}</td><td class="num">${fmt(L.tph)}</td><td class="num ${L.oee < 0.7 ? 'bad' : L.oee < 0.8 ? 'warn' : ''}">${pct(L.oee)}</td><td class="num">${pct(L.avail, 0)}</td><td class="num">${pct(L.perf, 0)}</td><td class="num">${pct(L.qual, 1)}</td></tr>`).join('')}</tbody>`);
+    const f = X.finance();
+    html($('#value'), [['Revenue shipped', f.revenue, ''], ['Contribution', f.margin, f.margin >= 0 ? 'pos' : 'neg'], ['Value from decisions', f.saved, 'pos'], ['Rework and scrap', -(f.rework || 0), f.rework ? 'neg' : ''], ['Inventory on the floor', f.total, '']].map(([l, v, c]) => `<div class="m"><span>${esc(l)}</span><b class="${c}">${esc(X.egp(v))}</b></div>`).join(''));
     const H = P.hist;
-    Viz.chart($('#oeeTrend'), { label: 'Plant OEE, last 15 minutes', height: 220, x: { min: H.t[0] || P.t - 900, max: H.t[H.t.length - 1] || P.t, fmt: t => PE.clock(t), name: 'Time' }, y: { min: 0.6, max: 1, fmt: v => Math.round(v * 100) + '%' }, series: [{ key: 'oee', label: 'Plant OEE', cls: 'c1', pts: H.t.map((t, i) => [t, H.oee[i]]), area: true, end: true, endLabel: pct(k.oee || 0) }], rules: [{ y: 0.85, label: 'Benchmark 85%', cls: 'ink' }], legend: false });
-    const ap = $('#approvals');
-    if (!(ap.contains(document.activeElement) && document.activeElement.closest('.cs-dec'))) html(ap, waiting.slice().sort((a, b) => (b.value || 0) - (a.value || 0)).map(c => CaseUI.card(c, { decide: true, noLast: true })).join('') || '<p class="empty">No decision waits. The agents act on their own only inside their autonomy and the plant policy.</p>');
-    // where time went: at each line's constraint station since 09:12; machines stopped anywhere on the line in the label
-    const rows = ['L1', 'L2', 'L3', 'L4', 'L5'].map(id => {
-      const L = P.lines[id];
-      const b = id === 'L5' ? P.byId['L5-Packing'] : L.stations.reduce((m, s) => ((s.kind === 'reflow' || s.kind === 'burnin' ? 0 : s.base) > m.base ? s : m), L.stations[0]);
-      return { L, down: b.counters.down / 60, starved: b.counters.starved / 60, blocked: b.counters.blocked / 60, b, lineDown: (W.stats.downSec[id] || 0) / 60 };
-    });
-    const mx = Math.max(10, ...rows.map(r => r.down + r.starved + r.blocked));
-    html($('#losses'), `<div class="pareto">${rows.map(r => `<div class="pb"><span>${link('line:' + r.L.id, r.L.name)} <span class="muted small">· at ${esc(r.b.name)}${r.lineDown >= 0.5 ? ` · machines stopped ${fmt(r.lineDown)} min on this line` : ''}</span></span><b>${fmt(r.down + r.starved + r.blocked)} min</b>
-      <span class="stack" role="img" aria-label="${esc(r.L.name)}: ${fmt(r.down)} min stopped, ${fmt(r.starved)} min starved, ${fmt(r.blocked)} min blocked">${[['down', r.down, 'c2'], ['starved', r.starved, 'c4'], ['blocked', r.blocked, 'c1']].map(([k, v, c]) => v > 0.05 ? `<i class="${c}" style="width:${(v / mx * 100).toFixed(2)}%"></i>` : '').join('')}</span></div>`).join('')}</div>
-      <p class="vz-legend"><span><i class="vz-bk" style="background:var(--vz-2)"></i>Stopped</span><span><i class="vz-bk" style="background:var(--vz-4)"></i>Starved of material</span><span><i class="vz-bk" style="background:var(--vz-1)"></i>Blocked downstream</span></p>`);
+    if (H.t.length > 2) Viz.chart($('#oeeTrend'), { height: 200, label: 'Main-line OEE', x: timeAxis(), y: { min: 0.5, max: 1, fmt: v => Math.round(v * 100) + '%' }, rules: [{ y: 0.85, label: 'Benchmark 85%', cls: 'ok' }], series: [{ label: 'OEE', cls: 'c1', pts: H.t.map((t, i) => [t, H.oee[i]]), end: true, endLabel: pct(H.oee[H.oee.length - 1]) }] });
+    const el = $('#approvals'), w = DF.waiting();
+    if (!(el.contains(document.activeElement) && document.activeElement.closest('.cs-btns'))) html(el, w.length ? w.map(c => DF.Dec.card(c, { decide: true })).join('') : '<p class="empty">No decision waits for a person.</p>');
+    // where time went: minutes stopped, short-stopped, in changeover or planned work, per line
+    const lost = s => { const rs = Object.assign({}, s.rs || {}); if (['down', 'maint', 'micro', 'changeover'].includes(s.state)) { const k = s.state + '|' + (s.why || ''); rs[k] = (rs[k] || 0) + (P.t - s.since); } return Object.entries(rs).filter(([k]) => /^(down|maint|micro|changeover)\|/.test(k)).reduce((a, [, v]) => a + v, 0); };
+    const items = Object.values(P.lines).filter(L => L.kind !== 'cushion').map(L => ({ k: L.kind === 'injection' ? 'Injection' : L.id, v: Math.round(L.stations.reduce((a, s) => a + lost(s), 0) / 60), tip: L.name })).map(it => Object.assign(it, { cls: it.v > 30 ? 'bad' : it.v > 10 ? 'warn' : 'c1' }));
+    Viz.columns($('#losses'), { items, label: 'Minutes lost per line', unit: 'min', height: 190, series: 'stopped, short stops, changeover, planned work' });
   }
   DF.onView('leadership', leadership);
 
-  /* ---------------- maintenance ---------------- */
-  let mSel = 'L1-MounterB';
-  const MK = ['printer', 'spi', 'mounter', 'reflow', 'aoi', 'robot', 'bond', 'fct', 'qc', 'packer', 'palletizer'];
-  function rulOf(s) {
-    if (!s.hist.vib || s.hist.vib.length < 12) return null;
-    const run = s.hist.vib.slice(-44).filter(v => v > 0.6).slice(-36), r = A.linreg(run, 5 / 60);
-    if (r.slope < 0.004 || r.r2 < 0.3) return { r, p50: Infinity };
-    return { r, p50: Math.max(0, 7.1 - r.last) / r.slope };
-  }
-  function maintenance() {
-    const P = DF.world();
-    const list = P.stations.filter(s => MK.includes(s.kind));
+  /* ================= maintenance ================= */
+  let mFilter = 'risk', mSel = null;
+  function machines() {
+    const P = DF.P;
+    let list = P.stations.filter(s => s.line !== 'SUP');
+    if (mFilter === 'risk') list = list.filter(s => s.degrade > 0 || s.state === 'down' || s.state === 'maint' || s.health < 70).sort((a, b) => (b.degrade > 0) - (a.degrade > 0) || a.health - b.health).slice(0, 24);
+    else if (mFilter === 'smd') list = list.filter(s => s.line.startsWith('SMD') && /mounter|reflow|printer|writer/.test(s.kind));
+    else if (mFilter === 'inj') list = list.filter(s => s.line === 'INJ');
+    else list = list.filter(s => s.line.startsWith('ML') && !s.manual);
+    if (!mSel || !P.byId[mSel]) mSel = list[0] ? list[0].id : 'SMD4-MounterB';
     const el = $('#machines');
-    if (!el.contains(document.activeElement) || document.activeElement.classList.contains('mach')) {
-      const focusId = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.mach;
-      html(el, list.map(s => {
-        const R = rulOf(s);
-        const hv = s.health / 100;
-        return `<button type="button" class="mach ${s.id === mSel ? 'sel' : ''}" data-mach="${esc(s.id)}" aria-pressed="${s.id === mSel}"><span class="mn">${esc(s.name)}${DF.stChip(s.state)}</span><span class="ml">${esc(lineOf(P, s))} · ${esc(DF.KINDN[s.kind] || s.kind)}</span>${Viz.meter(hv, hv < 0.5 ? 'bad' : hv < 0.75 ? 'warn' : '')}<span class="mr"><span>Health <b>${Math.round(s.health)}</b></span>${s.sens.vib != null ? `<span><b>${s.sens.vib.toFixed(1)}</b> mm/s</span>` : `<span>${(s.kwNow || 0).toFixed(1)} kW</span>`}${R && isFinite(R.p50) ? `<span>Life <b>${PE.mins(R.p50 * 60)}</b></span>` : ''}</span></button>`;
-      }).join(''));
-      if (focusId) { const f = el.querySelector(`[data-mach="${CSS.escape(focusId)}"]`); if (f) f.focus(); }
-    }
-    const s = P.byId[mSel] || list[0];
-    $('#vibH').textContent = s.hist.vib ? `${s.name} vibration` : `${s.name} power`;
-    const H = s.hist, ts = H.t || [];
-    if (H.vib && H.vib.length > 3) {
-      const R = rulOf(s), pts = ts.map((t, i) => [t, H.vib[i]]);
-      const series = [{ key: 'vib', label: 'Measured', cls: 'ck', pts, end: true, endLabel: (s.sens.vib || 0).toFixed(1) + ' mm/s' }];
-      let xmax = ts[ts.length - 1] || P.t;
-      if (R && isFinite(R.p50) && R.p50 < 240) {
-        const t1 = xmax + R.p50 * 60;
-        series.push({ key: 'fc', label: 'Trend to zone D', cls: 'c1', dash: true, pts: [[xmax, R.r.last], [t1, 7.1]] });
-        xmax = Math.max(xmax, t1);
-      }
-      Viz.chart($('#vibChart'), { label: `${s.name} vibration with ISO 10816 zones`, height: 220, x: { min: ts[0] || P.t - 900, max: xmax, fmt: t => PE.clock(t) }, y: { min: 0, max: Math.max(8, ...H.vib) * 1.05, fmt: v => v.toFixed(1), unit: 'mm/s' }, series, rules: [{ y: 4.5, label: 'Zone C 4.5', cls: 'warn', legend: 'Alarm limits' }, { y: 7.1, label: 'Zone D 7.1', cls: 'bad' }] });
-      $('#vibS').textContent = R && isFinite(R.p50) ? `Rising ${(R.r.slope * 60).toFixed(2)} mm/s per hour (r² ${R.r.r2.toFixed(2)}): about ${PE.mins(R.p50 * 60)} to zone D` : 'RMS velocity, mm/s · no wear trend';
-      html($('#vibChip'), DF.stChip(s.state));
-    } else {
-      Viz.chart($('#vibChart'), { label: `${s.name} power`, height: 220, x: { min: ts[0] || P.t - 900, max: ts[ts.length - 1] || P.t, fmt: t => PE.clock(t) }, y: { min: 0, fmt: v => v.toFixed(1), unit: 'kW' }, series: [{ key: 'kw', label: 'Power', cls: 'c1', pts: ts.map((t, i) => [t, (H.kw || [])[i]]), area: true, end: true }], legend: false });
-      $('#vibS').textContent = 'No vibration sensor on this machine; power draw instead (kW)';
-      html($('#vibChip'), DF.stChip(s.state));
-    }
-    html($('#techs'), P.techs.map(t => `<div class="rw"><b>${esc(t.name)}</b><span class="v">${esc(t.state)}</span>${t.job ? `<small>Working on ${link('st:' + (P.byId[t.job] ? t.job : ''), P.byId[t.job] ? P.byId[t.job].name : t.job)}</small>` : '<small>In the maintenance shop</small>'}</div>`).join(''));
-    const wo = P.events.filter(e => e.src === 'CMMS' || /work order|WO-/i.test(e.msg)).slice(0, 12);
-    html($('#workOrders'), wo.map(e => `<li><time>${esc(e.time)}</time><span class="src">${esc(e.src)}</span><span>${esc(e.msg)}</span></li>`).join('') || '<li><span></span><span></span><span class="muted">No work orders yet this shift.</span></li>');
+    if (!el.contains(document.activeElement)) html(el, list.length ? list.map(s => {
+      const rul = s.degrade > 0 && s.state !== 'down' ? (s.health - 22) / s.degrade : null;
+      return `<button type="button" class="mach ${s.id === mSel ? 'sel' : ''}" data-mach="${esc(s.id)}" aria-pressed="${s.id === mSel}"><span class="mn">${esc(s.name)}${stChip(s.state)}</span><span class="ml">${esc(P.lines[s.line] ? P.lines[s.line].name : s.line)}</span>${Viz.meter(s.health / 100, s.health < 40 ? 'bad' : s.health < 70 ? 'warn' : '')}<span class="mr"><span>Health <b>${Math.round(s.health)}</b></span><span>${rul != null ? `fails in <b>${esc(mins(rul))}</b>` : s.sens && s.sens.vib != null ? `<b>${s.sens.vib.toFixed(1)}</b> mm/s` : `<b>${(s.kwNow || 0).toFixed(0)}</b> kW`}</span></span></button>`;
+    }).join('') : '<p class="empty">No machine at risk: none wears faster than normal and none is stopped.</p>');
+    const s = P.byId[mSel], H = s.hist || {};
+    const key = H.vib && H.vib.length > 3 ? 'vib' : s.kind === 'injection' ? 'press' : (s.kind === 'oven' || s.kind === 'reflow') ? 'temp' : 'health';
+    const lim = key === 'vib' ? [{ y: 4.5, label: 'Alarm 4.5 mm/s', cls: 'warn' }, { y: 7.1, label: 'Zone D 7.1 mm/s', cls: 'bad' }] : key === 'temp' && s.kind === 'oven' ? [{ y: 190, label: 'Cure 190 °C', cls: 'warn' }] : key === 'health' ? [{ y: 22, label: 'Failure 22%', cls: 'bad' }] : [];
+    const unit = { vib: 'mm/s', press: 'bar', temp: '°C', health: '%' }[key];
+    $('#vibS').innerHTML = `${link('st:' + s.id, s.name)} · ${esc(P.lines[s.line] ? P.lines[s.line].name : '')} · ${{ vib: 'vibration, RMS velocity (ISO 10816 zones)', press: 'injection pressure', temp: 'temperature', health: 'health index' }[key]}`;
+    html($('#vibChip'), s.degrade > 0 ? tag('warn', 'Wearing') : stChip(s.state));
+    const v = H[key] || [], t0 = P.t - (v.length - 1) * 5;
+    if (v.length > 2) Viz.chart($('#vibChart'), { height: 200, label: `${s.name} ${unit}`, x: { min: t0, max: P.t, fmt: t => clock(t), name: 'Time' }, y: { unit, min: key === 'health' ? 0 : undefined, max: key === 'health' ? 100 : undefined }, rules: lim, series: [{ label: s.name, cls: 'c1', pts: v.map((x, i) => [t0 + i * 5, x]), end: true, endLabel: (+v[v.length - 1]).toFixed(1) + ' ' + unit }] });
+    else html($('#vibChart'), '<p class="empty">No trend recorded yet.</p>');
+    html($('#techs'), P.techs.map(t => `<div class="rw"><span>${esc(t.name)}</span><span class="v">${t.state === 'available' ? 'Available' : t.state === 'repairing' ? 'Repairing' : t.state === 'walking' ? 'On the way' : 'Returning'}</span><small>${t.job ? link('st:' + t.job.id, t.job.name) + ' · ' + esc(P.lines[t.job.line] ? P.lines[t.job.line].name : '') : 'Maintenance shop'}</small></div>`).join(''));
+    html($('#workOrders'), `<thead><tr><th>Order</th><th>Machine</th><th>Type</th><th>Status</th><th class="num">Due</th></tr></thead><tbody>${P.wo.slice().sort((a, b) => (a.status === 'Completed') - (b.status === 'Completed') || (a.due || 0) - (b.due || 0)).slice(0, 14).map(w => `<tr><td class="num">${esc(w.id)}</td><td>${P.byId[w.st] ? link('st:' + w.st, P.byId[w.st].name) : esc(w.st)}<small>${esc(w.why || '')}</small></td><td>${esc(w.type)}</td><td>${w.status === 'Completed' ? tag('', 'Completed') : w.status === 'In progress' ? tag('maint', 'In progress') : tag('', w.status)}</td><td class="num">${w.due ? esc(clock(w.due)) : '—'}</td></tr>`).join('')}</tbody>`);
   }
-  DF.onView('maintenance', maintenance);
-  document.addEventListener('click', e => { const m = e.target.closest('[data-mach]'); if (m) { mSel = m.dataset.mach; maintenance(); } });
+  seg('#machFilter', b => { mFilter = b.dataset.f; mSel = null; machines(); });
+  document.addEventListener('click', e => { const b = e.target.closest('[data-mach]'); if (b) { mSel = b.dataset.mach; b.blur(); machines(); } });
+  DF.onView('maintenance', machines);
 
-  /* ---------------- quality ---------------- */
-  let pLine = 'L1';
-  const P0 = { L1: 0.012, L2: 0.016 };
-  function binomTail(k, n, p) { let term = Math.pow(1 - p, n), cdf = 0; for (let i = 0; i < k; i++) { cdf += term; term *= (n - i) / (i + 1) * p / (1 - p); } return Math.max(0, 1 - cdf); }
+  /* ================= quality ================= */
+  const SIG = [
+    ['IM10:press', 'IM10 injection pressure (65" back covers)', 'IM10', 'press', 'bar'],
+    ['PR4-Coating:temp', 'Press line 4 coating oven, cure temperature', 'PR4-Coating', 'temp', '°C'],
+    ['SMD4-MounterB:vib', 'SMD line 4 Mounter B, spindle vibration', 'SMD4-MounterB', 'vib', 'mm/s'],
+    ['SMD1-Reflow:peak', 'SMD line 1 reflow, peak temperature', 'SMD1-Reflow', 'peak', '°C'],
+    ['IM03:press', 'IM03 injection pressure (43" back covers)', 'IM03', 'press', 'bar']
+  ];
+  const spcSel = $('#spcSel');
+  spcSel.innerHTML = SIG.map(s => `<option value="${s[0]}">${esc(s[1])}</option>`).join('');
+  spcSel.onchange = () => quality();
   function quality() {
-    const E = DF.E(), P = E.P, W = E.W, k = P.kpi, R = P.rejects;
-    html($('#qKpis'), [
-      DF.stat(pct(k.fpy || 0), 'First-pass yield', 'Function test and final QC', (k.fpy || 1) < 0.97 ? 'bad' : (k.fpy || 1) < 0.985 ? 'warn' : ''),
-      DF.stat(fmt(k.aoiPpm || 0), 'AOI rejects, ppm', 'Both SMT lines'),
-      DF.stat(fmt(R.aoi), 'Boards to SMT repair', `${fmt(R.smtRepair.length)} in the queue`),
-      DF.stat(fmt(R.fct + R.qc), 'Units failed at test', `${fmt(R.rework.length)} at the rework bench`),
-      DF.stat(money(W.stats.scrapCost), 'Scrap today', `${fmt(W.stats.scrap)} units`)
-    ].join(''));
-    // p-chart: subgroups of 40 boards
-    const rows = P.aoiLog[pLine], n = 40, pts = [];
-    for (let end = rows.length; end - n >= 0; end -= n) { const g = rows.slice(end - n, end); pts.unshift([g[g.length - 1].t, g.filter(r => !r.ok).length / n]); }
-    const p0 = P0[pLine], ucl = p0 + 3 * Math.sqrt(p0 * (1 - p0) / n);
-    const last = pts[pts.length - 1];
-    Viz.chart($('#pchart'), { label: `AOI reject share per 40 boards on ${P.lines[pLine].name}`, height: 230, x: { min: pts.length ? pts[0][0] : P.t - 1800, max: pts.length ? Math.max(pts[pts.length - 1][0], pts[0][0] + 60) : P.t, fmt: t => PE.clock(t) }, y: { min: 0, max: Math.max(ucl * 1.6, ...pts.map(p => p[1])) , fmt: v => (v * 100).toFixed(1) + '%' },
-      series: [{ key: 'p', label: 'Reject share', cls: last && last[1] > ucl ? 'c2' : 'c1', pts, end: true, endLabel: last ? (last[1] * 100).toFixed(1) + '%' : '' }],
-      rules: [{ y: ucl, label: `UCL ${(ucl * 100).toFixed(1)}%`, cls: 'bad', legend: 'Upper control limit' }, { y: p0, label: `Centre ${(p0 * 100).toFixed(1)}%`, cls: 'ink' }] });
-    // pareto of defect codes
-    const codes = {};
-    [...P.aoiLog.L1, ...P.aoiLog.L2].filter(r => !r.ok).forEach(r => { codes[r.code] = (codes[r.code] || 0) + 1; });
-    P.testLog.filter(r => !r.ok).forEach(r => { const c = r.code || 'Test fail'; codes[c] = (codes[c] || 0) + 1; });
-    const list = Object.entries(codes).sort((a, b) => b[1] - a[1]), mx = list.length ? list[0][1] : 1, tot = list.reduce((a, x) => a + x[1], 0);
-    html($('#pareto'), list.length ? `<div class="pareto">${list.slice(0, 8).map(([c, v]) => `<div class="pb"><span>${esc(c)}</span><b>${fmt(v)} <span class="muted small">· ${Math.round(v / tot * 100)}%</span></b>${Viz.meter(v / mx, 'brand')}</div>`).join('')}</div>` : '<p class="empty">No defects logged yet in the recent window.</p>');
-    // lots
-    const ta = A.TOOLS.test_analysis({ minutes: 40 });
-    html($('#lots'), `<thead><tr><th>Panel lot</th><th class="num">Tested</th><th class="num">Failed</th><th class="num">Rate</th><th>Chance by luck</th></tr></thead><tbody>${ta.byLot.map(l => { const pv = binomTail(l.failed, l.tested, 0.012); return `<tr><td>${esc(l.lot)}</td><td class="num">${fmt(l.tested)}</td><td class="num">${fmt(l.failed)}</td><td class="num">${pct(l.rate)}</td><td>${l.failed ? (pv < 0.002 ? `<span class="st bad"><i></i>${pv < 1e-4 ? '< 0.01%' : (pv * 100).toFixed(2) + '%'} · not luck</span>` : `<span class="st"><i></i>${(pv * 100).toFixed(1)}%</span>`) : '—'}</td></tr>`; }).join('') || '<tr><td colspan="5" class="muted">No TVs tested in the last 40 minutes.</td></tr>'}</tbody>`);
-    const rej = [...P.aoiLog.L1.map(r => Object.assign({ at: 'L1-AOI' }, r)), ...P.aoiLog.L2.map(r => Object.assign({ at: 'L2-AOI' }, r)), ...P.testLog].filter(r => !r.ok).sort((a, b) => b.t - a.t).slice(0, 14);
-    html($('#rejects'), rej.map(r => `<li class="warn"><time>${esc(PE.clock(r.t))}</time><span class="src">${esc(P.byId[r.at] ? P.byId[r.at].name : r.at)}</span><span>${esc(r.code || 'Fail')} · <button type="button" class="lnk" data-sn="${esc(r.sn)}">${esc(r.sn)}</button>${r.lot ? ` · lot ${esc(r.lot)}` : ''}</span></li>`).join('') || '<li><span></span><span></span><span class="muted">No rejects yet.</span></li>');
+    const P = DF.P, X = DF.X, q = X.quality();
+    stats($('#qKpis'), [[pct(q.fpy || 0, 2), 'First-pass yield', 'function test and final QA', q.fpy < 0.97 ? 'neg' : ''], [fmt(q.dppm), 'Defects per million', 'at the test and inspection stations'], [fmt(q.holds), 'Holds', 'lots and blocked stock'], [fmt(q.rework), 'TVs to rework', `${fmt(q.smtRepair)} boards to PBA repair`], [fmt(q.iqcOpen), 'Incoming lots in inspection', `${fmt(q.iqcDone)} accepted today`]]);
+    const sg = SIG.find(s => s[0] === spcSel.value) || SIG[0], st = P.byId[sg[2]], v = (st.hist[sg[3]] || []).filter(x => x > 0);
+    const c = DF.AG.spc(v, sg[0]);
+    if (v.length > 2) {
+      const t0 = P.t - (v.length - 1) * 5;
+      Viz.chart($('#pchart'), { height: 220, label: sg[1], x: { min: t0, max: P.t, fmt: t => clock(t), name: 'Time' }, y: { unit: sg[4], fmt: v => (Math.abs(v) >= 100 ? fmt(v) : v.toFixed(1)) }, rules: c ? [{ y: c.ucl, label: 'UCL', cls: 'bad' }, { y: c.mu, label: 'Mean' }, { y: c.lcl, label: 'LCL', cls: 'bad' }] : [], series: [{ label: st.name, cls: 'c1', pts: v.map((x, i) => [t0 + i * 5, x]), end: true, endLabel: (+v[v.length - 1]).toFixed(1) }] });
+    }
+    $('#spcRules').innerHTML = c ? (c.rules.length ? `<span class="neg">${esc(c.rules.join(' · '))}</span>` : `In control: mean ${c.mu.toFixed(1)} ${esc(sg[4])}, limits ${c.lcl.toFixed(1)}–${c.ucl.toFixed(1)}. No Nelson rule fired.`) : 'Collecting the normal-process samples for the control limits.';
+    const par = Object.entries(X.pareto).map(([k, n]) => { const [code, sid] = k.split('|'); return { code, sid, n }; }).sort((a, b) => b.n - a.n).slice(0, 8);
+    const mx = par.length ? par[0].n : 1;
+    html($('#pareto'), par.length ? `<div class="pareto">${par.map(p => `<div class="pb"><span>${esc(p.code)} <span class="muted">· ${P.byId[p.sid] ? link('st:' + p.sid, `${P.byId[p.sid].name}, ${P.lines[P.byId[p.sid].line].name}`) : esc(p.sid)}</span></span><b>${fmt(p.n)}</b>${Viz.meter(p.n / mx)}</div>`).join('')}</div>` : '<p class="empty">No defect found yet this shift.</p>');
+    html($('#ncr'), `<thead><tr><th>NCR</th><th>Defect</th><th>Step</th><th class="num">Count</th><th>Cause</th></tr></thead><tbody>${X.ncr.slice(0, 10).map(n => `<tr><td class="num">${esc(n.id)}</td><td>${esc(n.code)}<small>${P.byId[n.ref] ? esc(P.byId[n.ref].name) : ''}</small></td><td>${n.step >= 7 ? tag('', 'Closed') : tag(n.step < 3 ? 'warn' : '', X.D8[n.step])}</td><td class="num">${fmt(n.count)}</td><td>${esc(n.cause)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No nonconformance report open. One opens when a defect repeats, or a drill starts one.</td></tr>'}</tbody>`);
+    const rj = P.rejects.rework.slice(-12).reverse();
+    html($('#rejects'), rj.map(r => `<li class="warn"><time>${esc(clock(r.t))}</time><span class="src">Reject</span><span>${link('unit:' + r.u.sn, r.u.sn)} · ${esc(r.u.defect ? r.u.defect.code : 'Reworked')}${r.u.defect && P.byId[r.u.defect.at] ? ' · ' + esc(P.byId[r.u.defect.at].name) + ', ' + esc(P.lines[P.byId[r.u.defect.at].line].name) : ''}</span></li>`).join('') || '<li><span></span><span></span><span class="muted">No reject yet this shift.</span></li>');
   }
   DF.onView('quality', quality);
-  document.addEventListener('click', e => { const b = e.target.closest('#pLine .seg'); if (b) { pLine = b.dataset.l; seg('#pLine .seg', b); quality(); } });
 
-  /* ---------------- energy ---------------- */
+  /* ================= energy ================= */
   function energy() {
-    const E = DF.E(), P = E.P, W = E.W, En = P.energy, k = P.kpi;
-    html($('#eKpis'), [
-      DF.stat(fmt(k.kw || 0) + ' kW', 'Power now', `${esc(En.tariff)} tariff · EGP ${En.price.toFixed(2)}/kWh`),
-      DF.stat(fmt(En.proj) + ' kW', 'This 15-min interval', `projected · contract ${fmt(En.contract)} kW`, En.proj > En.contract ? 'bad' : En.proj > En.contract * 0.95 ? 'warn' : ''),
-      DF.stat(fmt(En.kwh) + ' kWh', 'Energy today', money(En.cost)),
-      DF.stat(money(W.stats.demandCost), 'Demand charge today', En.over ? `${fmt(En.over)} kW over the contract` : 'none'),
-      DF.stat((k.kwhUnit || 0).toFixed(2), 'kWh per unit', 'assembly output'),
-      DF.stat((P.util.ambient || 0).toFixed(1) + ' °C', 'Ambient', P.util.heatTarget ? 'heat wave' : 'normal day', P.util.heatTarget ? 'warn' : '')
-    ].join(''));
-    html($('#tariff'), `<span class="st ${En.tariff === 'Peak' ? 'warn' : ''}"><i></i>${esc(En.tariff)} tariff</span>`);
-    const H = P.hist;
-    Viz.chart($('#kwChart'), { label: 'Plant power, last 15 minutes', height: 230, x: { min: H.t[0] || P.t - 900, max: H.t[H.t.length - 1] || P.t, fmt: t => PE.clock(t) }, y: { min: 0, max: Math.max(En.contract * 1.1, ...H.kw) * 1.04, fmt: v => fmt(v), unit: 'kW' }, series: [{ key: 'kw', label: 'Plant power', cls: 'c1', pts: H.t.map((t, i) => [t, H.kw[i]]), area: true, end: true, endLabel: fmt(k.kw || 0) + ' kW' }], rules: [{ y: En.contract, label: `Contract ${En.contract} kW`, cls: 'bad', legend: 'Contract demand' }] });
-    const iv = En.avgHist.slice(-24), n0 = En.iNo - iv.length;
-    Viz.columns($('#intervals'), { label: '15-minute average demand per interval', height: 200, unit: 'kW', series: 'average', fmt: v => fmt(v), items: iv.map((v, i) => ({ k: PE.clock((n0 + i) * 900), v, cls: v > En.contract ? 'bad' : v > En.contract * 0.95 ? 'warn' : 'c1' })).concat([{ k: 'now', v: Math.round(En.proj), cls: En.proj > En.contract ? 'bad' : 'cm', tip: 'projected, this interval' }]), rule: { y: En.contract, label: `Contract ${En.contract} kW`, cls: 'bad' } });
-    const loads = P.util.assets.filter(a => a.kind !== 'transformer').map(a => ({ ref: 'util:' + a.id, name: a.name, kw: a.kw, sub: a.forced > P.t ? 'Forced on' : a.defer > P.t ? 'Start held' : a.on === false ? 'Off' : 'On' }))
-      .concat(P.stations.slice().sort((a, b) => b.kwNow - a.kwNow).slice(0, 5).map(s => ({ ref: 'st:' + s.id, name: s.name, kw: s.kwNow, sub: lineOf(P, s) })));
-    const mx = Math.max(1, ...loads.map(l => l.kw));
-    html($('#loads'), loads.map(l => `<div class="rw"><span>${link(l.ref, l.name)} <span class="muted small">· ${esc(l.sub)}</span></span><span class="v">${fmt(l.kw)} kW</span>${Viz.meter(l.kw / mx, 'brand')}</div>`).join(''));
+    const P = DF.P, A = DF.AG.energy, k = P.kpi, H = P.hist;
+    const tvs = Math.max(1, P.made.tv);
+    stats($('#eKpis'), [[fmt(k.kw) + ' kW', 'Plant now', `outside air ${P.util.ambient.toFixed(1)} °C`], [fmt(A.avg) + ' kW', '15-minute average', 'what the utility bills'], [fmt(A.peak) + ' kW', 'Forecast peak', 'contract 4,000 kW', A.peak > 4000 ? 'neg' : ''], [fmt(P.energy.kwh) + ' kWh', 'Energy since 09:12', `${(P.energy.kwh / tvs).toFixed(1)} kWh a TV packed`], [P.shave && P.t < P.shave.until ? 'On' : 'Off', 'Peak shaving', P.shave && P.t < P.shave.until ? 'until ' + clock(P.shave.until) : 'utilities only, takt unchanged']]);
+    html($('#tariff'), A.peak > 4000 ? tag('bad', 'Above contract') : A.peak > 3900 ? tag('warn', 'Near contract') : tag('', 'Inside contract'));
+    if (H.t.length > 2) Viz.chart($('#kwChart'), { height: 220, label: 'Plant power, kW', x: timeAxis(), y: { unit: 'kW' }, rules: [{ y: 4000, label: 'Contract 4,000 kW', cls: 'bad' }], series: [{ label: 'Plant', cls: 'c1', pts: H.t.map((t, i) => [t, H.kw[i]]), end: true, endLabel: fmt(H.kw[H.kw.length - 1]) + ' kW' }] });
+    const by = k2 => P.stations.filter(s => P.lines[s.line] && P.lines[s.line].kind === k2).reduce((a, s) => a + (s.kwNow || 0), 0);
+    const items = [['Main lines', by('main')], ['LCM', by('lcm')], ['SMD', by('smd')], ['Injection', by('injection')], ['Press and coating', by('press')], ['Cushions', by('cushion')], ['Utilities', P.util.kw - 380], ['Lighting, offices, IT', 380]].map(([kk, v]) => ({ k: kk, v: Math.round(v), cls: 'c1' }));
+    Viz.columns($('#intervals'), { items, label: 'Power by area, kW', unit: 'kW', height: 200, series: 'now' });
+    const loads = P.util.assets.map(a => ({ ref: 'util:' + a.id, name: a.name, kw: a.kw, sub: 'Utilities' })).concat(P.stations.slice().sort((a, b) => (b.kwNow || 0) - (a.kwNow || 0)).slice(0, 8).map(s => ({ ref: 'st:' + s.id, name: s.name, kw: s.kwNow || 0, sub: P.lines[s.line] ? P.lines[s.line].name : '' }))).sort((a, b) => b.kw - a.kw).slice(0, 12);
+    const mx = loads.length ? loads[0].kw : 1;
+    html($('#loads'), loads.map(l => `<div class="rw"><span>${link(l.ref, l.name)}</span><span class="v">${fmt(l.kw)} kW</span><small>${esc(l.sub)}</small>${Viz.meter(l.kw / mx)}</div>`).join(''));
   }
   DF.onView('energy', energy);
 })();

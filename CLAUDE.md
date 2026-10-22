@@ -2,10 +2,11 @@
 
 Static site (no build): `index.html` (website), `app.html` (command room), `deck.html` (presentation), `guide.html` (bilingual reference guide), `plant.html` (live plant in 3D). Plant data is simulated.
 When a screen, scenario, decision, slide or term changes, update `guide.html` (both languages) and `assets/js/guide-terms.js` to match.
-The command room runs one deterministic twin (`assets/js/twin/engine.js`) through the hub (`assets/js/twin/hub.js`); its agents and copilot
-live in `assets/js/agents/`, the room in `assets/js/room/`. Change that twin only through commands (`Twin.exec`), never by writing to the
-world from a page, or tabs, saved visits and the time machine drift apart. The live plant (`plant.html`) is a separate model:
-`assets/js/plant/` (engine, erp, agents, scene, views2d, ui, recorder).
+The command room and the live plant run one model of Plant EG-01, a TV plant with six main lines and the LCM, SMD, injection, press
+and cushion lines feeding them: `assets/js/plant/` (engine, erp, agents; plant.html adds scene, views2d, ui, recorder). The room lives in
+`assets/js/room/` (copilot included). Change the plant only through the engine's commands (`E.apply`, `E.hmi`, `E.changeover`,
+`E.trigger`, `AG.decide`, `AG.publish`), never by writing to the world from a page, or the audit trail and the time machine lie.
+Never bring back the old five-line plant (SMT 1–2, Final Assembly A/B, phones, burn-in, futures, cases, twelve drills).
 Design is the brand UI kit in `assets/kit/` (pinned brand: Inter, brand blues, light and dark). The plant is fictional (Plant EG-01);
 never name a real company or city for it.
 

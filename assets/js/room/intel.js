@@ -1,346 +1,269 @@
-/* Digital Factory — command room intelligence: the shift forecast (Monte Carlo on forks of the twin), the agent crew,
-   the case board, policy, ledger and memory, the case dialog, predictions, root cause and genealogy, the what-if lab
-   and the drills. Simulated data. */
+/* Digital Factory — the intelligence views of the command room, on Plant EG-01: the nine AI agents and their
+   decisions, predictions from the two-hour flow forecast, root cause and genealogy, the what-if lab with the
+   Scheduling agent's drafts, and the nine drills. Simulated data. */
 (function () {
   'use strict';
-  const { $, $$, esc, icon, fmt, pct, money, signed, link, html, clamp } = DF;
-  const PE = window.PlantEngine;
-  const T = window.Twin;
-  const A = window.Agents;
-  const seg = (sel, b) => $$(sel).forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+  const { $, $$, esc, icon, fmt, pct, link, toRef, stChip, tag, html } = DF;
+  const mins = s => DF.E.mins(s), clock = t => DF.E.clock(t);
+  const seg = (sel, fn) => $$(sel + ' .seg').forEach(b => { b.onclick = () => { $$(sel + ' .seg').forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); }); fn(b); }; });
 
-  /* ---------------- the shift forecast: futures to 14:00 ---------------- */
-  const erf = x => { const s = Math.sign(x); x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x); return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x)); };
-  const Phi = z => 0.5 * (1 + erf(z / Math.SQRT2));
-  const planAt = t => Math.round((95 + 164) * 0.82 * Math.max(0, t - T.E.SHIFT_START) / 3600);
-  DF.planAt = planAt;
-  let FC = null, fcBusy = false, fcWall = 0;
-  DF.forecastNow = function () {
-    const P = DF.world(), k = P.kpi, plan = k.planEnd || planAt(T.E.SHIFT_END);
-    if (P.t >= T.E.SHIFT_END - 60) return { sim: false, prob: k.units >= plan ? 1 : 0, p10: k.units, p50: k.units, p90: k.units, plan, done: true };
-    if (FC && !DF.replay) {
-      const S = FC.o.S.packed, b = FC.units0;
-      const p10 = b + S.p10, p50 = b + S.p50, p90 = b + S.p90, mean = b + S.mean;
-      const sd = Math.max(4, (p90 - p10) / 2.563);
-      return { sim: true, n: FC.res.seeds, prob: clamp(1 - Phi((plan - mean) / sd), 0.01, 0.99), p10, p50, p90, mean, plan, at: FC.at, ms: FC.res.ms };
+  /* ================= the decision dialog ================= */
+  const dlg = $('#caseDlg');
+  let openKey = null;
+  DF.openCase = function (key) {
+    const AG = DF.AG, c = AG.cards.get(key);
+    openKey = key;
+    if (c) { $('#caseDlgT').textContent = c.title; $('#caseDlgB').innerHTML = DF.Dec.detail(c); }
+    else {
+      const d = AG.decided.find(x => x.key === key);
+      $('#caseDlgT').textContent = d ? d.title : 'Decision';
+      $('#caseDlgB').innerHTML = d ? `<p class="cs-who">${esc(d.agent)} · ${esc(d.time)}</p><div class="cs-verify ok"><p><b>Decided</b> · ${esc(d.label)} · ${esc(d.by)} · ${esc(d.audit)}</p><p class="quiet">Forecast with this choice: ${fmt(d.packed)} TVs packed in ${Math.round(d.h / 60)} h, ${d.late} order${d.late === 1 ? '' : 's'} late.${d.recommended ? ' It was the recommended option.' : ''}</p></div>` : '<p>This decision is closed: the situation that raised it has passed.</p>';
     }
-    return { sim: false, prob: k.prob || 0.5, p10: (k.fcst || 0) * 0.97, p50: k.fcst || 0, p90: (k.fcst || 0) * 1.03, plan };
-  };
-  // a stop, a repair, a drill or a decision changes the end of the shift: play the futures again soon after it
-  let evTimer = null, evWall = 0;
-  T.on(t => {
-    if (t !== 'fault' && t !== 'repaired' && t !== 'scenario' && t !== 'action') return;
-    clearTimeout(evTimer);
-    evTimer = setTimeout(() => { if (Date.now() - evWall > 12000) { evWall = Date.now(); DF.runForecast(true); } }, 2500);
-  });
-  DF.runForecast = async function (force) {
-    const P = T.E.P;
-    if (fcBusy || DF.replay || T.paused || T.catching) return;
-    const horizon = T.E.SHIFT_END - P.t;
-    if (horizon < 600) return;
-    if (!force && FC && (Date.now() - fcWall < 45000 || (P.t - FC.at < 300 && Date.now() - fcWall < 150000))) return;
-    fcBusy = true; fcWall = Date.now();
-    const units0 = P.kpi.units, at = P.t;
-    $('#fcRun') && ($('#fcRun').disabled = true);
-    try {
-      const res = await T.whatif({ horizon, seeds: 6, sample: 300, options: [{ id: 'none', label: 'As planned', cmds: [] }] });
-      FC = { res, o: res.options[0], units0, at };
-    } catch (e) { console.warn('forecast', e); }
-    fcBusy = false;
-    if ($('#fcRun')) $('#fcRun').disabled = false;
-    DF.refresh();
-  };
-
-  /* ---------------- agents ---------------- */
-  const AUT = { advise: 'Advise only', approve: 'Ask first', auto: 'Auto' };
-  const AUT_S = { advise: 'Advise', approve: 'Ask first', auto: 'Auto' };
-  function crew() {
-    const el = $('#crew'); if (el.contains(document.activeElement)) return;
-    html(el, A.S.agents.map(a => {
-      const open = A.S.cases.find(c => c.agent === a.id && c.state !== 'closed');
-      const last = open && open.steps[open.steps.length - 1];
-      return `<article class="card agent ${/Waiting/.test(a.status) ? 'waiting' : ''}">
-        <div class="ah"><div><h3>${esc(a.name)}</h3><small>${esc(a.scope)}</small></div><span class="cs-chip ${/Waiting/.test(a.status) ? 'warn' : /Watching/.test(a.status) ? '' : 'info'}">${/Simulating|Investigating|Verifying/.test(a.status) ? '<i class="cs-spin"></i>' : ''}${esc(a.status)}</span></div>
-        <div class="seg-tabs sm" role="group" aria-label="${esc(a.name)} autonomy">${['advise', 'approve', 'auto'].map(l => `<button type="button" class="seg ${a.autonomy === l ? 'active' : ''}" aria-pressed="${a.autonomy === l}" data-aut="${a.id}:${l}" ${a.locked ? 'disabled' : ''}>${AUT_S[l]}</button>`).join('')}</div>
-        ${a.locked ? `<p class="muted small" style="margin:0">${a.meta ? 'Checks every plan; it does not act on the plant itself.' : 'Locked to Auto: it may slow a robot, never speed one up.'}</p>` : ''}
-        <p class="now">${open ? `<b>${link('case:' + open.id, open.id)}</b> ${esc(open.title)}${last ? ` · <span>${esc(last.title)}</span>` : ''}` : a.last ? esc(a.last) : 'Watching the plant.'}</p>
-        <div class="rec"><div><b>${fmt(a.cases)}</b>cases</div><div><b>${a.verified ? Math.round(a.accurate / a.verified * 100) + '%' : '—'}</b>verified right</div><div><b>${money(a.value)}</b>value</div></div>
-      </article>`;
-    }).join(''));
-  }
-  let caseFilter = 'open';
-  function board() {
-    const el = $('#board');
-    if (el.contains(document.activeElement) && document.activeElement.closest('.cs-dec')) return;
-    let list = A.S.cases;
-    if (caseFilter === 'open') list = list.filter(c => c.state !== 'closed');
-    else if (caseFilter === 'waiting') list = list.filter(c => c.state === 'awaiting' || c.state === 'advise');
-    else if (caseFilter === 'closed') list = list.filter(c => c.state === 'closed');
-    html(el, list.slice(0, 30).map(c => CaseUI.card(c, { decide: true })).join('') || `<p class="empty">${caseFilter === 'open' ? 'No open cases. Start a drill to watch the crew work one.' : 'No cases in this filter yet.'}</p>`);
-    if (typeof Theme !== 'undefined') Theme.icons(el);
-  }
-  function policy() {
-    const el = $('#policy'); if (el._h) return;
-    const NAME = { expedite: 'Expedite an AGV delivery', manualFetch: 'Fetch material by hand', planRepair: 'Planned repair now', derate: 'Derate a machine', dispatchTech: 'Dispatch a technician', switchL2: 'Changeover SMT Line 2', switchBack: 'Changeover back', slowAssembly: 'Slow the assembly lines', fixReflow: 'Correct an oven setpoint', stopInspect: 'Stop a line to inspect', quarantine: 'Quarantine a lot', inspectLot: '100% incoming inspection', boost: 'Line to 110%', split: 'Split a delivery', prioritize: 'Re-sequence orders', cover: 'Move an operator', leaderCover: 'Line leader covers', expediteTruck: 'Alternative carrier', restart: 'Staggered restart', restartAll: 'Restart everything at once', stagger: 'Stagger utility loads', precool: 'Pre-cool chillers', reflowProfile: 'Lower the reflow profile', safeSpeed: 'Robot to safe speed' };
-    html(el, `<thead><tr><th>Action</th><th>At most</th><th>Risk</th></tr></thead><tbody>${Object.entries(A.POLICY).filter(([k]) => k !== 'none').map(([k, p]) => `<tr><td>${esc(NAME[k] || k)}<small>${esc(p.note)}</small></td><td><span class="pol-${p.max}">${esc(AUT[p.max])}</span></td><td>${esc(p.risk)}</td></tr>`).join('')}</tbody>`);
-  }
-  function ledger() {
-    const el = $('#ledger');
-    const rows = A.S.ledger.slice(0, 40);
-    html(el, `<thead><tr><th>Time</th><th>Case</th><th>Decision</th><th>By</th><th>Rule</th><th class="num">Predicted</th><th>Verified</th></tr></thead><tbody>${rows.map(l => {
-      const c = A.caseById(l.case), o = c && c.outcome;
-      return `<tr><td class="num">${esc(l.time)}</td><td>${link('case:' + l.case, l.case)}<small>${esc(l.agent)}</small></td><td>${esc(l.action)}${l.rationale ? `<small>${esc(l.rationale)}</small>` : ''}</td><td>${esc(l.by)}</td><td>${esc(l.policy)}</td><td class="num">${l.predicted ? signed(l.predicted, money) : '—'}${l.confidence ? `<small>${Math.round(l.confidence * 100)}% sure</small>` : ''}</td><td>${o ? `<span class="st ${o.ok === false ? 'bad' : o.ok ? '' : 'warn'}"><i></i>${esc(o.verdict)}</span>` : c && c.state === 'verifying' ? '<span class="muted">Checking…</span>' : '—'}</td></tr>`;
-    }).join('') || '<tr><td colspan="7" class="muted">No decisions yet this shift.</td></tr>'}</tbody>`);
-  }
-  function memory() {
-    html($('#memory'), A.S.memory.slice(0, 18).map(m => `<li>${m.live ? '<em>Today</em>' : ''}<b>${esc(m.title)}</b><span>${esc(m.id)} · ${esc(m.when)} · ${esc(m.cause || '')}${m.fix ? ' → ' + esc(m.fix) : ''}. ${esc(m.outcome || '')}</span></li>`).join(''));
-  }
-  DF.onView('agents', () => { crew(); board(); policy(); ledger(); memory(); });
-  document.addEventListener('click', e => {
-    const a = e.target.closest('[data-aut]');
-    if (a) { const [id, l] = a.dataset.aut.split(':'); A.setAutonomy(id, l); DF.toast(`${A.agent(id).name}: ${AUT[l]}`, 'info'); setTimeout(crew, 60); return; }
-    const f = e.target.closest('#caseFilter .seg');
-    if (f) { caseFilter = f.dataset.f; seg('#caseFilter .seg', f); board(); }
-  });
-
-  /* ---------------- the case dialog ---------------- */
-  let dlgCase = null;
-  const dlg = $('#caseDlg'), dlgB = $('#caseDlgB');
-  function renderCase() {
-    const c = dlgCase && A.caseById(dlgCase);
-    if (!c) return;
-    if (dlgB.contains(document.activeElement) && document.activeElement.closest('.cs-dec, .cs-opts')) return;
-    $('#caseDlgT').textContent = c.title;
-    html(dlgB, CaseUI.detail(c, { noTitle: true }) + `<div class="cs-actions">${c.chain && c.chain.length ? `<button type="button" class="btn btn-secondary btn-sm" data-chain="${esc(c.id)}"><span data-icon="layers"></span>Show the cause path on the mimic</button>` : ''}<a class="btn btn-secondary btn-sm" href="plant.html"><span data-icon="layers"></span>Open the 3D plant</a><button type="button" class="btn btn-secondary btn-sm" data-ask-case="${esc(c.id)}"><span data-icon="sparkles"></span>Ask the copilot</button></div>`);
-    if (typeof Theme !== 'undefined') Theme.icons(dlgB);
-  }
-  DF.openCase = function (id) {
-    if (!A.caseById(id)) { DF.toast(`Case ${id} is not in this shift`, 'info'); return; }
-    dlgCase = id; dlgB._h = null;
-    renderCase();
-    if (!dlg.open) { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); }
-    dlgB.scrollTop = 0;
+    if (typeof Theme !== 'undefined') Theme.icons($('#caseDlgB'));
+    if (!dlg.open) dlg.showModal();
   };
   $('#caseDlgX').onclick = () => dlg.close();
+  dlg.addEventListener('close', () => { openKey = null; });
   dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
-  dlg.addEventListener('close', () => { dlgCase = null; });
-  CaseUI.bind(dlgB, (op) => { DF.toast(op === 'approve' ? 'Approved: the agent acts now and verifies the outcome' : 'Rejected and written to the ledger', op === 'approve' ? 'success' : 'info'); setTimeout(renderCase, 120); });
-  CaseUI.bind($('#needs'), op => { DF.toast(op === 'approve' ? 'Approved: the agent acts now and verifies the outcome' : 'Rejected and written to the ledger', op === 'approve' ? 'success' : 'info'); setTimeout(() => DF.renderCases(), 120); });
-  CaseUI.bind($('#board'), () => setTimeout(board, 120));
-  CaseUI.bind($('#approvals'), () => setTimeout(() => DF.refresh(true), 120));
-  document.addEventListener('click', e => {
-    const ch = e.target.closest('[data-chain]');
-    if (ch) { const c = A.caseById(ch.dataset.chain); dlg.open && dlg.close(); DF.go('command'); DF.showChain(c); return; }
-    const ak = e.target.closest('[data-ask-case]');
-    if (ak && window.Copilot) { const c = A.caseById(ak.dataset.askCase); dlg.open && dlg.close(); Copilot.open(`Explain case ${c.id} (${c.title}): the evidence, the options the agent simulated and whether you agree with its recommendation.`); }
-  });
-  DF.showChain = function (c) {
-    if (!DF.floor) return;
-    DF.floor.setChain(c && c.chain && c.chain.length ? c.chain : null);
-    if (c && c.chain && c.chain[0]) DF.select(c.chain[0], { focus: true });
-    DF.toast(c ? `Cause path of ${c.id} on the mimic: 1 is the cause` : 'Cause path cleared', 'info');
-  };
-  A.on(t => { if (dlg.open && (t === 'change' || t === 'step' || t === 'awaiting' || t === 'closed' || t === 'acted')) renderCase(); });
 
-  /* ---------------- predictions ---------------- */
-  function predict() {
-    const P = DF.world(), f = DF.forecastNow();
-    const H = P.hist, n = H.t.length;
-    const actual = H.t.map((t, i) => [t, H.packed[i]]);
-    const end = T.E.SHIFT_END, t0 = n ? H.t[0] : P.t - 900;
-    const series = [{ key: 'act', label: 'Packed so far', cls: 'ck', pts: actual, end: true, endLabel: fmt(P.kpi.units) }];
-    const bands = [];
-    if (FC && !DF.replay) {
-      const s = FC.o.series, b = FC.units0;
-      const pts = [[FC.at, b]].concat(s.t.map((t, i) => [FC.at + t, b + s.packed[i]]));
-      series.push({ key: 'fc', label: 'Futures, mean', cls: 'c1', pts, dash: true, end: true, endLabel: `${fmt(f.p50)} P50` });
-      bands.push({ cls: 'c1', label: 'Futures P10–P90', pts: [[FC.at, b, b]].concat(s.t.map((t, i) => [FC.at + t, b + s.packedLo[i], b + s.packedHi[i]])) });
-    }
-    series.push({ key: 'plan', label: 'Plan', cls: 'cm', pts: [[t0, planAt(t0)], [end, planAt(end)]], dash: true, end: true, endLabel: `Plan ${fmt(f.plan)}` });
-    Viz.chart($('#fcChart'), { label: 'Packed units: actual and simulated futures to the end of the shift', height: 280, x: { min: t0, max: end, fmt: t => PE.clock(t), name: 'Time' }, y: { fmt: v => Viz.compact(v), unit: 'units' }, series, bands, marks: [{ x: P.t, label: 'now' }] });
-    $('#fcS').textContent = FC ? `Packed units. ${FC.res.seeds} futures played from ${PE.clock(FC.at)} to 14:00 in ${(FC.res.ms / 1000).toFixed(1)} s on background workers` : 'Packed units. The first futures are being played…';
-    html($('#fcNums'), [
-      DF.stat(Math.round(f.prob * 100) + '%', 'Chance to hit plan', f.sim ? `from the spread of ${f.n} futures` : 'estimate from the current rate', f.prob < 0.5 ? 'bad' : f.prob < 0.8 ? 'warn' : 'ok'),
-      DF.stat(fmt(f.p10), 'P10 at 14:00', '9 in 10 futures do better'),
-      DF.stat(fmt(f.p50), 'P50 at 14:00', `plan ${fmt(f.plan)}`),
-      DF.stat(fmt(f.p90), 'P90 at 14:00', '1 in 10 futures do better'),
-      DF.stat(FC ? fmt(Object.values(FC.o.faults).length) : '—', 'Machines that fault in some future', FC && Object.values(FC.o.faults).length ? Object.values(FC.o.faults).sort((a, b) => b.p - a.p).slice(0, 2).map(x => `${esc(x.name)} ${Math.round(x.p * 100)}%`).join(' · ') : 'none in the futures')
-    ].join(''));
+  /* ================= agents ================= */
+  const AUT = { advise: 'Advise', approve: 'Approve', auto: 'Auto' };
+  function crew() {
+    const AG = DF.AG, el = $('#crew');
+    if (el.contains(document.activeElement)) return;
+    html(el, AG.AGENTS.map(a => {
+      const wait = DF.waiting().filter(c => c.owner === a.id).length;
+      const last = AG.feed.find(e => e.id === a.id);
+      return `<article class="card agent ${wait ? 'waiting' : ''}"><div class="ah"><div><h3>${esc(a.name)}</h3><small>${esc(a.role)}</small></div>${wait ? tag('warn', wait + ' waiting') : ''}</div>
+        <div class="seg-tabs sm" role="group" aria-label="Autonomy of the ${esc(a.name)}">${Object.keys(AUT).map(k => `<button type="button" class="seg ${a.autonomy === k ? 'active' : ''}" aria-pressed="${a.autonomy === k}" data-aut="${a.id}" data-v="${k}">${AUT[k]}</button>`).join('')}</div>
+        <p class="now">${last ? `<b>${esc(last.time)}</b> ${esc(last.text)}` : 'Watching. Nothing to report.'}</p>
+        <div class="rec"><div><b>${fmt(a.signals)}</b>signals</div><div><b>${fmt(a.acted)}</b>acted alone</div><div><b>${AUT[a.autonomy]}</b>autonomy</div></div></article>`;
+    }).join(''));
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-aut]'); if (!b) return;
+    DF.AG.setAutonomy(b.dataset.aut, b.dataset.v);
+    DF.toast(`${DF.AG.AGENTS.find(a => a.id === b.dataset.aut).name}: ${AUT[b.dataset.v]}. Logged.`, 'info');
+    b.blur(); crew();
+  });
+  function board() {
+    const AG = DF.AG, el = $('#board');
+    const w = DF.waiting(), done = [...AG.cards.values()].filter(c => c.decided);
+    $('#boardN').textContent = w.length;
+    if (el.contains(document.activeElement) && document.activeElement.closest('.cs-btns')) return;
+    html(el, w.length || done.length ? w.map(c => DF.Dec.card(c, { decide: true })).concat(done.map(c => DF.Dec.card(c))).join('') : '<p class="empty">No decision open. Start a drill and watch an agent detect it, simulate the options and recommend one.</p>');
+    if (typeof Theme !== 'undefined') Theme.icons(el);
+  }
+  function feed() {
+    html($('#agentFeed'), DF.AG.feed.slice(0, 40).map(e => `<li class="${esc(e.level)}"><time>${esc(e.time)}</time><span class="src">${esc(e.agent.replace(' agent', ''))}</span><span>${esc(e.text)}${e.ref ? ' ' + link(toRef(e.ref), '›') : ''}</span></li>`).join('') || '<li><span></span><span></span><span class="muted">The crew has not said anything yet.</span></li>');
+  }
+  function ledger() {
+    const D = DF.AG.decided;
+    html($('#ledger'), `<thead><tr><th>Time</th><th>Decision</th><th>Chosen</th><th>By</th><th class="num">Forecast</th><th>Audit</th></tr></thead><tbody>${D.map(d => `<tr><td class="num">${esc(d.time)}</td><td>${esc(d.title)}<small>${esc(d.agent)}</small></td><td>${esc(d.label)}${d.recommended ? '<small>recommended</small>' : '<small>not the recommendation</small>'}</td><td>${esc(d.by)}</td><td class="num">${fmt(d.packed)}<small>TVs · ${d.late} late</small></td><td class="num">${esc(d.audit)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Nothing decided yet.</td></tr>'}</tbody>`);
+  }
+  const ASKS = ['Shift summary', 'Why is line 3 slow?', 'Which orders are at risk?', 'Material shortages', 'OEE by line', 'Energy peak', 'Safety events'];
+  html($('#askChips'), ASKS.map(q => `<button type="button" class="btn btn-secondary btn-sm" data-askq="${esc(q)}">${esc(q)}</button>`).join(''));
+  function ask(q) {
+    const r = DF.AG.ask(q);
+    html($('#askOut'), `<p class="ask-out"><b>${esc(q)}</b><br>${esc(r.text)}</p>${r.refs && r.refs.length ? `<p class="small">${r.refs.map(x => link(toRef(x))).join(' · ')}</p>` : ''}`);
+  }
+  $('#askForm').addEventListener('submit', e => { e.preventDefault(); const q = $('#askIn').value.trim(); if (q) ask(q); });
+  document.addEventListener('click', e => { const b = e.target.closest('[data-askq]'); if (b) { $('#askIn').value = b.dataset.askq; ask(b.dataset.askq); } });
+  function incidents() {
+    html($('#incidentsList'), DF.AG.incidents.map(i => `<li class="warn"><time>${esc(i.time)}</time><span class="src">${esc(i.cam || 'Camera')}</span><span>${esc(i.text)}</span></li>`).join('') || '<li><span></span><span></span><span class="muted">No safety event from the cameras. The vision runs in the 3D plant.</span></li>');
+  }
+  DF.onView('agents', () => {
+    crew(); board(); feed(); ledger(); incidents();
+    if (openKey && dlg.open && !dlg.contains(document.activeElement)) DF.openCase(openKey);
+  });
+
+  /* ================= predictions ================= */
+  function predict(force) {
+    const P = DF.P, AG = DF.AG, k = P.kpi, M = DF.E.MODELS;
+    const f = force === 'run' ? AG.forecast() : AG.base || AG.forecast();
+    const planRate = Object.values(P.lines).filter(L => L.kind === 'main').reduce((a, L) => a + 3600 / M[L.model].takt * 0.82, 0);
+    const step = f.h / f.curve.length;
+    const fc = [[0, k.units]].concat(f.curve.map((v, i) => [(i + 1) * step, k.units + v]));
+    const plan = [[0, k.plan], [f.h, k.plan + planRate * f.h / 60]];
+    Viz.chart($('#fcChart'), { height: 260, label: 'TVs packed today: forecast and plan for the next two hours', x: { min: 0, max: f.h, fmt: v => clock(P.t + v * 60), name: 'Time' }, y: { fmt: v => Viz.compact(v), unit: 'TVs' },
+      series: [{ label: 'Forecast', cls: 'c1', pts: fc, end: true, endLabel: fmt(fc[fc.length - 1][1]) }, { label: 'Plan', cls: 'c3', dash: true, pts: plan, end: true, endLabel: 'plan ' + fmt(plan[1][1]) }] });
+    html($('#fcNums'), [[fmt(f.packed), 'TVs in the next 2 h', `plan pace ${fmt(planRate * 2)}`], [fmt(k.fcst), 'Forecast at 14:00', `plan ${fmt(k.planEnd)}`], [Math.round((k.prob || 0) * 100) + '%', 'Chance to hit plan', 'forecast against the 14:00 plan'], [fmt(f.late), 'Orders short', f.late ? f.lateList.join(', ') : 'every truck covered'], [fmt(f.starvedMin), 'Minutes short of material', 'summed over the models']].map(([v, l, s]) => `<div class="stat"><b>${esc(v)}</b><span>${esc(l)}</span><small>${esc(s)}</small></div>`).join(''));
+    $('#fcS').textContent = `TVs packed on the six main lines. Flow forecast run at ${clock(P.t)}; ${fmt(AG.stats.simulated)} forecasts so far today.`;
     // remaining useful life
-    const rot = P.stations.filter(s => (s.kind === 'mounter' || s.kind === 'robot' || s.kind === 'palletizer') && s.hist.vib && s.hist.vib.length > 10);
-    const rul = rot.map(s => {
-      const run = s.hist.vib.slice(-44).filter(v => v > 0.6).slice(-36), r = A.linreg(run, 5 / 60);
-      const left = Math.max(0, 7.1 - (s.sens.vib || r.last)), sl = r.slope;
-      const p50 = sl > 0.004 && r.r2 > 0.3 ? left / sl : Infinity;
-      const p10 = sl > 0.004 && r.r2 > 0.3 ? left / (sl + 1.64 * r.se) : Infinity;
-      return { s, vib: s.sens.vib || 0, trend: sl * 60, p50, p10 };
-    }).sort((a, b) => a.p50 - b.p50);
-    html($('#rul'), `<thead><tr><th>Machine</th><th class="num">Vibration</th><th class="num">Trend</th><th class="num">Life to zone D</th><th>State</th></tr></thead><tbody>${rul.map(r => `<tr><td>${link('st:' + r.s.id, r.s.name)}<small>${esc(P.lines[r.s.line].name)}</small></td><td class="num">${r.vib.toFixed(2)}<small>mm/s</small></td><td class="num">${r.trend > 0 ? '+' : ''}${r.trend.toFixed(2)}<small>per hour</small></td><td class="num">${isFinite(r.p50) ? PE.mins(r.p50 * 60) + `<small>P10 ${PE.mins(r.p10 * 60)}</small>` : '<span class="muted">No wear trend</span>'}</td><td>${DF.stChip(r.s.state)}</td></tr>`).join('')}</tbody>`);
+    const wear = P.stations.filter(s => s.degrade > 0 && s.state !== 'down').map(s => ({ s, rul: (s.health - 22) / s.degrade })).sort((a, b) => a.rul - b.rul);
+    const low = P.stations.filter(s => !(s.degrade > 0)).sort((a, b) => a.health - b.health).slice(0, Math.max(0, 5 - wear.length));
+    html($('#rul'), `<thead><tr><th>Machine</th><th class="num">Health</th><th class="num">Vibration</th><th class="num">Fails in</th><th>Plan</th></tr></thead><tbody>${wear.map(({ s, rul }) => `<tr><td>${link('st:' + s.id, s.name)}<small>${esc(P.lines[s.line].name)}</small></td><td class="num">${Math.round(s.health)}</td><td class="num">${s.sens.vib != null ? s.sens.vib.toFixed(1) + ' mm/s' : '—'}</td><td class="num ${rul < 1200 ? 'bad' : 'warn'}">${esc(mins(rul))}</td><td>${s.planned ? tag('', 'Repair planned') : tag('warn', 'Not planned')}</td></tr>`).concat(low.map(s => `<tr><td>${link('st:' + s.id, s.name)}<small>${esc(P.lines[s.line] ? P.lines[s.line].name : '')}</small></td><td class="num">${Math.round(s.health)}</td><td class="num">${s.sens.vib != null ? s.sens.vib.toFixed(1) + ' mm/s' : '—'}</td><td class="num">no trend</td><td>${tag('', 'Watch')}</td></tr>`)).join('')}</tbody>`);
     // orders
-    const open = P.orders.filter(o => o.state === 'open' || o.state === 'loading');
-    html($('#ordRisk'), open.map(o => {
-      const late = o.risk || 0, slack = o.due - (o.eta || o.due);
-      return `<div class="rw"><span>${link('order:' + o.id, o.id)} <span class="muted small">${esc(o.customer)} · ${fmt(o.qty)} ${o.product === 'tv' ? 'TVs' : 'phones'}</span></span><span class="v ${late > 300 ? 'neg' : ''}">${late > 60 ? PE.mins(late) + ' late' : PE.mins(Math.max(0, slack)) + ' spare'}</span>${Viz.meter(clamp((o.eta - P.t) / Math.max(60, o.due - P.t), 0, 1), late > 1800 ? 'bad' : late > 300 ? 'warn' : '')}<small>Due ${esc(PE.clock(o.due))} · ready about ${esc(PE.clock(o.eta || o.due))}</small></div>`;
-    }).join('') || '<p class="empty">No open orders.</p>');
+    const open = P.orders.filter(o => (o.state === 'open' || o.state === 'loading') && o.due - P.t < f.h * 60).sort((a, b) => a.due - b.due);
+    html($('#ordRisk'), open.length ? open.slice(0, 8).map(o => { const r = f.lateList.includes(o.id); return `<div class="rw ${r ? 'bad' : ''}"><span>${link('order:' + o.id, o.id)} · ${fmt(o.qty)} × ${esc(M[o.model].name)}</span><span class="v">${r ? 'short' : 'covered'}</span><small>${esc(o.customer)} · due ${esc(clock(o.due))}${o.truck ? ` · ${fmt(o.truck.loaded)} of ${fmt(o.truck.need)} loaded at ${esc(o.truck.dock.id)}` : ''}</small></div>`; }).join('') : '<p class="empty">No truck due in the next two hours.</p>');
     // runway
-    const bufs = Object.values(P.bufs).filter(b => (b.station || b.sm || b.id === 'RM:panel'));
-    const rws = bufs.map(b => ({ b, lv: T.E.level(b), rw: b.sm ? b.rw : T.E.runway(b) })).sort((a, b) => (a.rw || 1e9) - (b.rw || 1e9)).slice(0, 10);
-    html($('#runway'), `<thead><tr><th>Buffer</th><th class="num">Level</th><th class="num">Runway</th><th>Next delivery</th></tr></thead><tbody>${rws.map(({ b, lv, rw }) => `<tr><td>${link('buf:' + b.id, b.label)}<small>${esc(b.station ? P.byId[b.station].name : b.sm ? 'Supermarket' : 'Warehouse')}</small></td><td class="num">${fmt(lv)}<small>of ${fmt(b.cap)}</small></td><td class="num ${isFinite(rw) && rw < 600 ? 'neg' : ''}">${isFinite(rw) ? PE.mins(rw) : '—'}</td><td>${b.mission ? (b.mission.agv ? `${esc(b.mission.agv.id)}${b.mission.agv.fault ? ' (faulted)' : ''} · ${esc(PE.clock(b.mission.eta || P.t))}` : 'Waiting for an AGV') : b.id === 'RM:panel' ? (() => { const n = P.inbound.find(t => t.mat === 'panel' && t.state === 'due'); return n ? `Truck ${esc(n.id)} · ${esc(PE.clock(n.at))}${n.delayed ? ' (delayed)' : ''}` : 'Not booked'; })() : '<span class="muted">Above reorder point</span>'}</td></tr>`).join('')}</tbody>`);
-    // demand
-    const En = P.energy, k = clamp(En.proj / (En.contract * 1.15), 0, 1), left = Math.max(0, 900 - En.iSec);
-    html($('#demand'), `<div class="demand-now"><p class="big">${fmt(En.proj)}<small>kW projected · contract ${fmt(En.contract)} kW</small></p>
-      <div class="gauge" role="img" aria-label="Projected demand ${fmt(En.proj)} kW against a contract of ${fmt(En.contract)} kW"><i class="${En.proj > En.contract ? 'bad' : En.proj > En.contract * 0.95 ? 'warn' : ''}" style="width:${(k * 100).toFixed(1)}%"></i><em style="left:${(1 / 1.15 * 100).toFixed(1)}%"></em></div>
-      <p class="muted small" style="margin:0">${PE.mins(left)} left in this interval · ${esc(En.tariff)} tariff at EGP ${En.price.toFixed(2)} per kWh · ${En.over > 0 ? `<b class="neg">${fmt(En.over)} kW over the contract today</b>` : 'no demand charge today'}</p></div>`);
+    const rows = Object.values(DF.E.LS).filter(b => b.feed !== 'conveyor').map(b => ({ b, rw: DF.E.runway(b) })).filter(x => isFinite(x.rw)).sort((a, b) => a.rw - b.rw).slice(0, 10);
+    html($('#runway'), `<thead><tr><th>Material</th><th class="num">On hand</th><th class="num">Lasts</th><th>Next delivery</th></tr></thead><tbody>${rows.map(({ b, rw }) => `<tr><td>${link('buf:' + b.id, b.code)}<small>${esc(P.byId[b.station].name)} · ${esc(P.lines[b.line].name)}</small></td><td class="num">${fmt(DF.E.level(b))}</td><td class="num ${rw < 600 ? 'bad' : rw < 1200 ? 'warn' : ''}">${esc(mins(rw))}</td><td>${b.mission ? (b.mission.veh ? `${esc(b.mission.veh.id)} on its way` : 'AGV requested') : b.pending ? `${fmt(b.pending)} on the next lap` : b.feed === 'agv' ? 'AGV at reorder point' : 'milk run ' + esc(b.feed)}</td></tr>`).join('')}</tbody>`);
+    // power
+    const E = AG.energy;
+    html($('#demand'), `<div class="demand-now"><p class="big">${fmt(E.avg)}<small>kW · 15-minute average</small></p>
+      <div class="gauge" aria-hidden="true"><i class="${E.peak > 4000 ? 'bad' : E.peak > 3900 ? 'warn' : ''}" style="width:${Math.min(100, E.avg / 45).toFixed(1)}%"></i><em style="left:${(4000 / 45).toFixed(1)}%"></em></div>
+      <p class="small">Forecast peak <b>${fmt(E.peak)} kW</b> against the 4,000 kW contract. ${P.shave && P.t < P.shave.until ? `Peak shaving on until ${esc(clock(P.shave.until))}.` : E.peak > 3960 ? 'The Energy agent will shave it with utilities only.' : 'No action needed.'}</p></div>`);
   }
+  $('#fcRun').onclick = () => { predict('run'); DF.toast('Forecast run on the live plant.', 'info'); };
   DF.onView('predict', predict);
-  document.addEventListener('click', e => { if (e.target.closest('#fcRun')) { DF.toast('Playing the shift forward in background workers…', 'info'); DF.runForecast(true); } });
 
-  /* ---------------- root cause ---------------- */
+  /* ================= root cause and genealogy ================= */
+  const CHAIN = { rul: 'bearing', shot: 'shortshot', coat: 'coating', sw: 'software', 'erp.oc65': 'container', 'erp.ctn55': 'carton', absent: 'absent', 'erp.field': 'field' };
   let rcSel = null;
+  function problems() {
+    const P = DF.P, X = DF.X, out = [];
+    for (const r of P.recs) out.push({ id: 'rec:' + r.key, title: r.title, sub: `${r.agent} agent · ${r.time}`, r });
+    for (const n of X.ncr.filter(n => n.step < 7)) out.push({ id: 'ncr:' + n.id, title: `${n.id} · ${n.code}`, sub: `${X.D8[n.step]} · ${n.count} defect${n.count === 1 ? '' : 's'}`, n });
+    for (const s of P.stations.filter(s => s.state === 'down')) out.push({ id: 'st:' + s.id, title: `${s.name} stopped`, sub: `${P.lines[s.line] ? P.lines[s.line].name : ''} · ${s.why || ''}`, s });
+    if (P.alarms.some(a => a.key === 'GRID.DIP')) out.push({ id: 'grid', title: 'Grid voltage dip', sub: 'Utilities · SMD lines and coating ovens tripped', sc: 'power' });
+    return out;
+  }
   function rootcause() {
-    const cs = A.S.cases.filter(c => c.diagnosis || (c.chain && c.chain.length));
-    if (!rcSel || !A.caseById(rcSel)) rcSel = (cs.find(c => c.state !== 'closed') || cs[0] || {}).id || null;
-    const rl = $('#rcList');
-    if (!rl.contains(document.activeElement)) html(rl, cs.slice(0, 30).map(c => `<button type="button" class="rc-item ${c.id === rcSel ? 'sel' : ''}" data-rc="${esc(c.id)}" aria-pressed="${c.id === rcSel}"><b>${esc(c.title)}</b><span>${esc(c.id)} · ${esc(CaseUI.agentName(c.agent))} · ${esc(PE.clock(c.created))} · ${esc((CaseUI.STATE[c.state] || [c.state])[0])}</span></button>`).join('') || '<p class="empty">No diagnosed cases yet. Start a drill: the agent writes its cause path here.</p>');
-    const c = rcSel && A.caseById(rcSel);
-    if (!c) { html($('#rcPath'), ''); html($('#rcBody'), ''); return; }
-    $('#rcPathS').textContent = c.diagnosis ? `Cause: ${c.diagnosis.cause}` : 'From the first cause to what it reaches';
-    html($('#rcPath'), (c.chain || []).map((r, i) => `<li><span class="node ${i === 0 ? 'cause' : ''}" style="--i:${i}"><small>${i === 0 ? 'Cause' : 'Reaches'}</small>${link(r, DF.refName(r))}</span></li>`).join(''));
-    html($('#rcBody'), `${c.diagnosis ? `<p class="cs-dtext" style="margin-top:12px">${esc(c.diagnosis.text || '')}${c.diagnosis.confidence ? ` <b>${Math.round(c.diagnosis.confidence * 100)}% confidence.</b>` : ''}</p>` : ''}
-      ${CaseUI.evidence(c)}
-      <section class="cs-sec"><h4>How the agent got here <small>${c.steps.length} steps</small></h4>${CaseUI.trace(c)}</section>
-      <div class="cs-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn btn-secondary btn-sm" data-chain="${esc(c.id)}">Show on the mimic</button><button type="button" class="btn btn-secondary btn-sm" data-open-case="${esc(c.id)}">Open the case</button></div>`);
-    if (typeof Theme !== 'undefined') Theme.icons($('#rcBody'));
+    const P = DF.P, X = DF.X, list = problems();
+    if (!list.find(x => x.id === rcSel)) rcSel = list[0] ? list[0].id : null;
+    const el = $('#rcList');
+    if (!el.contains(document.activeElement)) html(el, list.length ? list.map(x => `<button type="button" class="rc-item ${x.id === rcSel ? 'sel' : ''}" data-rc="${esc(x.id)}" aria-pressed="${x.id === rcSel}"><b>${esc(x.title)}</b><span>${esc(x.sub)}</span></button>`).join('') : '<p class="empty">No open problem. Start a drill to see a cause traced through the plant.</p>');
+    const it = list.find(x => x.id === rcSel);
+    if (!it) { html($('#rcPath'), ''); html($('#rcBody'), ''); return; }
+    let nodes = [], body = '';
+    const scId = it.sc || (it.r && CHAIN[it.r.key.split(':')[0]]) || (it.n && it.n.scen);
+    const sc = scId && DF.E.SCENARIOS.find(s => s.id === scId);
+    if (sc) nodes = sc.chain.split(' → ').map((t, i) => ({ t, ref: i === 0 && it.r ? toRef(it.r.ref) : null }));
+    else if (it.r) {
+      const ref = toRef(it.r.ref), b = P.bufs[it.r.ref];
+      if (b && b.station) nodes = [{ t: b.code + ' at ' + P.byId[b.station].name, ref }, { t: P.lines[b.line].name, ref: 'line:' + b.line }, { t: 'TVs packed' }, { t: 'Orders' }];
+      else if (b) nodes = [{ t: b.label || b.code, ref }, { t: 'Main lines using it' }, { t: 'Orders' }];
+      else { const s = P.byId[it.r.ref]; nodes = [{ t: s ? s.name : it.r.title, ref }, s && P.lines[s.line] ? { t: P.lines[s.line].name, ref: 'line:' + s.line } : null, { t: 'TVs packed' }, { t: 'Orders' }].filter(Boolean); }
+    } else if (it.n) { const s = P.byId[it.n.ref]; nodes = [{ t: it.n.code }, s ? { t: s.name, ref: 'st:' + s.id } : null, it.n.line && P.lines[it.n.line] ? { t: P.lines[it.n.line].name, ref: 'line:' + it.n.line } : null, { t: 'Rework and final QA' }].filter(Boolean); }
+    else if (it.s) { const s = it.s, L = P.lines[s.line]; nodes = [{ t: s.name, ref: 'st:' + s.id }, L ? { t: L.name, ref: 'line:' + L.id } : null, L && L.kind !== 'main' ? { t: 'Main lines it feeds' } : null, { t: 'TVs packed' }].filter(Boolean); }
+    html($('#rcPath'), nodes.map((n, i) => `<li><span class="node ${i === 0 ? 'cause' : ''}" style="--i:${i}"><small>${i === 0 ? 'First cause' : 'Step ' + (i + 1)}</small>${n.ref ? link(n.ref, n.t) : `<b>${esc(n.t)}</b>`}</span></li>`).join(''));
+    $('#rcPathS').textContent = sc ? `${sc.title} · ${sc.area}` : 'From the first cause to what it reaches';
+    if (it.r) { const c = DF.AG.cards.get(it.r.key); body = `<p class="small">${esc(it.r.body || '')}</p>${c ? `<p class="small">${esc(c.agentName)} recommends <b>${esc(c.best.label)}</b>. ${link('card:' + c.key, 'Open the decision')}</p>` : ''}`; }
+    else if (it.n) body = DF.kv([['Owner', esc(it.n.owner)], ['Step', esc(X.D8[it.n.step])], ['Cause', esc(it.n.cause)], ['Action', esc(it.n.action)], ['Defects', fmt(it.n.count)], ['Opened', esc(clock(it.n.opened))]]);
+    else if (it.s) body = DF.kv([['State', stChip(it.s.state, it.s.why)], ['Technician', it.s.tech ? esc(it.s.tech.name) : 'not yet'], ['Repair left', it.s.repair > 0 ? esc(mins(it.s.repair)) : '—']]);
+    else if (sc) body = `<p class="small">${esc(sc.what)}</p>`;
+    html($('#rcBody'), body);
   }
-  DF.onView('rootcause', rootcause);
-  function trace(sn) {
-    const r = A.TOOLS.genealogy({ serial: sn });
+  document.addEventListener('click', e => { const b = e.target.closest('[data-rc]'); if (b) { rcSel = b.dataset.rc; rootcause(); } });
+  const PART = { smps: 'Power board', bc: 'Back cover', chs: 'Chassis', std: 'Stand', cus: 'Cushion', ctn: 'Carton', acc: 'Accessories', oc: 'Open cell', blu: 'Backlight', pcb: 'Bare PCB' };
+  DF.trace = function (sn) {
+    const P = DF.P, M = DF.E.MODELS, u = DF.E.findUnit(sn);
     $('#genIn').value = sn;
-    if (r.error) { html($('#genOut'), `<p class="empty">${esc(r.error)}.</p>`); return; }
-    html($('#genOut'), `<div class="gen"><p><b>${esc(r.serial)}</b> · ${esc(r.model || r.type)} · started ${esc(r.born)}${r.lot ? ` · panel lot <b>${esc(r.lot)}</b>` : ''}${r.pallet ? ` · pallet ${esc(r.pallet)}` : ''}${r.order ? ` · order ${link('order:' + r.order, r.order)}` : ''}</p>
-      ${Object.keys(r.parts).length ? `<p class="small muted">Parts: ${Object.entries(r.parts).map(([k, v]) => `${esc(k)} ${v ? `<button type="button" class="lnk" data-sn="${esc(v)}">${esc(v)}</button>` : '—'}`).join(' · ')}</p>` : ''}
-      <ol class="steps">${r.steps.map(s => `<li class="${s.ok ? '' : 'bad'}"><time>${esc(s.at)}</time><span>${esc(s.station)}${s.by ? ` <span class="muted">· ${esc(s.by)}</span>` : ''}</span><span class="muted">${esc(s.note || (s.ok ? 'Pass' : 'Fail'))}</span></li>`).join('')}</ol></div>`);
-  }
-  DF.trace = trace;
-  $('#genForm').addEventListener('submit', e => { e.preventDefault(); const v = $('#genIn').value.trim(); if (v) trace(v); });
-  $('#genLatest').onclick = () => {
-    const P = T.E.P;
-    const rows = [...P.aoiLog.L1, ...P.aoiLog.L2].filter(r => !r.ok).concat(P.testLog.filter(r => !r.ok)).sort((a, b) => b.t - a.t);
-    if (rows[0]) trace(rows[0].sn); else html($('#genOut'), '<p class="empty">No rejects yet this shift.</p>');
+    if (!u) { html($('#genOut'), `<p class="empty">No TV, module or board with serial ${esc(sn)} in today's records.</p>`); return; }
+    const name = u.type === 'tv' ? 'TV' : u.type === 'lcm' ? 'Panel module (LCM)' : 'Main board (PBA)';
+    const sub = p => (p ? `<li><span>${link('unit:' + p.sn, p.sn)}</span><span>${p.type === 'pba' ? `Main board · ${esc(P.lines[p.line] ? P.lines[p.line].name : p.line)} · firmware ${esc(p.sw || '—')}` : `Panel module · ${esc(P.lines[p.line] ? P.lines[p.line].name : '')}`}</span></li>` : '');
+    const lots = Object.entries(u.lots || {}).map(([k, l]) => `<li><span>${esc(PART[k] || k)}</span><span>lot ${esc(l)}${P.holds.has(l) ? ' · <b class="neg">on hold</b>' : ''}</span></li>`).join('');
+    html($('#genOut'), `<div class="gen"><h3 class="h4">${esc(name)} ${esc(u.sn)}</h3><p class="small muted">${esc(M[u.model] ? M[u.model].name : '')} · started ${esc(clock(u.born))}${u.order ? ` · order ${link('order:' + u.order, u.order)}` : ''}${u.usedIn ? ` · built into ${link('unit:' + u.usedIn, u.usedIn)}` : ''}</p>
+      ${u.defect ? `<p>${tag('bad', u.defect.code)} found at ${P.byId[u.defect.at] ? link('st:' + u.defect.at, P.byId[u.defect.at].name) : esc(u.defect.at)} · ${esc(u.defect.cause || '')}</p>` : ''}
+      <ol class="steps">${u.steps.map(s => `<li class="${s.ok === false ? 'bad' : ''}"><time>${esc(clock(s.t0))}</time><span>${P.byId[s.st] ? link('st:' + s.st, s.name) : esc(s.name)}${s.note ? ` <small class="muted">· ${esc(s.note)}</small>` : ''}</span><span class="muted small">${s.t1 ? Math.max(1, Math.round(s.t1 - s.t0)) + ' s' : 'now'}</span></li>`).join('')}</ol>
+      ${u.parts && (u.parts.lcm || u.parts.pba) ? `<h4 class="sub-h">Sub-assemblies</h4><ul class="list plain">${sub(u.parts.lcm)}${sub(u.parts.pba)}</ul>` : ''}
+      ${lots ? `<h4 class="sub-h">Material lots</h4><ul class="list plain">${lots}</ul>` : ''}</div>`);
   };
-  document.addEventListener('click', e => {
-    const r = e.target.closest('[data-rc]'); if (r) { rcSel = r.dataset.rc; $('#rcList')._h = null; rootcause(); return; }
-    const s = e.target.closest('[data-sn]'); if (s) { if (DF.view !== 'rootcause') DF.go('rootcause'); setTimeout(() => trace(s.dataset.sn), 20); }
-  });
+  $('#genForm').addEventListener('submit', e => { e.preventDefault(); const v = $('#genIn').value.trim(); if (v) DF.trace(v); });
+  $('#genLatest').onclick = () => { const P = DF.P; for (let i = P.archiveOrder.length - 1; i >= 0; i--) { const u = P.archive.get(P.archiveOrder[i]); if (u && u.type === 'tv') return DF.trace(u.sn); } const u = [...P.units].reverse().find(x => x.type === 'tv'); if (u) DF.trace(u.sn); };
+  $('#genReject').onclick = () => { const r = DF.P.rejects.rework[DF.P.rejects.rework.length - 1]; if (r) DF.trace(r.u.sn); else html($('#genOut'), '<p class="empty">No reject yet this shift.</p>'); };
+  DF.onView('rootcause', rootcause);
 
-  /* ---------------- what-if lab ---------------- */
-  const LAB = [
-    ['Lines', 'boost:L3', 'Final Assembly A to 110%', 'More TVs, more energy, small quality risk'],
-    ['Lines', 'boost:L4', 'Final Assembly B to 110%', 'More phones for the export orders'],
-    ['Lines', 'slowAssembly', 'Both assembly lines to 88%', 'Stretches board stock when SMT is short'],
-    ['Lines', 'switchL2', 'SMT Line 2 changeover to main boards', '4-minute changeover, then main boards'],
-    ['Maintenance', 'planRepair:L1-MounterB', 'Planned bearing change on Mounter B now', 'An 8-minute stop instead of a failure later'],
-    ['Maintenance', 'derate:L1-MounterB', 'Derate Mounter B to 85%', 'Slower wear, slower line'],
-    ['Energy', 'stagger', 'Hold Compressor 2 and Chiller 2 for 20 min', 'Shaves the 15-minute demand peak'],
-    ['Energy', 'precool', 'Pre-cool the chillers for 3 hours', 'Spends energy now to save in the heat'],
-    ['Test', 'stop:L2', 'Stop SMT Line 2', 'See what a stop costs downstream']
-  ];
-  let branch = null;      // { snap, t, k, actual: cmds } when the time machine branches from the past
-  DF.branchFrom = function (b) { branch = b; DF.go('simulator'); labForm(); };
-  function labForm() {
-    const fs = $('#labOpts');
-    let h = '<legend>Options to compare with doing nothing (up to 3)</legend>';
-    let g = '';
-    if (branch) h += `<p class="grp">From the past</p><label><input type="checkbox" value="__actual" checked><span>What actually happened<small>Every command people and agents gave after ${esc(PE.clockS(branch.t))}, replayed</small></span></label>`;
-    for (const [grp, id, label, sub] of LAB) { if (grp !== g) { g = grp; h += `<p class="grp">${esc(grp)}</p>`; } h += `<label><input type="checkbox" value="${esc(id)}"><span>${esc(label)}<small>${esc(sub)}</small></span></label>`; }
-    fs.innerHTML = h;
-    $('#labFrom').innerHTML = branch ? `From <b>${esc(PE.clockS(branch.t))}</b> in the past (time machine) · <button type="button" class="lnk" id="labLive">use the live plant</button>` : 'From the live plant, now';
+  /* ================= what-if lab ================= */
+  function labOptions() {
+    const P = DF.P, M = DF.E.MODELS, mains = Object.values(P.lines).filter(L => L.kind === 'main');
+    const D = DF.AG.drafts(), tgt = D.target;
+    const o = [];
+    for (const L of mains) if (L.speed < 1.08) o.push({ id: 'boost:' + L.id, grp: 'Speed', label: `${L.name} to 108%`, sub: `${M[L.model].name} · a little more output, a few more short stops`, mods: { rate: [{ id: L.id, k: 1.08 }] }, run: () => DF.E.apply('boost:' + L.id, 'You') });
+    for (const L of mains) if (L.model !== tgt) o.push({ id: 'co:' + L.id, grp: 'Changeover', label: `${L.name} to ${M[tgt].name}`, sub: `from ${M[L.model].name} · 15 minutes · ${M[tgt].name} has the least cover`, mods: { co: [{ id: L.id, at: 0, dur: 15, model: tgt }] }, run: () => DF.E.changeover(+L.id.slice(2), tgt, 'You') });
+    const wear = P.stations.filter(s => s.degrade > 0 && !s.planned && s.state !== 'down');
+    if (wear.length) o.push({ id: 'fix', grp: 'Maintenance', label: 'Repair the wearing machines now', sub: wear.map(s => s.name).join(', ') + ' · 8 minutes each', mods: { noFail: [...new Set(wear.map(s => P.lines[s.line].kind === 'lcm' ? 'ML' + s.line.slice(3) : s.line))], down: wear.map(s => ({ id: P.lines[s.line].kind === 'lcm' ? 'ML' + s.line.slice(3) : s.line, at: 0, dur: 8 })) } });
+    o.push({ id: 'smd4', grp: 'What if it breaks', label: 'SMD line 4 stops for 35 minutes', sub: 'a mounter failure: no PBA boards from it', mods: { down: [{ id: 'SMD4', at: 0, dur: 35 }] } });
+    o.push({ id: 'im10', grp: 'What if it breaks', label: 'IM10 stops for 40 minutes', sub: 'a mould change on a 65" back-cover machine', mods: { down: [{ id: 'IM10', at: 0, dur: 40 }] } });
+    o.push({ id: 'pr4', grp: 'What if it breaks', label: 'Press line 4 stops for 30 minutes', sub: 'no 65" chassis sets', mods: { down: [{ id: 'PR4', at: 0, dur: 30 }] } });
+    o.push({ id: 'staff3', grp: 'What if it breaks', label: 'Main line 3 short of 8 operators', sub: 'manual stations at about 65%', mods: { rate: [{ id: 'ML3', k: 0.65 }] } });
+    return o;
   }
-  labForm();
+  let labList = [], labRes = null;
+  function labBuild() {
+    const fs = $('#labOpts'), was = new Set($$('#labOpts input:checked').map(i => i.value));
+    labList = labOptions();
+    let grp = '', h = '<legend>Compare with the live plan (up to 3)</legend>';
+    for (const op of labList) { if (op.grp !== grp) { grp = op.grp; h += `<p class="grp">${esc(grp)}</p>`; } h += `<label><input type="checkbox" value="${esc(op.id)}" ${was.has(op.id) ? 'checked' : ''}><span>${esc(op.label)}<small>${esc(op.sub)}</small></span></label>`; }
+    fs.innerHTML = h;
+    $('#labFrom').textContent = `From the live plant at ${clock(DF.P.t)}`;
+  }
   $('#labOpts').addEventListener('change', e => {
     const on = $$('#labOpts input:checked');
-    if (on.length > 3) { e.target.checked = false; DF.toast('Up to three options at a time', 'info'); }
+    if (on.length > 3) { e.target.checked = false; DF.toast('Up to three options at a time.', 'info'); }
   });
-  document.addEventListener('click', e => { if (e.target.closest('#labLive')) { branch = null; labForm(); } });
-  let labRes = null, labBusy = false;
-  $('#labRun').onclick = async () => {
-    if (labBusy) return;
-    const ids = $$('#labOpts input:checked').map(x => x.value);
-    if (!ids.length) { DF.toast('Choose at least one option to compare with doing nothing', 'info'); return; }
-    const opts = [{ id: 'none', label: 'Do nothing', cmds: [] }].concat(ids.map(id => id === '__actual'
-      ? { id: 'actual', label: 'What actually happened', cmds: branch.actual }
-      : { id, label: LAB.find(x => x[1] === id)[2], cmds: [{ type: 'apply', id }] }));
-    labBusy = true; $('#labRun').disabled = true; $('#labRun').lastChild.textContent = 'Playing futures…';
-    $('#labOutS').textContent = `Playing ${opts.length} options × ${$('#labSeeds').value} futures…`;
-    $('#view-simulator .lab-out').classList.add('busy');
-    try {
-      const req = { horizon: +$('#labH2').value, seeds: +$('#labSeeds').value, options: opts };
-      if (branch) req.snap = structuredClone(branch.snap);
-      labRes = await T.whatif(req);
-      labRes.fromT = branch ? branch.t : T.E.P.t;
-    } catch (err) { DF.toast('The futures could not run: ' + err.message, 'error'); }
-    labBusy = false; $('#labRun').disabled = false; $('#labRun').lastChild.textContent = 'Play the futures';
-    $('#view-simulator .lab-out').classList.remove('busy');
-    lab();
-  };
-  function lab() {
-    if (!labRes) return;
-    const r = labRes, base = r.options.find(o => o.id === 'none');
-    const cls = ['cm', 'c1', 'c2', 'c3', 'c4'];
-    const H = r.horizon;
-    const series = r.options.map((o, i) => ({ key: o.id, label: o.label, cls: cls[i], pts: o.series.t.map((t, j) => [t, o.series.packed[j]]), dash: o.id === 'none', end: true, endLabel: fmt(o.S.packed.mean) }));
-    const bands = r.options.filter(o => o.id !== 'none').map((o, i) => ({ cls: cls[i + 1], pts: o.series.t.map((t, j) => [t, o.series.packedLo[j], o.series.packedHi[j]]) }));
-    Viz.chart($('#labChart'), { label: 'Units packed in the simulated futures for each option', height: 280, x: { min: 0, max: H, fmt: t => '+' + Math.round(t / 60) + ' min', name: 'Minutes ahead' }, y: { min: 0, fmt: v => Viz.compact(v), unit: 'units' }, series, bands });
-    const best = r.options.filter(o => o.id !== 'none').sort((a, b) => b.S.value.mean - a.S.value.mean)[0];
-    const d = (o, k) => o.S[k].mean - base.S[k].mean;
-    $('#labOutS').textContent = `${r.options.length} options × ${r.seeds} futures from ${PE.clockS(r.fromT)}, ${Math.round(H / 60)} min ahead, played in ${(r.ms / 1000).toFixed(1)} s. Lines are the mean; bands are P10–P90.`;
-    const v = $('#labVerdict');
-    const clear = best && best.S.value.mean - base.S.value.mean > 2500 && best.winRate >= 0.6;
-    v.className = 'chip ' + (clear ? 'chip-success' : 'chip-neutral');
-    v.textContent = best ? (clear ? `Best: ${best.label}` : 'No clear winner over doing nothing') : '—';
-    html($('#labTable'), `<thead><tr><th>Option</th><th class="num">Value vs doing nothing</th><th class="num">Better in</th><th class="num">Packed</th><th class="num">Late</th><th class="num">Down</th><th class="num">Peak kW</th><th class="num">Energy</th></tr></thead><tbody>${r.options.map((o, i) => `<tr class="${o === best ? 'best' : ''}">
-      <td><span class="vz-legend" style="margin:0"><span><i class="vz-lk ${cls[i]}${o.id === 'none' ? ' dash' : ''}"></i>${esc(o.label)}</span></span></td>
-      <td class="num">${o.id === 'none' ? 'Baseline' : `${signed(o.S.value.mean - base.S.value.mean, money)}<small>P10–P90 ${signed(o.S.value.p10 - base.S.value.mean, money)} to ${signed(o.S.value.p90 - base.S.value.mean, money)}</small>`}</td>
-      <td class="num">${o.id === 'none' ? '—' : Math.round(o.winRate * 100) + '%'}</td>
-      <td class="num">${fmt(o.S.packed.mean)}${o.id === 'none' ? '' : `<small>${signed(d(o, 'packed'))}</small>`}</td>
-      <td class="num">${fmt(o.S.lateMin.mean)} min</td><td class="num">${fmt(o.S.downMin.mean)} min</td><td class="num">${fmt(o.S.kwPeak.mean)}</td><td class="num">${money(o.S.energyCost.mean + o.S.demandCost.mean)}</td></tr>`).join('')}</tbody>`);
+  function labRun() {
+    const ids = $$('#labOpts input:checked').map(i => i.value);
+    if (!ids.length) { DF.toast('Choose at least one option to compare.', 'info'); return; }
+    const h = +$('#labH2').value, S = DF.AG.snapshot(h);
+    const live = { id: 'live', label: 'Live plan', f: DF.AG.forecast({}, S) };
+    const ops = ids.map(id => labList.find(o => o.id === id)).filter(Boolean).map(o => Object.assign({}, o, { f: DF.AG.forecast(o.mods, S) }));
+    labRes = { live, ops, h, at: DF.P.t };
+    labShow();
   }
-  DF.onView('simulator', () => { lab(); });
+  function labShow() {
+    if (!labRes) return;
+    const { live, ops, h } = labRes, all = [live].concat(ops), P = DF.P;
+    const best = ops.slice().sort((a, b) => (b.f.packed - b.f.late * 300) - (a.f.packed - a.f.late * 300))[0];
+    const step = h / live.f.curve.length;
+    Viz.chart($('#labChart'), { height: 260, label: 'TVs packed in the forecast, per option', x: { min: 0, max: h, fmt: v => clock(labRes.at + v * 60), name: 'Time' }, y: { min: 0, unit: 'TVs' },
+      series: all.map((o, i) => ({ label: o.label, cls: o === live ? 'c4' : 'c' + Math.min(3, i), dash: o === live, pts: [[0, 0]].concat(o.f.curve.map((v, j) => [(j + 1) * step, v])), end: true, endLabel: fmt(o.f.packed) })) });
+    html($('#labTable'), `<thead><tr><th>Option</th><th class="num">TVs packed</th><th class="num">vs live</th><th class="num">Late orders</th><th class="num">Revenue delayed</th><th class="num">Short of material</th><th><span class="sr-only">Apply</span></th></tr></thead><tbody>${all.map(o => { const d = o.f.packed - live.f.packed; return `<tr class="${o === best ? 'best' : ''}"><td>${esc(o.label)}</td><td class="num">${fmt(o.f.packed)}</td><td class="num ${d > 0 ? 'pos' : d < 0 ? 'neg' : ''}">${o === live ? '—' : (d > 0 ? '+' : '') + fmt(d)}</td><td class="num">${o.f.late}</td><td class="num">${esc(DF.X.egp(o.f.revDelayed))}</td><td class="num">${fmt(o.f.starvedMin)} min</td><td>${o.run ? `<button type="button" class="btn btn-secondary btn-sm" data-labgo="${esc(o.id)}">Apply</button>` : ''}</td></tr>`; }).join('')}</tbody>`);
+    const d = best.f.packed - live.f.packed;
+    $('#labVerdict').textContent = best.run ? `Best: ${best.label}` : d < 0 ? `Worst case costs ${fmt(-d)} TVs` : `Best: ${best.label}`;
+    $('#labOutS').textContent = `${all.length} forecasts over ${h / 60} h from ${clock(labRes.at)}${P.t - labRes.at > 120 ? ' · the plant has moved on, simulate again' : ''}`;
+  }
+  $('#labRun').onclick = labRun;
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-labgo]'); if (!b || !labRes) return;
+    const o = labRes.ops.find(x => x.id === b.dataset.labgo); if (!o || !o.run) return;
+    if (await DF.confirm({ title: o.label, html: `<p>Forecast with it: <b>${fmt(o.f.packed)}</b> TVs in ${labRes.h / 60} h against ${fmt(labRes.live.f.packed)} on the live plan, ${o.f.late} late order${o.f.late === 1 ? '' : 's'}. It goes to the audit trail with your name.</p>`, yes: 'Apply' })) {
+      o.run(); DF.toast(`${o.label}: done. Logged as ${DF.P.audit[0].id}.`, 'success'); labBuild(); DF.refresh(true);
+    }
+  });
+  function drafts(force) {
+    const D = DF.AG.drafts(force), M = DF.E.MODELS;
+    $('#draftS').textContent = `${M[D.target].name} has the least cover against the orders due. Simulated over ${D.h / 60} hours at ${clock(D.at)}. Only a person publishes a draft.`;
+    const live = D.list[0];
+    html($('#drafts'), `<thead><tr><th>Draft</th><th class="num">TVs in 4 h</th><th class="num">vs live</th><th class="num">Late orders</th><th class="num">Cost</th><th><span class="sr-only">Publish</span></th></tr></thead><tbody>${D.list.map(d => `<tr class="${d === D.best ? 'best' : ''}"><td>${esc(d.name)}${d === D.best ? ' <b class="pos">· best</b>' : ''}<small>${esc(d.note)}</small></td><td class="num">${fmt(d.f.packed)}</td><td class="num">${d === live ? '—' : (d.f.packed >= live.f.packed ? '+' : '') + fmt(d.f.packed - live.f.packed)}</td><td class="num">${d.f.late}</td><td class="num">${esc(DF.X.egp(d.cost))}</td><td>${d.id === 'live' ? '' : `<button type="button" class="btn btn-secondary btn-sm" data-publish="${esc(d.id)}">Publish</button>`}</td></tr>`).join('')}</tbody>`);
+  }
+  $('#draftRun').onclick = () => drafts(true);
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-publish]'); if (!b) return;
+    const D = DF.AG.drafts(), d = D.list.find(x => x.id === b.dataset.publish); if (!d) return;
+    if (await DF.confirm({ title: `Publish ${d.name}`, html: `<p>${esc(d.note)}. Forecast: <b>${fmt(d.f.packed)}</b> TVs in 4 h, ${d.f.late} late (live plan: ${fmt(D.list[0].f.packed)}, ${D.list[0].f.late} late). The lines change now.</p>`, yes: 'Publish' })) {
+      const au = DF.AG.publish(d.id, 'You'); DF.toast(`${d.name} is the live plan. Logged as ${au.id}.`, 'success'); drafts(true); labBuild(); DF.refresh(true);
+    }
+  });
+  DF.onView('simulator', force => {
+    if (force || !$('#labOpts input')) labBuild();
+    // the first visit compares two ready-made options, so the page never opens empty
+    if (!labRes) { const pre = [labList.find(o => o.grp === 'Speed'), labList.find(o => o.id === 'smd4')].filter(Boolean); pre.forEach(o => { const i = $(`#labOpts input[value="${CSS.escape(o.id)}"]`); if (i) i.checked = true; }); labRun(); }
+    if (force) drafts(); else if (labRes) labShow();
+  });
 
-  /* ---------------- drills ---------------- */
+  /* ================= drills ================= */
+  const TARGET = { bearing: 'st:SMD4-MounterB', shortshot: 'st:IM10', coating: 'st:PR4-Coating', software: 'st:SMD1-SWdownload', container: 'buf:IMP:OC-65', carton: 'buf:LOC:CTN-55', absent: 'line:ML3', field: 'buf:SVC:PBA-55', power: 'util:UTIL-TX1' };
   const started = {};
-  function drills() {
-    const el = $('#scenarios'), P = T.E.P;
-    if (el.contains(document.activeElement) && !el._h) return;
-    html(el, T.E.SCENARIOS.map(sc => {
-      const at = started[sc.id];
-      const c = at != null ? A.S.cases.find(x => x.agent === sc.agent && x.created >= at - 5) : null;
-      const running = c && c.state !== 'closed';
-      return `<article class="card sc ${running ? 'running' : ''}">
-        <div><h3>${esc(sc.title)}</h3><p class="area">${esc(sc.area)} · ${esc(CaseUI.agentName(sc.agent))}</p></div>
-        <p>${esc(sc.what)}</p>
-        <p class="chain"><b>Knock-on path:</b> ${esc(sc.chain)}</p>
-        ${c ? `<p class="live-case">${link('case:' + c.id, c.id)} · ${esc((CaseUI.STATE[c.state] || [c.state])[0])}${c.state === 'closed' && c.outcome ? ' · ' + esc(c.outcome.verdict) : ''}</p>` : at != null ? '<p class="live-case muted">Started. The agents detect it from the plant\'s data, not from the drill.</p>' : ''}
-        <button type="button" class="btn ${running ? 'btn-secondary' : 'btn-primary'} btn-sm" data-drill="${esc(sc.id)}"><span data-icon="play"></span>${at != null ? 'Run again' : 'Start drill'}</button>
-      </article>`;
+  function scenarios() {
+    const el = $('#scenarios'); if (el.contains(document.activeElement)) return;
+    html(el, DF.E.SCENARIOS.map(s => {
+      const on = started[s.id], dec = DF.P.recs.find(r => CHAIN[r.key.split(':')[0]] === s.id || (s.id === 'power' && r.ref === 'UTIL-TX1'));
+      return `<article class="card sc ${on ? 'running' : ''}"><div><h3>${esc(s.title)}</h3><p class="area">${esc(s.area)} · ${esc(s.agent)} agent</p></div><p>${esc(s.what)}</p><p class="chain"><b>Chain:</b> ${esc(s.chain)}</p>
+        ${on ? `<p class="live-case">Started ${esc(clock(on))} · watch ${link(TARGET[s.id])}${dec ? ` · ${link('card:' + dec.key, 'decision waiting')}` : ''}</p>` : ''}
+        <button type="button" class="btn ${on ? 'btn-secondary' : 'btn-primary'}" data-drill="${esc(s.id)}"><span data-icon="play"></span>${on ? 'Run again' : 'Start drill'}</button></article>`;
     }).join(''));
     if (typeof Theme !== 'undefined') Theme.icons(el);
-    void P;
   }
-  DF.onView('scenarios', drills);
-  document.addEventListener('click', async e => {
-    const d = e.target.closest('[data-drill]');
-    if (d) {
-      const sc = T.E.SCENARIOS.find(s => s.id === d.dataset.drill);
-      started[sc.id] = T.E.P.t;
-      const ok = await T.trigger(sc.id, 'You');
-      DF.toast(ok ? `Drill started: ${sc.title}. Watch the ${CaseUI.agentName(sc.agent).toLowerCase()} pick it up.` : `${sc.title}: not possible right now (already running or the machine is down)`, ok ? 'info' : 'warning');
-      drills(); return;
-    }
-    if (e.target.closest('#ff10')) { T.fastForward(600); DF.toast('Skipped 10 plant minutes', 'info'); return; }
-    if (e.target.closest('#resetSim')) {
-      const ok = await DF.confirm({ title: 'Start a new shift?', yes: 'New shift', html: '<p>The plant goes back to 09:12 with full buffers, and the agents\' cases and ledger are cleared in every open tab.</p>' });
-      if (ok) T.reset();
-    }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-drill]'); if (!b) return;
+    const s = DF.E.SCENARIOS.find(x => x.id === b.dataset.drill);
+    DF.E.trigger(s.id); started[s.id] = DF.P.t;
+    DF.toast(`Drill started: ${s.title}. The agents will pick it up within a minute.`, 'info');
+    scenarios();
   });
+  $('#ff10').onclick = () => { DF.E.fastForward(600); DF.toast('Skipped 10 plant minutes.', 'info'); DF.refresh(true); };
+  DF.startedDrills = started;
+  DF.onView('scenarios', scenarios);
 })();
