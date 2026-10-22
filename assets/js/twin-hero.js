@@ -1,6 +1,6 @@
 /* Digital Factory — the live line drawn on the website.
    [data-twin="slot"]  a small running conveyor that sits inside the headline in place of the word "line"
-   [data-twin="full"]  the same SMT line opened full width as a blueprint, with live readouts in [data-read]
+   [data-twin="full"]  the same SMD line (SMD line 4 of Plant EG-01) opened full width as a blueprint, with live readouts in [data-read]
    Simulated data. Pauses off-screen; with reduced motion it draws one still frame. */
 (() => {
   'use strict';
@@ -86,7 +86,7 @@
       ctx.beginPath(); ctx.moveTo(L, dy - 8); ctx.lineTo(L, dy + 8); ctx.moveTo(R, dy - 8); ctx.lineTo(R, dy + 8); ctx.moveTo(L, dy); ctx.lineTo(R, dy); ctx.stroke();
       for (const [x, s] of [[L, 1], [R, -1]]) { ctx.beginPath(); ctx.moveTo(x, dy); ctx.lineTo(x + 8 * s, dy - 4); ctx.lineTo(x + 8 * s, dy + 4); ctx.fill(); }
       ctx.font = '600 13px Inter, system-ui, sans-serif'; ctx.textAlign = 'center';
-      const lbl = 'SMT Line 1  ·  6 stations  ·  38.4 m';
+      const lbl = 'SMD line 4  ·  board line  ·  38.4 m';
       const lw = ctx.measureText(lbl).width + 20;
       ctx.fillStyle = C.bg; ctx.fillRect((L + R) / 2 - lw / 2, dy - 10, lw, 20);
       ctx.fillStyle = C.text2; ctx.fillText(lbl, (L + R) / 2, dy + 4.5);

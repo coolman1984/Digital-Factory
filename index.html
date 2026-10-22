@@ -47,12 +47,12 @@
         <div class="twin-crop"><div class="twin-in">
           <canvas data-twin="full" aria-hidden="true"></canvas>
         </div>
-          <div class="read r-risk"><b>Mounter B</b><span>Bearing wear · failure risk <em data-read="risk">72%</em> in about 40 h</span></div>
+          <div class="read r-risk"><b>Mounter B · SMD line 4</b><span>Bearing wear · failure risk <em data-read="risk">72%</em> in about 40 h</span></div>
           <div class="read r-oee"><b data-read="oee">86.4%</b><span>Line OEE</span></div>
-          <div class="read r-units"><b data-read="units">12,480</b><span>Units this shift</span></div>
+          <div class="read r-units"><b data-read="units">12,480</b><span>Boards this shift</span></div>
           <div class="read r-clock"><b data-read="clock">—</b><span>Shift clock</span></div>
         </div>
-        <figcaption class="wrap">A running simulation of one SMT line. Plant data on this site is simulated. <a href="app.html">Open the full command room</a> or <a href="plant.html">walk the whole plant in 3D</a></figcaption>
+        <figcaption class="wrap">A running simulation of SMD line 4, one of the six board lines that feed the six main TV lines of Plant EG-01. Plant data on this site is simulated. <a href="app.html">Open the full command room</a> or <a href="plant.html">walk the whole plant in 3D</a></figcaption>
       </figure>
     </section>
 
@@ -85,7 +85,7 @@
           <h2 id="how-h" class="h2" data-reveal>Four layers on the machines you already own.</h2>
           <p class="sub" data-reveal>Nothing is replaced. Digital Factory sits on top of the equipment, MES and ERP the plant already runs.</p>
           <figure class="shot only-sm"><img src="assets/img/pnp.jpg" width="1000" height="1250" alt="A placement head puts components on a green circuit board" loading="lazy"></figure>
-          <div class="lstep" data-step="0"><h3>Connect every signal.</h3><p>PLCs, SMT equipment, AOI and SPI, testers, energy meters and the MES stream into one place over open industrial standards. We start read-only, so production is never touched.</p></div>
+          <div class="lstep" data-step="0"><h3>Connect every signal.</h3><p>PLCs, SMD equipment, AOI and SPI, testers, energy meters and the MES stream into one place over open industrial standards. We start read-only, so production is never touched.</p></div>
           <div class="lstep" data-step="1"><h3>See the whole plant live.</h3><p>Every line, station and unit, updated every second. One shared picture for operators, engineers and management, on screens and on mobile.</p></div>
           <div class="lstep" data-step="2"><h3>Predict what comes next.</h3><p>Machine-health models forecast failures days ahead. Vision AI inspects every board. Root-cause models link each defect to the step that caused it.</p></div>
           <div class="lstep" data-step="3"><h3>Act on the best decision.</h3><p>Actions ranked by their value in EGP, work orders raised for you, and a copilot that answers questions about the plant in plain language.</p></div>
@@ -143,20 +143,20 @@
       <div class="wrap split">
         <div>
           <h2 id="c-h" class="h2" data-reveal>Ten capabilities you can open now.</h2>
-          <p class="sub" data-reveal>Each runs on a simulated electronics plant. In production, each connects to the real equipment.</p>
+          <p class="sub" data-reveal>Each runs on Plant EG-01, a simulated TV plant. In production, each connects to the real equipment.</p>
           <figure class="shot"><img src="assets/img/robot.jpg" width="1287" height="1125" alt="A robot arm working inside an automated machine cell" loading="lazy"></figure>
         </div>
         <ul class="caplist">
           <li><a href="plant.html"><b>Live plant in 3D</b><span>A whole TV plant running: six main lines and every line that feeds them, the stores, milk runs and docks in 3D, with SAP, GMES, S&amp;OP, MRP and every department on the same numbers. Nine AI agents simulate every option before they recommend one; every machine can be controlled behind its interlocks. Select any TV to read its passport.</span><i data-icon="arrowRight"></i></a></li>
-          <li><a href="app.html#command"><b>Command room</b><span>Every line, station and unit live, with alarms, decisions and the agent crew on one screen.</span><i data-icon="arrowRight"></i></a></li>
-          <li><a href="app.html#agents"><b>AI agent crew</b><span>Six agents for maintenance, quality, logistics, energy, planning and safety. You set how much each may do alone.</span><i data-icon="arrowRight"></i></a></li>
-          <li><a href="app.html#alarms"><b>Alarm flood to one cause</b><span>Dozens of alarms become one incident with its root cause.</span><i data-icon="arrowRight"></i></a></li>
-          <li><a href="app.html#predict"><b>Shift forecast</b><span>The chance of hitting today's plan, re-forecast on futures of the twin, with the remaining life of every rotating machine.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#command"><b>Command room</b><span>All six main lines and every line, store and vehicle feeding them, live, with alarms, decisions and the agent crew on one screen.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#agents"><b>AI agent crew</b><span>Nine agents for maintenance, quality, scheduling, material, logistics, energy, people, service and safety. You set how much each may do alone.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#alarms"><b>Alarms to one cause</b><span>Alarms grouped by area under their likely first-out, linked to the decision that fixes the cause.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#predict"><b>Shift forecast</b><span>The chance of hitting today's plan from a two-hour forecast of the six main lines and everything that feeds them, with the remaining life of every machine that wears.</span><i data-icon="arrowRight"></i></a></li>
           <li><a href="app.html#rootcause"><b>Root-cause chains</b><span>From symptom to cause to cost in one picture, with the evidence behind it.</span><i data-icon="arrowRight"></i></a></li>
-          <li><a href="app.html#command"><b>Time machine</b><span>Rebuild any moment of the last half hour exactly, then ask what would have happened if you had acted.</span><i data-icon="arrowRight"></i></a></li>
-          <li><a href="app.html#scenarios"><b>Drills</b><span>Twelve real-world drills: breakdowns, alarm floods, heat waves, power dips, supplier delays, safety events.</span><i data-icon="arrowRight"></i></a></li>
-          <li><a href="app.html#control"><b>Simulate before you act</b><span>Units packed, order lateness and money against no change, played on the twin before any change, with a full audit trail.</span><i data-icon="arrowRight"></i></a></li>
-          <li><a href="app.html#leadership"><b>Leadership view</b><span>Plant health score, value saved, and decisions ranked by money at stake.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#command"><b>Time machine</b><span>Replay machine states, vehicles and readouts of the last 45 minutes, then compare what to do from now.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#scenarios"><b>Drills</b><span>Nine real-world drills: a worn mounter bearing, short shots, a coating oven drop, a faulty firmware release, a container held at port, a late carton truck, absent operators, field failures and a grid dip.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#control"><b>Simulate before you act</b><span>TVs packed and late orders against the live plan, simulated on a two-hour forecast before any change, with a full audit trail.</span><i data-icon="arrowRight"></i></a></li>
+          <li><a href="app.html#leadership"><b>Leadership view</b><span>Plant health score, value from decisions, and the decisions waiting with what each agent recommends.</span><i data-icon="arrowRight"></i></a></li>
         </ul>
       </div>
     </section>
@@ -182,7 +182,7 @@
     <section class="block close" aria-labelledby="x-h">
       <div class="wrap">
         <h2 id="x-h" class="close-s">Break a machine. Watch the AI <a class="word" href="app.html#scenarios">respond<i data-icon="arrowRight"></i></a></h2>
-        <p class="after">Opens the command room with twelve real-world drills. Prefer the business case? <a href="deck.html#plan">See the 12-week plan</a>.</p>
+        <p class="after">Opens the command room with nine real-world drills. Prefer the business case? <a href="deck.html#plan">See the 12-week plan</a>.</p>
       </div>
     </section>
   </main>
