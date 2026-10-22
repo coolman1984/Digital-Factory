@@ -20,7 +20,9 @@ All plant data is simulated. Plant EG-01 is fictional; no real company or city i
 the live plant; its explain mode describes any control under the pointer.
 
 **Customer show.** In the command room, the Customer show button (or `S`) runs a two-minute guided presentation: the live
-plant, a problem started on purpose, the decision the agents prepare, its approval, the forecast and the value, then the 3D tour.
+plant, a problem started on purpose, the decision the agents prepare, its approval, and every other screen with how it
+helps, then hands over to **Autopilot** (key `A`): the Orchestrator, a lead agent, runs the plant with the nine agents
+proposing, decides by plant-wide rules, explains each decision and checks the result.
 
 ## Presenting
 
@@ -87,7 +89,7 @@ assets/vendor/    three.js r170, bundled once (see assets/vendor/three/README.md
 assets/js/room/   the command room on the plant model: core · viz (SVG charts) · floor (plant mimic and detail panel) · command (value stream,
                   decisions) · ops (alarms, control) · intel (agents, predictions, root cause, what-if lab, drills) · perf (leadership,
                   maintenance, quality, energy) · briefing (feeds the deck) · copilot (local and Claude modes) · main (boot, time machine) ·
-                  show (the customer show)
+                  show (the customer show) · orchestrator (autopilot) · lighthouse (scorecard) · voice (spoken alerts)
 ```
 
 Motion and quality checks follow the Animation studio's web method (`coolman1984/animation`): reveals, word-by-word headlines,

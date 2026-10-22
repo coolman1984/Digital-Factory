@@ -370,7 +370,7 @@
       if (A.decided.length > 20) A.decided.pop();
       return c.decided;
     }
-    A.decide = (c, op, who = 'You') => decide(c, op, who, 'person');
+    A.decide = (c, op, who = 'You', how = 'person') => decide(c, op, who, how);
     A.veto = key => { const c = A.cards.get(key); if (!c) return; c.veto = true; c.autoAt = null; E.audit('You', 'Vetoed an automatic approval', `${c.best.label} · ${c.title}`); say(c.owner, `Vetoed: I will wait for a person to decide on "${c.title}".`, 'warn'); };
     A.card = r => card(r);
     function refresh() {

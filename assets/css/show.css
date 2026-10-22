@@ -51,3 +51,40 @@ body.showing .dg-fab, body.showing .dg-panel { display: none; }
 .lh-kpis > div { padding: 12px 14px; border-radius: 14px; background: var(--surface-2); }
 .lh-kpis b { display: block; font-size: 24px; font-variant-numeric: tabular-nums; }
 .lh-kpis span { font-size: 13px; color: var(--text-2); }
+
+/* autopilot: the Orchestrator's view (assets/js/room/orchestrator.js) */
+.ap-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: start; margin-bottom: var(--gap, 16px); }
+.ap-head p { margin: 8px 0 0; line-height: 1.6; }
+.ap-rules { font-size: 14px; color: var(--text-2); }
+.ap-ctl { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; min-width: 220px; }
+.ap-sw { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.ap-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: var(--gap, 16px); }
+.ap-t { padding: 14px 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); min-width: 0; }
+.ap-t b { display: block; font-size: 26px; font-variant-numeric: tabular-nums; }
+.ap-t .ap-l { display: block; font-weight: 600; font-size: 14px; }
+.ap-t small { display: block; color: var(--text-2); font-size: 13px; margin-top: 2px; }
+.ap-t.warn b { color: var(--warning-text, var(--warning)); } .ap-t.bad b { color: var(--danger-text, var(--danger)); }
+.ap-grid { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); gap: var(--gap, 16px); align-items: start; }
+.ap-log { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.ap-e { padding: 14px 16px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border); min-width: 0; overflow-wrap: anywhere; }
+.ap-e.drill { background: color-mix(in srgb, var(--warning) 10%, var(--surface-2)); }
+.ap-e h3 { margin: 4px 0 8px; font-size: 16px; line-height: 1.4; }
+.ap-e p { margin: 6px 0 0; font-size: 14px; line-height: 1.6; color: var(--text-2); }
+.ap-e .ap-k { display: block; font-size: 12px; font-weight: 700; color: var(--text-3); }
+.ap-when { font-size: 12px !important; color: var(--text-3) !important; margin: 0 !important; }
+.ap-dec { color: var(--text) !important; }
+.ap-based { margin-top: 6px; font-size: 14px; color: var(--text-2); }
+.ap-based ul { margin: 2px 0 0; padding-inline-start: 18px; }
+.ap-opts { width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 13px; }
+.ap-opts th, .ap-opts td { padding: 6px 8px; text-align: start; border-bottom: 1px solid var(--border); }
+.ap-opts th { color: var(--text-3); font-weight: 600; }
+.ap-opts tr.on td { font-weight: 700; color: var(--text); background: color-mix(in srgb, var(--brand-2, #2D5BFF) 8%, transparent); }
+.ap-opts small { color: var(--text-3); font-weight: 500; }
+.ap-chk.ok { color: var(--success-text, var(--success)) !important; } .ap-chk.bad { color: var(--warning-text, var(--warning)) !important; }
+.ap-crew { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 8px; }
+.ap-crew li { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); font-size: 14px; }
+.ap-crew li span { color: var(--text-2); }
+.ap-crew li.busy span { color: var(--warning-text, var(--warning)); font-weight: 600; }
+@media (max-width: 1100px) { .ap-grid, .ap-head { grid-template-columns: minmax(0, 1fr); } }
+.sh-cap .sh-v { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--brand-2, #2D5BFF) 9%, transparent); color: var(--text); }
+.sh-cap .sh-v b { display: block; font-size: 12px; color: var(--brand-text, var(--brand)); margin-bottom: 2px; }
