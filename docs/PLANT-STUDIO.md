@@ -2,7 +2,13 @@
 
 How we build a chat-driven 3D layout studio for Plant EG-01 that does what Spline for ChatGPT does and goes well past it.
 Part 1 is the plan for the owner, in Arabic. Part 2 is the build specification for the coding agents, in English.
-Version 1 is live (`assets/js/plant/studio.js`, merged in coolman1984/Digital-Factory#27); this document covers what comes next.
+Version 1 is live (`assets/js/plant/studio.js`, merged in coolman1984/Digital-Factory#27).
+
+**Status:** phases 1 to 4 are built: the operations contract with revisions, authors and per-author undo
+(`studio.js`), the layout file `studio/layout.json` with three-way follow, the zero-dependency agent bridge
+(`tools/studio-bridge`, registered in `.mcp.json`), and presence (author colours, live tags, who is here). The 3D look
+was raised at the same time: a studio light-panel environment for reflections, clear-coated physical materials across the
+plant, and detailed animated models for every kind (`studio-models.js`). Next: phase 5 (impact).
 
 ---
 
