@@ -142,9 +142,10 @@
     const it = document.createTreeWalker(n, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: x => (x.nodeType === 1 && x.matches('.ws') ? (words(x), NodeFilter.FILTER_REJECT) : x.nodeType === 1 && x.matches(SKIP) ? NodeFilter.FILTER_REJECT : x.nodeType === 1 && block(x) ? (attrs(x), NodeFilter.FILTER_REJECT) : NodeFilter.FILTER_ACCEPT) });
     for (let x = it.nextNode(); x; x = it.nextNode()) { if (x.nodeType === 3) textNode(x); else attrs(x); }
   }
-  // changes arrive in bursts (a panel re-rendered every second): they are gathered and translated once per frame
+  // changes arrive in bursts (a panel re-rendered every second): they are gathered and translated in the same task, before the
+  // browser paints, so the English never shows for a frame (translating a frame later made every live panel flicker)
   const queue = new Set(); let raf = 0;
-  function schedule(n) { queue.add(n); if (!raf) raf = requestAnimationFrame(flush); }
+  function schedule(n) { queue.add(n); if (!raf) { raf = 1; queueMicrotask(flush); } }
   function flush() {
     raf = 0;
     if (lang !== 'ar') { queue.clear(); return; }
@@ -192,7 +193,7 @@
       lg.lang = ll.lang = lang === 'ar' ? 'en' : 'ar';
       b.title = lang === 'ar' ? 'Switch to English (L)' : 'التبديل إلى العربية (L)';
     });
-    if (lang === 'ar') { obs.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS }); queue.add(document.head); queue.add(document.body); cancelAnimationFrame(raf); flush(); }
+    if (lang === 'ar') { obs.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS }); queue.add(document.head); queue.add(document.body); flush(); }
     else { obs.disconnect(); restore(); root.removeAttribute('data-i18n-wait'); }
     window.dispatchEvent(new CustomEvent('langchange', { detail: lang }));
   }

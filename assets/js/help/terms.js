@@ -72,7 +72,8 @@
     wrappers.clear();
   }
   const pending = new Set(); let timer = 0;
-  function later(n) { pending.add(n); if (!timer) timer = setTimeout(() => { timer = 0; const l = [...pending]; pending.clear(); paused = true; l.forEach(scan); obs.takeRecords(); paused = false; }, 250); }
+  // marked in the same task as the change (after the translation), so a panel that re-renders never shows its words without the line
+  function later(n) { pending.add(n); if (!timer) { timer = 1; queueMicrotask(() => { timer = 0; const l = [...pending]; pending.clear(); paused = true; l.forEach(scan); obs.takeRecords(); paused = false; }); } }
   let paused = false;
   const obs = new MutationObserver(ms => { if (paused) return; for (const m of ms) { if (m.type === 'characterData') later(m.target); else m.addedNodes.forEach(n => { if (n.nodeType !== 1 || !n.classList.contains('df-tw')) later(n); }); } });
 
