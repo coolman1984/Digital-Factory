@@ -18,6 +18,7 @@ window.DF = (function () {
   /* words for plant states (ISA-101: normal is quiet, colour only for abnormal) */
   const STATE = { run: 'Running', warn: 'Running slow', idle: 'Idle', starved: 'Starved', blocked: 'Blocked', down: 'Stopped', maint: 'Planned work', micro: 'Short stop', changeover: 'Changeover', tripped: 'Tripped', stopped: 'Stopped by a person' };
   const SEV = st => (st === 'down' || st === 'tripped' || st === 'stopped' ? 'bad' : st === 'maint' || st === 'changeover' ? 'maint' : st === 'warn' || st === 'starved' || st === 'micro' || st === 'blocked' ? 'warn' : 'ok');
+  const tag = (sev, label) => `<span class="st ${sev || ''}"><i></i>${esc(label)}</span>`;
   const stChip = (st, why) => `<span class="st ${SEV(st)}"><i></i>${esc(STATE[st] || st)}${why ? ` · ${esc(why)}` : ''}</span>`;
 
   /* refs, as in the 3D plant: 'st:ML1-Packing', 'line:ML3', 'buf:LS:ML1:CTN', 'agv:AGV-03', 'tug:T1', 'fl:FL-02', 'order:SO-…',
@@ -33,6 +34,9 @@ window.DF = (function () {
     if (k === 'util') { const a = P.util.assets.find(x => x.id === id); return a ? a.name : id; }
     if (k === 'unit') return id;
     if (k === 'dept') { const d = api.X && api.X.DEPTS.find(x => x.id === id); return d ? d.name : id; }
+    if (k === 'zone') { const z = P.layout.ZONES.find(x => x.id === id); return z ? z.name : id; }
+    if (k === 'person') { const p = P.people.find(x => x.id === id); return p ? `${p.name} · ${p.role}` : id; }
+    if (k === 'inbound') return 'Inbound truck ' + id;
     if (k === 'card') { const c = api.AG && api.AG.cards.get(id); return c ? c.title : 'Decision'; }
     return ref;
   }
@@ -40,9 +44,11 @@ window.DF = (function () {
   // turn an engine 'ref' (station id, buffer id, vehicle id, utility id) into a ref
   function toRef(r) {
     if (!r) return null;
-    if (/^(st|line|buf|agv|tug|fl|order|util|unit|po|dept|card|mrp|svc):/.test(r)) return r;
+    if (/^(st|line|buf|agv|tug|fl|order|util|unit|po|dept|card|mrp|svc|zone|person|inbound):/.test(r)) return r;
     if (/^(IMP|LOC|INJ|PRS|PBA|SVC|SILO|HALL|LS|WIP|SM|RM):/.test(r)) return 'buf:' + r;
     if (/^AGV/.test(r)) return 'agv:' + r;
+    if (/^FL-/.test(r)) return 'fl:' + r;
+    if (/^Milk run/.test(r)) return 'tug:' + r;
     if (/^UTIL/.test(r)) return 'util:' + r;
     if (/^(ML|LCM|SMD|PR|CUS)\d$|^INJ$/.test(r)) return 'line:' + r;
     return 'st:' + r;
@@ -107,8 +113,8 @@ window.DF = (function () {
   };
   const hooks = {};
   const api = {
-    $, $$, esc, icon, fmt, pct, money, signed, clamp, reduce, STATE, SEV, stChip, refName, link, toRef, toast, confirm: confirmBox, tween, html, VIEWS,
-    view: 'command', sel: null, E: null, X: null, AG: null,
+    $, $$, esc, icon, fmt, pct, money, signed, clamp, reduce, STATE, SEV, stChip, tag, refName, link, toRef, toast, confirm: confirmBox, tween, html, VIEWS,
+    view: 'command', sel: null, E: null, X: null, AG: null, boot: [],
     onView(name, fn) { (hooks[name] = hooks[name] || []).push(fn); },
     route() {
       let h = (location.hash || '#command').slice(1);

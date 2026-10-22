@@ -1,1 +1,50 @@
-/* Command room: styles for floor views on Plant EG-01 */
+/* Command room on Plant EG-01: the mimic, the detail panel, the value stream and shared rows */
+.vs-steps { grid-template-columns: repeat(11, minmax(112px, 1fr)); }
+.insp .back-l { align-self: flex-start; margin-bottom: 6px; }
+.insp .dec-l { margin: 0 0 8px; line-height: 1.45; }
+.insp .meter-row { margin-top: 12px; }
+.insp .spark-l { margin: 10px 0 2px; }
+.insp .sns { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 0; font-size: 13px; }
+.insp .list li > span:first-child { min-width: 0; }
+.insp .kv dd .bad, .insp .bad { color: var(--danger-text); }
+.insp .kv dd .warn, .insp .warn { color: var(--warning-text); }
+.legend i.round { border-radius: 50%; }
+.legend i.maint.round { border-style: solid; background: var(--indigo); }
+.rw.warn .v { color: var(--warning-text); }
+.rw.bad .v { color: var(--danger-text); }
+.rw .lnk { text-align: start; }
+.ctl-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); align-items: start; margin-top: var(--gap); }
+.field.inline select { min-height: 40px; max-width: 260px; }
+.sub-h { font-size: 14px; font-weight: 750; margin: 18px 0 8px; }
+.ask-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.ask-out { font-size: 14px; line-height: 1.55; margin: 6px 0 0; }
+.cs-kv { margin: 6px 0 10px; }
+.cs-why-l { margin: 0; padding-inline-start: 18px; font-size: 13.5px; line-height: 1.5; color: var(--text-2); }
+.cs-talk { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.cs-talk li { display: grid; gap: 2px; font-size: 13.5px; line-height: 1.45; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); }
+.cs-talk b { font-size: 12.5px; color: var(--text-2); }
+.cs-out { font-size: 13.5px; color: var(--text-2); display: flex; gap: 6px; align-items: center; margin: 6px 0 0; }
+@media (max-width: 1100px) { .ctl-row { grid-template-columns: 1fr; } }
+/* control */
+.ctl-acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+.ctl-acts .btn { min-height: 40px; }
+.ctl-acts .field.inline { margin: 0; }
+.btn.danger-o { color: var(--danger-text); border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+.hmi-pre { margin-top: 14px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
+.hmi-pre h4 { font-size: 14px; margin: 0 0 8px; }
+.hmi-pre h5 { font-size: 13px; color: var(--text-2); margin: 12px 0 4px; }
+.ilk { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13.5px; }
+.ilk li { display: flex; gap: 8px; align-items: center; }
+.ilk li svg { width: 16px; height: 16px; flex: none; }
+.ilk li.ok svg { color: var(--success-text); }
+.ilk li.bad { color: var(--danger-text); font-weight: 650; }
+.hmi-eff { font-size: 13.5px; margin: 0; line-height: 1.5; }
+.pos { color: var(--success-text); } .neg { color: var(--danger-text); }
+.acts-c { white-space: nowrap; text-align: end; }
+.acts-c .btn + .btn { margin-inline-start: 6px; }
+.tbl tr.unack td:first-child { box-shadow: inset 3px 0 0 var(--danger); }
+#utilBody .kv { margin-top: 14px; }
+table.sr-only { display: block; position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.vz-box { position: relative; }
+.lab > *, .lab-out .table-wrap { min-width: 0; max-width: 100%; }
+.table-wrap { position: relative; }

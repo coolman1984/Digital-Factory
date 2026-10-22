@@ -179,6 +179,7 @@
 
   /* ---------------- go ---------------- */
   speedUi();
+  DF.boot.forEach(f => f());
   if (DF.initMimic) DF.initMimic();
   if (DF.briefingStart) DF.briefingStart();
   if ('IntersectionObserver' in window && $('#floor')) new IntersectionObserver(es => { mimicOn = es[0].isIntersecting; }).observe($('#floor'));
