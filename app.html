@@ -34,6 +34,7 @@
       <a href="#control" data-view="control"><span data-icon="settings"></span>Control</a>
       <a href="plant.html" id="navPlant"><span data-icon="layers"></span>Live plant · 3D</a>
       <div class="nav-label">Intelligence</div>
+      <a href="#autopilot" data-view="autopilot"><span data-icon="sparkles"></span>Autopilot<i class="nav-badge info" id="navAuto" hidden>on</i></a>
       <a href="#agents" data-view="agents"><span data-icon="sparkles"></span>AI agents<i class="nav-badge info" id="navAgents" hidden>0</i></a>
       <a href="#predict" data-view="predict"><span data-icon="chart"></span>Predictions</a>
       <a href="#rootcause" data-view="rootcause"><span data-icon="search"></span>Root cause</a>
@@ -231,6 +232,10 @@
       </section>
 
       <!-- AGENTS -->
+      <section class="view" id="view-autopilot" hidden>
+        <div id="autopilot" data-no-i18n></div>
+      </section>
+
       <section class="view" id="view-agents" hidden>
         <p class="lede">Nine agents watch Plant EG-01 and its offices. Each one says what it sees with the numbers behind it, forms options, <b>simulates every option</b> on a two-hour forecast of the six main lines and everything that feeds them, then recommends one. It acts on its own only on <b>Auto</b> and only when the step can be undone; on <b>Approve</b> a person decides, and a cheap reversible step goes ahead after two minutes unless someone vetoes it. Every step gets an audit ID.</p>
         <div class="crew" id="crew"></div>
@@ -496,6 +501,7 @@
   <script src="assets/js/room/show.js"></script>
   <script src="assets/js/room/lighthouse.js"></script>
   <script src="assets/js/room/voice.js"></script>
+  <script src="assets/js/room/orchestrator.js"></script>
   <script src="assets/js/i18n/i18n.js"></script>
   <script src="assets/js/i18n/ar-common.js"></script>
   <script src="assets/js/i18n/ar-plant.js"></script>

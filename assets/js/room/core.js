@@ -109,7 +109,7 @@ window.DF = (function () {
 
   const VIEWS = {
     command: 'Command room', alarms: 'Alarms', control: 'Control', agents: 'AI agents', predict: 'Predictions', rootcause: 'Root cause',
-    scenarios: 'Drills', leadership: 'Leadership', maintenance: 'Maintenance', quality: 'Quality', energy: 'Energy', simulator: 'What-if lab'
+    scenarios: 'Drills', autopilot: 'Autopilot', leadership: 'Leadership', maintenance: 'Maintenance', quality: 'Quality', energy: 'Energy', simulator: 'What-if lab'
   };
   const hooks = {};
   const api = {

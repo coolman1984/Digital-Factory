@@ -177,3 +177,4 @@ DFI18N.add({
   ]
 });
 DFI18N.add({ exact: { 'Customer show': 'عرض للعميل', 'Customer show: a guided run through the plant (S)': 'عرض للعميل: جولة موجّهة في المصنع (S)' } });
+DFI18N.add({ exact: { 'Autopilot': 'التشغيل الذاتي', 'Orchestrator': 'الوكيل القائد', 'Autopilot on': 'بدأ التشغيل الذاتي', 'Autopilot off': 'توقف التشغيل الذاتي', 'The agents propose, the Orchestrator decides': 'الوكلاء يقترحون، والوكيل القائد يقرر', "Decisions are back with people and the agents' own autonomy": 'عادت القرارات إلى الأفراد واستقلالية الوكلاء' } });

@@ -1441,8 +1441,8 @@
     /* ----- drills ----- */
     const timers = [];
     const later = (sec, fn) => timers.push({ at: P.t + sec, fn });
-    function trigger(id) {
-      const sc = SCENARIOS.find(s => s.id === id); if (sc) audit('You', 'Started drill', sc.title);
+    function trigger(id, who = 'You') {
+      const sc = SCENARIOS.find(s => s.id === id); if (sc) audit(who, 'Started drill', sc.title);
       const S = P.scen;
       // a drill compresses time: the fault started a while ago, so its first parts are already at the lines
       const early = (lines, k) => { for (const n of lines) { const b = P.lines[n].ls[k]; if (b && b.lots && b.lots[0]) return b.lots[0].id; } };
