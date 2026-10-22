@@ -7,6 +7,7 @@
   const open = () => { const A = PL().AG; return A ? [...A.cards.values()].filter(c => !c.decided && !c.autoDone) : []; };
   DFHelp.page({
     title: s('3D plant', 'المصنع ثلاثي الأبعاد'),
+    fab: { bottom: '102px' },   // above the value-stream bar
     purpose: s('Plant EG-01 in three dimensions, moving with the same model as the command room: six main TV lines, every feeding line, stores, vehicles, offices and the systems behind them. Select anything to learn what it is and what it is doing.', 'المصنع EG-01 بالأبعاد الثلاثة، يتحرك بالنموذج نفسه الذي تعمل عليه غرفة التحكم: ستة خطوط رئيسية لتجميع أجهزة التلفزيون، وكل خط مغذٍ، والمخازن والمركبات والمكاتب والأنظمة التي تقف خلفها. اختر أي شيء لتعرف ماهيته وما يفعله الآن.'),
     screens: [
       { id: 'walk', when: () => mode() === '3d' && walking(), title: s('Walking the floor', 'التجول في أرض المصنع'),

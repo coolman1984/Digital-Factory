@@ -410,16 +410,19 @@
       { a: [53, 22], b: [107, 22] }, { a: [2, 19], b: [53, 19] }
     ];
     for (const z of [55, 69, 83, 97, 111]) AISLES.push({ a: [53, z], b: [204, z] });
-    for (let r = 0; r < 13; r++) AISLES.push({ a: [204, 49 + r * 6], b: [261, 49 + r * 6] });
+    // the aisles between the finished-goods racks are for the forklift working that row: routing counts them 2.5 times their
+    // length, so through traffic keeps to the main aisles around the racks
+    for (let r = 0; r < 13; r++) AISLES.push({ a: [204, 49 + r * 6], b: [261, 49 + r * 6], rack: r });
     AISLES.push({ a: [261, 49], b: [261, 121] });
     const nodes = P.nodes, edges = P.edges;
     const nodeAt = (x, z) => { let n = nodes.find(n => Math.abs(n.x - x) < 0.05 && Math.abs(n.z - z) < 0.05); if (!n) { n = { id: nodes.length, x, z, adj: [] }; nodes.push(n); } return n; };
     const aislePts = AISLES.map(() => []);
+    const CROSS = new Map();   // aisle crossings, each held by at most one vehicle at a time
     AISLES.forEach((A, i) => AISLES.forEach((B, j) => {
       if (i >= j) return;
       const ah = A.a[1] === A.b[1], bh = B.a[1] === B.b[1]; if (ah === bh) return;
       const H = ah ? A : B, V = ah ? B : A, x = V.a[0], z = H.a[1];
-      if (x >= Math.min(H.a[0], H.b[0]) - 0.01 && x <= Math.max(H.a[0], H.b[0]) + 0.01 && z >= Math.min(V.a[1], V.b[1]) - 0.01 && z <= Math.max(V.a[1], V.b[1]) + 0.01) { aislePts[i].push([x, z]); aislePts[j].push([x, z]); }
+      if (x >= Math.min(H.a[0], H.b[0]) - 0.01 && x <= Math.max(H.a[0], H.b[0]) + 0.01 && z >= Math.min(V.a[1], V.b[1]) - 0.01 && z <= Math.max(V.a[1], V.b[1]) + 0.01) { aislePts[i].push([x, z]); aislePts[j].push([x, z]); CROSS.set(x.toFixed(1) + ',' + z.toFixed(1), { x, z, by: null }); }
     }));
     const STOPS = {};
     function stop(key, x, z) {
@@ -460,7 +463,7 @@
       const h = A.a[1] === A.b[1];
       const pts = aislePts[i].concat([A.a, A.b]).sort((p, q) => (h ? p[0] - q[0] : p[1] - q[1]));
       let prev = null;
-      for (const p of pts) { const n = nodeAt(p[0], p[1]); if (prev && prev !== n) { const w = Math.hypot(prev.x - n.x, prev.z - n.z); prev.adj.push([n.id, w]); n.adj.push([prev.id, w]); edges.push([prev.id, n.id]); } prev = n; }
+      for (const p of pts) { const n = nodeAt(p[0], p[1]); if (prev && prev !== n) { const w = Math.hypot(prev.x - n.x, prev.z - n.z) * (A.rack != null ? 2.5 : 1); prev.adj.push([n.id, w]); n.adj.push([prev.id, w]); edges.push([prev.id, n.id]); } prev = n; }
     });
     for (const k in STOPS) { const S = STOPS[k], a = nodeAt(S.ax, S.az), n = nodeAt(S.x, S.z); if (a !== n) { const w = Math.hypot(a.x - n.x, a.z - n.z); a.adj.push([n.id, w]); n.adj.push([a.id, w]); edges.push([a.id, n.id]); } S.node = n.id; }
     const nodeDist = new Map();
@@ -539,13 +542,39 @@
         }
       }
       // overtake on the side away from the stopped vehicle: left of the centre line, or further right when it stands on the left
-      if (by && still(by) && (a.blockT || 0) > 1.5 && !a.passT) {
+      // (never one that stands at this vehicle's own destination: that one is waited for)
+      const end = a.path[a.path.length - 1];
+      if (by && still(by) && (a.blockT || 0) > 1.5 && !a.passT && Math.hypot(by.x - end[0], by.z - end[1]) > 4.5) {
         const lane = byLat + (-(a.lx || 0) * sh + (a.lz || 0) * ch) > 0 ? -0.95 : 1.6;
         if (!(lane < 0 ? oncL : oncR)) { a.passT = 9; a.passLane = lane; }
       }
+      // an oncoming vehicle while overtaking: back into the own lane and let it by
+      if (by && a.passT && Math.cos(by.h - a.h) < -0.5) a.passT = 0;
+      // crossings: the vehicle that reaches a crossing first holds it until its body is through; others wait before it
+      let hold = false;
+      if (!by) {
+        const hr = half(a);
+        for (const [k, J] of CROSS) if (J.by === a && Math.hypot(J.x - a.x, J.z - a.z) > hr + 2.6) J.by = null;
+        let c = 0;
+        for (let i = 1; i < a.path.length && c - a.s < hr + 3; i++) {
+          c += dist(a.path[i - 1], a.path[i]);
+          if (c < a.s - 0.5) continue;
+          const J = CROSS.get(a.path[i][0].toFixed(1) + ',' + a.path[i][1].toFixed(1)); if (!J) continue;
+          // a holder that has stood still for 6 s, or has stopped for good, no longer holds it, so no two vehicles lock each other
+          const o = J.by;
+          // (one on the same aisle, ahead or oncoming in its own lane, is handled by the gap and the lanes, not by the crossing)
+          if (o && o !== a && o.path && (o.stuckT || 0) < 6 && Math.abs(Math.cos(o.h - a.h)) < 0.7 && Math.hypot(J.x - o.x, J.z - o.z) < half(o) + 2.6) { hold = true; break; }
+          J.by = a; break;
+        }
+        // the place it is going to is taken by a vehicle standing there: wait a few metres short of it, off its way out
+        const end = a.path[a.path.length - 1], left = a.len - a.s;
+        if (!hold && left < 8 && left > 1.2 && (a.destT || 0) < 90) for (const o of VEH()) if (o !== a && still(o) && Math.hypot(o.x - end[0], o.z - end[1]) < 2.2) { hold = true; a.destT = (a.destT || 0) + dt; break; }
+        if (!hold) a.destT = 0;
+      }
       a.blockBy = by ? by.id : null;
       a.blockT = by ? (a.blockT || 0) + dt : a.blockT > 20 ? (a.blockT > 24 ? 0 : a.blockT + dt) : 0;
-      a.v = by ? 0 : ema(a.v, a.load ? a.vmax * 0.82 : a.vmax, Math.min(1, dt * 1.6));
+      a.v = by || hold ? 0 : ema(a.v, a.load ? a.vmax * 0.82 : a.vmax, Math.min(1, dt * 1.6));
+      a.stuckT = a.v < 0.05 ? (a.stuckT || 0) + dt : 0;
       a.s = Math.min(a.len, a.s + a.v * dt);
       // keep right: vehicles drive 0.9 m right of the aisle centre line, so traffic in opposite directions passes side by side
       // (left while overtaking); the offset fades in after leaving a stop and out before the next one, and eases round corners
@@ -667,8 +696,25 @@
     }
 
     // warehouse forklifts refill the silos and hall stores; finished-goods forklifts store pallets and load trucks
+    // Traffic rules of the finished-goods store, as in a real warehouse: one forklift at a time in each rack aisle, and two
+    // loading bays at each dock, 4 m apart. A forklift only takes a job whose row and bay are free, and keeps them until it has
+    // driven out of them.
+    const DROP_X = 257.8;   // where a forklift sets a pallet down for the truck: clear of the racks and of the dock-side aisle
+    const rowZ = r => 49 + r * 6;
+    const inRow = (f, r) => f.x > 205.5 && f.x < 259 && Math.abs(f.z - rowZ(r)) < 3.2;
+    const bayZ = b => b.dock.z + (b.n ? 2 : -2);
+    const atBay = (f, b) => Math.hypot(f.x - DROP_X, f.z - bayZ(b)) < 3;
+    const takenRows = f => new Set(P.forklifts.filter(o => o !== f && o.rowLock != null).map(o => o.rowLock));
+    // a free bay at this dock, or null
+    const freeBay = (f, d) => { const used = P.forklifts.filter(o => o !== f && o.dockLock && o.dockLock.dock === d).map(o => o.dockLock.n); return [0, 1].filter(n => !used.includes(n)).map(n => ({ dock: d, n }))[0] || null; };
+    function release(f) {
+      const j = f.job;
+      if (f.rowLock != null && !inRow(f, f.rowLock) && !(j && ((j.slot && j.slot.row === f.rowLock) || (j.pallet && j.pallet.slot && j.pallet.slot.row === f.rowLock && j.phase === 'toPallet')))) f.rowLock = null;
+      if (f.dockLock && !atBay(f, f.dockLock) && !(j && j.truck && j.truck.dock === f.dockLock.dock)) f.dockLock = null;
+    }
     function forkliftStep(f, dt) {
       if (f.role === 'wh') { agvStep(f, dt); return; }
+      release(f);
       if (f.path) {
         if (!moveStep(f, dt)) return;
         f.waitT = 6; return;
@@ -678,14 +724,16 @@
       if (!j) {
         // a palletizer with two finished pallets waiting stops its line: clear it first; a waiting truck takes it straight
         const lineFull = P.pallets.find(p => p.where === 'pickup' && !p.claimed && P.pallets.filter(q => q.where === 'pickup' && q.line === p.line).length >= 2);
-        const loading = P.trucks.filter(t => t.state === 'loading' && t.need > t.claimed);
+        const rows = takenRows(f);
+        const loading = P.trucks.filter(t => t.state === 'loading' && t.need > t.claimed && freeBay(f, t.dock));
         const direct = (lineFull && loading.find(t => t.model === lineFull.model)) ? lineFull : !lineFull && P.pallets.find(p => p.where === 'pickup' && !p.claimed && loading.some(t => t.model === p.model && t.need - t.claimed >= p.units.length));
-        if (direct) { const tr = loading.find(t => t.model === direct.model); direct.claimed = true; tr.claimed += direct.units.length; f.job = { kind: 'load', pallet: direct, truck: tr, phase: 'toPallet', direct: true }; goPoint(f, [direct.x + 1.6, direct.z]); return; }
-        const tr = !lineFull && loading.find(t => P.pallets.some(p => p.where === 'fg' && p.model === t.model && !p.claimed));
-        const pal = tr && P.pallets.filter(p => p.where === 'fg' && p.model === tr.model && !p.claimed).sort((a, b) => a.built - b.built)[0];
-        if (tr && pal) { pal.claimed = true; tr.claimed += pal.units.length; f.job = { kind: 'load', pallet: pal, truck: tr, phase: 'toPallet' }; goSlot(f, pal.slot); return; }
+        if (direct) { const tr = loading.find(t => t.model === direct.model); direct.claimed = true; tr.claimed += direct.units.length; f.job = { kind: 'load', pallet: direct, truck: tr, phase: 'toPallet', direct: true }; f.dockLock = freeBay(f, tr.dock); goPoint(f, [direct.x + 1.6, direct.z]); return; }
+        const free = p => p.where === 'fg' && !p.claimed && !rows.has(p.slot.row);
+        const tr = !lineFull && loading.find(t => P.pallets.some(p => free(p) && p.model === t.model));
+        const pal = tr && P.pallets.filter(p => free(p) && p.model === tr.model).sort((a, b) => a.built - b.built)[0];
+        if (tr && pal) { pal.claimed = true; tr.claimed += pal.units.length; f.job = { kind: 'load', pallet: pal, truck: tr, phase: 'toPallet' }; f.rowLock = pal.slot.row; f.dockLock = freeBay(f, tr.dock); goSlot(f, pal.slot); return; }
         const fresh = lineFull || P.pallets.find(p => p.where === 'pickup' && !p.claimed);
-        if (fresh) { const slot = P.fgSlots.find(s => !s.p); if (slot) { fresh.claimed = true; slot.p = fresh; f.job = { kind: 'store', pallet: fresh, slot, phase: 'toPallet' }; goPoint(f, [fresh.x + 1.6, fresh.z]); return; } }
+        if (fresh) { const slot = P.fgSlots.find(s => !s.p && !rows.has(s.row)); if (slot) { fresh.claimed = true; slot.p = fresh; f.job = { kind: 'store', pallet: fresh, slot, phase: 'toPallet' }; f.rowLock = slot.row; goPoint(f, [fresh.x + 1.6, fresh.z]); return; } }
         f.state = 'idle'; f.idleT += dt; settle(f, dt);
         if (f.idleT > 20 && f.node !== f.home) { drive(f, f.home); }
         return;
@@ -694,7 +742,7 @@
       if (j.phase === 'toPallet') {
         f.load = j.pallet; j.pallet.where = 'fork';
         if (j.kind === 'store') { j.phase = 'toSlot'; goSlot(f, j.slot); }
-        else { if (j.pallet.slot) j.pallet.slot.p = null; j.phase = 'toTruck'; goPoint(f, [258.6, j.truck.dock.z]); }
+        else { if (j.pallet.slot) j.pallet.slot.p = null; j.phase = 'toTruck'; goPoint(f, [DROP_X, bayZ(f.dockLock)]); }
       } else if (j.phase === 'toSlot') {
         j.pallet.where = 'fg'; j.pallet.slot = j.slot; j.pallet.claimed = false; j.pallet.x = j.slot.x; j.pallet.z = j.slot.z; f.load = null; f.job = null;
       } else if (j.phase === 'toTruck') {
