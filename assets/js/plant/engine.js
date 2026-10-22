@@ -139,7 +139,7 @@
       walker: null, agvs: [], tuggers: [], forklifts: [], people: [], techs: [], inbound: [], trucks: [], pallets: [], fgSlots: [], orders: [],
       events: [], alarms: [], recs: [], preds: [], audit: [], kpi: {}, hist: { t: [], kw: [], tph: [], oee: [], wip: [] },
       scen: {}, energy: { kwh: 0 }, c0: START, wo: [], woSeq: 4180, audSeq: 30410, snaps: [], made: { tv: 0, byModel: { M43: 0, M55: 0, M65: 0, M75: 0 } },
-      base: { M43: 260, M55: 830, M65: 490, M75: 150 },     // TVs packed between 06:00 and the model start
+      base: { M43: 280, M55: 880, M65: 520, M75: 160 },     // TVs packed between 06:00 and the model start: about the demonstrated 700 an hour after a 30-minute start-up
       rejects: { rework: [], smtRepair: [] }, saved: 0, leads: [], nodes: [], edges: [], layout: {}, sw: {}, holds: new Set(), svc: { orders: [], shipped: 0 }
     };
 
@@ -1190,6 +1190,61 @@
       P.util.kw = A.reduce((a, x) => a + x.kw, 0) + 380;   // lighting, HVAC for offices, IT
     }
 
+    /* ----- the shift forecast and the chance to hit the plan -----
+       Expected output to the end of the shift, and its spread, in three parts:
+       1. the next two hours from the agents' flow model (material, known repairs, changeovers, orders), corrected by the
+          model's own bias: what each forecast said for its second half hour is checked against what was packed (EWMA);
+       2. after that, the flow model's steady rate (rated × 90% performance × crew), with the same correction;
+       3. the spread: random breakdowns as a compound Poisson process (count λT with λ = Σ 1/MTBF of the line's stations,
+          calibrated to the availability seen this shift; each costing MTTR × rate, repair times
+          with a coefficient of variation of 0.6), hour-to-hour performance noise (CV 5% an hour, independent hours), and
+          the model's own error (6% of what is left, measured on replays).
+       The chance to hit the plan is Φ((forecast − plan) / σ), the normal approximation, kept within 1–99%. */
+    const fcHist = [];
+    const PLAN_OEE = 0.82, MTTR_H = 0.3, REPAIR_CV = 0.6, PERF_CV = 0.05, MODEL_ERR = 0.06;
+    const phi = z => { const t = 1 / (1 + 0.2316419 * Math.abs(z)), d = 0.3989423 * Math.exp(-z * z / 2), p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+    function lineLambda(L) {
+      // a main line stops when any of its own stations or its LCM line's stations break (the SMD, press and injection
+      // lines feed through supermarkets that ride out a repair, so they count at a quarter)
+      const n = L.id.slice(2), own = L.stations.concat((P.lines['LCM' + n] || { stations: [] }).stations), feed = (P.lines['SMD' + n] || { stations: [] }).stations;
+      const lam = s => (s.mtbf && s.mtbf < 9e8 ? 3600 / s.mtbf : 0);
+      return own.reduce((a, s) => a + lam(s), 0) + 0.25 * feed.reduce((a, s) => a + lam(s), 0);
+    }
+    function shiftForecast(k, mains, units, rate) {
+      const rem = Math.max(0, (SHIFT_END - P.t) / 3600);
+      k.oeeShift = k.oeeShift === undefined ? 0.85 : k.oeeShift + ((k.oee || k.oeeShift) - k.oeeShift) * 0.02;
+      const rated = mains.reduce((a, L) => a + 3600 / MODELS[L.model].takt * L.speed, 0);
+      // the flow model learns its own bias: each forecast's first 30 minutes are checked against what was packed
+      const fc = P.fc2 && P.t - P.fc2.at < 120 ? P.fc2 : null;
+      // (minutes 30 to 60, past the pipeline the model takes from the current rate), one sample every 5 minutes
+      if (fc && fc.curve && fc.curve.length > 5 && P.t - (shiftForecast.last || -1e9) >= 300) { shiftForecast.last = P.t; fcHist.push({ at: P.t, pred: fc.curve[5] - fc.curve[2], u30: null }); }
+      for (const e of fcHist) if (e.u30 === null && P.t - e.at >= 1800) e.u30 = units;
+      while (fcHist.length && P.t - fcHist[0].at >= 3600) { const e = fcHist.shift(); if (e.pred > 50 && e.u30 !== null) k.fcBias = (k.fcBias || 1) + (clamp((units - e.u30) / e.pred, 0.6, 1.3) - (k.fcBias || 1)) * 0.25; }
+      const bias = k.fcBias || 1;
+      // capability for the far hours: the flow model's steady rate (rated × 90% × crew) corrected by its bias
+      const cap = clamp((fc && fc.nominal ? fc.nominal : rated * 0.9) * bias, rated * 0.45, rated * 0.97);
+      k.rateShift = cap;
+      // breakdowns: the rate comes from the stations' MTBF, scaled to what the lines actually lost to stops this shift
+      const availNow = mains.reduce((a, L) => a + (L.avail || 0.95), 0) / mains.length;
+      k.availShift = k.availShift === undefined ? 0.95 : k.availShift + (availNow - k.availShift) * 0.02;
+      const lamModel = mains.reduce((a, L) => a + lineLambda(L), 0) / mains.length, lamSeen = Math.max(0.05, (1 - k.availShift) / MTTR_H);
+      const lamK = lamModel ? clamp(lamSeen / lamModel, 0.1, 1.5) : 1;
+      let varFail = 0;
+      for (const L of mains) { const lam = lineLambda(L) * lamK, r = 3600 / MODELS[L.model].takt * L.speed * clamp(k.oeeShift, 0.55, 0.97); varFail += lam * rem * (r * MTTR_H) ** 2 * (1 + REPAIR_CV ** 2); }
+      // the near term: the flow model when it is fresh, otherwise the current rate easing back to capability over 45 minutes
+      const near = Math.min(rem, 2);
+      let nearOut;
+      if (fc && fc.curve && fc.curve.length) { const pts = [0].concat(fc.curve), x = near / 2 * (pts.length - 1), i = Math.floor(x), f = x - i; nearOut = (pts[i] + ((pts[i + 1] ?? pts[i]) - pts[i]) * f) * bias; }
+      else { const tau = 0.75, w = tau * (1 - Math.exp(-near / tau)); nearOut = rate * w + cap * (near - w); }
+      const farOut = cap * Math.max(0, rem - 2);
+      const left = Math.max(0, nearOut + farOut);
+      k.fcst = Math.round(units + left);
+      const sigma = Math.sqrt(varFail + (PERF_CV * cap) ** 2 * rem + (MODEL_ERR * left) ** 2) || 1;
+      k.fcSigma = sigma;
+      k.prob = rem <= 0 ? (units >= k.planEnd ? 1 : 0) : clamp(phi((k.fcst - k.planEnd) / sigma), 0.01, 0.99);
+      k.p10 = Math.round(k.fcst - 1.2816 * sigma); k.p90 = Math.round(k.fcst + 1.2816 * sigma);
+    }
+
     /* ----- KPIs ----- */
     const win = [];
     // the time machine: a compact snapshot every 20 s of machine states, vehicles and readouts, 45 minutes deep
@@ -1203,7 +1258,10 @@
       const mains = Object.values(P.lines).filter(L => L.kind === 'main');
       let units = 0; for (const m in MODELS) units += P.base[m] + P.made.byModel[m];
       k.units = units;
-      k.plan = Math.round(mains.reduce((a, L) => a + 3600 / MODELS[L.model].takt * 0.82, 0) * el);
+      // the plan is loaded at demonstrated capacity: each main line's rated rate (3600 / takt) × the plan OEE (PLAN_OEE)
+      const planRate = mains.reduce((a, L) => a + 3600 / MODELS[L.model].takt * PLAN_OEE, 0);
+      k.planRate = planRate;
+      k.plan = Math.round(planRate * el);
       const snap = {};
       for (const id in P.lines) {
         const L = P.lines[id]; if (L.kind === 'injection') continue;
@@ -1231,7 +1289,8 @@
       if (rW) k.oee = oW / rW;
       const insp = P.stations.filter(s => s.kind === 'fct' || s.kind === 'qa');
       const tot = insp.reduce((a, s) => a + s.counters.made + s.counters.bad, 0), bad = insp.reduce((a, s) => a + s.counters.bad, 0);
-      k.fpy = tot ? 1 - bad / tot : 0.992;
+      // first-pass yield of the TV: the product of the first-pass yields of each test and inspection (rolled throughput yield)
+      k.fpy = tot ? insp.reduce((y, s) => { const n = s.counters.made + s.counters.bad; return n ? y * (1 - s.counters.bad / n) : y; }, 1) : 0.992;
       let wip = 0; for (const u of P.units) if (u.type === 'tv' && !u.packed) wip++;
       k.wip = wip; k.lead = P.leads.length ? P.leads.reduce((a, b) => a + b, 0) / P.leads.length : 0;
       k.kw = P.stations.reduce((a, s) => a + s.kwNow, 0) + P.util.kw;
@@ -1239,12 +1298,9 @@
       k.otif = shipped.length ? shipped.filter(o => o.state === 'shipped').length / shipped.length : 1;
       k.alarms = P.alarms.length;
       const rate = mains.reduce((a, L) => a + (L.tph || 0), 0);
-      const rem = Math.max(0, (SHIFT_END - P.t) / 3600);
-      const risk = P.stations.filter(s => s.state === 'down' || s.degrade > 0).length;
-      k.planEnd = Math.round(mains.reduce((a, L) => a + 3600 / MODELS[L.model].takt * 0.82, 0) * (SHIFT_END - SHIFT_START) / 3600);
-      k.fcst = Math.round(units + rate * rem * (1 - 0.03 * risk));
-      k.prob = clamp(1 / (1 + Math.exp(-(k.fcst - k.planEnd) / (k.planEnd * 0.02))), 0.02, 0.98);
       k.tph = rate;
+      k.planEnd = Math.round(planRate * (SHIFT_END - SHIFT_START) / 3600);
+      shiftForecast(k, mains, units, rate);
       const h = P.hist; h.t.push(P.t); h.kw.push(Math.round(k.kw)); h.tph.push(Math.round(rate)); h.oee.push(+(k.oee || 0.85).toFixed(3)); h.wip.push(k.wip);
       for (const key in h) if (h[key].length > HIST) h[key].shift();
     }

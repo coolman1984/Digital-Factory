@@ -314,7 +314,7 @@
       else E.rec('agent.energy', null);
       // scheduling: orders at risk in the next two hours
       const base = forecast();
-      A.base = base; A.apsLate = base.lateList;
+      A.base = base; A.apsLate = base.lateList; P.fc2 = { at: P.t, curve: base.curve, packed: base.packed, nominal: mainLines().reduce((a, L) => a + 3600 / MODELS[L.model].takt * 0.9 * L.speed * crewOf(L), 0) };   // the engine's shift forecast reads it
       const risk = base.lateList.map(id => P.orders.find(o => o.id === id)).filter(Boolean)[0];
       if (risk && !P.recs.some(x => x.key.startsWith('erp.') || x.key.startsWith('rul') || x.key.startsWith('pba'))) {
         const L = mainLines().filter(x => x.model === risk.model).sort((a, b) => a.speed - b.speed)[0];
