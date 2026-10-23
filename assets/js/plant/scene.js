@@ -93,31 +93,42 @@
     scene.add(sun, sun.target);
     scene.fog = new T.Fog(C.fog, 340, 1100);   // atmospheric depth: far halls soften a little at overview distance
 
-    /* ---------------- post-processing: MSAA, ambient occlusion, bloom, tone mapping ---------------- */
-    let quality = low ? 'low' : 'high', composer = null, gtao = null, bloom = null, vig = null;
+    /* ---------------- post-processing: MSAA, ambient occlusion, outlines, depth of field, bloom, tone mapping, grade ---------------- */
+    // the look is an art direction from DFLook (assets/js/vfx/look.js): realistic by default, toon, anime or outlined on request;
+    // the fly-through switches to the cinematic grade (letterbox, cooler shadows) and, at high quality, depth of field
+    let quality = low ? 'low' : 'high', composer = null, gtao = null, bloom = null, vig = null, edgeP = null, bokeh = null, look = 'realistic';
+    const lookProfile = () => DFLook.PROFILES[cine.on ? 'cinematic' : look] || DFLook.PROFILES.realistic;
     function buildComposer() {
-      if (quality === 'low') { composer = null; return; }
+      DFLook.disposeComposer(composer); composer = null; gtao = bloom = vig = edgeP = bokeh = null;
+      if (quality === 'low') return;
+      const P = lookProfile(), art = DFLook.PROFILES[look] || DFLook.PROFILES.realistic;
       const size = renderer.getDrawingBufferSize(new T.Vector2());
       const rt = new T.WebGLRenderTarget(Math.max(1, size.x), Math.max(1, size.y), { type: T.HalfFloatType, samples: 4 });
       composer = new T.EffectComposer(renderer, rt);
       composer.addPass(new T.RenderPass(scene, camera));
-      if (quality === 'high') {
+      if (quality === 'high' && art.art === 'realistic') {
         gtao = new T.GTAOPass(scene, camera, size.x, size.y);
         gtao.updateGtaoMaterial({ radius: 0.9, distanceExponent: 1.4, thickness: 1.2, scale: 1.1, samples: 12 });
         gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
         gtao.blendIntensity = 0.85;
         composer.addPass(gtao);
-      } else gtao = null;
+      }
+      if (art.outline) composer.addPass(edgeP = DFLook.edgePass(T, scene, camera, size.x, size.y, { color: theme === 'dark' ? 0x0A0C10 : 0x1A1F27, thickness: Math.max(1, renderer.getPixelRatio()), strength: 0.8, depthK: 0.02, normalK: 0.35 }));
+      // depth of field renders the scene's depth once more (about a third more draw calls): only at high quality with headroom
+      if (cine.on && quality === 'high' && cine.dof && T.X && T.X.BokehPass) composer.addPass(bokeh = new T.X.BokehPass(scene, camera, { focus: 40, aperture: 0.00006, maxblur: 0.005 }));
       bloom = new T.UnrealBloomPass(new T.Vector2(size.x / 2, size.y / 2), C.bloom, 0.55, 1.45);
       composer.addPass(bloom);
       composer.addPass(new T.OutputPass());
-      // the finish: a natural (cos⁴) vignette in linear light keeps the eye on the middle of the floor, then a dither
-      // of ±1 LSB removes banding from the floor, the fog and the dark theme (assets/js/plant/shaders.js)
-      composer.addPass(vig = DFShaders.finishPass(T, theme === 'dark' ? 0.75 : 0.45));
-      vig.uniforms.focal.value = 1 / Math.tan(camera.fov * Math.PI / 360); vig.uniforms.aspect.value = size.x / Math.max(1, size.y);
+      // the finish: grade, natural (cos⁴) vignette in linear light, letterbox in the fly-through, ±1 LSB dither
+      composer.addPass(vig = DFLook.gradePass(T)); DFLook.applyGrade(vig, P);
+      if (!cine.on) vig.uniforms.amount.value = theme === 'dark' ? 0.75 : 0.45;
+      DFLook.frameGrade(vig, camera, frames);
+      DFLook.setToon(T, scene, art.art === 'toon', { bands: art.bands, rim: art.rim });
     }
-    // adaptive quality: drop to a cheaper pipeline when frames get slow
-    let ftAvg = 16, ftN = 0, autoQ = true;
+    function setLook(id) { if (!DFLook.PROFILES[id] || id === 'cinematic' || id === look) return; look = id; buildComposer(); resize(); emit('look', look); }
+    // adaptive quality (DFPerf): steps down on the measured frame interval, pixel ratio before effects, and back up with headroom
+    const LADDER = [{ q: 'high', dpr: 1.5 }, { q: 'high', dpr: 1.25 }, { q: 'medium', dpr: 1.25 }, { q: 'medium', dpr: 1 }, { q: 'low', dpr: 1 }];
+    const gov = DFPerf.governor({ levels: LADDER, start: low ? 4 : 0, budgetMs: 16.7, apply: L => applyLevel(L) });
 
     /* ---------------- textures ---------------- */
     const cv = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t; };
@@ -1097,7 +1108,7 @@
     let xray = false;
     function applyTheme() {
       C = PAL[theme]; S = STATUS[theme];
-      scene.background = new T.Color(C.bg); scene.fog.color.set(C.fog); if (vig) vig.uniforms.amount.value = theme === 'dark' ? 0.75 : 0.45;
+      scene.background = new T.Color(C.bg); scene.fog.color.set(C.fog); if (vig && !cine.on) vig.uniforms.amount.value = theme === 'dark' ? 0.75 : 0.45; if (atmos) atmos.theme(theme === 'dark');
       scene.environmentIntensity = C.env;
       hemi.color.set(C.hemi[0]); hemi.groundColor.set(C.hemi[1]); hemi.intensity = C.hemi[2]; sun.intensity = C.sun; amb.intensity = C.amb;
       renderer.toneMappingExposure = C.exp;
@@ -1396,14 +1407,50 @@
     const CINE_P = [[-30, 60, 18], [20, 14, 18], [50, 9, 30], [80, 7, 12], [120, 6, 20], [150, 8, 16], [104, 4.5, 70], [130, 3.2, 63], [168, 3.4, 63], [192, 5, 70], [232, 9, 82], [262, 8, 60], [234, 14, 30], [150, 18, 128], [40, 14, 150], [20, 26, 82], [-30, 60, 18]].map(p => new T.Vector3(p[0], p[1], p[2]));
     const CINE_T = [[50, 0, 14], [40, 0, 25], [90, 0, 18], [120, 0, 25], [160, 0, 20], [180, 0, 40], [120, 1, 62], [150, 1, 62], [185, 1, 66], [215, 0, 80], [250, 0, 90], [240, 0, 50], [240, 0, 18], [100, 0, 145], [30, 0, 140], [60, 0, 80], [50, 0, 14]].map(p => new T.Vector3(p[0], p[1], p[2]));
     const cineP = new T.CatmullRomCurve3(CINE_P, false, 'centripetal'), cineT = new T.CatmullRomCurve3(CINE_T, false, 'centripetal');
-    function setCinematic(v) { cine.on = !!v; cine.t = 0; if (v) { if (walk.on) setWalk(false); fly = null; follow = false; } emit('cinematic', cine.on); }
+    // the fly-through keeps the spline (it clears the machines) and gets a director's pacing from GSAP: eased moves
+    // between landmarks and short holds, the cinematic grade, lit haze under the high-bay lights, drifting dust and,
+    // at high quality, depth of field focused on the point the camera looks at. Without GSAP it runs at constant speed.
+    let atmos = null, cineTl = null;
+    const LANDMARKS = [0, 0.07, 0.16, 0.25, 0.36, 0.44, 0.52, 0.61, 0.7, 0.8, 0.9, 1];
+    function cineTimeline() {
+      if (!window.gsap) return null;
+      const tl = gsap.timeline({ paused: true });
+      for (let i = 1; i < LANDMARKS.length; i++) {
+        const d = (LANDMARKS[i] - LANDMARKS[i - 1]) * 110;
+        tl.to(cine, { k: LANDMARKS[i], duration: d, ease: i === 1 ? 'power2.in' : i === LANDMARKS.length - 1 ? 'power2.out' : 'sine.inOut' });
+        if (i < LANDMARKS.length - 1) tl.to({}, { duration: 1.6 });
+      }
+      return tl;
+    }
+    async function setCinematic(v) {
+      cine.on = !!v; cine.t = 0; cine.k = 0;
+      if (v) { if (walk.on) setWalk(false); fly = null; follow = false; }
+      if (v && !atmos && window.DFAtmos) {
+        const lamps = []; for (let x = 12; x < L.W; x += 12) for (let z = 10.5; z < L.D; z += 10.5) if (!lvAt(x, z)) lamps.push([x, ROOF - 1.7, z]);
+        atmos = DFAtmos.create(T, scene, { lamps, shafts: { height: ROOF - 1.7, top: 0.4, bottom: 3 }, dust: { count: low ? 1200 : 3500, box: [70, 12, 70] } });
+        atmos.theme(theme === 'dark');
+      }
+      if (atmos) atmos.set(cine.on && quality !== 'low');
+      emit('cinematic', cine.on);
+      buildComposer(); resize();
+      if (v) {
+        // GSAP for the pacing and the add-ons for depth of field load on first use; the fly-through starts at once either way
+        try { await Promise.all([window.gsap ? null : DFLook.load(DFLook.base + 'assets/vendor/gsap/gsap.min.js'), quality === 'high' && !(T.X && T.X.BokehPass) ? DFLook.extras() : null]); } catch (e) { /* constant speed, no DOF */ }
+        if (!cine.on) return;
+        if (window.DFMotion) DFMotion.drive();
+        cineTl = cineTimeline(); cine.t0 = performance.now() / 1000 - cine.t * 110;
+        cine.dof = quality === 'high' && (gov.manual || gov.ema < 16.7 * 0.6);
+        if (cine.dof && !bokeh) { buildComposer(); resize(); }
+      } else if (cineTl) { cineTl.kill(); cineTl = null; }
+    }
     function stepCinematic(dt) {
       if (!cine.on) return;
       cine.t = Math.min(1, cine.t + dt / 110);
-      const k = cine.t < 0.02 ? cine.t : cine.t;
+      let k = cine.t;
+      if (cineTl) { cineTl.time(performance.now() / 1000 - cine.t0); k = Math.min(1, Math.max(0, cine.k)); if (cineTl.progress() >= 1) k = 1; }
       camera.position.copy(cineP.getPointAt(k)); controls.target.copy(cineT.getPointAt(k));
       camera.lookAt(controls.target);
-      if (cine.t >= 1) setCinematic(false);
+      if (k >= 1 || (!cineTl && cine.t >= 1)) setCinematic(false);
     }
 
     /* ---------------- walk the floor: first person at eye height, with collision ---------------- */
@@ -1795,13 +1842,20 @@
     new ResizeObserver(resize).observe(canvas.parentElement);
     buildComposer(); resize();
     applyTheme();
+    function applyLevel(L) {
+      // phones and small tablets (lowPower) keep one device pixel per CSS pixel at every level, as before
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, low ? 1 : L.dpr));
+      const was = quality, shadowsWere = renderer.shadowMap.enabled;
+      quality = L.q; buildComposer(); resize();
+      renderer.shadowMap.enabled = quality !== 'low'; sun.castShadow = quality !== 'low';
+      if (shadowsWere !== renderer.shadowMap.enabled) scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
+      if (was !== quality) emit('quality', quality);
+    }
     function setQuality(qv, manual) {
-      if (manual !== undefined) autoQ = !manual;
-      if (qv === quality) return;
-      quality = qv; if (composer) composer.dispose && composer.dispose(); buildComposer(); resize();
-      renderer.shadowMap.enabled = qv !== 'low'; sun.castShadow = qv !== 'low';
-      scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
-      emit('quality', quality);
+      if (manual === false) { gov.manual = false; return; }
+      const i = LADDER.findIndex(L => L.q === qv); if (i < 0) return;
+      gov.set(i, manual !== undefined ? !!manual : gov.manual);
+      if (LADDER[gov.i].q !== quality) applyLevel(LADDER[gov.i]);
     }
     const frameFns = [];   // per-frame hooks for layers drawn by other modules (the plant studio)
     // the lift cabs run between the floors (and wait on your floor when you walk near), the material lifts carry totes up
@@ -1816,8 +1870,11 @@
       }
       for (const v of VRC) { const t = (tAnim * 0.9 + v.ph) % 14; v.car.position.y = 0.1 + (t < 4 ? 0 : t < 7 ? FL * ease3((t - 4) / 3) : t < 11 ? FL : FL * (1 - ease3((t - 11) / 3))); v.car.children[1].visible = t < 7 || t > 11.5; }
     }
+    let lastFrame = 0;
     function render(dt) {
       const t0 = performance.now();
+      if (lastFrame) gov.tick(t0 - lastFrame); lastFrame = t0;
+      DFPerf.frame(t0); if (window.DFMotion) DFMotion.tick(t0);
       stepFly(); stepCinematic(dt); stepWalk(dt);
       acc += dt;
       updateMachines(dt);
@@ -1833,7 +1890,9 @@
       if (renderer.shadowMap.enabled && frames % 3 === 0) renderer.shadowMap.needsUpdate = true;
       stepLevels();
       for (const f of frameFns) f(dt);
-      if (vig) { vig.uniforms.frame.value = frames; vig.uniforms.aspect.value = camera.aspect; vig.uniforms.focal.value = 1 / Math.tan(camera.fov * Math.PI / 360); }
+      if (vig) DFLook.frameGrade(vig, camera, frames);
+      if (atmos) atmos.update(t0 / 1000, camera, Ht * renderer.getPixelRatio() / (2 * Math.tan(camera.fov * Math.PI / 360)));
+      if (bokeh) { bokeh.uniforms.focus.value = camera.position.distanceTo(controls.target); bokeh.uniforms.aspect.value = camera.aspect; }
       if (composer) composer.render(dt); else renderer.render(scene, camera);
       // CCTV feeds: one camera redrawn per frame, the rest keep their last image
       if (cctvOn) {
@@ -1850,12 +1909,6 @@
       }
       projectLabels(Wd, Ht);
       frames++;
-      // adaptive quality
-      const ft = performance.now() - t0; ftAvg = ftAvg * 0.95 + ft * 0.05; ftN++;
-      if (autoQ && ftN > 90) {
-        if (ftAvg > 26 && quality === 'high') { setQuality('medium'); ftN = 0; }
-        else if (ftAvg > 30 && quality === 'medium') { setQuality('low'); ftN = 0; }
-      }
     }
 
     return {
@@ -1877,7 +1930,8 @@
       setCinematic, get cinematic() { return cine.on; },
       setCctv(v) { cctvOn = !!v; emit('cctv', cctvOn); }, get cctv() { return cctvOn; }, cctvRects,
       setXray, get xray() { return xray; },
-      setQuality, get quality() { return quality; },
+      setQuality, get quality() { return quality; }, get governor() { return gov; },
+      setLook, get look() { return look; },
       unitPos, frames: () => frames
     };
   }

@@ -2312,6 +2312,47 @@
         </div>
       </div></div>
     </section>
+
+    <!-- 18 · THE SHOWROOM -->
+    <section class="ch" id="ch-showroom">
+      <div class="ch-head bi">
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 18</p><h2>صالة العرض: استوديو المنتج واستوديو الحركة</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 18</p><h2>The showroom: product studio and motion studio</h2></div>
+      </div>
+      <div class="bi">
+        <div class="ar" lang="ar" dir="rtl">
+          <p class="lede">صالة العرض (showroom.html) تعرض جهاز QLED 65 الذي يصنعه المصنع EG-01، وهو منتج افتراضي، في استوديو تصوير منتجات، وإلى جانبه استوديو حركة ثنائي الأبعاد لفيلم العلامة التجارية. ويعمل استوديو واحد في كل مرة، ويُحرَّر الآخر من ذاكرة معالج الرسوميات.</p>
+          <h3 class="minor">استوديو المنتج</h3>
+          <ul>
+            <li><b>Camera:</b> لقطات Hero وFront وProfile وPorts وStand وMaterials، وتنتقل الكاميرا بينها بحركة سلسة (أو بقطع مباشر عند تفعيل تقليل الحركة). اسحب للدوران، ومرّر للتكبير، وعلى لوحة المفاتيح: الأسهم و+ و− و0.</li>
+            <li><b>Finish:</b> إطار Graphite أو Silver أو Pearl، والشاشة تعمل أو مطفأة.</li>
+            <li><b>Look:</b> <a class="t" data-term="artdir">الطابع البصري</a>: Realistic وProduct وCinematic وToon وAnime وOutlined، مع خيار Depth of field والتعليقات التوضيحية المثبتة على أجزاء الجهاز.</li>
+            <li><b>Materials:</b> لوحة من عشر كرات تعرض مكتبة <a class="t" data-term="pbr">الخامات الفيزيائية</a>: ألومنيوم مصقول، وكروم، وذهب، وزجاج، وسيراميك، وقماش، ومخمل، وبلاستيك لامع، ومطاط، وبشرة.</li>
+            <li><b>Presentation:</b> زر Render path-traced still يبني لقطة ثابتة <a class="t" data-term="pathtrace">بتتبّع المسار</a>، مع شريط يبيّن عدد العينات حتى 600. وأي حركة للكاميرا تعيد البدء، وزر Back to live view يعود إلى العرض الحي.</li>
+            <li><b>Render quality:</b> Auto يخفض الجودة وحده عند بطء الإطارات (دقة البكسل أولًا ثم المؤثرات) ويرفعها عند توفر هامش، أو اختر High أو Medium أو Low يدويًا.</li>
+          </ul>
+          <h3 class="minor">استوديو الحركة</h3>
+          <p>فيلم قصير من طبقات: خلفيات بعمق متدرج مع تموّج سائل، وخطوط انسيابية، وصورة المنتج منقولة من استوديو المنتج (يبدأ الفيلم من اللقطة نفسها التي كانت ظاهرة)، وعنوان يُكتب حرفًا حرفًا (وكلمة كلمة بالعربية حفاظًا على اتصال الحروف) مع توهج، وشرارات تتبع المؤشر وتتفجر عند اللمس. ثلاثة أفلام: Launch وNight shift وClean room، مع Play again وPause. ويعمل على WebGPU إن توفر، وإلا على WebGL 2.</p>
+          <div class="note"><b>حدود صالة العرض</b><p>المنتج افتراضي، والنموذج مبني برمجيًا ومتحقَّق منه بأداة Khronos (tools/assets). وتتبّع المسار يحتاج WebGL 2 وقد يستغرق وقتًا طويلًا على الهاتف. ولا توجد أرقام أداء مقيسة على أجهزة العملاء بعد؛ أضف ?perf=1 إلى الرابط لقراءة معدل الإطارات وعدد أوامر الرسم على جهازك.</p></div>
+        </div>
+        <div class="en" lang="en" dir="ltr">
+          <p class="lede">The showroom (showroom.html) presents the QLED 65 that Plant EG-01 builds, a fictional product, in a product photography studio, with a 2D motion studio for the brand reel beside it. One studio runs at a time; the other is released from GPU memory.</p>
+          <h3 class="minor">Product studio</h3>
+          <ul>
+            <li><b>Camera:</b> Hero, Front, Profile, Ports, Stand and Materials shots; the camera glides between them (or cuts, with reduced motion). Drag to orbit, scroll to zoom; on the keyboard: arrows, + and −, and 0.</li>
+            <li><b>Finish:</b> a Graphite, Silver or Pearl frame; the screen on or off.</li>
+            <li><b>Look:</b> the <a class="t" data-term="artdir">art direction</a>: Realistic, Product, Cinematic, Toon, Anime and Outlined, with Depth of field and callouts anchored to the parts.</li>
+            <li><b>Materials:</b> a board of ten spheres from the <a class="t" data-term="pbr">physically based</a> material library: brushed aluminium, chrome, gold, glass, ceramic, fabric, velvet, gloss plastic, rubber and skin.</li>
+            <li><b>Presentation:</b> Render path-traced still builds a <a class="t" data-term="pathtrace">path-traced</a> still, with a bar counting samples to 600. Any camera move starts it again; Back to live view returns to the live render.</li>
+            <li><b>Render quality:</b> Auto lowers quality by itself when frames slow down (pixel ratio first, then effects) and raises it again with headroom; or choose High, Medium or Low.</li>
+          </ul>
+          <h3 class="minor">Motion studio</h3>
+          <p>A short reel built from layers: backdrops at different depths with a liquid ripple, flow lines, the product picture handed over from the product studio (the reel opens on the exact frame you were looking at), a title set letter by letter (word by word in Arabic, so the script stays joined) with a glow, and sparks that follow the pointer and burst on a tap. Three reels: Launch, Night shift and Clean room, with Play again and Pause. It runs on WebGPU where the browser has it, otherwise on WebGL 2.</p>
+          <div class="note"><b>Limits of the showroom</b><p>The product is fictional; the model is built in code and checked with the Khronos validator (tools/assets). Path tracing needs WebGL 2 and can take long on a phone. There are no frame-rate figures measured on client devices yet: add ?perf=1 to the address to read frame rate and draw calls on your own device.</p></div>
+        </div>
+      </div>
+    </section>
+
     </main>
   </div>
 

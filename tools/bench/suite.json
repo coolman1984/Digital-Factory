@@ -1,0 +1,29 @@
+{
+  "sampleMs": 5000,
+  "devices": [
+    { "id": "desktop", "width": 1440, "height": 900, "dsf": 1 },
+    { "id": "mobile", "width": 390, "height": 844, "dsf": 2, "mobile": true }
+  ],
+  "productions": [
+    { "id": "A-product-legacy", "url": "showroom.html?pipeline=legacy", "ready": "!!(window.Showroom && Showroom.product && Showroom.product.ready && Showroom.product.frames > 5)",
+      "setup": "Showroom.product.gov.set(1, true)",
+      "poses": [ { "id": "hero", "js": "Showroom.product.setCam('hero')", "settle": 4000 }, { "id": "stand", "js": "Showroom.product.setCam('stand')", "settle": 4000 }, { "id": "materials", "js": "Showroom.product.setCam('materials')", "settle": 4000 } ] },
+    { "id": "A-product", "url": "showroom.html", "ready": "!!(window.Showroom && Showroom.product && Showroom.product.ready && Showroom.product.frames > 5)",
+      "setup": "Showroom.product.gov.set(1, true)",
+      "poses": [ { "id": "hero", "js": "Showroom.product.setCam('hero')", "settle": 4000 }, { "id": "stand", "js": "Showroom.product.setCam('stand')", "settle": 4000 }, { "id": "materials", "js": "Showroom.product.setCam('materials')", "settle": 4000 } ] },
+    { "id": "B-plant", "url": "plant.html", "ready": "!!(window.Plant && Plant.V && Plant.V.frames() > 10)",
+      "setup": "Plant.V.setQuality('high', true)",
+      "poses": [
+        { "id": "overview", "js": "Plant.V.view('overview')", "settle": 3000 },
+        { "id": "mid", "js": "Plant.V.view([132, 78, 70])", "settle": 3000 },
+        { "id": "close", "js": "Plant.V.view([150, 95, 22])", "settle": 3000 },
+        { "id": "cinematic", "js": "Plant.V.setCinematic(true)", "settle": 6000 }
+      ] },
+    { "id": "C-motion-legacy", "url": "showroom.html?pipeline=legacy#motion", "ready": "!!(window.Showroom && Showroom.motion && Showroom.motion.built)",
+      "poses": [ { "id": "reel", "js": "Showroom.motion.play()", "settle": 3000 } ] },
+    { "id": "C-motion", "url": "showroom.html#motion", "ready": "!!(window.Showroom && Showroom.motion && Showroom.motion.built)",
+      "poses": [ { "id": "reel", "js": "Showroom.motion.play()", "settle": 3000 } ] },
+    { "id": "C-hero2d-before", "url": "index.html", "ready": "document.readyState === 'complete'",
+      "poses": [ { "id": "hero", "js": "window.scrollTo(0, 0)", "settle": 2500 } ] }
+  ]
+}

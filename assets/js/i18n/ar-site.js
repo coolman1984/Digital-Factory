@@ -1,4 +1,5 @@
 /* Digital Factory — Arabic for the website (index.html). Wording follows the approved translation in guide.html. */
+DFI18N.add({ exact: { 'The QLED 65 the plant builds, in a product studio with physically based metal, glass and fabric, six looks from realistic to anime, and a path-traced still. Beside it, a 2D motion studio for the brand reel.': 'جهاز QLED 65 الذي يصنعه المصنع، في استوديو منتج بخامات فيزيائية من معدن وزجاج وقماش، وستة طوابع بصرية من الواقعي إلى الأنمي، ولقطة ثابتة بتتبّع المسار. وإلى جانبه استوديو حركة ثنائي الأبعاد لفيلم العلامة التجارية.' } });
 DFI18N.add({
   exact: {
     'Two weeks': 'أسبوعان', 'Four weeks': 'أربعة أسابيع',
