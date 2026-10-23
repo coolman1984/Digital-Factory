@@ -160,7 +160,24 @@
     const sopTex = cv(512, 256, sopDraw);
     // English names are set in capitals; a translated name keeps its own letters
     const caps = t => { const a = tt(t); return isAr(a) ? a : a.toUpperCase(); };
-    function signTex(text, sub) {
+    // the Digital Factory mark on a canvas (geometry from brand.js, on the 32-unit grid), at x, y, size s
+    function drawMark(g, x, y, s) {
+      const K = window.DF_MARK; if (!K) return false;
+      g.save(); g.translate(x, y); g.scale(s / 32, s / 32);
+      const gr = g.createLinearGradient(0, 0, 32, 32); gr.addColorStop(0, K.colors.a); gr.addColorStop(1, K.colors.b);
+      g.fillStyle = gr; g.beginPath(); g.roundRect(0, 0, 32, 32, 8); g.fill();
+      g.fillStyle = '#fff'; g.fill(new Path2D(K.factory));
+      for (const [cx, cy, o] of K.cells) { g.globalAlpha = o; g.beginPath(); g.roundRect(cx, cy, 3.4, 3.4, 0.7); g.fill(); }
+      g.globalAlpha = 1; g.fillStyle = K.colors.live; g.beginPath(); g.roundRect(K.live[0], K.live[1], 3.4, 3.4, 0.7); g.fill();
+      g.restore(); return true;
+    }
+    function signTex(text, sub, brand) {
+      if (brand) return cv(1024, 192, (g, w, h) => {
+        g.fillStyle = '#10151E'; g.fillRect(0, 0, w, h);
+        const m = drawMark(g, 36, 30, 132), x0 = m ? 196 : 36;
+        g.fillStyle = '#FFFFFF'; g.font = `800 72px ${FONT}`; say(g, caps(text), x0, 104, w);
+        g.fillStyle = '#9AA6B8'; g.font = `600 36px ${FONT}`; say(g, tt(sub), x0 + 2, 156, w);
+      });
       return cv(512, 96, (g, w, h) => {
         g.fillStyle = '#10151E'; g.fillRect(0, 0, w, h); g.fillStyle = '#2D5BFF'; g.fillRect(0, 0, 10, h);
         g.fillStyle = '#FFFFFF'; g.font = `bold 40px ${FONT}`; say(g, caps(text), 28, 50, w);
@@ -198,7 +215,7 @@
         for (let y = 0; y < 13; y++) for (let x = 0; x < 13; x++) { h = (h * 1103515245 + 12345) & 0x7fffffff; const fin = (x < 4 && y < 4) || (x > 8 && y < 4) || (x < 4 && y > 8); if (!fin && (h >> 16) & 1) g.fillRect(16 + x * m, 16 + y * m, m, m); }
         for (const [fx, fy] of [[0, 0], [9, 0], [0, 9]]) { g.fillRect(16 + fx * m, 16 + fy * m, 4 * m, 4 * m); g.fillStyle = '#fff'; g.fillRect(16 + (fx + 0.6) * m, 16 + (fy + 0.6) * m, 2.8 * m, 2.8 * m); g.fillStyle = '#111'; g.fillRect(16 + (fx + 1.2) * m, 16 + (fy + 1.2) * m, 1.6 * m, 1.6 * m); } });
       cell(7, 0, () => tri(() => { g.fillRect(40, 70, 36, 22); g.fillRect(70, 52, 6, 40); g.fillRect(76, 86, 22, 4); g.beginPath(); g.arc(48, 96, 6, 0, 7); g.arc(68, 96, 6, 0, 7); g.fill(); }));
-      cell(0, 1, () => { const gr = g.createLinearGradient(0, 0, 256, 128); gr.addColorStop(0, '#D9DDE2'); gr.addColorStop(0.5, '#F2F4F6'); gr.addColorStop(1, '#BFC5CC'); g.fillStyle = gr; g.fillRect(4, 8, 248, 112); g.fillStyle = '#1428A0'; g.fillRect(4, 8, 248, 26); g.fillStyle = '#fff'; g.font = `800 18px ${FONT}`; g.fillText('PLANT EG-01', 14, 28); g.fillStyle = '#23272E'; g.font = `600 13px ${FONT}`; ['TYPE   DF-450 / 3PH', 'SUPPLY  400 V  50 Hz  32 A', 'AIR     6 bar   SN 0417-22'].forEach((t, i) => g.fillText(t, 14, 56 + i * 20)); g.fillStyle = '#9AA3AE'; for (const [x, y] of [[10, 14], [244, 14], [10, 112], [244, 112]]) { g.beginPath(); g.arc(x, y, 3, 0, 7); g.fill(); } }, 2);
+      cell(0, 1, () => { const gr = g.createLinearGradient(0, 0, 256, 128); gr.addColorStop(0, '#D9DDE2'); gr.addColorStop(0.5, '#F2F4F6'); gr.addColorStop(1, '#BFC5CC'); g.fillStyle = gr; g.fillRect(4, 8, 248, 112); g.fillStyle = '#1428A0'; g.fillRect(4, 8, 248, 26); const mk = drawMark(g, 9, 10, 22); g.fillStyle = '#fff'; g.font = `800 18px ${FONT}`; g.fillText('PLANT EG-01', mk ? 38 : 14, 28); g.fillStyle = '#23272E'; g.font = `600 13px ${FONT}`; ['TYPE   DF-450 / 3PH', 'SUPPLY  400 V  50 Hz  32 A', 'AIR     6 bar   SN 0417-22'].forEach((t, i) => g.fillText(t, 14, 56 + i * 20)); g.fillStyle = '#9AA3AE'; for (const [x, y] of [[10, 14], [244, 14], [10, 112], [244, 112]]) { g.beginPath(); g.arc(x, y, 3, 0, 7); g.fill(); } }, 2);
       cell(2, 1, () => { g.fillStyle = '#fff'; g.fillRect(6, 24, 244, 80); g.fillStyle = '#111'; let x = 18; let h = 3; while (x < 236) { h = (h * 69069 + 1) >>> 0; const w = 1 + (h >>> 29); g.fillRect(x, 32, w * 1.6, 46); x += w * 1.6 + 1.6 + ((h >>> 26) & 3); } g.font = `600 12px ${FONT}`; g.fillText('EG01-AST-004172', 72, 96); }, 2);
       cell(4, 1, () => { g.fillStyle = '#F6C400'; g.beginPath(); g.arc(64, 64, 60, 0, 7); g.fill(); g.fillStyle = '#111'; g.font = `800 14px ${FONT}`; g.textAlign = 'center'; g.fillText('EMERGENCY', 64, 24); g.fillText('STOP', 64, 114); });
       cell(5, 1, () => { g.fillStyle = '#C8102E'; g.fillRect(6, 6, 116, 116); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(64, 20); g.bezierCurveTo(92, 50, 96, 80, 64, 104); g.bezierCurveTo(34, 82, 40, 56, 56, 44); g.bezierCurveTo(56, 60, 62, 64, 66, 60); g.bezierCurveTo(60, 46, 62, 32, 64, 20); g.fill(); });
@@ -1113,7 +1130,7 @@
       for (const [x, z] of [[220, 24], [226, 24], [238, 24], [244, 24]]) { sbox('plastic', 2.2, 0.42, 0.9, x, 0, z, { r: 0.12 }); sbox('plastic', 2.2, 0.5, 0.2, x, 0.42, z + 0.4, { r: 0.08 }); }
       for (const [x, z] of [[214, 8], [250, 8], [214, 30], [250, 30], [226, 30], [238, 30]]) { scyl('dark', 0.35, 0.6, x, 0, z, { r2: 0.28 }); push('leaf', place(new T.IcosahedronGeometry(0.62, 1), x, 1.25, z)); }
       liftNow = 0;
-      const wall = new T.Mesh(new T.PlaneGeometry(14, 2.6), new T.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: signTex('Plant EG-01', 'Digital Factory · TV plant'), emissiveIntensity: 0.9 }));
+      const wall = new T.Mesh(new T.PlaneGeometry(14, 2.6), new T.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: signTex('Plant EG-01', 'Digital Factory · TV plant', true), emissiveIntensity: 0.9 }));
       wall.position.set(232, 2.6, 3.2); wall.userData.ground = true; wall.raycast = () => {}; world.add(wall);
       const lobbyScreen = new T.Mesh(new T.PlaneGeometry(5.2, 2.9), M.sop); lobbyScreen.position.set(250, 2.2, 3.25); lobbyScreen.userData.ground = true; lobbyScreen.raycast = () => {}; world.add(lobbyScreen);
       LOBBY = wall.material;
@@ -1599,7 +1616,7 @@
     // a new language repaints every sign, floor name and screen in the plant
     addEventListener('langchange', () => {
       updateSigns(true);
-      if (LOBBY) { const old = LOBBY.emissiveMap; LOBBY.emissiveMap = signTex('Plant EG-01', 'Digital Factory · TV plant'); LOBBY.needsUpdate = true; old.dispose(); }
+      if (LOBBY) { const old = LOBBY.emissiveMap; LOBBY.emissiveMap = signTex('Plant EG-01', 'Digital Factory · TV plant', true); LOBBY.needsUpdate = true; old.dispose(); }
       world.traverse(o => { if (o.userData.zoneName) { const old = o.material.map; o.material.map = floorWord(o.userData.zoneName); o.material.needsUpdate = true; old.dispose(); } });
       for (const [k, draw, w, h] of [['hmi', hmiDraw, 256, 160], ['sop', sopDraw, 512, 256]]) { const old = M[k].emissiveMap; M[k].emissiveMap = cv(w, h, draw); M[k].needsUpdate = true; old.dispose(); }
     });
@@ -2139,7 +2156,7 @@
     // stall (objects wait on layer 1, which no camera draws)
     const REVEAL = [];
     for (const o of world.children) { const ms = []; o.traverse(m => { if ((m.isMesh || m.isLine || m.isPoints) && m.layers.isEnabled(0)) { m.layers.set(1); ms.push(m); } }); if (ms.length) REVEAL.push(ms); }
-    const revealN = Math.ceil(REVEAL.length / 16);
+    const revealN = Math.ceil(REVEAL.length / 16); let REVEAL_DONE = 0;
     function applyLevel(L) {
       // phones and small tablets (lowPower) keep one device pixel per CSS pixel at every level, as before
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, low ? 1 : L.dpr));
@@ -2178,7 +2195,7 @@
     }
     let lastFrame = 0;
     function render(dt) {
-      if (REVEAL.length) for (let i = 0; i < revealN && REVEAL.length; i++) REVEAL.shift().forEach(m => m.layers.set(0));
+      if (REVEAL.length) { for (let i = 0; i < revealN && REVEAL.length; i++) REVEAL.shift().forEach(m => m.layers.set(0)); if (!REVEAL.length) REVEAL_DONE = frames; }
       const t0 = performance.now();
       if (lastFrame) gov.tick(t0 - lastFrame); lastFrame = t0;
       DFPerf.frame(t0); if (window.DFMotion) DFMotion.tick(t0);
@@ -2247,6 +2264,8 @@
       camTo(p, t, dur = 2.4, fov) { if (walk.on) setWalk(false); moved = true; fly = { t: 0, dur: still ? 0.01 : dur, p0: camera.position.clone(), t0: controls.target.clone(), p1: new T.Vector3(...p), t1: new T.Vector3(...t) }; if (fov) { camera.fov = fov; camera.updateProjectionMatrix(); } },
       setFov(f) { camera.fov = f || FOV_ORBIT; camera.updateProjectionMatrix(); },
       get stationsPos() { return P.stations.map(s => ({ id: s.id, kind: s.kind, line: s.line, x: s.x, z: s.z, w: s.w, d: s.d, y: lvStatic(s.x, s.z) })); },
+      // the whole plant is drawn (the progressive first frames are done): the start-up splash waits for this
+      get ready() { return !REVEAL.length && frames > REVEAL_DONE + 1; },
       unitPos, frames: () => frames
     };
   }

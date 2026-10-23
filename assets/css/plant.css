@@ -766,3 +766,9 @@ body.pl-presenting .pl-3d > :not(canvas#gl):not(.pl-present) { display: none !im
 [dir="rtl"] .pp-ctl .flip svg { transform: none; }
 @media (max-width: 640px) { .pp-cap { bottom: 84px; padding: 14px 16px; } }
 @media (prefers-reduced-motion: reduce) { .pp-cap.in { animation: none; } }
+/* the brand lockup in the presentation's top letterbox */
+.pp-brand { position: absolute; top: clamp(14px, 3.4vh, 30px); left: clamp(16px, 5vw, 72px); display: inline-flex; align-items: center; gap: 10px; color: #fff; }
+[dir="rtl"] .pp-brand { left: auto; right: clamp(16px, 5vw, 72px); }
+.pp-brand .logo-mark { width: 28px; height: 28px; }
+.pp-brand b { font-size: 17px; font-weight: 800; letter-spacing: -0.6px; }
+.pp-brand small { font-size: 13px; color: #AFC0E0; font-weight: 600; padding-inline-start: 10px; border-inline-start: 1px solid rgb(255 255 255 / 0.25); }

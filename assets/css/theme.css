@@ -69,13 +69,41 @@ table.sr-only { display: block; }   /* tables ignore width: 1px; as a block the 
 .btn.sm { height: 32px; padding: 0 13px; font-size: 13px; gap: 6px; }
 .btn .icon { width: 18px; height: 18px; }
 
-/* brand lockup (our own mark, not a third-party logo) */
+/* brand lockup (our own mark, not a third-party logo): a factory whose right half is a grid of cells, the plant
+   becoming its digital twin, with the top-right cell lit (the live signal). Built by tools/brand/build.mjs. */
+/* df-brand:start */
+:root { --df-glyph: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20d%3D%22M7%2023.8V9.4a.7.7%200%200%201%201.1-.57L11.5%2011.3V9.4a.7.7%200%200%201%201.1-.57L16%2011.3v12.5z%22%2F%3E%3Crect%20x%3D%2217.2%22%20y%3D%2220.4%22%20width%3D%223.4%22%20height%3D%223.4%22%20rx%3D%22.7%22%2F%3E%3Crect%20x%3D%2221.4%22%20y%3D%2220.4%22%20width%3D%223.4%22%20height%3D%223.4%22%20rx%3D%22.7%22%2F%3E%3Crect%20x%3D%2217.2%22%20y%3D%2216.2%22%20width%3D%223.4%22%20height%3D%223.4%22%20rx%3D%22.7%22%2F%3E%3Crect%20x%3D%2221.4%22%20y%3D%2216.2%22%20width%3D%223.4%22%20height%3D%223.4%22%20rx%3D%22.7%22%20opacity%3D%220.72%22%2F%3E%3Crect%20x%3D%2217.2%22%20y%3D%2212%22%20width%3D%223.4%22%20height%3D%223.4%22%20rx%3D%22.7%22%20opacity%3D%220.72%22%2F%3E%3C%2Fsvg%3E"); --df-live: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20x%3D%2221.4%22%20y%3D%2212%22%20width%3D%223.4%22%20height%3D%223.4%22%20rx%3D%22.7%22%2F%3E%3C%2Fsvg%3E"); }
+/* df-brand:end */
 .logo { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; }
 .logo-word { font-size: 19px; font-weight: 800; letter-spacing: -0.8px; line-height: 1; }
-.logo-mark { width: 30px; height: 30px; border-radius: 9px; position: relative; flex: none; background: var(--brand); }
-.logo-mark::before, .logo-mark::after { content: ""; position: absolute; background: #fff; border-radius: 2px; }
-.logo-mark::before { left: 8px; top: 8px; width: 5px; height: 14px; }
-.logo-mark::after { left: 16px; top: 13px; width: 5px; height: 9px; }
+.logo-mark { width: 30px; height: 30px; border-radius: 26.7%; position: relative; flex: none; background: linear-gradient(135deg, #2D5BFF, #1428A0); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14), 0 1px 2px rgb(20 40 160 / 0.25); }
+.logo-mark::before, .logo-mark::after { content: ""; position: absolute; inset: 0; -webkit-mask: center / 100% 100% no-repeat; mask: center / 100% 100% no-repeat; }
+.logo-mark::before { background: #fff; -webkit-mask-image: var(--df-glyph); mask-image: var(--df-glyph); }
+.logo-mark::after { background: #7FE4FF; -webkit-mask-image: var(--df-live); mask-image: var(--df-live); }
+.logo:hover .logo-mark::after { animation: df-live 1.2s var(--ease-out, ease-out) 1; }
+@keyframes df-live { 40% { opacity: 0.35; } }
+
+/* module icons: the same tile, one for each part of the product */
+.mod-ic { display: inline-block; width: 20px; height: 20px; flex: none; border-radius: 26.7%; background: center / contain no-repeat; vertical-align: -4px; }
+.mod-plant { background-image: url("../brand/mod-plant.svg"); } .mod-room { background-image: url("../brand/mod-room.svg"); }
+.mod-deck { background-image: url("../brand/mod-deck.svg"); } .mod-guide { background-image: url("../brand/mod-guide.svg"); }
+.mod-showroom { background-image: url("../brand/mod-showroom.svg"); } .mod-present { background-image: url("../brand/mod-present.svg"); }
+
+/* the start-up splash on the heavy pages: the mark builds itself, cell by cell, then the page takes over */
+.df-splash { position: fixed; inset: 0; z-index: 500; display: grid; place-content: center; justify-items: center; gap: 18px; background: var(--bg); transition: opacity .45s var(--ease-out, ease-out), visibility 0s linear .45s; }
+.df-splash.done { opacity: 0; visibility: hidden; pointer-events: none; }
+.df-splash-mark { width: 76px; height: 76px; filter: drop-shadow(0 14px 30px rgb(20 40 160 / 0.28)); }
+.df-splash-mark .f { animation: df-rise .7s var(--ease-out, ease-out) both; transform-origin: 50% 100%; }
+.df-splash-mark .c { animation: df-cell .5s var(--ease-out, ease-out) both; transform-box: fill-box; transform-origin: center; }
+.df-splash-mark .c1 { animation-delay: .25s; } .df-splash-mark .c2 { animation-delay: .35s; } .df-splash-mark .c3 { animation-delay: .45s; }
+.df-splash-mark .c4 { animation-delay: .55s; } .df-splash-mark .c5 { animation-delay: .65s; }
+.df-splash-mark .live { animation: df-cell .5s var(--ease-out, ease-out) .8s both, df-pulse 1.6s ease-in-out 1.4s infinite; }
+.df-splash b { font-size: 22px; font-weight: 800; letter-spacing: -0.8px; color: var(--text); }
+.df-splash p { margin: -10px 0 0; font-size: 15px; font-weight: 600; color: var(--text-2); }
+@keyframes df-rise { from { opacity: 0; transform: scaleY(0.6); } }
+@keyframes df-cell { from { opacity: 0; transform: scale(0.3); } }
+@keyframes df-pulse { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .df-splash-mark .f, .df-splash-mark .c { animation: none; } .df-splash { transition: none; } }
 
 /* kit-style headings */
 .eyebrow { color: var(--text-2); font-size: 12px; letter-spacing: 1.6px; font-weight: 650; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
@@ -108,3 +136,5 @@ table.sr-only { display: block; }   /* tables ignore width: 1px; as a block the 
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important; }
   [data-reveal], [data-split] .w { opacity: 1 !important; transform: none !important; filter: none !important; }
 }
+.caplist b .mod-ic { width: 26px; height: 26px; margin-inline-end: 10px; vertical-align: -6px; }
+.btn .mod-ic { width: 20px; height: 20px; }

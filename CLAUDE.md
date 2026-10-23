@@ -22,4 +22,5 @@ node .claude/skills/web-design-pipeline/scripts/qa.mjs guide.html --theme-key df
 ```
 For 3D, 2D motion, materials, models or rendering performance, also follow `.claude/skills/visual-factory` (look system in `assets/js/vfx/`,
 asset pipeline in `tools/assets/`, benchmark in `tools/bench/`, Windows check in `tools/checks/`); its record is `docs/VISUAL-FACTORY.md`.
+Brand: the mark and every icon come from `tools/brand/marks.mjs` via `node tools/brand/build.mjs` (see `docs/BRAND.md`); never hand-edit the generated `df-*` blocks.
 Recorded design allowances: `docs/ALLOWANCES.md`. Plant studio roadmap (agents and hand editing the 3D layout): `docs/PLANT-STUDIO.md`. The reusable installer lives in `design-pipeline/`.
