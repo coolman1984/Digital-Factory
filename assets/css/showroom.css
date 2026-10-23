@@ -1,0 +1,79 @@
+/* Digital Factory — Showroom (showroom.html). The grammar of a tethered product shoot: the frame is the hero, a
+   narrow panel of bare controls beside it, no cards inside cards. Same top bar and tokens as the live plant. */
+html, body { height: 100%; }
+body.sr { margin: 0; background: var(--bg); color: var(--text); font-size: 15px; display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100dvh; overflow: hidden; }
+.sr button { font: inherit; }
+.skip { position: absolute; inset-inline-start: 12px; top: -60px; z-index: 300; background: var(--surface); color: var(--text); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-strong); font-weight: 650; }
+.skip:focus { top: 12px; }
+
+.sr-top { display: flex; align-items: center; gap: 18px; padding: 10px 20px; min-height: 64px; border-bottom: 1px solid var(--border); background: var(--bg); }
+.sr-top .logo { min-height: 44px; }
+.sr-title { display: flex; flex-direction: column; line-height: 1.15; padding-inline-start: 18px; position: relative; }
+.sr-title::before { content: ""; position: absolute; inset-inline-start: 0; top: 2px; bottom: 2px; width: 1px; background: var(--border); }
+.sr-title h1 { font-size: 18px; font-weight: 800; letter-spacing: -.02em; margin: 0; }
+.sr-sub { font-size: 13px; color: var(--text-2); }
+.sr-tabs { display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); margin-inline-start: auto; }
+.sr-tabs button { white-space: nowrap; min-height: 38px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; cursor: pointer; font-weight: 650; font-size: 14px; color: var(--text-2); transition: background-color var(--dur-ui) var(--ease-out), color var(--dur-ui) var(--ease-out); }
+.sr-tabs button:hover { color: var(--text); }
+.sr-tabs button[aria-selected="true"] { background: var(--text); color: var(--bg); }
+.sr-actions { display: flex; gap: 8px; }
+.sr-actions .btn { height: 44px; }
+
+.sr-main { min-height: 0; position: relative; }
+.stage { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
+.stage[hidden] { display: none; }
+.stage-gl { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--surface-2); }
+.stage-gl canvas, .pixi, .pixi canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.stage-gl canvas:focus-visible { outline: 3px solid var(--brand-2); outline-offset: -3px; }
+.stage-note { position: absolute; inset-inline-start: 16px; bottom: 14px; margin: 0; font-size: 13px; color: var(--text-2); background: color-mix(in srgb, var(--bg) 82%, transparent); padding: 6px 10px; border-radius: 8px; max-width: calc(100% - 32px); }
+.stage-note:empty { display: none; }
+
+/* callouts: a hairline and a label, anchored to the part */
+.hot { position: absolute; inset: 0; pointer-events: none; }
+.hot .h { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 650; color: var(--text); white-space: nowrap; transition: opacity var(--dur-ui) var(--ease-out); will-change: transform; }
+.hot .h::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--bg); border: 2px solid var(--text); flex: none; }
+.hot .h span { background: color-mix(in srgb, var(--bg) 88%, transparent); padding: 3px 8px; border-radius: 6px; }
+.hot .h.l { flex-direction: row-reverse; }
+.hot .h.off { opacity: 0; }
+
+.pt-bar { position: absolute; inset-inline: 16px; top: 14px; display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 650; color: var(--text); }
+.pt-bar i { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.pt-bar b { display: block; height: 100%; width: 0; background: var(--brand-2); }
+
+/* the panel */
+.panel { border-inline-start: 1px solid var(--border); overflow-y: auto; padding: 8px 20px 24px; background: var(--bg); }
+.panel section { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.panel section:last-child { border-bottom: 0; }
+.panel h2 { font-size: 13px; font-weight: 750; letter-spacing: .01em; color: var(--text-2); margin: 0 0 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.chips button { min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background-color var(--dur-ui) var(--ease-out), border-color var(--dur-ui) var(--ease-out), color var(--dur-ui) var(--ease-out); }
+.chips button:hover { border-color: var(--text-3); }
+.chips button[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: var(--bg); }
+.chips button:focus-visible, .sr-tabs button:focus-visible { outline: 3px solid var(--brand-2); outline-offset: 2px; }
+.sw { width: 14px; height: 14px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18); flex: none; }
+.tog { display: flex; align-items: center; gap: 10px; min-height: 40px; font-size: 14px; cursor: pointer; }
+.tog input { width: 18px; height: 18px; accent-color: var(--brand); }
+.hint { font-size: 13px; color: var(--text-2); margin: 4px 0 10px; line-height: 1.5; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.panel .btn { height: 44px; margin-bottom: 10px; }
+.facts dl { margin: 0; display: grid; gap: 8px; }
+.facts dl div { display: grid; grid-template-columns: 84px 1fr; gap: 10px; font-size: 14px; }
+.facts dt { color: var(--text-3); }
+.facts dd { margin: 0; }
+.reel-copy { font-size: 15px; line-height: 1.5; margin: 0 0 12px; }
+
+@media (max-width: 1100px) { .hide-md { display: none; } }
+@media (max-width: 1240px) and (min-width: 900px) { .sr-sub { display: none; } }
+@media (max-width: 899px) {
+  body.sr { overflow: auto; height: auto; grid-template-rows: auto auto; }
+  .sr-top { flex-wrap: wrap; gap: 10px 14px; padding: 8px 16px; }
+  .sr-tabs { order: 3; margin-inline-start: 0; width: 100%; }
+  .sr-tabs button { flex: 1; min-height: 44px; }
+  .sr-main { min-height: auto; }
+  .stage { position: relative; inset: auto; grid-template-columns: 1fr; }
+  .stage-gl { height: 62vh; min-height: 360px; }
+  .panel { border-inline-start: 0; border-top: 1px solid var(--border); padding: 4px 16px 24px; overflow: visible; }
+  .chips button, .tog { min-height: 44px; }
+  .hide-sm { display: none; }
+}
+@media (max-width: 520px) { .sr-sub { display: none; } }

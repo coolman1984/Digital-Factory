@@ -1,0 +1,28 @@
+{
+  "built": "2026-10-23",
+  "parts": 16,
+  "ao": {
+    "rays": 48,
+    "reachM": 0.12,
+    "min": 0.35,
+    "mean": 0.76
+  },
+  "files": {
+    "tv-qled65.glb": {
+      "bytes": 363312,
+      "triangles": 7514,
+      "vertices": 4839,
+      "meshes": 16,
+      "materials": 8,
+      "textures": 4
+    },
+    "tv-qled65-lod1.glb": {
+      "bytes": 63132,
+      "triangles": 2548,
+      "vertices": 1953,
+      "meshes": 16,
+      "materials": 8,
+      "textures": 0
+    }
+  }
+}

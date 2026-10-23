@@ -17,7 +17,7 @@ Findings from the design checks that stay on purpose, with the reason. Everythin
 | Aphoristic cadence | guide | Short definitional sentences are the register of a glossary and a reference book. |
 | Long-page probe timeout | guide | The QA probe walks every element of a 290 KB book; run it with a longer CDP timeout (0 FAIL at 390 / 820 / 1440, light and dark). |
 | 13px secondary labels | live plant: readout sub-lines, value stream, 3D labels | The same operator-screen density as the command room; every primary number is 18–28px and every control is 44px on touch. |
-| Page weight about 1.7 MB; slow largest paint in headless QA | live plant | three.js with its post-processing, environment and control add-ons (820 KB, 235 KB gzipped), the brand fonts and the plant, SAP and view scripts. The QA browser renders WebGL in software, so its LCP (5–9 s) is far above a real GPU; the engine warm-up takes about 1.5 s of it. |
+| Page weight about 2.2 MB; slow largest paint in headless QA | live plant | three.js with its post-processing, environment and control add-ons (820 KB, 235 KB gzipped), the brand fonts and the plant, SAP and view scripts. The QA browser renders WebGL in software, so its LCP (5–9 s) is far above a real GPU; the engine warm-up takes about 1.5 s of it. |
 | 13px secondary labels | command room: readout sub-lines, chart ticks, table sub-lines, case meta | Operator-screen density (ISA-101 overview); every primary number is 18–32px and every control is 44px on touch. |
 | Em dashes in readouts | live plant, command room | Used only as the "no value yet" placeholder in readouts and table cells, not in prose. |
 | Copilot SDK (212 KB) | command room | Loads only when a viewer switches the copilot to Claude mode. |
@@ -25,3 +25,5 @@ Findings from the design checks that stay on purpose, with the reason. Everythin
 | Footnote numbers under 14px | website: superscript source markers | Superscripts are footnote markers; the sources they point to are 14px. |
 | Small text on the theme label | deck: "Light" / "Dark" on the theme button | False positive: the label is screen-reader only (`sr-only`); nothing is drawn. |
 | Inline glossary links under 44px | guide: term links inside sentences and lists | Links inside running text, the inline exception of WCAG 2.5.8; every control, chip, contents link and footer link is 44px on touch. |
+| Page weight about 1.95 MB; slow largest paint in headless QA | showroom | three.js (820 KB), GSAP (73 KB), the add-ons (80 KB) and the 41 KB far model, then the 348 KB full model streams in; PixiJS (840 KB) and the path tracer (208 KB) load only when their studio or button is used. LCP in software WebGL is not a real-GPU figure. |
+| Command room weight just over 1.5 MB | command room | The brand fonts are embedded in the kit; the page itself grew by one link. |

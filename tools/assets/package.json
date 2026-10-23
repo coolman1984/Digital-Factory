@@ -1,0 +1,22 @@
+{
+  "name": "df-asset-pipeline",
+  "private": true,
+  "type": "module",
+  "description": "Builds, bakes, optimizes and validates the Digital Factory GLB assets (node build-tv.mjs).",
+  "scripts": {
+    "build": "node build-tv.mjs",
+    "check": "node check-glb.mjs ../../assets/models/tv-qled65.glb"
+  },
+  "dependencies": {
+    "@gltf-transform/core": "4.5.1",
+    "@gltf-transform/extensions": "4.5.1",
+    "@gltf-transform/functions": "4.5.1",
+    "gltf-validator": "2.0.0-dev.3.10",
+    "meshoptimizer": "1.3.0",
+    "mikktspace": "1.1.1",
+    "mikktspace": "^1.1.1",
+    "pngjs": "7.0.0",
+    "three": "0.170.0",
+    "three-mesh-bvh": "0.9.1"
+  }
+}

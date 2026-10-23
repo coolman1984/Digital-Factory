@@ -1,6 +1,6 @@
 # Digital Factory
 
-Static site (no build): `index.html` (website), `app.html` (command room), `deck.html` (presentation), `guide.html` (bilingual reference guide), `plant.html` (live plant in 3D). Plant data is simulated.
+Static site (no build): `index.html` (website), `app.html` (command room), `deck.html` (presentation), `guide.html` (bilingual reference guide), `plant.html` (live plant in 3D), `showroom.html` (product studio and motion studio). Plant data is simulated.
 When a screen, scenario, decision, slide or term changes, update `guide.html` (both languages) and `assets/js/guide-terms.js` to match.
 The command room and the live plant run one model of Plant EG-01, a TV plant with six main lines and the LCM, SMD, injection, press
 and cushion lines feeding them: `assets/js/plant/` (engine, erp, agents; plant.html adds scene, views2d, ui, recorder). The room lives in
@@ -16,7 +16,10 @@ For any change to how a page looks, moves or reads, follow the `web-design-pipel
 
 ```bash
 node .claude/skills/web-design-pipeline/scripts/qa.mjs index.html app.html deck.html plant.html --theme-key df-theme
+node .claude/skills/web-design-pipeline/scripts/qa.mjs showroom.html --theme-key df-theme   # WebGL pages together exceed the 30 s CDP timeout
 node .claude/skills/web-design-pipeline/scripts/qa.mjs guide.html --theme-key df-theme   # long page: its probe can exceed the 30 s CDP timeout
-.claude/skills/impeccable/scripts/impeccable detect index.html app.html deck.html guide.html plant.html assets/css
+.claude/skills/impeccable/scripts/impeccable detect index.html app.html deck.html guide.html plant.html showroom.html assets/css
 ```
+For 3D, 2D motion, materials, models or rendering performance, also follow `.claude/skills/visual-factory` (look system in `assets/js/vfx/`,
+asset pipeline in `tools/assets/`, benchmark in `tools/bench/`, Windows check in `tools/checks/`); its record is `docs/VISUAL-FACTORY.md`.
 Recorded design allowances: `docs/ALLOWANCES.md`. Plant studio roadmap (agents and hand editing the 3D layout): `docs/PLANT-STUDIO.md`. The reusable installer lives in `design-pipeline/`.

@@ -15,7 +15,7 @@ DFI18N.add({
     'Running slow': 'يعمل ببطء', 'Short stop': 'توقف قصير', 'Planned maintenance': 'صيانة مخططة', 'Tripped': 'مفصول', 'Attention': 'يستدعي الانتباه', 'Interrupted': 'متقطع',
     'Healthy': 'سليم', 'Warning': 'تحذير', 'Critical': 'حرج', 'OK': 'سليم', 'Fault': 'عطل', 'Parked': 'في الموقف', 'Charging': 'يشحن', 'Driving': 'في مهمة', 'Waiting': 'ينتظر', 'Open ': 'مفتوح',
     'running': 'يعمل', 'stopped': 'متوقف', 'idle': 'خامل', 'starved': 'متوقف لنقص المواد', 'blocked': 'متوقف لامتلاء المرحلة التالية', 'changeover': 'تغيير الموديل', 'down': 'متوقف', 'warn': 'تحذير', 'maint': 'صيانة', 'micro': 'توقف قصير',
-    'Shift A': 'الوردية A', 'Shift B': 'الوردية B', 'Shift C': 'الوردية C', 'Shift A · 06–14': 'الوردية A · 06–14', 'Shift B · 14–22': 'الوردية B · 14–22', 'Shift C · 22–06': 'الوردية C · 22–06',
+    'Showroom': 'صالة العرض', 'Shift A': 'الوردية A', 'Shift B': 'الوردية B', 'Shift C': 'الوردية C', 'Shift A · 06–14': 'الوردية A · 06–14', 'Shift B · 14–22': 'الوردية B · 14–22', 'Shift C · 22–06': 'الوردية C · 22–06',
     'simulated': 'بيانات محاكاة', 'simulated plant data': 'بيانات مصنع محاكاة', 'Plant data is simulated.': 'بيانات المصنع محاكاة.', 'Sample readouts': 'قراءات توضيحية',
     'Line OEE': 'فعالية الخط OEE', 'Guided tour': 'جولة إرشادية', 'Run a drill': 'تشغيل تمرين', 'Drills': 'التمارين', 'Drill': 'تمرين',
     'Time machine': 'آلة الزمن', 'AI agents': 'وكلاء الذكاء الاصطناعي', 'Copilot': 'المساعد الذكي', 'Ask copilot': 'اسأل المساعد الذكي', 'Ask the copilot': 'اسأل المساعد الذكي',

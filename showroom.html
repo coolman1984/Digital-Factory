@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Digital Factory · Showroom</title>
+  <meta name="description" content="The showroom of Plant EG-01: the QLED 65 the plant builds, in a product studio with physically based materials, and a 2D motion studio. Fictional product, real rendering.">
+  <script>try{var t=localStorage.getItem('df-theme')}catch(e){}document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')</script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231428A0'/%3E%3Crect x='8' y='8' width='5' height='15' rx='1' fill='%23fff'/%3E%3Crect x='16' y='13' width='5' height='10' rx='1' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/kit/fonts.css">
+  <link rel="stylesheet" href="assets/kit/brand-ui.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/showroom.css">
+  <script>try{if((localStorage.getItem('df-lang')||localStorage.getItem('df-guide-lang'))==='ar'){var r=document.documentElement;r.lang='ar';r.dir='rtl';r.setAttribute('data-i18n-wait','');setTimeout(function(){r.removeAttribute('data-i18n-wait')},1200)}}catch(e){}</script>
+</head>
+<body class="sr">
+  <a class="skip" href="#controls">Skip to the controls</a>
+  <header class="sr-top">
+    <a class="logo" href="./" aria-label="Digital Factory home"><span class="logo-mark" aria-hidden="true"></span><span class="logo-word">Digital Factory</span></a>
+    <div class="sr-title">
+      <h1>Showroom</h1>
+      <span class="sr-sub">QLED 65 from Plant EG-01 · fictional product</span>
+    </div>
+    <div class="sr-tabs" role="tablist" aria-label="Studios">
+      <button type="button" role="tab" id="tab-product" aria-selected="true" aria-controls="stage-product">Product studio</button>
+      <button type="button" role="tab" id="tab-motion" aria-selected="false" aria-controls="stage-motion" tabindex="-1">Motion studio</button>
+    </div>
+    <div class="sr-actions">
+      <button type="button" class="btn btn-secondary btn-sm theme-btn" data-theme-toggle title="Light / dark"><span class="ti" aria-hidden="true"></span><span class="tl hide-md">Light</span></button>
+      <a class="btn btn-secondary btn-sm hide-sm" href="plant.html"><span data-icon="globe"></span><span class="hide-md">Live plant</span></a>
+    </div>
+  </header>
+
+  <main class="sr-main" id="main">
+    <!-- A · product studio -->
+    <section class="stage" id="stage-product" role="tabpanel" aria-labelledby="tab-product">
+      <div class="stage-gl">
+        <canvas id="gl" role="img" aria-label="The QLED 65 television on a studio sweep. The controls beside it change the camera, the finish, the screen and the look."></canvas>
+        <div class="hot" id="hot" aria-hidden="true"></div>
+        <p class="stage-note" id="note" aria-live="polite"></p>
+        <div class="pt-bar" id="ptBar" hidden><span id="ptText">Path tracing</span><i><b id="ptFill"></b></i></div>
+        <noscript><p class="stage-note">The studio needs JavaScript and WebGL 2. The product facts are listed beside it.</p></noscript>
+      </div>
+      <aside class="panel" id="controls" aria-label="Studio controls">
+        <section>
+          <h2>Camera</h2>
+          <div class="chips" role="group" aria-label="Camera">
+            <button type="button" data-cam="hero" aria-pressed="true">Hero</button>
+            <button type="button" data-cam="front" aria-pressed="false">Front</button>
+            <button type="button" data-cam="side" aria-pressed="false">Profile</button>
+            <button type="button" data-cam="back" aria-pressed="false">Ports</button>
+            <button type="button" data-cam="stand" aria-pressed="false">Stand</button>
+            <button type="button" data-cam="materials" aria-pressed="false">Materials</button>
+          </div>
+          <p class="hint">Drag to orbit, scroll or pinch to zoom. Keys: arrows orbit, + and − zoom, 0 resets.</p>
+        </section>
+        <section>
+          <h2>Finish</h2>
+          <div class="chips" role="group" aria-label="Frame finish">
+            <button type="button" data-finish="graphite" aria-pressed="true"><i class="sw" style="--c:#2B2E33"></i>Graphite</button>
+            <button type="button" data-finish="silver" aria-pressed="false"><i class="sw" style="--c:#C9CDD2"></i>Silver</button>
+            <button type="button" data-finish="pearl" aria-pressed="false"><i class="sw" style="--c:#EEEDE8"></i>Pearl</button>
+          </div>
+          <div class="chips" role="group" aria-label="Screen">
+            <button type="button" data-screen="on" aria-pressed="true">Screen on</button>
+            <button type="button" data-screen="off" aria-pressed="false">Screen off</button>
+          </div>
+        </section>
+        <section>
+          <h2>Look</h2>
+          <div class="chips" role="group" aria-label="Look" id="looks"></div>
+          <div class="chips" role="group" aria-label="Options">
+            <button type="button" id="dof" aria-pressed="false">Depth of field</button>
+            <button type="button" id="hotOn" aria-pressed="true">Callouts</button>
+          </div>
+        </section>
+        <section>
+          <h2>Presentation</h2>
+          <p class="hint">A path-traced still: every ray of light followed through glass and metal. It needs a few seconds on a desktop GPU, and much longer on a phone or without one.</p>
+          <button type="button" class="btn btn-primary btn-sm" id="ptBtn">Render path-traced still</button>
+          <div class="chips" role="group" aria-label="Render quality" id="quality">
+            <button type="button" data-q="auto" aria-pressed="true">Auto</button>
+            <button type="button" data-q="0" aria-pressed="false">High</button>
+            <button type="button" data-q="2" aria-pressed="false">Medium</button>
+            <button type="button" data-q="3" aria-pressed="false">Low</button>
+          </div>
+        </section>
+        <section class="facts">
+          <h2>QLED 65</h2>
+          <dl>
+            <div><dt>Panel</dt><dd>65-inch quantum-dot, 1.44 × 0.81 m</dd></div>
+            <div><dt>Frame</dt><dd>Anodised aluminium, 6 mm</dd></div>
+            <div><dt>Stand</dt><dd>Brushed aluminium pedestal</dd></div>
+            <div><dt>Built on</dt><dd>Main lines 3 and 6, Plant EG-01</dd></div>
+          </dl>
+          <p class="hint">A fictional product of a fictional plant. The model is built in code, baked and validated (tools/assets).</p>
+        </section>
+      </aside>
+    </section>
+
+    <!-- C · 2D motion studio -->
+    <section class="stage" id="stage-motion" role="tabpanel" aria-labelledby="tab-motion" hidden>
+      <div class="stage-gl">
+        <div class="pixi" id="pixi" aria-hidden="true"></div>
+        <p class="stage-note" id="mnote" aria-live="polite"></p>
+      </div>
+      <aside class="panel" aria-label="Motion controls">
+        <section>
+          <h2>Reel</h2>
+          <p class="reel-copy" id="reelCopy">Made to be seen. Six main lines, one picture: Plant EG-01 builds the QLED 65.</p>
+          <div class="chips" role="group" aria-label="Reel">
+            <button type="button" data-reel="launch" aria-pressed="true">Launch</button>
+            <button type="button" data-reel="night" aria-pressed="false">Night shift</button>
+            <button type="button" data-reel="clean" aria-pressed="false">Clean room</button>
+          </div>
+          <div class="row">
+            <button type="button" class="btn btn-primary btn-sm" id="replay"><span data-icon="play"></span>Play again</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="mpause" aria-pressed="false"><span data-icon="pause"></span>Pause</button>
+          </div>
+          <p class="hint">Move the pointer or a finger across the picture: the layers shift with depth and the sparks follow. Tap or click for a burst.</p>
+        </section>
+        <section>
+          <h2>Renderer</h2>
+          <p class="hint" id="backend">Starts when you open this studio.</p>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="assets/kit/icons.js"></script>
+  <script src="assets/js/theme.js"></script>
+  <script src="assets/vendor/three/three.iife.min.js"></script>
+  <script src="assets/vendor/gsap/gsap.min.js"></script>
+  <script src="assets/js/plant/shaders.js"></script>
+  <script src="assets/js/vfx/look.js"></script>
+  <script src="assets/js/vfx/perf.js"></script>
+  <script src="assets/js/vfx/presets.js"></script>
+  <script src="assets/js/vfx/materials.js"></script>
+  <script src="assets/js/showroom/product.js"></script>
+  <script src="assets/js/showroom/motion.js"></script>
+  <script src="assets/js/i18n/i18n.js"></script>
+  <script src="assets/js/i18n/ar-common.js"></script>
+  <script src="assets/js/i18n/ar-showroom.js"></script>
+</body>
+</html>
