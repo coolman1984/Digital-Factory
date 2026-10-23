@@ -81,6 +81,7 @@ body.pl { margin: 0; background: var(--bg); color: var(--text); font-size: 15px;
 .pl-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--text-2); padding: 6px 10px; border-radius: 9px; background: color-mix(in srgb, var(--bg) 80%, transparent); }
 .pl-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 0; background: var(--border-strong); }
 .pl-legend .ok { background: var(--success); } .pl-legend .warn { background: var(--warning); } .pl-legend .bad { background: var(--danger); } .pl-legend .maint { background: var(--indigo); } .pl-legend .info { background: var(--brand-2); } .pl-legend .person { background: #46546A; }
+.pl-legend .prob { border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 2px var(--danger); } .pl-legend .cause { width: 18px; height: 3px; border-radius: 2px; vertical-align: 2px; background: repeating-linear-gradient(90deg, var(--danger) 0 4px, transparent 4px 7px); } .pl-legend .fix { width: 18px; height: 3px; border-radius: 2px; vertical-align: 2px; background: repeating-linear-gradient(90deg, var(--success) 0 4px, transparent 4px 7px); }
 .pl-legend .ramp i { width: 70px; height: 8px; background: linear-gradient(90deg, var(--surface-3), var(--brand)); }
 [data-theme="dark"] .pl-legend .ramp i { background: linear-gradient(90deg, var(--surface-3), var(--brand-2)); }
 .pl-drill { position: absolute; right: 14px; top: 14px; z-index: 5; display: flex; gap: 8px; align-items: flex-start; }

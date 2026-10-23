@@ -78,5 +78,50 @@ void main() {
     });
   }
 
-  window.DFShaders = { LIB, floor, finishPass };
+
+  // hazard paint: yellow and black bands at 45° in world space, box-filtered so they stay clean in the distance
+  function hazard(mat) {
+    mat.onBeforeCompile = sh => {
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vDfW;').replace('#include <fog_vertex>', '#include <fog_vertex>\nvDfW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vDfW;')
+        .replace('#include <map_fragment>', `#include <map_fragment>
+  float dfU = (vDfW.x + vDfW.z) / 0.84;
+  float dfW = fwidth(dfU);
+  // box-filtered square wave: the share of the pixel that falls in a yellow band
+  float dfA = dfU + 0.5 * dfW, dfB = dfU - 0.5 * dfW;
+  float dfY = (floor(dfA) * 0.5 + max(fract(dfA) - 0.5, 0.0) - floor(dfB) * 0.5 - max(fract(dfB) - 0.5, 0.0)) / max(dfW, 1e-4);
+  diffuseColor.rgb *= mix(vec3(0.95, 0.68, 0.02), vec3(0.03, 0.03, 0.035), clamp(dfY, 0.0, 1.0));`);
+    };
+    mat.customProgramCacheKey = () => 'df-hazard'; mat.needsUpdate = true; return mat;
+  }
+
+  // insulated sandwich-panel cladding: trapezoidal ribs every 25 cm (normal-perturbed, faded before they alias),
+  // horizontal panel joints every 1.2 m, a slight tint per panel, and a dark clerestory band of glazing
+  function cladding(mat) {
+    mat.onBeforeCompile = sh => {
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vDfW;').replace('#include <fog_vertex>', '#include <fog_vertex>\nvDfW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vDfW;' + LIB)
+        .replace('#include <map_fragment>', `#include <map_fragment>
+  float dfU = (vDfW.x + vDfW.z) / 0.25, dfFw = fwidth(dfU);
+  float dfS = fract(dfU), dfFade = 1.0 - smoothstep(0.25, 0.6, dfFw);
+  float dfJ = 1.0 - smoothstep(0.0, max(fwidth(vDfW.y) * 1.5, 0.01), abs(fract(vDfW.y / 1.2 + 0.5) - 0.5) * 1.2);
+  vec2 dfCell = floor(vec2((vDfW.x + vDfW.z) / 1.1, vDfW.y / 1.2));
+  float dfTint = dfHash22(dfCell + 31.0).x;
+  float dfWin = step(8.2, vDfW.y) * step(vDfW.y, 9.6);
+  diffuseColor.rgb *= (0.96 + 0.06 * dfTint) * (1.0 - 0.25 * dfJ * dfFade);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.06, 0.09, 0.13), dfWin);`)
+        .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+  {
+    float dfSl = (dfS < 0.12 ? 1.0 : dfS < 0.24 ? -1.0 : 0.0) * dfFade * (1.0 - dfWin);
+    vec3 dfUp = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
+    vec3 dfT = normalize(cross(dfUp, normal));
+    normal = normalize(normal + dfT * dfSl * 0.55);
+  }`)
+        .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+  roughnessFactor = mix(roughnessFactor, 0.08, dfWin);`);
+    };
+    mat.customProgramCacheKey = () => 'df-cladding'; mat.needsUpdate = true; return mat;
+  }
+
+  window.DFShaders = { LIB, floor, finishPass, hazard, cladding };
 })();

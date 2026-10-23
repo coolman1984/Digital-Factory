@@ -645,7 +645,7 @@
     if (v === 'overview') V.view('overview'); else { const z = P.layout.ZONES.find(x => x.id === v); V.view(z.view); }
   }));
   const LEGEND = {
-    status: '<span><i class="ok"></i>Running</span><span><i class="warn"></i>Slow, short stop or starved</span><span><i class="bad"></i>Stopped</span><span><i class="maint"></i>Planned work</span>',
+    status: '<span><i class="ok"></i>Running</span><span><i class="warn"></i>Slow, short stop or starved</span><span><i class="bad"></i>Stopped</span><span><i class="maint"></i>Planned work</span><span><i class="prob"></i>Problem</span><span><i class="cause"></i>Cause → effect</span><span><i class="fix"></i>Fix on its way</span>',
     flow: '<span><i class="info"></i>Moving material: conveyors, milk runs, AGVs and forklifts</span>',
     data: '<span><i class="info"></i>Messages between the floor, GMES, SAP and the offices</span>',
     energy: '<span class="ramp"><i></i>Machine power, low to high</span>',

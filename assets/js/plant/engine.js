@@ -1319,15 +1319,15 @@
         const eta = b.feed === 'agv' ? (b.mission ? (b.mission.veh && !b.mission.veh.fault ? Math.max(0, b.mission.eta - P.t) : 300) : Infinity) : nextLap(b);
         const src = P.bufs[b.src];
         if (rw < 600 && level(src) < (b.batch || 1)) {
-          rec('src:' + b.id, { agent: 'Logistics', level: 'crit', ref: src.id, title: `${s.name} on ${L.name} runs out of ${b.code} in ${mins(rw)}: the ${src.store === 'PBA' ? 'PBA supermarket' : src.store === 'INJ' ? 'injection supermarket' : src.store === 'PRS' ? 'chassis supermarket' : src.store === 'IMP' ? 'import warehouse' : 'local supermarket'} is empty too`,
+          rec('src:' + b.id, { agent: 'Logistics', level: 'crit', ref: src.id, links: [[src.id, s.id]], title: `${s.name} on ${L.name} runs out of ${b.code} in ${mins(rw)}: the ${src.store === 'PBA' ? 'PBA supermarket' : src.store === 'INJ' ? 'injection supermarket' : src.store === 'PRS' ? 'chassis supermarket' : src.store === 'IMP' ? 'import warehouse' : 'local supermarket'} is empty too`,
             body: `${level(src).toLocaleString('en-US')} ${b.code} left at the source. The feeding line or the supplier is the real problem; see What happens next.`, actions: [{ id: 'focus:' + src.id, label: 'Show the source' }] });
         } else rec('src:' + b.id, null);
         if (rw < 600 && level(src) < (b.batch || 1)) rec('rw:' + b.id, null);
         else if (b.feed === 'agv' && b.mission && rw < 420 && rw < eta + 60) {
-          rec('rw:' + b.id, { agent: 'Logistics', level: rw < 180 ? 'crit' : 'warn', ref: s.id, title: `${s.name} on ${L.name} runs out of ${b.code} in ${mins(rw)}`, body: `The next AGV arrives in about ${mins(eta)}. Pre-empt the least urgent AGV mission to deliver now.`, actions: [{ id: 'expedite:' + b.id, label: 'Deliver now' }, { id: 'focus:' + s.id, label: 'Show station' }] });
+          rec('rw:' + b.id, { agent: 'Logistics', level: rw < 180 ? 'crit' : 'warn', ref: s.id, links: [[b.src, s.id]], title: `${s.name} on ${L.name} runs out of ${b.code} in ${mins(rw)}`, body: `The next AGV arrives in about ${mins(eta)}. Pre-empt the least urgent AGV mission to deliver now.`, actions: [{ id: 'expedite:' + b.id, label: 'Deliver now' }, { id: 'focus:' + s.id, label: 'Show station' }] });
         } else if (b.feed !== 'agv' && rw < 360 && rw < eta && level(src) >= b.batch * 0.5) {
           const t = P.tuggers.find(t => TROUTE[t.route].serves(b.id));
-          rec('rw:' + b.id, { agent: 'Logistics', level: rw < 150 ? 'crit' : 'warn', ref: s.id, title: `${s.name} on ${L.name} runs out of ${b.code} in ${mins(rw)}`, body: `Milk run ${t.route} (${t.routeName}) reaches it in about ${mins(eta)}. Send a hot run with an AGV straight from ${src.label}.`, actions: [{ id: 'hot:' + b.id, label: 'Send a hot run' }, { id: 'focus:' + s.id, label: 'Show station' }] });
+          rec('rw:' + b.id, { agent: 'Logistics', level: rw < 150 ? 'crit' : 'warn', ref: s.id, links: [[b.src, s.id]], title: `${s.name} on ${L.name} runs out of ${b.code} in ${mins(rw)}`, body: `Milk run ${t.route} (${t.routeName}) reaches it in about ${mins(eta)}. Send a hot run with an AGV straight from ${src.label}.`, actions: [{ id: 'hot:' + b.id, label: 'Send a hot run' }, { id: 'focus:' + s.id, label: 'Show station' }] });
         } else rec('rw:' + b.id, null);
       }
       // 2. machine wear
@@ -1355,7 +1355,9 @@
         const short = (feeders.length ? running < feeders.length : true) && rw < 2700;
         // a spare SMD line must not be the only one building its own board, or the switch just moves the shortage
         const spare = Object.values(P.lines).filter(L => L.kind === 'smd' && L.model !== m && L.state === 'run' && Object.values(P.lines).filter(x => x.kind === 'smd' && x.model === L.model).length > 1).map(L => ({ L, cover: (STORE.PBA['PBA-' + SIZE(L.model)].items.length) / Math.max(1e-6, Object.values(P.lines).filter(x => x.kind === 'main' && x.model === L.model).length * 3600 / MODELS[L.model].takt / 3600) })).sort((a, b) => b.cover - a.cover)[0];
-        if (short && demand) rec('pba:' + m, { agent: 'Planning', level: rw < 900 ? 'crit' : 'warn', ref: lane.id, title: `PBA ${SIZE(m)} runs out for ${users.map(L => L.name).join(' and ')} in ${mins(rw)}`,
+        if (short && demand) rec('pba:' + m, { agent: 'Planning', level: rw < 900 ? 'crit' : 'warn', ref: lane.id,
+          // what the 3D view draws as cause and effect: the stopped SMD machine → the PBA lane → each main line it feeds
+          links: feeders.filter(L => L.state === 'down' || L.state === 'tripped').map(L => [(L.stations.find(st => st.state === 'down') || L.stations[0]).id, lane.id]).concat(users.map(L => [lane.id, L.ls.PBA.station])), title: `PBA ${SIZE(m)} runs out for ${users.map(L => L.name).join(' and ')} in ${mins(rw)}`,
           body: `${feeders.filter(L => L.state === 'down').map(L => L.name).join(', ') || 'An SMD line'} is not feeding. ${lane.items.length} boards in the supermarket and ${lineSide} at the lines for ${Math.round(demand)} an hour. ${spare ? `Switch ${spare.L.name} from PBA ${SIZE(spare.L.model)} (stock covers ${mins(spare.cover)}) to PBA ${SIZE(m)}: a 10-minute changeover, then about 340 boards an hour.` : ''}`,
           actions: spare ? [{ id: `switchSmd:${spare.L.id}:${m}`, label: `Switch ${spare.L.name} to PBA ${SIZE(m)}` }, { id: 'focus:' + lane.id, label: 'Show supermarket' }] : [{ id: 'focus:' + lane.id, label: 'Show supermarket' }] });
         else rec('pba:' + m, null);
@@ -1386,7 +1388,7 @@
       } else { rec('sw', null); alarm('QA.SW', false); }
       if (S.absent && !S.absent.fixed) {
         const L = P.lines.ML3;
-        rec('absent', { agent: 'Planning', level: 'warn', ref: 'ML3-PBAandSMPS', title: 'Main line 3 is short of 8 operators',
+        rec('absent', { agent: 'Planning', level: 'warn', ref: 'ML3-PBAandSMPS', links: [], title: 'Main line 3 is short of 8 operators',
           body: `Manual stations on line 3 run at about ${Math.round(100 * L.stations.filter(s => s.manual).reduce((a, s) => a + s.crew.filter(p => p.present).length, 0) / L.stations.filter(s => s.manual).reduce((a, s) => a + s.staff, 0))}% staffing; the line loses about ${Math.round(3600 / MODELS[L.model].takt * 0.35)} TVs an hour. Main line 6 runs below plan this morning: move 6 certified operators from line 6 and approve 2 hours overtime for 2 more.`,
           actions: [{ id: 'moveOps', label: 'Move 6 operators and approve overtime' }, { id: 'focus:ML3-PBAandSMPS', label: 'Show line 3' }] });
       } else rec('absent', null);

@@ -166,6 +166,13 @@
     function floorWord(text) {
       return cv(1024, 160, (g, w, h) => { g.clearRect(0, 0, w, h); g.fillStyle = 'rgba(255,255,255,0.9)'; g.font = `800 92px ${FONT}`; g.textBaseline = 'middle'; say(g, caps(text), 10, h / 2, w); });
     }
+    // the walkway pictogram (ISO 7001 style): a white walking figure, read from the walking direction
+    const walkTex = cv(128, 128, (g, w, h) => {
+      g.clearRect(0, 0, w, h); g.fillStyle = '#ffffff'; g.strokeStyle = '#ffffff'; g.lineCap = 'round'; g.lineWidth = 11;
+      g.beginPath(); g.arc(70, 20, 11, 0, 7); g.fill();
+      const ln = (a, b, c, d) => { g.beginPath(); g.moveTo(a, b); g.lineTo(c, d); g.stroke(); };
+      ln(66, 38, 58, 74); ln(58, 74, 40, 112); ln(58, 74, 78, 92); ln(78, 92, 80, 116); ln(64, 46, 42, 62); ln(66, 46, 88, 60);
+    });
     const signSub = Ln => (Ln.kind === 'press' ? `Chassis ${Ln.size}"` : Ln.kind === 'smd' && Ln.model ? 'PBA ' + Ln.model.slice(1) : Ln.model && E.MODELS[Ln.model] ? E.MODELS[Ln.model].name : '');
 
     /* ---------------- materials (rethemed in place) ---------------- */
@@ -202,8 +209,18 @@
       pkt: new T.MeshBasicMaterial({ color: C.pkt, toneMapped: false }), net: new T.LineBasicMaterial({ color: C.net, transparent: true, opacity: 0.4 }),
       hit: new T.MeshBasicMaterial({ visible: false }),
       slab: DFShaders.floor(phys(C.floor, { roughness: 0.42, clearcoat: 0.3, clearcoatRoughness: 0.32 }), { joint: 3 }), safety: phys(0xF2B705, { roughness: 0.4, clearcoat: 0.5 }),
-      hatW: std(0xffffff, { roughness: 0.32 }), vest: std(0xffffff, { roughness: 0.6 }), leaf: std(0x3E7D4F, { roughness: 0.8 })
+      hatW: std(0xffffff, { roughness: 0.32 }), vest: phys(0xffffff, { roughness: 0.6, sheen: 0.6, sheenColor: 0xffffff, sheenRoughness: 0.4 }), leaf: std(0x3E7D4F, { roughness: 0.8 }),
+      // floor paint for the traffic system (ISO 3864 / OSHA practice): yellow vehicle lanes and junctions, green walkways,
+      // white crossings and symbols, yellow-black hatching on hazard zones; a little gloss, like paint on epoxy
+      markY: phys(0xF2B705, { roughness: 0.45, clearcoat: 0.3 }), markG: phys(0x2E9E5B, { roughness: 0.5, clearcoat: 0.3 }), markW: phys(0xF4F5F2, { roughness: 0.45, clearcoat: 0.3 }), markHaz: DFShaders.hazard(phys(0xffffff, { roughness: 0.48, clearcoat: 0.3 })),
+      walkSym: new T.MeshStandardMaterial({ map: walkTex, transparent: true, alphaTest: 0.3, roughness: 0.5, depthWrite: false }),
+      // insulated sandwich-panel cladding, full height, with a clerestory band; the walls toward the camera are cut away
+      clad: DFShaders.cladding(std(C.wall, { roughness: 0.55, metalness: 0.35, side: T.DoubleSide }))
     };
+    // people: uniforms are woven fabric (sheen), skin uses a wrapped diffuse so the light bleeds past the terminator
+    M.person = DFMaterials.make(T, 'fabric'); M.person.color.set(0xffffff); M.person.sheenColor.set(0xbfc4cc); M.person.roughness = 0.85;
+    M.skin = DFMaterials.make(T, 'skin'); M.skin.color.set(0xffffff);
+    M.alu = new T.MeshPhysicalMaterial({ color: C.alu, roughness: 0.28, metalness: 0.9, anisotropy: 0.6 });
     const XRAY = ['paint', 'paint2', 'frame', 'wall', 'glass'];
 
     /* ---------------- two levels ----------------
@@ -256,7 +273,7 @@
         for (const set of [idx, non]) for (let i = 0; i < set.length; i += 3000) {
           const g = T.mergeGeometries(set.slice(i, i + 3000), false); if (!g) continue;
           const m = new T.Mesh(g, M[key]);
-          m.castShadow = !['glass', 'zone', 'floorLine', 'screen', 'white', 'hmi', 'sop', 'fixture', 'lights', 'carpet', 'roof'].includes(key); m.receiveShadow = !['glass', 'fixture'].includes(key);
+          m.castShadow = !['glass', 'zone', 'floorLine', 'screen', 'white', 'hmi', 'sop', 'fixture', 'lights', 'carpet', 'roof', 'markY', 'markG', 'markW', 'markHaz'].includes(key); m.receiveShadow = !['glass', 'fixture'].includes(key);
           m.raycast = () => {};
           if (key === 'glass' || key === 'zone') m.renderOrder = 2;
           world.add(m);
@@ -303,6 +320,7 @@
     const unitBoxB = new T.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
 
     /* ---------------- the building: floor, markings, walls, steel, roof trusses, lights ---------------- */
+    const CLAD = [], tmpV = new T.Vector3();
     const floor = new T.Mesh(new T.PlaneGeometry(L.W + 140, L.D + 120), M.floor);
     floor.rotation.x = -Math.PI / 2; floor.position.set(L.W / 2, -0.01, L.D / 2); floor.receiveShadow = true; world.add(floor);
     for (const z of L.ZONES) {
@@ -313,13 +331,45 @@
       word.userData.zoneName = z.name;
       word.rotation.x = -Math.PI / 2; word.position.set(z.x0 + 2 + Math.min(w - 4, 30) / 2, 0.02, z.z1 - 2.2); word.raycast = () => {}; word.userData.floorWord = true; world.add(word);
     }
-    // walkway edges: white lines either side of every aisle
+    // the traffic system on the floor: every aisle is a yellow-edged vehicle lane with a green walkway along one side
+    // (not in the forklift aisles between the racks), white walking symbols every 14 m, a yellow box junction where aisles
+    // cross with zebra crossings on each arm, and yellow-black hatching on the dock aprons where trucks and forklifts work
+    const walkI = inst(new T.PlaneGeometry(0.62, 0.62).rotateX(-Math.PI / 2), M.walkSym, 400, { order: 2 });
+    const JUNC = [];
+    const strip2 = (key, x0, z0, x1, z1, y = 0.012) => { const w = Math.abs(x1 - x0), d = Math.abs(z1 - z0); if (w < 0.01 || d < 0.01) return; const g = new T.PlaneGeometry(w, d); g.rotateX(-Math.PI / 2); g.translate((x0 + x1) / 2, y, (z0 + z1) / 2); push(key, g); };
     for (const A of L.AISLES) {
-      const h = A.a[1] === A.b[1];
-      const len = h ? Math.abs(A.b[0] - A.a[0]) + 2.6 : Math.abs(A.b[1] - A.a[1]) + 2.6;
-      const cx = (A.a[0] + A.b[0]) / 2, cz = (A.a[1] + A.b[1]) / 2;
-      for (const s of [-1.25, 1.25]) { const g = new T.PlaneGeometry(h ? len : 0.1, h ? 0.1 : len); g.rotateX(-Math.PI / 2); g.translate(cx + (h ? 0 : s), 0.012, cz + (h ? s : 0)); push('floorLine', g); }
+      const h = A.a[1] === A.b[1], lo = Math.min(h ? A.a[0] : A.a[1], h ? A.b[0] : A.b[1]) - 1.3, hi = Math.max(h ? A.a[0] : A.a[1], h ? A.b[0] : A.b[1]) + 1.3, c = h ? A.a[1] : A.a[0];
+      const along = (key, u0, u1, v0, v1, y) => h ? strip2(key, u0, c + v0, u1, c + v1, y) : strip2(key, c + v0, u0, c + v1, u1, y);
+      // the lane edges, solid yellow, 10 cm
+      along('markY', lo, hi, -1.3, -1.2); along('markY', lo, hi, 1.2, 1.3);
+      if (A.rack === undefined) {
+        // the walkway: green between the lane edge and a white line, broken where it meets a junction
+        const gaps = [];
+        for (const B of L.AISLES) {
+          const hb = B.a[1] === B.b[1]; if (hb === h || B.rack !== undefined) continue;
+          const cb = hb ? B.a[1] : B.a[0], b0 = Math.min(hb ? B.a[0] : B.a[1], hb ? B.b[0] : B.b[1]), b1 = Math.max(hb ? B.a[0] : B.a[1], hb ? B.b[0] : B.b[1]);
+          if (cb > lo + 1 && cb < hi - 1 && c >= b0 - 0.5 && c <= b1 + 0.5) { gaps.push([cb - 1.6, cb + 1.6]); if (h) JUNC.push([cb, c]); }
+        }
+        let u = lo + 0.2; for (const [g0, g1] of gaps.concat([[hi - 0.2, hi]]).sort((p2, q2) => p2[0] - q2[0])) { if (g0 > u) { along('markG', u, g0, 0.42, 1.2, 0.011); along('markW', u, g0, 0.36, 0.42, 0.013); for (let k = u + 5; k < g0 - 2; k += 14) { if (h) put(walkI, k, 0.016, c + 0.81, 1, 1, 1, A.b[0] > A.a[0] ? 0 : Math.PI); else put(walkI, c + 0.81, 0.016, k, 1, 1, 1, -Math.PI / 2); } } u = Math.max(u, g1); }
+      }
     }
+    // box junctions and zebra crossings (deduplicated: the same crossing can come from two aisle pairs)
+    const seenJ = new Set();
+    for (const [x, z] of JUNC) {
+      const k = Math.round(x) + ':' + Math.round(z); if (seenJ.has(k)) continue; seenJ.add(k);
+      // the box: an outline and two diagonals, so no one stops on it
+      strip2('markY', x - 1.3, z - 1.3, x + 1.3, z - 1.2); strip2('markY', x - 1.3, z + 1.2, x + 1.3, z + 1.3); strip2('markY', x - 1.3, z - 1.3, x - 1.2, z + 1.3); strip2('markY', x + 1.2, z - 1.3, x + 1.3, z + 1.3);
+      for (const r of [Math.PI / 4, -Math.PI / 4]) { const g = new T.PlaneGeometry(3.4, 0.09); g.rotateX(-Math.PI / 2); g.rotateY(r); g.translate(x, 0.013, z); push('markY', g); }
+      // zebra crossings on the four arms, where the walkways cross the lanes
+      for (const [dx, dz] of [[2.2, 0], [-2.2, 0], [0, 2.2], [0, -2.2]]) for (let i = -2; i <= 2; i++) {
+        if (dx) strip2('markW', x + dx - 0.6, z + i * 0.5 - 0.17, x + dx + 0.6, z + i * 0.5 + 0.17, 0.013);
+        else strip2('markW', x + i * 0.5 - 0.17, z + dz - 0.6, x + i * 0.5 + 0.17, z + dz + 0.6, 0.013);
+      }
+    }
+    // hazard hatching: yellow and black bands at 45° on the dock aprons and in front of the inbound doors (drawn by the paint shader)
+    const hatch = (x0, z0, x1, z1) => strip2('markHaz', x0, z0, x1, z1, 0.01);
+    for (const d of P.docks) hatch(L.W - 5.5, d.z - 2.1, L.W - 0.3, d.z + 2.1);
+    for (const d of L.INDOCK) if (d.side === 'w') hatch(0.3, d.z - 2.3, 4.5, d.z + 2.3); else hatch(d.x - 2.3, 0.3, d.x + 2.3, 4.5);
     {
       const H = 1.4, t = 0.3;
       const run = (a, b, gaps, fn) => { let s = a; for (const [g0, g1] of gaps.concat([[b, b]]).sort((p, q2) => p[0] - q2[0])) { if (g0 > s) fn(s, g0); s = Math.max(s, g1); } };
@@ -332,6 +382,17 @@
       run(0, L.D, docksE, (a, b) => sbox('wall', t, H, b - a, L.W, 0, (a + b) / 2));
       for (const d of P.docks) { sbox('steel', 1.6, 1.15, 3.8, L.W + 0.9, 0, d.z); sbox('rubber', 0.3, 3.6, 0.4, L.W + 0.2, 0, d.z - 2.0); sbox('rubber', 0.3, 3.6, 0.4, L.W + 0.2, 0, d.z + 2.0); sbox('rubber', 0.3, 0.5, 4.4, L.W + 0.2, 3.3, d.z); }
       for (const d of L.INDOCK) if (d.side === 'w') sbox('steel', 1.4, 1.1, 3.6, -0.8, 0, d.z); else sbox('steel', 3.6, 1.1, 1.4, d.x, 0, -0.8);
+      // the walls above the dado: insulated cladding to the eaves, door heads at 4.6 m; each side is one mesh so the sides
+      // that face the camera can be cut away (the doll's-house view), and all four stand when you walk the floor
+      const cladSide = (alongX, at, len, gaps, n) => {
+        const parts = [], seg = (u0, u1, y0, y1) => { const g = new T.PlaneGeometry(u1 - u0, y1 - y0); if (alongX) g.translate((u0 + u1) / 2, (y0 + y1) / 2, at); else { g.rotateY(Math.PI / 2); g.translate(at, (y0 + y1) / 2, (u0 + u1) / 2); } parts.push(g); };
+        run(0, len, gaps, (a, b) => seg(a, b, H, 4.6)); seg(0, len, 4.6, ROOF + 0.6);
+        const m = new T.Mesh(T.mergeGeometries(parts), M.clad); m.receiveShadow = true; m.raycast = () => {};
+        m.userData.n = new T.Vector3(...n); m.userData.p = alongX ? new T.Vector3(len / 2, 5, at) : new T.Vector3(at, 5, len / 2);
+        world.add(m); CLAD.push(m);
+      };
+      cladSide(true, 0, L.W, doorsN, [0, 0, -1]); cladSide(true, L.D, L.W, [], [0, 0, 1]);
+      cladSide(false, 0, L.D, doorsW, [-1, 0, 0]); cladSide(false, L.W, L.D, docksE, [1, 0, 0]);
     }
     // steel columns on a 24 × 21 m grid, roof trusses and high-bay lights (the roof itself is cut away)
     const COLX = [], COLZ = [];
@@ -1015,7 +1076,10 @@
 
     /* ---------------- people (instanced) ---------------- */
     const bodyI = inst(new T.CapsuleGeometry(0.19, 0.42, 4, 12), M.person, 900, { color: true, pick: true, shadow: true });
-    const headI = inst(new T.SphereGeometry(0.115, 14, 10), M.skin, 900, { shadow: true });
+    const headI = inst(new T.SphereGeometry(0.115, 18, 12), M.skin, 900, { color: true, shadow: true });
+    // a range of skin tones, fixed per person (sRGB, light to deep)
+    const TONES = [0xF2CDB0, 0xE3B38F, 0xCFA07C, 0xB98463, 0x9A6A4C, 0x7A5038, 0x5C3B28];
+    const toneOf = k => { let h = 2166136261; const t = String(k); for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619); return TONES[(h >>> 0) % TONES.length]; };
     const legI = inst(new T.CapsuleGeometry(0.075, 0.66, 3, 8).translate(0, -0.4, 0), M.dark, 1800, { shadow: true });   // pivots at the hip
     const armI = inst(new T.CapsuleGeometry(0.058, 0.46, 3, 8).translate(0, -0.29, 0), M.person, 1800, { color: true, shadow: true });   // pivots at the shoulder
     const hatI = inst(new T.SphereGeometry(0.14, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), M.hatW, 900, { color: true, shadow: true });
@@ -1030,7 +1094,7 @@
       put(bodyI, x, y + hip + 0.34, z, 1, 1, 1, -h, 0, 0, ref, tc);
       if (VEST[role]) put(vestI, x, y + hip + 0.32, z, 1, 1, 1, -h, 0, 0, undefined, VEST[role]);
       for (const sd of [-1, 1]) put(armI, x + px * sd * 0.25, y + hip + 0.6, z + pz * sd * 0.25, 1, 1, 1, -h, sd * 0.08, seated ? 0.9 : -sd * swing * 0.45, undefined, tc);
-      put(headI, x, y + hip + 0.85, z);
+      put(headI, x, y + hip + 0.85, z, 1, 1, 1, 0, 0, 0, undefined, toneOf(ref && ref.startsWith('person:') ? ref : (ref || role) + x.toFixed(1) + z.toFixed(1)));
       put(hatI, x, y + hip + 0.88, z, 1, 1, 1, -h, 0, 0, undefined, HAT[role] || 0xF2B705);
     }
     const OFFICE = [];
@@ -1113,7 +1177,7 @@
       hemi.color.set(C.hemi[0]); hemi.groundColor.set(C.hemi[1]); hemi.intensity = C.hemi[2]; sun.intensity = C.sun; amb.intensity = C.amb;
       renderer.toneMappingExposure = C.exp;
       for (const k of ['floor', 'zone', 'paint', 'paint2', 'frame', 'dark', 'steel', 'alu', 'rubber', 'rack', 'beam', 'glass', 'pcb', 'tv', 'carton', 'pallet', 'tray', 'agv', 'stripe', 'truck', 'cab', 'mag', 'plastic', 'desk', 'carpet', 'wall', 'skin']) M[k].color.set(C[k]);
-      M.floorLine.color.set(C.floorLine); M.slab.color.set(C.floor); M.fixture.emissiveIntensity = C.fixture; M.lights.emissiveIntensity = C.fixture; M.roof.color.set(C.beam);
+      M.floorLine.color.set(C.floorLine); M.slab.color.set(C.floor); M.clad.color.set(C.wall); M.fixture.emissiveIntensity = C.fixture; M.lights.emissiveIntensity = C.fixture; M.roof.color.set(C.beam);
       M.sel.color.set(S.info); M.route.color.set(S.info); chev.material.color.set(S.info); M.pkt.color.set(C.pkt); M.net.color.set(C.net);
       world.traverse(o => { if (o.userData && o.userData.floorWord) o.material.opacity = theme === 'dark' ? 0.22 : 0.55; });
       if (bloom) bloom.strength = C.bloom;
@@ -1886,6 +1950,8 @@
       // the roof steel fades out as the camera rises above it, so the plant stays readable from the top
       const ro = Math.max(0, Math.min(1, (60 - camera.position.y) / 30));
       M.roof.opacity = ro; M.lights.opacity = ro; M.roof.visible = M.lights.visible = ro > 0.02; M.roof.depthWrite = ro > 0.98;
+      // the doll's house: a wall whose outside faces the camera is cut away; walking the floor, all four stand
+      for (const w of CLAD) w.visible = walk.on || w.userData.n.dot(tmpV.copy(camera.position).sub(w.userData.p)) < 0;
       renderer.setScissorTest(false); renderer.setViewport(0, 0, Wd, Ht);
       if (renderer.shadowMap.enabled && frames % 3 === 0) renderer.shadowMap.needsUpdate = true;
       stepLevels();
@@ -1932,6 +1998,7 @@
       setXray, get xray() { return xray; },
       setQuality, get quality() { return quality; }, get governor() { return gov; },
       setLook, get look() { return look; },
+      FL, lvAt: (x, z) => lvStatic(x, z), get overlayMode() { return overlay; },
       unitPos, frames: () => frames
     };
   }

@@ -253,3 +253,58 @@ The reusable skill is `.claude/skills/visual-factory/SKILL.md`.
 - The pipeline accepts them when they come.
 
 **Plant:** the plant's toon, anime and outlined looks exist as `Plant.V.setLook(id)`. Only the showroom exposes them in the interface.
+
+## 10. Applied to the whole plant (Plant EG-01)
+
+The look system and the material standards now run across the live plant:
+
+**The floor's traffic system:**
+- yellow-edged vehicle lanes on every aisle;
+- green walkways with walking symbols every 14 m (none in the forklift-only rack aisles);
+- box junctions with zebra crossings on every arm;
+- yellow-black hazard hatching on the dock and door aprons.
+
+The hatching is a box-filtered world-space shader (`DFShaders.hazard`). Everything else is merged static geometry: one draw call per paint colour, plus one for the instanced symbols.
+
+**The building:**
+- Ribbed insulated cladding runs to the eaves, with a clerestory band (`DFShaders.cladding`: normal-perturbed ribs that fade before they alias, panel joints, a per-panel tint).
+- Door heads sit at 4.6 m.
+- Each side is one mesh. A side whose outside faces the camera is cut away (doll's-house view), and all four stand while walking.
+
+**People and materials:**
+- Fabric uniforms with sheen; skin with wrapped diffuse, in seven tones fixed per person.
+- Brushed (anisotropic) aluminium.
+
+**Problems and fixes** (`assets/js/plant/problems.js`). It reads `P.recs` and never writes to the plant.
+
+| Signal | How it shows |
+|---|---|
+| Problem | A pulsing ring at the machine or store; red when critical, amber for a warning. A column of light marks it from the overview and steps back while walking. |
+| Cause → effect | A dashed arc from the cause to where it lands, from the recommendation's new display-only `links` field. Examples: an empty source to the station that will starve; a stopped SMD machine to the PBA lane to each main line. |
+| Fix on its way | A green route for technicians walking to a stopped machine and for AGVs on a hot or expedited run. A green ring turns around a machine under repair. |
+| Solved | A green ring opens once where a problem cleared. |
+
+Additive light on the dark theme, painted marks on the light theme. Shown with the Status and Flow overlays.
+
+**Cost:** a few draw calls for the rings and columns, one per arc or route (usually under 10), and the walls (4 meshes).
+
+The measured before and after for the plant is in `docs/bench/world-before.json` and `docs/bench/world-after.json`.
+
+Measured on the same machine, at high quality, at the same poses (SwiftShader):
+
+| Pose | Draw calls | Triangles | Programs |
+|---|---|---|---|
+| desktop · overview | 468 → 485 (+4 %) | 1.27 M → 1.33 M | 40 → 48 |
+| desktop · mid | 422 → 424 | 2.09 M → 1.77 M | 46 → 54 |
+| desktop · close | 256 → 302 | 2.07 M → 2.04 M | 46 → 54 |
+| mobile · overview, high forced | 354 → 401 (+13 %) | 0.84 M → 0.97 M | 57 → 73 |
+
+Phones start at the low level, which has no GTAO and no shadows, so the forced-high mobile row is the worst case.
+
+The floor paint does not cast shadows. The 8 new programs are the new materials: fabric, skin, anisotropic aluminium, cladding, hazard paint, markings, the problem column and the arcs.
+
+**Comparison images:**
+- `docs/bench/world-overview.jpg`, `world-mid.jpg`, `world-close.jpg`: before and after, side by side.
+- `world-traffic.jpg`, `world-dock.jpg`: the floor.
+- `world-problems-dark.jpg`, `world-problems-fix.jpg`: problems, arcs and repairs.
+
