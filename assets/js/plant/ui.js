@@ -715,7 +715,7 @@
 
   /* ---------------- walk the floor, fly-through, cameras, x-ray, the plant map ---------------- */
   const navBtns = $$('.pl-nav3d [data-nav]');
-  const syncNav = () => { if (!V) return; const st = { walk: V.walking, cine: V.cinematic, cctv: V.cctv, xray: V.xray }; navBtns.forEach(b => b.setAttribute('aria-pressed', String(!!st[b.dataset.nav]))); };
+  const syncNav = () => { if (!V) return; const st = { walk: V.walking, cine: V.cinematic, cctv: V.cctv, xray: V.xray, present: window.PlantPresent && PlantPresent.on }; navBtns.forEach(b => b.setAttribute('aria-pressed', String(!!st[b.dataset.nav]))); };
   const coarse = matchMedia('(pointer: coarse)').matches;
   navBtns.forEach(b => b.addEventListener('click', () => {
     if (!V) return;
@@ -724,6 +724,7 @@
     if (n === 'cine') V.setCinematic(!V.cinematic);
     if (n === 'cctv') V.setCctv(!V.cctv);
     if (n === 'xray') V.setXray(!V.xray);
+    if (n === 'present' && window.PlantPresent) { PlantPresent.toggle(); return; }
     syncNav();
   }));
   const walkHint = $('#walkHint'), joy = $('#joy'), hud = $('#hud');

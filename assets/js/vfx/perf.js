@@ -3,7 +3,7 @@
    - governor: adaptive quality on the real signal (the interval between frames, which includes GPU time), not on
      the time spent in JavaScript. It steps down a ladder after 2 s over budget and back up after 10 s well under it,
      waits out the shader-compile stall after each change, and never runs while the tab is hidden or the user chose a
-     level by hand. A ladder lowers pixel ratio before it removes effects.
+     level by hand; levels above o.top (a presentation level) are only ever chosen by hand. A ladder lowers pixel ratio before it removes effects.
    - hud: ?perf=1 shows fps, p50 / p95 frame time, draw calls, triangles, GPU resources, heap, level and backend.
    - reduceMotion(): the user's motion preference, live. */
 (function () {
@@ -26,7 +26,7 @@
       if (g.manual) return;
       if (g.hold > 0) { g.hold -= dt; return; }          // the stall after a change compiles shaders
       if (g.ema > budget * 1.3) { g.over += dt; g.under = 0; if (g.over > 2000) g.set(g.i + 1); }
-      else if (g.ema < budget * 0.75) { g.under += dt; g.over = 0; if (g.under > 10000) g.set(g.i - 1); }
+      else if (g.ema < budget * 0.75) { g.under += dt; g.over = 0; if (g.under > 10000 && g.i - 1 >= (o.top || 0)) g.set(g.i - 1); }
       else { g.over = Math.max(0, g.over - dt); g.under = Math.max(0, g.under - dt); }
     };
     Object.defineProperty(g, 'level', { get: () => o.levels[g.i] });
