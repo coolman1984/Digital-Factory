@@ -111,25 +111,16 @@
       bloom = new T.UnrealBloomPass(new T.Vector2(size.x / 2, size.y / 2), C.bloom, 0.55, 1.45);
       composer.addPass(bloom);
       composer.addPass(new T.OutputPass());
-      // a quiet vignette after tone mapping keeps the eye on the middle of the floor
-      composer.addPass(vig = new T.ShaderPass({
-        uniforms: { tDiffuse: { value: null }, amount: { value: theme === 'dark' ? 0.38 : 0.22 } },
-        vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-        fragmentShader: 'uniform sampler2D tDiffuse; uniform float amount; varying vec2 vUv; void main() { vec4 c = texture2D(tDiffuse, vUv); vec2 d = vUv - 0.5; float v = smoothstep(0.85, 0.25, length(d * vec2(1.0, 0.8))); gl_FragColor = vec4(c.rgb * mix(1.0 - amount, 1.0, v), c.a); }'
-      }));
+      // the finish: a natural (cos⁴) vignette in linear light keeps the eye on the middle of the floor, then a dither
+      // of ±1 LSB removes banding from the floor, the fog and the dark theme (assets/js/plant/shaders.js)
+      composer.addPass(vig = DFShaders.finishPass(T, theme === 'dark' ? 0.75 : 0.45));
+      vig.uniforms.focal.value = 1 / Math.tan(camera.fov * Math.PI / 360); vig.uniforms.aspect.value = size.x / Math.max(1, size.y);
     }
     // adaptive quality: drop to a cheaper pipeline when frames get slow
     let ftAvg = 16, ftN = 0, autoQ = true;
 
     /* ---------------- textures ---------------- */
     const cv = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t; };
-    // polished epoxy floor: soft mottling and saw-cut joints every 6 m
-    const floorTex = cv(512, 512, (g, w, h) => {
-      g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h);
-      for (let i = 0; i < 2600; i++) { const x = Math.random() * w, y = Math.random() * h, r = 2 + Math.random() * 14; g.fillStyle = `rgba(0,0,0,${0.006 + Math.random() * 0.02})`; g.beginPath(); g.arc(x, y, r, 0, 6.3); g.fill(); }
-      g.strokeStyle = 'rgba(0,0,0,0.22)'; g.lineWidth = 2; g.strokeRect(0, 0, w, h);
-    });
-    floorTex.wrapS = floorTex.wrapT = T.RepeatWrapping; floorTex.repeat.set((L.W + 140) / 6, (L.D + 120) / 6); floorTex.colorSpace = T.SRGBColorSpace;
     // words painted in the plant (signs, floor names, screens) follow the page language; Arabic is set right to left
     const tt = t => (window.DFI18N && DFI18N.ar() && DFI18N.t(t)) || t;
     const isAr = t => /[\u0600-\u06FF]/.test(t);
@@ -171,7 +162,8 @@
     // physical materials where a clear coat shows: painted machine housings, screens, vehicles and the epoxy floor
     const phys = (c, o = {}) => new T.MeshPhysicalMaterial(Object.assign({ color: c, roughness: 0.5, metalness: 0 }, o));
     const M = {
-      floor: phys(C.floor, { map: floorTex, roughness: 0.42, metalness: 0.0, clearcoat: 0.32, clearcoatRoughness: 0.32 }),
+      // the epoxy floor and the deck are procedural (shaders.js): mottling, trowel marks, saw-cut joints every 6 m, gloss that varies
+      floor: DFShaders.floor(phys(C.floor, { roughness: 0.42, metalness: 0.0, clearcoat: 0.32, clearcoatRoughness: 0.32 })),
       zone: std(C.zone, { roughness: 0.5, transparent: true, opacity: 0.55, depthWrite: false }),
       floorLine: new T.MeshBasicMaterial({ color: C.floorLine }),
       paint: phys(C.paint, { roughness: 0.36, metalness: 0.05, clearcoat: 0.6, clearcoatRoughness: 0.2 }), paint2: std(C.paint2, { roughness: 0.45 }),
@@ -198,7 +190,7 @@
       route: new T.LineBasicMaterial({ color: S.info, transparent: true, opacity: 0.9 }),
       pkt: new T.MeshBasicMaterial({ color: C.pkt, toneMapped: false }), net: new T.LineBasicMaterial({ color: C.net, transparent: true, opacity: 0.4 }),
       hit: new T.MeshBasicMaterial({ visible: false }),
-      slab: phys(C.floor, { roughness: 0.42, clearcoat: 0.3, clearcoatRoughness: 0.32 }), safety: phys(0xF2B705, { roughness: 0.4, clearcoat: 0.5 }),
+      slab: DFShaders.floor(phys(C.floor, { roughness: 0.42, clearcoat: 0.3, clearcoatRoughness: 0.32 }), { joint: 3 }), safety: phys(0xF2B705, { roughness: 0.4, clearcoat: 0.5 }),
       hatW: std(0xffffff, { roughness: 0.32 }), vest: std(0xffffff, { roughness: 0.6 }), leaf: std(0x3E7D4F, { roughness: 0.8 })
     };
     const XRAY = ['paint', 'paint2', 'frame', 'wall', 'glass'];
@@ -1105,7 +1097,7 @@
     let xray = false;
     function applyTheme() {
       C = PAL[theme]; S = STATUS[theme];
-      scene.background = new T.Color(C.bg); scene.fog.color.set(C.fog); if (vig) vig.uniforms.amount.value = theme === 'dark' ? 0.38 : 0.22;
+      scene.background = new T.Color(C.bg); scene.fog.color.set(C.fog); if (vig) vig.uniforms.amount.value = theme === 'dark' ? 0.75 : 0.45;
       scene.environmentIntensity = C.env;
       hemi.color.set(C.hemi[0]); hemi.groundColor.set(C.hemi[1]); hemi.intensity = C.hemi[2]; sun.intensity = C.sun; amb.intensity = C.amb;
       renderer.toneMappingExposure = C.exp;
@@ -1841,6 +1833,7 @@
       if (renderer.shadowMap.enabled && frames % 3 === 0) renderer.shadowMap.needsUpdate = true;
       stepLevels();
       for (const f of frameFns) f(dt);
+      if (vig) { vig.uniforms.frame.value = frames; vig.uniforms.aspect.value = camera.aspect; vig.uniforms.focal.value = 1 / Math.tan(camera.fov * Math.PI / 360); }
       if (composer) composer.render(dt); else renderer.render(scene, camera);
       // CCTV feeds: one camera redrawn per frame, the rest keep their last image
       if (cctvOn) {
