@@ -1001,13 +1001,14 @@
     else if (e.key === 'Escape') { if (!drills.hidden) openMenu(false); else if (tour) stopTour(); else select(null); }
   });
 
-  /* ---------------- deep links: #st:ML1-Packing, #unit:TV26…, #drill:container, #mode:mrp, #tour ---------------- */
+  /* ---------------- deep links: #st:ML1-Packing, #unit:TV26…, #drill:container, #mode:mrp, #tour, #present ---------------- */
   function fromHash() {
     let h; try { h = decodeURIComponent(location.hash.slice(1)); } catch (err) { return; }   // a malformed link is ignored
     if (!h) return;
     if (h.startsWith('drill:')) { setTimeout(() => runDrill(h.slice(6)), 300); return; }
     if (h.startsWith('mode:')) { setMode(h.slice(5)); return; }
     if (h === 'tour') return startTour();
+    if (h === 'present') { const go = () => (window.PlantPresent && V && V.frames() > 2 ? PlantPresent.enter() : setTimeout(go, 400)); return go(); }   // the installed app's Present shortcut
     if (/^(st|buf|agv|tug|fl|unit|order|zone|util|line|dept|sys|po|mrp):/.test(h)) setTimeout(() => select(h), 400);
   }
 

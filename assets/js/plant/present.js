@@ -70,7 +70,7 @@
     /* ---------------- presentation ---------------- */
     const view = $('#view3d');
     const ui = document.createElement('div'); ui.className = 'pl-present'; ui.hidden = true; ui.setAttribute('role', 'region'); ui.setAttribute('aria-label', tt('Presentation'));
-    ui.innerHTML = `<div class="pp-cap"><span class="pp-n"></span><h2 class="pp-t"></h2><p class="pp-x"></p><div class="pp-bar" aria-hidden="true"><i></i></div></div>
+    ui.innerHTML = `<span class="pp-brand" aria-hidden="true"><span class="logo-mark"></span><b>Digital Factory</b><small>Plant EG-01</small></span><div class="pp-cap"><span class="pp-n"></span><h2 class="pp-t"></h2><p class="pp-x"></p><div class="pp-bar" aria-hidden="true"><i></i></div></div>
       <div class="pp-ctl">
         <button type="button" class="btn btn-secondary btn-sm" data-pp="prev"><span data-icon="skip" class="flip"></span><span class="sr-only">${tt('Previous shot')}</span></button>
         <button type="button" class="btn btn-secondary btn-sm" data-pp="play" aria-pressed="true"><span data-icon="pause"></span><span class="sr-only">${tt('Pause')}</span></button>

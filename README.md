@@ -95,6 +95,7 @@ assets/js/        theme.js · motion.js · deck.js
                   twin-hero.js (SMD line 4 drawn live on the website and title slide) · site.js
                   briefing.js (the deck's live briefing) · review.js (time-window review and PowerPoint export) · guide.js · guide-terms.js (glossary and icon list for the guide)
 assets/img/       open-licence factory photos, credits in assets/img/CREDITS.md
+assets/brand/     the mark, app and module icons, the share card and the web app manifest, built by tools/brand (docs/BRAND.md)
 assets/js/plant/  engine (unit-level plant model) · erp (SAP, GMES, S&OP, MRP, departments) · agents (AI crew, flow-model forecast) · scene (three.js view) · shaders (procedural floor and the finish pass, ported from gokayfem/shader-skills, MIT) · views2d (2D tabs) · ui (panels, drills, tour) · studio + studio-models (design layer by chat, by hand or by agents) · recorder + record-page (flight recorder) · problems (problems, cause → effect arcs and fixes drawn on the floor) · present (presentation mode and picture quality) · sample-shift.worker
 assets/js/i18n/   i18n.js (translates the page in place, RTL, the language button) · ar-common · ar-site · ar-deck · ar-plant · ar-room (dictionaries)
 assets/js/help/   terms.js (dotted-underline term cards) · coach.js (the page guide and explain mode) · index · app · plant · deck (each page's guide)
@@ -105,6 +106,7 @@ assets/vendor/    three.js r170, bundled once, plus on-demand add-ons (GLTFLoade
 tools/assets/     asset pipeline: build, bake AO, tangents, meshopt, LOD, Khronos validation and asset checks
 tools/bench/      benchmark (load, frame time, draw calls, triangles, GPU resources, heap) and before/after comparison
 tools/checks/     Windows compatibility check
+tools/brand/      the brand source (marks.mjs) and its build: icons, manifest, page head tags, CSS glyph, splash
 assets/js/room/   the command room on the plant model: core · viz (SVG charts) · floor (plant mimic and detail panel) · command (value stream,
                   decisions) · ops (alarms, control) · intel (agents, predictions, root cause, what-if lab, drills) · perf (leadership,
                   maintenance, quality, energy) · briefing (feeds the deck) · copilot (local and Claude modes) · main (boot, time machine) ·

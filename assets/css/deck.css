@@ -199,14 +199,12 @@ body { background: var(--bg); }
 /* footer + production-line progress (follow the active slide's field) */
 .footer { position: absolute; left: 100px; right: 100px; bottom: 46px; z-index: 2; display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--text-3); pointer-events: none; transition: color .4s var(--ease-out); }
 .footer .logo { color: var(--text); }
-.footer .logo-mark { width: 24px; height: 24px; border-radius: 7px; }
-.footer .logo-mark::before { left: 6px; top: 6px; width: 4px; height: 11px; }
-.footer .logo-mark::after { left: 13px; top: 10px; width: 4px; height: 7px; }
+.footer .logo-mark { width: 24px; height: 24px; }
 .footer .logo-word { font-size: 15px; }
-.stage[data-tone="blue"] .footer .logo-mark, .stage[data-tone="ink"] .footer .logo-mark { background: #fff; }
+.stage[data-tone="blue"] .footer .logo-mark, .stage[data-tone="ink"] .footer .logo-mark { background: #fff; box-shadow: none; }
 .stage[data-tone="blue"] .footer .logo-mark::before, .stage[data-tone="blue"] .footer .logo-mark::after,
 .stage[data-tone="ink"] .footer .logo-mark::before, .stage[data-tone="ink"] .footer .logo-mark::after { background: #0F1115; }
-[data-theme="dark"] .stage[data-tone="ink"] .footer .logo-mark { background: var(--brand); }
+[data-theme="dark"] .stage[data-tone="ink"] .footer .logo-mark { background: linear-gradient(135deg, #2D5BFF, #1428A0); }
 [data-theme="dark"] .stage[data-tone="ink"] .footer .logo-mark::before, [data-theme="dark"] .stage[data-tone="ink"] .footer .logo-mark::after { background: #fff; }
 .prail { position: absolute; left: 100px; right: 100px; bottom: 18px; height: 16px; z-index: 3; }
 .prail-line { position: absolute; left: 0; right: 0; top: 7px; height: 2px; background: var(--border-strong); border-radius: 2px; overflow: hidden; }
