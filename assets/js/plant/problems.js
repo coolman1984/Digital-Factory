@@ -76,7 +76,9 @@
     const posOf = ref => V.posOfRef(ref);
 
     function frame(dt) {
-      tAnim += dt; const show = (V.overlay === 'status' || V.overlay === 'flow') && !V.cinematic;
+      tAnim += dt;
+      // in a presentation the marks belong to the overview and to the problem shot, not across the machine close-ups
+      const pp = window.PlantPresent, show = (V.overlay === 'status' || V.overlay === 'flow') && !V.cinematic && (!pp || !pp.on || pp.shot === 'plant' || pp.shot === 'problem');
       group.visible = show; if (!show) return;
       rings.count = 0; cols.count = 0;
       const pulse = 0.5 + 0.5 * Math.sin(tAnim * 4);

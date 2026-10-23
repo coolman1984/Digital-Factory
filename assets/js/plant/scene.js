@@ -97,7 +97,7 @@
     // the look is an art direction from DFLook (assets/js/vfx/look.js): realistic by default, toon, anime or outlined on request;
     // the fly-through switches to the cinematic grade (letterbox, cooler shadows) and, at high quality, depth of field
     let quality = low ? 'low' : 'high', composer = null, gtao = null, bloom = null, vig = null, edgeP = null, bokeh = null, look = 'realistic';
-    const lookProfile = () => DFLook.PROFILES[cine.on ? 'cinematic' : look] || DFLook.PROFILES.realistic;
+    const lookProfile = () => DFLook.PROFILES[cine.on || present ? 'cinematic' : look] || DFLook.PROFILES.realistic;
     function buildComposer() {
       DFLook.disposeComposer(composer); composer = null; gtao = bloom = vig = edgeP = bokeh = null;
       if (quality === 'low') return;
@@ -108,27 +108,31 @@
       composer.addPass(new T.RenderPass(scene, camera));
       if (quality === 'high' && art.art === 'realistic') {
         gtao = new T.GTAOPass(scene, camera, size.x, size.y);
-        gtao.updateGtaoMaterial({ radius: 0.9, distanceExponent: 1.4, thickness: 1.2, scale: 1.1, samples: 12 });
+        gtao.updateGtaoMaterial({ radius: ultra ? 1.1 : 0.9, distanceExponent: 1.4, thickness: 1.2, scale: 1.1, samples: ultra ? 16 : 12 });
         gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
         gtao.blendIntensity = 0.85;
         composer.addPass(gtao);
       }
       if (art.outline) composer.addPass(edgeP = DFLook.edgePass(T, scene, camera, size.x, size.y, { color: theme === 'dark' ? 0x0A0C10 : 0x1A1F27, thickness: Math.max(1, renderer.getPixelRatio()), strength: 0.8, depthK: 0.02, normalK: 0.35 }));
       // depth of field renders the scene's depth once more (about a third more draw calls): only at high quality with headroom
-      if (cine.on && quality === 'high' && cine.dof && T.X && T.X.BokehPass) composer.addPass(bokeh = new T.X.BokehPass(scene, camera, { focus: 40, aperture: 0.00006, maxblur: 0.005 }));
+      if ((cine.on && cine.dof || present && ultra) && quality === 'high' && T.X && T.X.BokehPass) composer.addPass(bokeh = new T.X.BokehPass(scene, camera, { focus: 40, aperture: 0.00006, maxblur: 0.005 }));
       bloom = new T.UnrealBloomPass(new T.Vector2(size.x / 2, size.y / 2), C.bloom, 0.55, 1.45);
       composer.addPass(bloom);
       composer.addPass(new T.OutputPass());
       // the finish: grade, natural (cos⁴) vignette in linear light, letterbox in the fly-through, ±1 LSB dither
       composer.addPass(vig = DFLook.gradePass(T)); DFLook.applyGrade(vig, P);
-      if (!cine.on) vig.uniforms.amount.value = theme === 'dark' ? 0.75 : 0.45;
+      if (!cine.on && !present) vig.uniforms.amount.value = theme === 'dark' ? 0.75 : 0.45;
       DFLook.frameGrade(vig, camera, frames);
       DFLook.setToon(T, scene, art.art === 'toon', { bands: art.bands, rim: art.rim });
     }
     function setLook(id) { if (!DFLook.PROFILES[id] || id === 'cinematic' || id === look) return; look = id; buildComposer(); resize(); emit('look', look); }
     // adaptive quality (DFPerf): steps down on the measured frame interval, pixel ratio before effects, and back up with headroom
-    const LADDER = [{ q: 'high', dpr: 1.5 }, { q: 'high', dpr: 1.25 }, { q: 'medium', dpr: 1.25 }, { q: 'medium', dpr: 1 }, { q: 'low', dpr: 1 }];
-    const gov = DFPerf.governor({ levels: LADDER, start: low ? 4 : 0, budgetMs: 16.7, apply: L => applyLevel(L) });
+    // three picture modes: Ultra (presentation: device pixels up to 2, finer ambient occlusion, haze in the light, held by
+    // hand), Standard (the governor picks from high to low on the measured frame time) and Light (low, held by hand).
+    // The governor never climbs into Ultra on its own.
+    const LADDER = [{ q: 'high', dpr: 2, ultra: true }, { q: 'high', dpr: 1.5 }, { q: 'high', dpr: 1.25 }, { q: 'medium', dpr: 1.25 }, { q: 'medium', dpr: 1 }, { q: 'low', dpr: 1 }];
+    let ultra = false, present = false;
+    const gov = DFPerf.governor({ levels: LADDER, start: low ? 5 : 1, top: 1, budgetMs: 16.7, apply: L => applyLevel(L) });
 
     /* ---------------- textures ---------------- */
     const cv = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t; };
@@ -173,6 +177,51 @@
       const ln = (a, b, c, d) => { g.beginPath(); g.moveTo(a, b); g.lineTo(c, d); g.stroke(); };
       ln(66, 38, 58, 74); ln(58, 74, 40, 112); ln(58, 74, 78, 92); ln(78, 92, 80, 116); ln(64, 46, 42, 62); ln(66, 46, 88, 60);
     });
+    // the decal sheet (8 × 4 cells of 128 px): ISO 7010-style warning, mandatory, fire and exit signs, a rating plate,
+    // asset tags and floor arrows, all drawn here; the plant's machines and walls carry them as small textured planes
+    const DEC = { elec: [0, 0], hot: [1, 0], crush: [2, 0], manual: [3, 0], ppe: [4, 0], loto: [5, 0], qr: [6, 0], fork: [7, 0],
+      plate: [0, 1, 2], barcode: [2, 1, 2], estop: [4, 1], fire: [5, 1], aid: [6, 1], noentry: [7, 1],
+      arrow: [0, 2], exit: [1, 2, 2], robot: [3, 2], air: [4, 2], volt: [5, 2, 2], hold: [7, 2] };
+    const decalTex = cv(1024, 512, (g) => {
+      g.clearRect(0, 0, 1024, 512);
+      const cell = (c, r, fn, span = 1) => { g.save(); g.translate(c * 128, r * 128); g.beginPath(); g.rect(0, 0, 128 * span, 128); g.clip(); fn(); g.restore(); };
+      const tri = (fn) => { g.fillStyle = '#111'; g.beginPath(); g.moveTo(64, 8); g.lineTo(122, 112); g.lineTo(6, 112); g.closePath(); g.fill(); g.fillStyle = '#F6C400'; g.beginPath(); g.moveTo(64, 22); g.lineTo(110, 104); g.lineTo(18, 104); g.closePath(); g.fill(); g.fillStyle = '#111'; g.strokeStyle = '#111'; g.lineWidth = 6; g.lineJoin = 'round'; g.lineCap = 'round'; fn(); };
+      const circ = (bg, fn) => { g.fillStyle = '#fff'; g.beginPath(); g.arc(64, 64, 60, 0, 7); g.fill(); g.fillStyle = bg; g.beginPath(); g.arc(64, 64, 55, 0, 7); g.fill(); g.fillStyle = '#fff'; g.strokeStyle = '#fff'; g.lineWidth = 7; g.lineCap = 'round'; fn(); };
+      const P = (...pts) => { g.beginPath(); g.moveTo(pts[0], pts[1]); for (let i = 2; i < pts.length; i += 2) g.lineTo(pts[i], pts[i + 1]); };
+      cell(0, 0, () => tri(() => { P(70, 44, 54, 74, 70, 74, 56, 98); g.stroke(); P(52, 92, 56, 100, 63, 93); g.stroke(); }));
+      cell(1, 0, () => tri(() => { for (const x of [48, 64, 80]) { g.beginPath(); g.moveTo(x, 92); g.bezierCurveTo(x - 9, 80, x + 9, 66, x, 52); g.stroke(); } g.fillRect(38, 96, 52, 5); }));
+      cell(2, 0, () => tri(() => { g.fillRect(36, 56, 56, 8); g.fillRect(36, 88, 56, 8); P(52, 72, 70, 72, 76, 80, 52, 84); g.fill(); }));
+      cell(3, 0, () => circ('#1F5FAD', () => { g.fillRect(40, 38, 22, 52); g.fillRect(66, 38, 22, 52); g.fillStyle = '#1F5FAD'; for (let i = 0; i < 4; i++) { g.fillRect(44, 46 + i * 10, 14, 3); g.fillRect(70, 46 + i * 10, 14, 3); } }));
+      cell(4, 0, () => circ('#1F5FAD', () => { g.beginPath(); g.arc(64, 58, 24, Math.PI, 0); g.fill(); g.fillRect(34, 56, 60, 8); g.fillRect(48, 70, 32, 16); }));
+      cell(5, 0, () => { g.fillStyle = '#C8102E'; g.fillRect(14, 8, 100, 112); g.fillStyle = '#fff'; g.font = `800 30px ${FONT}`; g.textAlign = 'center'; g.fillText('LOTO', 64, 58); g.font = `600 15px ${FONT}`; g.fillText('LOCKOUT', 64, 84); g.fillText('POINT', 64, 102); });
+      cell(6, 0, () => { g.fillStyle = '#fff'; g.fillRect(10, 10, 108, 108); g.fillStyle = '#111'; let h = 7; const m = 7.4;
+        for (let y = 0; y < 13; y++) for (let x = 0; x < 13; x++) { h = (h * 1103515245 + 12345) & 0x7fffffff; const fin = (x < 4 && y < 4) || (x > 8 && y < 4) || (x < 4 && y > 8); if (!fin && (h >> 16) & 1) g.fillRect(16 + x * m, 16 + y * m, m, m); }
+        for (const [fx, fy] of [[0, 0], [9, 0], [0, 9]]) { g.fillRect(16 + fx * m, 16 + fy * m, 4 * m, 4 * m); g.fillStyle = '#fff'; g.fillRect(16 + (fx + 0.6) * m, 16 + (fy + 0.6) * m, 2.8 * m, 2.8 * m); g.fillStyle = '#111'; g.fillRect(16 + (fx + 1.2) * m, 16 + (fy + 1.2) * m, 1.6 * m, 1.6 * m); } });
+      cell(7, 0, () => tri(() => { g.fillRect(40, 70, 36, 22); g.fillRect(70, 52, 6, 40); g.fillRect(76, 86, 22, 4); g.beginPath(); g.arc(48, 96, 6, 0, 7); g.arc(68, 96, 6, 0, 7); g.fill(); }));
+      cell(0, 1, () => { const gr = g.createLinearGradient(0, 0, 256, 128); gr.addColorStop(0, '#D9DDE2'); gr.addColorStop(0.5, '#F2F4F6'); gr.addColorStop(1, '#BFC5CC'); g.fillStyle = gr; g.fillRect(4, 8, 248, 112); g.fillStyle = '#1428A0'; g.fillRect(4, 8, 248, 26); g.fillStyle = '#fff'; g.font = `800 18px ${FONT}`; g.fillText('PLANT EG-01', 14, 28); g.fillStyle = '#23272E'; g.font = `600 13px ${FONT}`; ['TYPE   DF-450 / 3PH', 'SUPPLY  400 V  50 Hz  32 A', 'AIR     6 bar   SN 0417-22'].forEach((t, i) => g.fillText(t, 14, 56 + i * 20)); g.fillStyle = '#9AA3AE'; for (const [x, y] of [[10, 14], [244, 14], [10, 112], [244, 112]]) { g.beginPath(); g.arc(x, y, 3, 0, 7); g.fill(); } }, 2);
+      cell(2, 1, () => { g.fillStyle = '#fff'; g.fillRect(6, 24, 244, 80); g.fillStyle = '#111'; let x = 18; let h = 3; while (x < 236) { h = (h * 69069 + 1) >>> 0; const w = 1 + (h >>> 29); g.fillRect(x, 32, w * 1.6, 46); x += w * 1.6 + 1.6 + ((h >>> 26) & 3); } g.font = `600 12px ${FONT}`; g.fillText('EG01-AST-004172', 72, 96); }, 2);
+      cell(4, 1, () => { g.fillStyle = '#F6C400'; g.beginPath(); g.arc(64, 64, 60, 0, 7); g.fill(); g.fillStyle = '#111'; g.font = `800 14px ${FONT}`; g.textAlign = 'center'; g.fillText('EMERGENCY', 64, 24); g.fillText('STOP', 64, 114); });
+      cell(5, 1, () => { g.fillStyle = '#C8102E'; g.fillRect(6, 6, 116, 116); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(64, 20); g.bezierCurveTo(92, 50, 96, 80, 64, 104); g.bezierCurveTo(34, 82, 40, 56, 56, 44); g.bezierCurveTo(56, 60, 62, 64, 66, 60); g.bezierCurveTo(60, 46, 62, 32, 64, 20); g.fill(); });
+      cell(6, 1, () => { g.fillStyle = '#00843D'; g.fillRect(6, 6, 116, 116); g.fillStyle = '#fff'; g.fillRect(52, 24, 24, 80); g.fillRect(24, 52, 80, 24); });
+      cell(7, 1, () => { g.fillStyle = '#fff'; g.beginPath(); g.arc(64, 64, 60, 0, 7); g.fill(); g.strokeStyle = '#C8102E'; g.lineWidth = 12; g.beginPath(); g.arc(64, 64, 50, 0, 7); g.stroke(); P(29, 29, 99, 99); g.stroke(); g.fillStyle = '#111'; g.fillRect(56, 34, 16, 16); g.fillRect(50, 52, 28, 30); });
+      cell(0, 2, () => { g.fillStyle = '#fff'; P(64, 6, 112, 58, 80, 58, 80, 122, 48, 122, 48, 58, 16, 58); g.closePath(); g.fill(); });
+      cell(1, 2, () => { g.fillStyle = '#00843D'; g.fillRect(4, 14, 248, 100); g.fillStyle = '#fff'; g.fillRect(150, 30, 40, 70); g.fillStyle = '#00843D'; g.fillRect(156, 36, 28, 64); g.fillStyle = '#fff'; g.beginPath(); g.arc(120, 38, 9, 0, 7); g.fill(); g.lineWidth = 9; g.strokeStyle = '#fff'; g.lineCap = 'round'; P(116, 50, 108, 74, 94, 96); g.stroke(); P(108, 74, 124, 84, 130, 100); g.stroke(); P(114, 56, 98, 64); g.stroke(); P(114, 56, 132, 66); g.stroke(); P(30, 64, 80, 64); g.stroke(); P(30, 64, 46, 50); g.stroke(); P(30, 64, 46, 78); g.stroke(); g.font = `800 20px ${FONT}`; g.fillText('EXIT', 200, 72); }, 2);
+      cell(3, 2, () => tri(() => { g.fillRect(44, 92, 30, 10); P(58, 92, 58, 70, 80, 52, 92, 62); g.stroke(); g.beginPath(); g.arc(58, 70, 5, 0, 7); g.fill(); }));
+      cell(4, 2, () => { g.fillStyle = '#1F5FAD'; g.fillRect(6, 30, 116, 68); g.fillStyle = '#fff'; g.font = `800 26px ${FONT}`; g.textAlign = 'center'; g.fillText('AIR', 64, 64); g.font = `600 14px ${FONT}`; g.fillText('6 bar', 64, 86); });
+      cell(5, 2, () => { g.fillStyle = '#F6C400'; g.fillRect(6, 24, 244, 80); g.fillStyle = '#111'; g.fillRect(6, 24, 244, 8); g.fillRect(6, 96, 244, 8); g.font = `800 26px ${FONT}`; g.fillText('400 V', 92, 70); g.font = `600 13px ${FONT}`; g.fillText('ISOLATE BEFORE OPENING', 70, 90); g.lineWidth = 6; P(56, 40, 40, 66, 56, 66, 42, 92); g.stroke(); }, 2);
+      cell(7, 2, () => { g.fillStyle = '#C8102E'; g.fillRect(8, 20, 112, 88); g.fillStyle = '#fff'; g.font = `800 22px ${FONT}`; g.textAlign = 'center'; g.fillText('QA HOLD', 64, 72); });
+    });
+    decalTex.anisotropy = 8;
+    // a soft rounded-rectangle shade for the contact shadow under machines and vehicles (computed, no blur filter needed)
+    const contactTex = (() => {
+      const n = 128, c = document.createElement('canvas'); c.width = c.height = n; const g = c.getContext('2d'), im = g.createImageData(n, n);
+      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+        const u = Math.abs((x + 0.5) / n * 2 - 1), v = Math.abs((y + 0.5) / n * 2 - 1), qx = Math.max(u - 0.62, 0), qy = Math.max(v - 0.62, 0);
+        const d = Math.hypot(qx, qy) / 0.38, a = Math.pow(Math.max(0, 1 - d), 1.8);
+        const o = (y * n + x) * 4; im.data[o] = im.data[o + 1] = im.data[o + 2] = Math.round(a * 255); im.data[o + 3] = 255;   // an alpha map reads green
+      }
+      g.putImageData(im, 0, 0); const t = new T.CanvasTexture(c); return t;
+    })();
     const signSub = Ln => (Ln.kind === 'press' ? `Chassis ${Ln.size}"` : Ln.kind === 'smd' && Ln.model ? 'PBA ' + Ln.model.slice(1) : Ln.model && E.MODELS[Ln.model] ? E.MODELS[Ln.model].name : '');
 
     /* ---------------- materials (rethemed in place) ---------------- */
@@ -181,7 +230,7 @@
     const phys = (c, o = {}) => new T.MeshPhysicalMaterial(Object.assign({ color: c, roughness: 0.5, metalness: 0 }, o));
     const M = {
       // the epoxy floor and the deck are procedural (shaders.js): mottling, trowel marks, saw-cut joints every 6 m, gloss that varies
-      floor: DFShaders.floor(phys(C.floor, { roughness: 0.42, metalness: 0.0, clearcoat: 0.32, clearcoatRoughness: 0.32 })),
+      floor: DFShaders.floor(phys(C.floor, { roughness: 0.42, metalness: 0.0, clearcoat: 0.32, clearcoatRoughness: 0.32 }), { pools: true }),
       zone: std(C.zone, { roughness: 0.5, transparent: true, opacity: 0.55, depthWrite: false }),
       floorLine: new T.MeshBasicMaterial({ color: C.floorLine }),
       paint: phys(C.paint, { roughness: 0.36, metalness: 0.05, clearcoat: 0.6, clearcoatRoughness: 0.2 }), paint2: std(C.paint2, { roughness: 0.45 }),
@@ -217,10 +266,27 @@
       // insulated sandwich-panel cladding, full height, with a clerestory band; the walls toward the camera are cut away
       clad: DFShaders.cladding(std(C.wall, { roughness: 0.55, metalness: 0.35, side: T.DoubleSide }))
     };
+    // the detail kit: decals, e-stop red, compressed-air blue, sprinkler red, plastic totes, industrial robots, wire-mesh guarding
+    Object.assign(M, {
+      decal: new T.MeshStandardMaterial({ map: decalTex, transparent: true, alphaTest: 0.4, roughness: 0.42, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
+      estop: phys(0xD2161E, { roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.1 }),
+      air: phys(0x1F5FAD, { roughness: 0.35, clearcoat: 0.4 }), sprink: phys(0xB3141C, { roughness: 0.4, clearcoat: 0.3 }),
+      bin: phys(0x1D5FC4, { roughness: 0.42, clearcoat: 0.2 }),
+      robot: phys(0xE9A40F, { roughness: 0.34, clearcoat: 0.7, clearcoatRoughness: 0.18 }),
+      mesh: DFShaders.mesh(std(0x1B1E23, { roughness: 0.5, metalness: 0.5, transparent: true, side: T.DoubleSide, depthWrite: false })),
+      contact: new T.MeshBasicMaterial({ color: 0x000000, alphaMap: contactTex, transparent: true, opacity: 0.5, depthWrite: false, toneMapped: false })
+    });
+    for (const k of ['estop', 'air', 'sprink', 'bin', 'robot']) DFShaders.surface(M[k], k === 'robot' || k === 'bin' ? 'powder' : 'cast', { fl: 5.4 });
     // people: uniforms are woven fabric (sheen), skin uses a wrapped diffuse so the light bleeds past the terminator
     M.person = DFMaterials.make(T, 'fabric'); M.person.color.set(0xffffff); M.person.sheenColor.set(0xbfc4cc); M.person.roughness = 0.85;
     M.skin = DFMaterials.make(T, 'skin'); M.skin.color.set(0xffffff);
     M.alu = new T.MeshPhysicalMaterial({ color: C.alu, roughness: 0.28, metalness: 0.9, anisotropy: 0.6 });
+    // worn finishes in world space (shaders.js): powder-coat stipple and gloss drift on paint, grain on brushed metal,
+    // a dull grain on cast parts and rubber, handling marks at waist height, grime and a contact shade at every floor;
+    // smudged, dusty glass (denser near the floor)
+    const FIN = { paint: 'powder', paint2: 'powder', frame: 'powder', rack: 'powder', beam: 'powder', cab: 'powder', safety: 'powder', agv: 'powder', truck: 'powder', desk: 'powder', steel: 'brushed', alu: 'brushed', dark: 'cast', mag: 'cast', plastic: 'cast', rubber: 'rubber', tray: 'cast' };
+    for (const k in FIN) DFShaders.surface(M[k], FIN[k], { fl: 5.4 });
+    DFShaders.surface(M.glass, 'powder', { fl: 5.4, glass: true });
     const XRAY = ['paint', 'paint2', 'frame', 'wall', 'glass'];
 
     /* ---------------- two levels ----------------
@@ -265,6 +331,22 @@
     }
     function storus(key, R, r, x, y, z, o = {}) { push(key, place(new T.TorusGeometry(R, r, 8, 24), x, y, z, o.ry || 0, o.rx || 0, o.rz || 0)); }
     function splane(key, w, h, x, y, z, ry = 0, rx = 0) { push(key, place(new T.PlaneGeometry(w, h), x, y, z, ry, rx)); }
+    // a decal from the sheet: a small textured plane w × h, centred at x, y, z, facing +z turned by ry (+x for π/2)
+    function decal(id, w, h, x, y, z, ry = 0, rx = 0) {
+      if (low) return;
+      const [c, r, span = 1] = DEC[id], g = new T.PlaneGeometry(w, h), uv = g.attributes.uv;
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, (c + uv.getX(i) * span) / 8, 1 - (r + 1 - uv.getY(i)) / 4);
+      push('decal', place(g, x, y, z, ry, rx));
+    }
+    // a decal lying on the floor, its arrow (texture up) along the heading yaw (0 toward −z, −π/2 toward +x)
+    function floorDecal(id, w, h, x, z, yaw, y = 0.014) {
+      if (low) return;
+      const [c, r, span = 1] = DEC[id], g = new T.PlaneGeometry(w, h), uv = g.attributes.uv;
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, (c + uv.getX(i) * span) / 8, 1 - (r + 1 - uv.getY(i)) / 4);
+      g.rotateX(-Math.PI / 2); g.rotateY(yaw); g.translate(x, y, z); push('decal', g);
+    }
+    // a soft contact shade on the floor under a footprint (machines, racks, benches)
+    const contact = (x, z, w, d, y = 0) => { const g = new T.PlaneGeometry(w + 0.7, d + 0.7); g.rotateX(-Math.PI / 2); g.translate(x, y + 0.004, z); push('contact', g); };
     const world = new T.Group(); scene.add(world);
     function finalize() {
       for (const key in BAG) {
@@ -273,9 +355,9 @@
         for (const set of [idx, non]) for (let i = 0; i < set.length; i += 3000) {
           const g = T.mergeGeometries(set.slice(i, i + 3000), false); if (!g) continue;
           const m = new T.Mesh(g, M[key]);
-          m.castShadow = !['glass', 'zone', 'floorLine', 'screen', 'white', 'hmi', 'sop', 'fixture', 'lights', 'carpet', 'roof', 'markY', 'markG', 'markW', 'markHaz'].includes(key); m.receiveShadow = !['glass', 'fixture'].includes(key);
+          m.castShadow = !['glass', 'zone', 'floorLine', 'screen', 'white', 'hmi', 'sop', 'fixture', 'lights', 'carpet', 'roof', 'markY', 'markG', 'markW', 'markHaz', 'decal', 'contact', 'mesh'].includes(key); m.receiveShadow = !['glass', 'fixture', 'contact'].includes(key);
           m.raycast = () => {};
-          if (key === 'glass' || key === 'zone') m.renderOrder = 2;
+          if (key === 'glass' || key === 'zone' || key === 'mesh') m.renderOrder = 2; if (key === 'contact') m.renderOrder = 1;
           world.add(m);
         }
         list.forEach(g => g.dispose()); BAG[key] = [];
@@ -342,6 +424,11 @@
       const along = (key, u0, u1, v0, v1, y) => h ? strip2(key, u0, c + v0, u1, c + v1, y) : strip2(key, c + v0, u0, c + v1, u1, y);
       // the lane edges, solid yellow, 10 cm
       along('markY', lo, hi, -1.3, -1.2); along('markY', lo, hi, 1.2, 1.3);
+      // direction arrows every 18 m, keep right: one each way across the vehicle lane
+      for (let k = lo + 8; k < hi - 6; k += 18) {
+        if (h) { floorDecal('arrow', 0.45, 0.8, k, c - 0.8, -Math.PI / 2); floorDecal('arrow', 0.45, 0.8, k + 9, c - 0.04, Math.PI / 2); }
+        else { floorDecal('arrow', 0.45, 0.8, c - 0.8, k, Math.PI); floorDecal('arrow', 0.45, 0.8, c - 0.04, k + 9, 0); }
+      }
       if (A.rack === undefined) {
         // the walkway: green between the lane edge and a white line, broken where it meets a junction
         const gaps = [];
@@ -393,12 +480,14 @@
       };
       cladSide(true, 0, L.W, doorsN, [0, 0, -1]); cladSide(true, L.D, L.W, [], [0, 0, 1]);
       cladSide(false, 0, L.D, doorsW, [-1, 0, 0]); cladSide(false, L.W, L.D, docksE, [1, 0, 0]);
+      // emergency exit signs over the doors, facing in
+      for (const d of L.INDOCK) if (d.side === 'w') decal('exit', 0.9, 0.45, 0.36, 4.95, d.z, Math.PI / 2); else decal('exit', 0.9, 0.45, d.x, 4.95, 0.36);
     }
     // steel columns on a 24 × 21 m grid, roof trusses and high-bay lights (the roof itself is cut away)
     const COLX = [], COLZ = [];
     for (let x = 0; x <= L.W + 0.1; x += 24) COLX.push(Math.min(x, L.W));
     for (let z = 0; z <= L.D + 0.1; z += 21) COLZ.push(Math.min(z, L.D));
-    const colAt = new Set();
+    const colAt = new Set(); let COLN = 0;
     // a column never stands in an aisle, in the finished-goods pallet rows, on a store or dock apron, or in a machine:
     // where the grid point is taken it moves up to 3.5 m along the grid line, and if no spot is free it is left out
     const nearAisle = (x, z) => L.AISLES.some(A => A.a[1] === A.b[1]
@@ -421,6 +510,26 @@
       colAt.add(x + ',' + z);
       sbox('beam', 0.42, ROOF, 0.12, x, 0, z - 0.17); sbox('beam', 0.42, ROOF, 0.12, x, 0, z + 0.17); sbox('beam', 0.08, ROOF, 0.3, x, 0, z);
       sbox('frame', 0.7, 0.25, 0.7, x, 0, z);
+      if (low) continue;
+      // a yellow-black guard round the foot of every column, then by turns an extinguisher point or a PPE sign, and on
+      // the outer wall a distribution board beside the column
+      sbox('markHaz', 0.62, 1.2, 0.66, x, 0, z);
+      const ci = COLN++, fz = z + 0.34;
+      if (ci % 2 === 0) { sbox('dark', 0.2, 0.05, 0.03, x, 1.42, fz); scyl('sprink', 0.085, 0.52, x, 0.86, fz + 0.11, { seg: 10 }); scyl('dark', 0.03, 0.08, x, 1.38, fz + 0.11, { seg: 8 }); decal('fire', 0.3, 0.3, x, 2.05, fz + 0.002); }
+      else { decal('ppe', 0.3, 0.3, x, 2.05, fz + 0.002); decal('manual', 0.3, 0.3, x, 2.4, fz + 0.002); }
+      if (edge(x0, L.W) || edge(z0, L.D)) {
+        const ix = edge(x0, L.W) ? (x0 < 1 ? 0.75 : -0.75) : 0, iz = edge(z0, L.D) ? (z0 < 1 ? 0.75 : -0.75) : 0;
+        const bx = x + ix + (iz ? 1.1 : 0), bz = z + iz + (ix ? 1.1 : 0);
+        if (!blocked(bx, bz)) { sbox('paint2', ix ? 0.45 : 0.9, 2.0, iz ? 0.45 : 0.9, bx, 0, bz); sbox('dark', ix ? 0.47 : 0.02, 0.15, iz ? 0.47 : 0.02, bx, 2.0, bz); decal('volt', 0.3, 0.12, bx + ix * -0.3, 1.5, bz + iz * -0.3, ix ? (ix > 0 ? Math.PI / 2 : -Math.PI / 2) : (iz > 0 ? 0 : Math.PI)); if (ix) scyl('dark', 0.05, ROOF - 2.1, bx, 2.1, bz, { seg: 8 }); else scyl('dark', 0.05, ROOF - 2.1, bx, 2.1, bz, { seg: 8 }); }
+      }
+    }
+    // services under the roof steel along every truss line: the sprinkler main (red) and the compressed-air ring (blue),
+    // hung on rods every 6 m, with sprinkler heads dropping every 3 m
+    if (!low) for (const z of COLZ) {
+      if (z < 1 || z > L.D - 1) continue;
+      scyl('sprink', 0.075, L.W, L.W / 2, ROOF - 0.45, z + 0.55, { rz: Math.PI / 2, seg: 10 }); scyl('air', 0.055, L.W, L.W / 2, ROOF - 0.62, z + 0.85, { rz: Math.PI / 2, seg: 10 });
+      for (let x = 3; x < L.W; x += 6) { sbox('steel', 0.02, 0.62, 0.02, x, ROOF - 0.62, z + 0.7); sbox('steel', 0.02, 0.02, 0.5, x, ROOF - 0.64, z + 0.7); }
+      for (let x = 1.5; x < L.W; x += 3) scyl('sprink', 0.02, 0.25, x, ROOF - 0.72, z + 0.55, { seg: 6 });
     }
     for (const z of COLZ) { sbox('roof', L.W, 0.5, 0.18, L.W / 2, ROOF, z); sbox('roof', L.W, 0.12, 0.3, L.W / 2, ROOF + 1.6, z); for (let x = 3; x < L.W; x += 6) sbox('roof', 0.08, 1.6, 0.08, x, ROOF + 0.25, z, { rz: (x / 6 | 0) % 2 ? 0.5 : -0.5 }); }
     for (const x of COLX) sbox('roof', 0.18, 0.4, L.D, x, ROOF, L.D / 2);
@@ -430,6 +539,7 @@
     const ANIM = { gantry: [], arm: [], platen: [], ram: [], fan: [] };
     const SV = new Map();
     const topOf = s => ({ robot: 2.2, bench: 1.7, subassy: 1.7, repair: 1.7, blu: 1.7, aging: 3.2, oven: 3.4, press: 5.2, injection: 2.9, cushion: 3.6, palletizer: 2.5, lcmload: 2.2 }[s.kind] || s.h);
+    const PNEU = new Set(['mounter', 'printer', 'spi', 'aoi', 'robot', 'bond', 'packer', 'press', 'injection', 'cushion', 'loader', 'unloader', 'ict', 'fct', 'lcmload', 'palletizer']);
     function buildStation(s) {
       const W = s.w, D = s.d, H = s.h, X0 = s.x, Z0 = s.z;
       const b = (k, w, h, d, x, y, z, o) => sbox(k, w, h, d, X0 + x, y, Z0 + z, o);
@@ -444,11 +554,43 @@
         for (let i = 0; i < 5; i++) b('dark', 0.012, 0.03, d * 0.36, x + w / 2 + 0.004, h * 0.25 + i * 0.06, z);
         for (const [fx, fz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) c('steel', 0.035, 0.06, x + fx * (w / 2 - 0.12), 0, z + fz * (d / 2 - 0.12), { seg: 10 });
         if (o.hmi !== false) { b('dark', 0.5, 0.36, 0.05, x + w * 0.28, h * 0.5, z + d / 2 + 0.03); splane('hmi', 0.44, 0.3, X0 + x + w * 0.28, h * 0.5 + 0.18, Z0 + z + d / 2 + 0.06); }
+        if (low) return;
+        // doors on the operator side (seams and handles), the rating plate and asset tag, the electrical warning by the
+        // cabinet vents, and an emergency stop beside the screen
+        const nDoor = Math.max(1, Math.min(3, Math.round(w / 1.1))), fz = z + d / 2;
+        for (let i = 1; i < nDoor; i++) b('dark', 0.012, h * 0.48, 0.006, x - w / 2 + i * w / nDoor, 0.18, fz + 0.002);
+        for (let i = 0; i < nDoor; i++) b('steel', 0.025, 0.15, 0.035, x - w / 2 + (i + 1) * w / nDoor - 0.09, h * 0.3, fz + 0.016);
+        decal('plate', 0.26, 0.13, X0 + x - w * 0.3, 0.36, Z0 + fz + 0.004); decal('qr', 0.07, 0.07, X0 + x - w * 0.3 + 0.19, 0.36, Z0 + fz + 0.004);
+        decal('elec', 0.12, 0.12, X0 + x + w / 2 + 0.004, h * 0.8, Z0 + z, Math.PI / 2);
+        if (o.hmi !== false) estop(Math.min(x + w * 0.28 + 0.34, x + w / 2 - 0.08), h * 0.5 + 0.16, fz);
       };
+      // an emergency stop: a red mushroom on a yellow box with its ring label, on the face at fz (relative coordinates)
+      const estop = (x, y, fz) => { if (low) return; b('safety', 0.1, 0.1, 0.045, x, y - 0.05, fz + 0.022); c('estop', 0.032, 0.03, x, y, fz + 0.06, { rx: Math.PI / 2, seg: 14 }); c('estop', 0.016, 0.02, x, y, fz + 0.04, { rx: Math.PI / 2, seg: 10 }); };
+      // the face of a big casting or enclosure (relative coordinates, front at fz): panel seams about every 1.1 m with a
+      // handle on each panel, a vent grille, the rating plate and a warning sign
+      const panels = (w, h, x, y, fz, o = {}) => {
+        if (low) return;
+        const n = Math.max(1, Math.round(w / 1.1));
+        for (let i = 1; i < n; i++) b('dark', 0.012, h - 0.12, 0.006, x - w / 2 + i * w / n, y + 0.06, fz + 0.002);
+        if (o.handles !== false) for (let i = 0; i < n; i++) b('steel', 0.025, 0.14, 0.03, x - w / 2 + (i + 1) * w / n - 0.1, y + h * 0.45, fz + 0.015);
+        if (o.vent !== false) for (let i = 0; i < 6; i++) b('dark', Math.min(0.5, w / n * 0.5), 0.018, 0.008, x - w / 2 + w / n / 2, y + h * 0.25 + i * 0.045, fz + 0.003);
+        if (o.plate !== false) decal('plate', 0.26, 0.13, X0 + x + w / 2 - 0.22, y + 0.16, Z0 + fz + 0.004);
+        if (o.sign) decal(o.sign, 0.14, 0.14, X0 + x + w / 2 - 0.2, y + h - 0.16, Z0 + fz + 0.004);
+      };
+      // the cable chain that feeds a moving head: a lower and an upper run and the bend between them
+      const chain = (x, y, z, len) => { if (low) return; b('dark', len, 0.03, 0.07, x, y, z); b('dark', len * 0.55, 0.03, 0.07, x - len * 0.225, y + 0.13, z); push('dark', place(new T.TorusGeometry(0.065, 0.017, 6, 10, Math.PI), X0 + x + len / 2, y + 0.08, Z0 + z, 0, 0, -Math.PI / 2)); };
+      // machine guarding (ISO 14120 practice): yellow posts every 1.4 m, welded wire-mesh panels from 0.15 m to the top rail,
+      // the cell warning and no-entry signs on the operator side; the infeed side stays open for the conveyor
       const fence = (w, d, h = 2.0) => {
-        for (const [px, pz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) b('frame', 0.07, h, 0.07, px * w / 2, 0, pz * d / 2);
-        b('glass', w, h - 0.2, 0.03, 0, 0.2, -d / 2); b('glass', w, h - 0.2, 0.03, 0, 0.2, d / 2); b('glass', 0.03, h - 0.2, d, -w / 2, 0.2, 0);
-        b('frame', w, 0.05, 0.05, 0, h, -d / 2); b('frame', w, 0.05, 0.05, 0, h, d / 2);
+        const post = (px, pz) => { b('safety', 0.06, h, 0.06, px, 0, pz); b('safety', 0.14, 0.012, 0.14, px, 0, pz); };
+        const side = (len, along, at) => {
+          const n = Math.max(1, Math.ceil(len / 1.4));
+          for (let i = 0; i <= n; i++) { const u = -len / 2 + i * len / n; along ? post(u, at) : post(at, u); }
+          if (along) { splane('mesh', len, h - 0.2, X0, 0.15 + (h - 0.2) / 2, Z0 + at); b('safety', len, 0.04, 0.04, 0, h - 0.04, at); b('safety', len, 0.04, 0.04, 0, 0.11, at); }
+          else { splane('mesh', len, h - 0.2, X0 + at, 0.15 + (h - 0.2) / 2, Z0, Math.PI / 2); b('safety', 0.04, 0.04, len, at, h - 0.04, 0); b('safety', 0.04, 0.04, len, at, 0.11, 0); }
+        };
+        side(w, true, -d / 2); side(w, true, d / 2); side(d, false, -w / 2);
+        decal('robot', 0.22, 0.22, X0 - w * 0.25, 1.55, Z0 + d / 2 + 0.03); decal('noentry', 0.2, 0.2, X0 - w * 0.25 + 0.26, 1.55, Z0 + d / 2 + 0.03);
       };
       const bench = (w, d) => {
         b('paint2', w, 0.05, d, 0, 0.86, 0, { r: 0.02 }); b('rubber', w - 0.1, 0.01, d - 0.1, 0, 0.91, 0);
@@ -456,6 +598,13 @@
         b('frame', 0.05, 0.9, 0.05, -w * 0.45, 0.9, -d / 2 + 0.1); b('frame', 0.05, 0.9, 0.05, w * 0.45, 0.9, -d / 2 + 0.1);
         b('paint2', w * 0.94, 0.05, 0.3, 0, 1.78, -d / 2 + 0.2); b('fixture', w * 0.8, 0.02, 0.12, 0, 1.76, -d / 2 + 0.22);
         b('dark', 0.5, 0.32, 0.04, w * 0.28, 0.98, -d / 2 + 0.3); splane('hmi', 0.46, 0.28, X0 + w * 0.28, 1.14, Z0 - d / 2 + 0.33);
+        if (low) return;
+        // parts in blue totes on the shelf, a tote of fasteners at each hand, the work instruction and an e-stop
+        const nb = Math.max(2, Math.floor(w * 0.94 / 0.42));
+        for (let i = 0; i < nb; i++) b('bin', 0.36, 0.17, 0.26, -w * 0.47 + 0.21 + i * (w * 0.94 - 0.42) / Math.max(1, nb - 1), 1.83, -d / 2 + 0.2);
+        for (const sx of [-1, 1]) b('bin', 0.3, 0.12, 0.2, sx * (w / 2 - 0.3), 0.91, -d / 2 + 0.22);
+        decal('manual', 0.12, 0.12, X0 - w * 0.2, 1.5, Z0 - d / 2 + 0.13); decal('ppe', 0.12, 0.12, X0 - w * 0.2 + 0.15, 1.5, Z0 - d / 2 + 0.13);
+        b('safety', 0.1, 0.1, 0.045, -w * 0.45, 1.4, -d / 2 + 0.12); c('estop', 0.032, 0.03, -w * 0.45, 1.45, -d / 2 + 0.165, { rx: Math.PI / 2, seg: 14 });
       };
       switch (s.kind) {
         case 'loader': case 'unloader':
@@ -468,7 +617,7 @@
           b('glass', W * 0.96, H * 0.28, D * 0.94, 0, H * 0.7, 0, { r: 0.04 });
           for (const pz of [-1, 1]) b('alu', W + 0.3, 0.05, 0.06, 0, H * 0.48, pz * D * 0.18);   // the board conveyor rails, through the machine
           if (s.kind === 'printer') {
-            ANIM.gantry.push({ s, y: H * 0.72, len: D * 0.8, amp: W * 0.34, rate: 1.6 });
+            ANIM.gantry.push({ s, y: H * 0.72, len: D * 0.8, amp: W * 0.34, rate: 1.6 }); chain(0, H * 0.98, -D * 0.36, W * 0.6);
             b('steel', W * 0.7, 0.02, D * 0.62, 0, H * 0.56, 0); b('frame', W * 0.74, 0.04, 0.05, 0, H * 0.56, -D * 0.33); b('frame', W * 0.74, 0.04, 0.05, 0, H * 0.56, D * 0.33);
             c('paint2', 0.06, 0.3, W * 0.36, H * 0.82, -D * 0.3, { rz: Math.PI / 2 }); c('dark', 0.065, 0.06, W * 0.52, H * 0.82, -D * 0.3, { rz: Math.PI / 2 });
           } else { c('dark', 0.13, 0.22, 0, H * 0.84, 0); c('fixture', 0.16, 0.02, 0, H * 0.83, 0); b('alu', W * 0.6, 0.06, 0.08, 0, H * 0.94, 0); }
@@ -493,6 +642,7 @@
           for (const px of [-1, 1]) b('frame', 0.06, H * 0.36, 0.06, px * W * 0.49, H * 0.58, -D * 0.48), b('frame', 0.06, H * 0.36, 0.06, px * W * 0.49, H * 0.58, D * 0.48);
           b('dark', 0.36, 0.08, 0.2, -W * 0.36, H * 0.6, -D * 0.25);   // the nozzle changer
           ANIM.gantry.push({ s, y: H * 0.86, len: D * 0.86, amp: W * 0.3, rate: 2.1 });
+          chain(0, H * 0.97, -D * 0.4, W * 0.62); chain(0, H * 0.97, D * 0.4, W * 0.62);
           break;
         case 'reflow':
           plinth();
@@ -504,6 +654,7 @@
           for (const sx of [-1, 1]) { b('alu', 0.7, 0.05, D * 0.5, sx * (W / 2 + 0.3), H * 0.5, 0); for (const pz of [-1, 1]) b('frame', 0.05, H * 0.5, 0.05, sx * (W / 2 + 0.55), 0, pz * D * 0.2); }
           b('dark', W * 0.6, 0.12, 0.04, 0, 0.14 + H * 0.36, D / 2 + 0.01); splane('screen', W * 0.58, 0.1, X0, 0.14 + H * 0.36 + 0.06, Z0 + D / 2 + 0.035);
           b('dark', 0.5, 0.32, 0.05, W * 0.3, H * 0.42, D / 2 + 0.03); splane('hmi', 0.44, 0.28, X0 + W * 0.3, H * 0.42 + 0.16, Z0 + D / 2 + 0.06);
+          panels(W * 0.82, H * 0.32, 0, 0.16, D / 2, { sign: 'hot' }); estop(W * 0.3 + 0.33, H * 0.42 + 0.16, D / 2 + 0.01);
           break;
         case 'writer':
           cabinet(W, H * 0.55, D);
@@ -524,7 +675,7 @@
         case 'bond':
           cabinet(W, H * 0.55, D);
           b('glass', W, H * 0.4, D, 0, H * 0.55, 0, { r: 0.06 }); for (const pz of [-1, 1]) b('frame', W, 0.05, 0.05, 0, H * 0.95, pz * D * 0.46);
-          ANIM.gantry.push({ s, y: H * 0.86, len: D * 0.8, amp: W * 0.28, rate: 1.2 });
+          ANIM.gantry.push({ s, y: H * 0.86, len: D * 0.8, amp: W * 0.28, rate: 1.2 }); chain(0, H * 0.97, -D * 0.38, W * 0.6);
           break;
         case 'lighting':
           cabinet(W, 0.9, D, 0, 0, { hmi: false }); b('dark', W, H - 0.9, D * 0.92, 0, 0.9, 0, { r: 0.05 });
@@ -587,6 +738,14 @@
           b('dark', 0.55, 0.4, 0.06, W * 0.36, 1.4, D / 2 + 0.03); splane('hmi', 0.5, 0.34, X0 + W * 0.36, 1.6, Z0 + D / 2 + 0.07);
           ANIM.platen.push({ s, x: X0 - W * 0.27, y: 1.05, z: Z0, w: 0.24, h: 1.4, d: D * 0.82, amp: W * 0.11 });
           ANIM.gantry.push({ s, y: 2.75, len: 0.3, amp: W * 0.12, rate: 1.1, offX: -W * 0.27 });
+          // the base and the injection unit as real enclosures, the safety gate's frame and handle, the mould water
+          // circuits (supply blue, return red) and the warnings: crush at the clamp, hot surface at the barrel
+          panels(W * 0.98, 0.8, 0, 0.16, D / 2, { sign: 'elec' });
+          panels(W * 0.22, 0.66, W * 0.36, 1.01, D * 0.35, { plate: false, handles: false });
+          b('paint2', W * 0.4, 0.06, 0.06, -W * 0.27, 2.46, D / 2 + 0.05); b('paint2', 0.06, 1.5, 0.06, -W * 0.08, 0.99, D / 2 + 0.05); b('steel', 0.04, 0.5, 0.05, -W * 0.11, 1.5, D / 2 + 0.1);
+          decal('crush', 0.2, 0.2, X0 - W * 0.38, 2.1, Z0 + D / 2 + 0.075); decal('hot', 0.16, 0.16, X0 + W * 0.14, 1.78, Z0 + 0.23);
+          if (!low) for (let i = 0; i < 4; i++) { c(i % 2 ? 'sprink' : 'air', 0.02, 0.9, -W * 0.27 + (i - 1.5) * 0.12, 1.0, -D / 2 - 0.04, { seg: 8 }); }
+          estop(W * 0.36 + 0.36, 1.6, D / 2 + 0.01);
           break;
         }
         case 'press':
@@ -604,6 +763,8 @@
           for (let i = 0; i < 12; i++) b('steel', 0.4, 0.03, 0.06, W / 2 + 0.25, 0.4 + i * 0.36, -D * 0.38); for (const pz of [-0.3, -0.46]) b('steel', 0.04, 4.6, 0.04, W / 2 + 0.25 + (pz + 0.38) * 3, 0, -D * 0.38);
           for (let i = 0; i < 4; i++) c('steel', 0.12, D * 0.6, -W / 2 - 0.7, 0.9 + (i % 2) * 0.26, 0, { rx: Math.PI / 2, seg: 14 });
           ANIM.ram.push({ s, x: X0, y: 1.3, z: Z0, w: W - 1.4, h: 0.55, d: D * 0.78, amp: 1.0 });
+          panels(W * 0.98, 0.66, 0, 0.16, D / 2, { sign: 'crush' }); panels(W * 0.98, 1.0, 0, 4.05, D * 0.45, { handles: false, plate: false, sign: 'elec' });
+          estop(W * 0.2 + 0.4, 1.6, D / 2 + 0.01); decal('ppe', 0.2, 0.2, X0 - W / 2 + 0.34, 2.6, Z0 + D * 0.45 + 0.004);
           break;
         case 'oven':
           b('frame', W, 0.4, D, 0, 0, 0);
@@ -613,6 +774,7 @@
           b('steel', W + 7, 0.08, 0.1, 0, 2.85, 0);
           for (const px of [-W / 2 - 3.4, W / 2 + 3.4]) b('frame', 0.1, 2.85, 0.1, px, 0, 0);
           b('dark', 0.55, 0.4, 0.06, -W * 0.42, 1.4, D / 2 + 0.18); splane('hmi', 0.5, 0.34, X0 - W * 0.42, 1.6, Z0 + D / 2 + 0.22);
+          panels(W * 0.98, 2.2, 0, 0.45, D / 2 + 0.15, { sign: 'hot' }); estop(-W * 0.42 + 0.4, 1.6, D / 2 + 0.16);
           break;
         case 'cushion':
           plinth(); b('paint', W, 1.2, D, 0, 0.14, 0, { r: 0.06 }); b('paint', W * 0.5, 1.8, D * 0.9, -W * 0.2, 1.3, 0, { r: 0.06 });
@@ -621,10 +783,29 @@
           for (let i = 0; i < 3; i++) c('steel', 0.05, 1.4, -W * 0.45, 1.3 + i * 0.1, -D * 0.3 + i * 0.3, { rz: Math.PI / 2 });
           b('dark', 0.5, 0.36, 0.06, W * 0.3, 1.0, D / 2 + 0.03); splane('hmi', 0.46, 0.32, X0 + W * 0.3, 1.18, Z0 + D / 2 + 0.07);
           ANIM.platen.push({ s, x: X0 - W * 0.2, y: 1.5, z: Z0, w: 0.2, h: 1.2, d: D * 0.8, amp: 0.35 });
+          panels(W * 0.98, 1.1, 0, 0.16, D / 2, { sign: 'hot' }); estop(W * 0.3 + 0.34, 1.18, D / 2 + 0.01);
           break;
         default: cabinet(W, H, D);
       }
       SV.set(s.id, { s, top: topOf(s) });
+      contact(X0, Z0, W, D);
+      if (low || lvStatic(X0, Z0)) return;
+      // services: power comes down in a conduit from the line's cable tray (or from the roof steel where a line has none),
+      // compressed air in a blue drop to a filter-regulator on the back of the machine
+      const Ln = P.lines[s.line], kind = Ln && Ln.kind, tray = kind === 'main' || kind === 'smd' || kind === 'press' || kind === 'lcm';
+      const top = topOf(s), ty = tray ? (kind === 'smd' ? 3.6 : 4.6) : ROOF - 0.3, tz = tray && kind !== 'smd' ? Ln.stations[0].z - 2.6 : null;
+      const cx = X0 - W / 2 + 0.2, cz = Z0 - D / 2 + 0.14;
+      if (top < ty - 0.3) {
+        scyl('dark', 0.035, ty - top, cx, top, cz, { seg: 8 });
+        if (tz !== null && Math.abs(tz - cz) > 0.1) scyl('dark', 0.035, Math.abs(tz - cz), cx, ty - 0.05, (cz + tz) / 2, { rx: Math.PI / 2, seg: 8 });
+      }
+      if (PNEU.has(s.kind) && ty > 1.6) {
+        const az = Z0 - D / 2 - 0.07, ax = cx + 0.16;
+        scyl('air', 0.018, ty - 1.25, ax, 1.25, az, { seg: 8 });
+        if (tz !== null && Math.abs(tz - az) > 0.1) scyl('air', 0.018, Math.abs(tz - az), ax, ty - 0.12, (az + tz) / 2, { rx: Math.PI / 2, seg: 8 });
+        sbox('alu', 0.16, 0.2, 0.08, ax, 1.02, az); scyl('glass', 0.03, 0.12, ax - 0.04, 0.86, az, { seg: 8 }); scyl('glass', 0.03, 0.12, ax + 0.04, 0.86, az, { seg: 8 });
+        decal('air', 0.1, 0.06, ax, 1.34, az - 0.045, Math.PI);
+      }
     }
     P.stations.forEach(buildStation);
     // clean booths around the LCM lines; overhead cable trays and line signs above every line
@@ -714,6 +895,9 @@
         for (let l = 0; l < levels; l++) for (const pz of [-1, 1]) sbox(kind === 'pallet' ? 'stripe' : 'rack', lenX, 0.1, 0.07, x, 0.1 + l * lh, z + pz * (depZ / 2 - 0.05));
         for (let i = 0; i <= bays; i++) for (let l = 1; l <= levels; l++) sbox('rack', 0.03, 0.03, depZ, x - lenX / 2 + i * lenX / bays, l * lh - 0.5, z, { rx: 0 });
       }
+      contact(x, z, lenX, depZ);
+      // end-of-aisle guards on the pallet racks, against forklift strikes
+      if (kind === 'pallet' && !low) for (const sx of [-1, 1]) { sbox('safety', 0.14, 0.45, depZ + 0.1, x + sx * (lenX / 2 + 0.16), 0, z); decal('fork', 0.22, 0.22, x + sx * (lenX / 2 + 0.24), 1.2, z, sx > 0 ? Math.PI / 2 : -Math.PI / 2); }
       const slots = [];
       for (let l = 0; l < levels; l++) for (let i = 0; i < bays; i++) for (let k = 0; k < deep; k++) slots.push({ x: x - lenX / 2 + (i + 0.5) * lenX / bays, y: 0.19 + l * lh, z: z - depZ / 2 + (k + 0.5) * depZ / deep });
       slots.sort((a, b2) => a.y - b2.y || a.x - b2.x || a.z - b2.z);
@@ -946,11 +1130,17 @@
     const stripI = inst(new T.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), M.flat, NST * 4 + 400, { color: true, order: 3 });
     const tileI = inst(new T.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), M.flat, NST + 80, { color: true, order: 2 });
     const beamI = inst(unitBox, M.frame, ANIM.gantry.length * 2, { shadow: true });
-    const baseI = inst(new T.CylinderGeometry(0.2, 0.26, 1, 20).translate(0, 0.5, 0), M.frame, ANIM.arm.length, { shadow: true });
-    const turretI = inst(new T.CylinderGeometry(0.17, 0.17, 1, 16).translate(0, 0.5, 0), M.paint, ANIM.arm.length, { shadow: true });
-    const linkI = inst(new T.BoxGeometry(0.24, 1, 0.27).translate(0, 0.5, 0), M.paint2, ANIM.arm.length * 2, { shadow: true });
-    const jointI = inst(new T.SphereGeometry(0.17, 14, 10), M.frame, ANIM.arm.length * 3, { shadow: true });
-    const toolI = inst(new T.BoxGeometry(0.22, 0.16, 0.22), M.frame, ANIM.arm.length, { shadow: true });
+    // industrial six-axis robots: a cast base, a yellow turret, joint housings across the arm with their servo motors,
+    // rounded cast links, and a tool flange carrying a vacuum gripper (the panel and carton robots handle flat loads)
+    const mg = gs => T.mergeGeometries(gs.map(g => (g.index ? g.toNonIndexed() : g)));
+    const rb = (w, h, d, r) => (low ? new T.BoxGeometry(w, h, d) : new T.RoundedBoxGeometry(w, h, d, 1, r));
+    const baseI = inst(mg([new T.CylinderGeometry(0.2, 0.27, 1, 24).translate(0, 0.5, 0), new T.CylinderGeometry(0.3, 0.3, 0.12, 24).translate(0, 0.06, 0)]), M.dark, ANIM.arm.length, { shadow: true });
+    const turretI = inst(mg([new T.CylinderGeometry(0.15, 0.19, 1, 20).translate(0, 0.5, 0), rb(0.3, 0.5, 0.34, 0.06).translate(0.04, 0.7, 0)]), M.robot, ANIM.arm.length, { shadow: true });
+    const linkI = inst(rb(0.2, 1, 0.24, 0.07).translate(0, 0.5, 0), M.robot, ANIM.arm.length * 2, { shadow: true });
+    const jointI = inst(new T.CylinderGeometry(0.15, 0.15, 0.36, 16).rotateX(Math.PI / 2), M.robot, ANIM.arm.length * 3, { shadow: true });
+    const motorI = inst(mg([new T.CylinderGeometry(0.085, 0.085, 0.16, 16).rotateX(Math.PI / 2).translate(0, 0, 0.25), new T.CylinderGeometry(0.06, 0.06, 0.04, 12).rotateX(Math.PI / 2).translate(0, 0, 0.35)]), M.dark, ANIM.arm.length * 3, { shadow: true });
+    const toolI = inst(mg([new T.CylinderGeometry(0.06, 0.06, 0.08, 16).translate(0, 0.04, 0), new T.BoxGeometry(0.5, 0.04, 0.08).translate(0, 0.1, 0), new T.BoxGeometry(0.08, 0.04, 0.4).translate(0, 0.1, 0),
+      ...[[-0.22, 0], [0.22, 0], [0, -0.17], [0, 0.17]].map(([x, z]) => new T.CylinderGeometry(0.035, 0.022, 0.06, 10).translate(x, 0.15, z))]), M.dark, ANIM.arm.length, { shadow: true });
     const platenI = inst(unitBox, M.steel, ANIM.platen.length + ANIM.ram.length, { shadow: true });
     const fanI = inst(new T.BoxGeometry(1, 0.02, 0.06), M.dark, ANIM.fan.length * 2);
     const hangI = inst(new T.BoxGeometry(0.06, 0.9, 0.7).translate(0, -0.45, 0), M.plastic, 700);
@@ -1033,6 +1223,9 @@
       const g = new T.Group(), by = {};
       for (const [mat, geo] of parts) (by[mat] = by[mat] || []).push(strip(geo));
       for (const k in by) { const idx = by[k].filter(x => x.index), non = by[k].filter(x => !x.index); for (const set of [idx, non]) { if (!set.length) continue; const m = new T.Mesh(T.mergeGeometries(set, false), M[k]); m.castShadow = true; m.receiveShadow = true; g.add(m); } }
+      // a contact shade that travels with the vehicle
+      const bb = new T.Box3().setFromObject(g), sh = new T.Mesh(new T.PlaneGeometry(bb.max.x - bb.min.x + 0.5, bb.max.z - bb.min.z + 0.5).rotateX(-Math.PI / 2), M.contact);
+      sh.position.set((bb.min.x + bb.max.x) / 2, 0.006, (bb.min.z + bb.max.z) / 2); sh.renderOrder = 1; sh.raycast = () => {}; g.add(sh);
       world.add(g); return g;
     }
     const gb = (w, h, d, x, y, z, r) => (r && !low ? new T.RoundedBoxGeometry(w, h, d, 2, Math.min(r, w / 2 - 0.001, h / 2 - 0.001, d / 2 - 0.001)) : new T.BoxGeometry(w, h, d)).translate(x, y + h / 2, z);
@@ -1084,17 +1277,22 @@
     const armI = inst(new T.CapsuleGeometry(0.058, 0.46, 3, 8).translate(0, -0.29, 0), M.person, 1800, { color: true, shadow: true });   // pivots at the shoulder
     const hatI = inst(new T.SphereGeometry(0.14, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), M.hatW, 900, { color: true, shadow: true });
     const vestI = inst(new T.CylinderGeometry(0.205, 0.2, 0.34, 14, 1, true), M.vest, 900, { color: true });
-    for (const m of [bodyI, headI, legI, armI, hatI, vestI]) m.userData.noLift = true;   // people climb: their level is eased per person
+    // hands and safety shoes, placed at the end of each swinging arm and leg
+    const handI = inst(new T.SphereGeometry(0.05, 7, 5).scale(1, 1.25, 0.8), M.skin, 1800, { color: true });
+    const shoeI = inst(new T.BoxGeometry(0.27, 0.09, 0.12).translate(0.04, 0.045, 0), M.rubber, 1800, { shadow: true });
+    for (const m of [bodyI, headI, legI, armI, hatI, vestI, handI, shoeI]) m.userData.noLift = true;   // people climb: their level is eased per person
     const HAT = { Operator: 0xF2B705, 'Line leader': 0xFFFFFF, Technician: 0x1F6FEB, 'Rework technician': 0xF2B705, 'Milk-run driver': 0xFFFFFF, 'Forklift driver': 0xFFFFFF, office: 0xFFFFFF };
     const VEST = { Operator: 0xC6F432, 'Line leader': 0xFF7A1A, Technician: 0xFF7A1A, 'Rework technician': 0xC6F432, 'Milk-run driver': 0xC6F432, 'Forklift driver': 0xC6F432 };
     function person(x, y, z, h, swing, tc, role, ref, seated) {
       const c = Math.cos(h), s2 = Math.sin(h), px = -s2, pz = c;   // across the body
       const hip = seated ? 0.5 : 0.86 + Math.abs(swing) * 0.02;
-      if (!seated) for (const sd of [-1, 1]) put(legI, x + px * sd * 0.1, y + hip, z + pz * sd * 0.1, 1, 1, 1, -h, 0, sd * swing * 0.55);
-      put(bodyI, x, y + hip + 0.34, z, 1, 1, 1, -h, 0, 0, ref, tc);
-      if (VEST[role]) put(vestI, x, y + hip + 0.32, z, 1, 1, 1, -h, 0, 0, undefined, VEST[role]);
-      for (const sd of [-1, 1]) put(armI, x + px * sd * 0.25, y + hip + 0.6, z + pz * sd * 0.25, 1, 1, 1, -h, sd * 0.08, seated ? 0.9 : -sd * swing * 0.45, undefined, tc);
-      put(headI, x, y + hip + 0.85, z, 1, 1, 1, 0, 0, 0, undefined, toneOf(ref && ref.startsWith('person:') ? ref : (ref || role) + x.toFixed(1) + z.toFixed(1)));
+      // the torso is wider across the shoulders than it is deep; local x is the facing direction (c, s2)
+      if (!seated) for (const sd of [-1, 1]) { const a = sd * swing * 0.55; put(legI, x + px * sd * 0.1, y + hip, z + pz * sd * 0.1, 1.1, 1, 1.1, -h, 0, a); const f = Math.sin(a) * 0.8; put(shoeI, x + px * sd * 0.1 + c * f, y + Math.max(0, hip - Math.cos(a) * 0.84 - 0.02), z + pz * sd * 0.1 + s2 * f, 1, 1, 1, -h); }
+      put(bodyI, x, y + hip + 0.34, z, 0.8, 1, 1.18, -h, 0, 0, ref, tc);
+      if (VEST[role]) put(vestI, x, y + hip + 0.32, z, 0.82, 1, 1.2, -h, 0, 0, undefined, VEST[role]);
+      const tone = toneOf(ref && ref.startsWith('person:') ? ref : (ref || role) + x.toFixed(1) + z.toFixed(1));
+      for (const sd of [-1, 1]) { const a = seated ? 0.9 : -sd * swing * 0.45, sx2 = x + px * sd * 0.26, sz2 = z + pz * sd * 0.26; put(armI, sx2, y + hip + 0.6, sz2, 1, 1, 1, -h, sd * 0.08, a, undefined, tc); put(handI, sx2 + c * Math.sin(a) * 0.6, y + hip + 0.6 - Math.cos(a) * 0.6, sz2 + s2 * Math.sin(a) * 0.6, 1, 1, 1, -h, 0, 0, undefined, tone); }
+      put(headI, x, y + hip + 0.85, z, 1, 1, 1, 0, 0, 0, undefined, tone);
       put(hatI, x, y + hip + 0.88, z, 1, 1, 1, -h, 0, 0, undefined, HAT[role] || 0xF2B705);
     }
     const OFFICE = [];
@@ -1177,7 +1375,7 @@
       hemi.color.set(C.hemi[0]); hemi.groundColor.set(C.hemi[1]); hemi.intensity = C.hemi[2]; sun.intensity = C.sun; amb.intensity = C.amb;
       renderer.toneMappingExposure = C.exp;
       for (const k of ['floor', 'zone', 'paint', 'paint2', 'frame', 'dark', 'steel', 'alu', 'rubber', 'rack', 'beam', 'glass', 'pcb', 'tv', 'carton', 'pallet', 'tray', 'agv', 'stripe', 'truck', 'cab', 'mag', 'plastic', 'desk', 'carpet', 'wall', 'skin']) M[k].color.set(C[k]);
-      M.floorLine.color.set(C.floorLine); M.slab.color.set(C.floor); M.clad.color.set(C.wall); M.fixture.emissiveIntensity = C.fixture; M.lights.emissiveIntensity = C.fixture; M.roof.color.set(C.beam);
+      M.floorLine.color.set(C.floorLine); M.slab.color.set(C.floor); M.clad.color.set(C.wall); M.fixture.emissiveIntensity = C.fixture; M.lights.emissiveIntensity = C.fixture; M.roof.color.set(C.beam); if (M.floor.userData.pool) M.floor.userData.pool.value = theme === 'dark' ? 0.55 : 0.16;
       M.sel.color.set(S.info); M.route.color.set(S.info); chev.material.color.set(S.info); M.pkt.color.set(C.pkt); M.net.color.set(C.net);
       world.traverse(o => { if (o.userData && o.userData.floorWord) o.material.opacity = theme === 'dark' ? 0.22 : 0.55; });
       if (bloom) bloom.strength = C.bloom;
@@ -1185,7 +1383,7 @@
     }
     function setXray(v) {
       xray = !!v;
-      for (const k of XRAY) { const m = M[k]; if (k === 'glass') continue; m.transparent = xray; m.opacity = xray ? 0.16 : 1; m.depthWrite = !xray; m.needsUpdate = true; }
+      for (const k of XRAY) { const m = M[k]; if (k === 'glass') continue; m.opacity = xray ? 0.16 : 1; m.depthWrite = !xray; if (m.transparent !== xray) { m.transparent = xray; m.needsUpdate = true; } }   // recompile only on a real change (a theme switch calls this too)
     }
 
     /* ---------------- per-frame view ---------------- */
@@ -1199,7 +1397,22 @@
     }
     let tAnim = 0;
     const KWMAX = { injection: 60, oven: 95, reflow: 46, press: 40, cushion: 32 };
-    const m4 = new T.Matrix4(), m5 = new T.Matrix4(), m6 = new T.Matrix4(), v3 = new T.Vector3();
+    const m4 = new T.Matrix4(), m5 = new T.Matrix4(), m6 = new T.Matrix4(), m7 = new T.Matrix4(), v3 = new T.Vector3();
+    // the robot cycle in joint space [yaw, shoulder, elbow] and seconds per move: over the pick, down, dwell (vacuum on), up,
+    // across, down over the place, dwell (release), up, back; yaw −2.4 picks on the infeed side, −0.7 places on the outfeed
+    // side, both over the line inside the guarding
+    const ARM_K = [[-2.4, -0.5, 1.7, 0.9], [-2.4, -0.95, 2.1, 0.7], [-2.4, -0.95, 2.1, 0.5], [-2.4, -0.5, 1.7, 0.6], [-0.7, -0.5, 1.7, 1.3], [-0.7, -0.92, 2.05, 0.7], [-0.7, -0.92, 2.05, 0.5], [-0.7, -0.5, 1.7, 0.6]];
+    const ARM = { length: ARM_K.reduce((t2, k2) => t2 + k2[3], 0) };
+    const smoother = t2 => t2 * t2 * t2 * (t2 * (t2 * 6 - 15) + 10);
+    const armPose = ct => {
+      let t2 = ct;
+      for (let i = 0; i < ARM_K.length; i++) {
+        const a = ARM_K[i], b2 = ARM_K[(i + 1) % ARM_K.length];
+        if (t2 <= a[3]) { const e = smoother(t2 / a[3]); return [a[0] + (b2[0] - a[0]) * e, a[1] + (b2[1] - a[1]) * e, a[2] + (b2[2] - a[2]) * e]; }
+        t2 -= a[3];
+      }
+      return ARM_K[0];
+    };
     function updateMachines(dt) {
       tAnim += dt;
       stackI.count = poleI.count = stripI.count = tileI.count = hitI.count = 0;
@@ -1226,30 +1439,35 @@
         put(hitI, s.x, s.h / 2, s.z, s.w, Math.max(1, s.h), s.d, 0, 0, 0, 'st:' + s.id);
       }
       for (const id in BV) { const b = BV[id]; put(hitI, b.x, b.h / 2, b.z, b.w, b.h, b.d, 0, 0, 0, b.kind === 'room' ? id : b.kind === 'util' ? 'util:' + b.id : 'buf:' + id); }
-      beamI.count = baseI.count = turretI.count = linkI.count = jointI.count = toolI.count = platenI.count = fanI.count = 0;
+      beamI.count = baseI.count = turretI.count = linkI.count = jointI.count = motorI.count = toolI.count = platenI.count = fanI.count = 0;
       const on = s => s && (s.state === 'run' || s.state === 'warn');
       for (const a of ANIM.gantry) {
         const s = a.s, t = on(s) ? tAnim * a.rate * (s.state === 'warn' ? 0.6 : 1) : 0;
         const bx = s.x + (a.offX || 0) + Math.sin(t + s.x) * a.amp;
         put(beamI, bx, a.y, s.z, 0.12, 0.08, a.len); put(beamI, bx, a.y - 0.14, s.z + Math.sin(t * 2.4 + s.z) * a.len * 0.38, 0.2, 0.2, 0.2);
       }
-      // six-axis robots by forward kinematics: base → turret (yaw) → upper arm (shoulder) → forearm (elbow) → tool
+      // six-axis robots by forward kinematics: base → turret (yaw) → upper arm (shoulder) → forearm (elbow) → tool.
+      // A pick-and-place cycle in joint space, each move eased in and out (smootherstep) with a dwell at pick and place;
+      // the cycle clock only runs while the machine runs, so a stopped robot holds its pose instead of jumping home.
       for (const a of ANIM.arm) {
-        const s = a.s, t = on(s) ? tAnim * a.rate + s.x * 0.37 : s.x * 0.37, k = a.k;
-        const yaw = Math.sin(t) * 1.4, sh = -0.55 + Math.sin(t * 1.3) * 0.35, el = 1.2 + Math.sin(t * 1.7 + 1) * 0.35;
-        put(baseI, a.x, a.y, a.z, k, 0.18 * k, k);
-        put(turretI, a.x, a.y + 0.18 * k, a.z, k, 0.28 * k, k, yaw);
+        const s = a.s, k = a.k;
+        if (a.ct === undefined) a.ct = (s.x * 0.37) % ARM.length;
+        if (on(s)) a.ct = (a.ct + dt * a.rate * 1.3 * (s.state === 'warn' ? 0.6 : 1)) % ARM.length;
+        const [yaw, sh, el] = armPose(a.ct);
+        put(baseI, a.x, a.y, a.z, k, 0.16 * k, k);
+        put(turretI, a.x, a.y + 0.16 * k, a.z, k, 0.26 * k, k, yaw);
         m4.makeRotationY(yaw).setPosition(a.x, a.y + 0.42 * k, a.z);
         m5.makeRotationZ(sh); m4.multiply(m5);
-        putM(jointI, m6.copy(m4).multiply(new T.Matrix4().makeScale(k, k, k)));
-        putM(linkI, m6.copy(m4).multiply(new T.Matrix4().makeScale(k, 0.85 * k, k)));
+        putM(jointI, m6.copy(m4).multiply(m7.makeScale(k, k, k))); putM(motorI, m6.copy(m4).multiply(m7.makeScale(k, k, k)));
+        putM(linkI, m6.copy(m4).multiply(m7.makeScale(k, 0.85 * k, k)));
         m5.makeTranslation(0, 0.85 * k, 0); m4.multiply(m5); m5.makeRotationZ(-el); m4.multiply(m5);
-        putM(jointI, m6.copy(m4).multiply(new T.Matrix4().makeScale(0.85 * k, 0.85 * k, 0.85 * k)));
-        putM(linkI, m6.copy(m4).multiply(new T.Matrix4().makeScale(0.85 * k, 0.75 * k, 0.85 * k)));
+        putM(jointI, m6.copy(m4).multiply(m7.makeScale(0.8 * k, 0.8 * k, 0.8 * k))); putM(motorI, m6.copy(m4).multiply(m7.makeScale(0.75 * k, 0.75 * k, 0.75 * k)));
+        putM(linkI, m6.copy(m4).multiply(m7.makeScale(0.75 * k, 0.75 * k, 0.75 * k)));
         m5.makeTranslation(0, 0.75 * k, 0); m4.multiply(m5);
-        putM(jointI, m6.copy(m4).multiply(new T.Matrix4().makeScale(0.6 * k, 0.6 * k, 0.6 * k)));
-        m5.makeRotationZ(sh * 0.5 + el * 0.5 - 0.6); m4.multiply(m5); m5.makeTranslation(0, 0.12 * k, 0); m4.multiply(m5);
-        putM(toolI, m6.copy(m4).multiply(new T.Matrix4().makeScale(k, k, k)));
+        putM(jointI, m6.copy(m4).multiply(m7.makeScale(0.5 * k, 0.5 * k, 0.5 * k)));
+        // the wrist keeps the tool level: its pitch cancels the shoulder and the elbow
+        m5.makeRotationZ(Math.PI + el - sh); m4.multiply(m5); m5.makeTranslation(0, 0.08 * k, 0); m4.multiply(m5);
+        putM(toolI, m6.copy(m4).multiply(m7.makeScale(k, k, k)));
       }
       for (const a of ANIM.platen) { const t = on(a.s) ? tAnim * (a.s.kind === 'injection' ? 0.9 : 0.6) + a.s.z : a.s.z; put(platenI, a.x + (0.5 + 0.5 * Math.sin(t)) * a.amp, a.y + a.h / 2, a.z, a.w, a.h, a.d); }
       for (const a of ANIM.ram) { const t = on(a.s) ? tAnim * 1.8 + a.s.z : 1.6; put(platenI, a.x, a.y + (0.5 + 0.5 * Math.cos(t)) * a.amp + a.h / 2, a.z, a.w, a.h, a.d); }
@@ -1265,7 +1483,7 @@
         const on2 = Math.sin(tAnim * (3 + (i % 5)) + i * 1.7 + rx) > 0.2;
         put(rackLedI, rx - 0.25 + (i % 4) * 0.16, 0.4 + Math.floor(i / 4) * 0.3, rz + 0.57, 1, 1, 1, 0, 0, 0, undefined, lit.set(i % 7 === 3 ? S.warn : S.ok).multiplyScalar(on2 ? 2.4 : 0.15));
       }
-      done(stackI, poleI, stripI, tileI, hitI, beamI, baseI, turretI, linkI, jointI, toolI, platenI, fanI, hangI, rackLedI);
+      done(stackI, poleI, stripI, tileI, hitI, beamI, baseI, turretI, linkI, jointI, motorI, toolI, platenI, fanI, hangI, rackLedI);
       void dim; void v3;
     }
     function updateStock() {
@@ -1324,7 +1542,7 @@
         else { v.g.rotation.y = Math.PI / 2; v.g.position.set(d.x, 0, -0.6 - len / 2 - (1 - k) * 28); }
       }
       for (const [id, v] of INB) if (!P.inbound.some(t => t.id === id)) { world.remove(v.g); INB.delete(id); }
-      for (const m of [bodyI, headI, legI, armI, hatI, vestI]) m.count = 0;
+      for (const m of [bodyI, headI, legI, armI, hatI, vestI, handI, shoeI]) m.count = 0;
       const tint = { Operator: C.person, 'Line leader': C.dark, Technician: C.tech, 'Rework technician': C.person, 'Milk-run driver': C.cab, 'Forklift driver': C.cab };
       const dtm = Math.min(0.1, Math.max(0.001, tAnim - (updateMovers.t || tAnim))); updateMovers.t = tAnim;
       for (const p of P.people) {
@@ -1340,7 +1558,7 @@
         person(p.x, p.ly, p.z, p.hd || 0, swing, tc, p.role, 'person:' + p.id, false);
       }
       for (const o of OFFICE) person(o.x, FL, o.z, Math.PI, 0, C.office, 'office', 'dept:' + o.dept, true);
-      done(bodyI, headI, legI, armI, hatI, vestI);
+      done(bodyI, headI, legI, armI, hatI, vestI, handI, shoeI);
     }
     function updatePackets(dt) {
       pktI.count = 0;
@@ -1475,6 +1693,20 @@
     // between landmarks and short holds, the cinematic grade, lit haze under the high-bay lights, drifting dust and,
     // at high quality, depth of field focused on the point the camera looks at. Without GSAP it runs at constant speed.
     let atmos = null, cineTl = null;
+    // haze in the light (shafts under the high-bay lamps, dust): in the fly-through, and in Ultra for hero views
+    function ensureAtmos() {
+      if (atmos || !window.DFAtmos) return;
+      const lamps = []; for (let x = 12; x < L.W; x += 12) for (let z = 10.5; z < L.D; z += 10.5) if (!lvAt(x, z)) lamps.push([x, ROOF - 1.7, z]);
+      atmos = DFAtmos.create(T, scene, { lamps, shafts: { height: ROOF - 1.7, top: 0.4, bottom: 3 }, dust: { count: low ? 1200 : 3500, box: [70, 12, 70] } });
+      atmos.theme(theme === 'dark');
+    }
+    const syncAtmos = () => { if (ultra && !still) ensureAtmos(); if (atmos) atmos.set((cine.on || ultra) && quality !== 'low'); };
+    // presentation: the cinematic grade (letterbox, cooler shadows); depth of field focuses on the subject in Ultra
+    function setPresent(v) {
+      present = !!v;
+      if (present && quality === 'high' && !(T.X && T.X.BokehPass)) DFLook.extras().then(() => { if (present) { buildComposer(); resize(); } }).catch(() => {});
+      buildComposer(); resize(); emit('present', present);
+    }
     const LANDMARKS = [0, 0.07, 0.16, 0.25, 0.36, 0.44, 0.52, 0.61, 0.7, 0.8, 0.9, 1];
     function cineTimeline() {
       if (!window.gsap) return null;
@@ -1489,12 +1721,8 @@
     async function setCinematic(v) {
       cine.on = !!v; cine.t = 0; cine.k = 0;
       if (v) { if (walk.on) setWalk(false); fly = null; follow = false; }
-      if (v && !atmos && window.DFAtmos) {
-        const lamps = []; for (let x = 12; x < L.W; x += 12) for (let z = 10.5; z < L.D; z += 10.5) if (!lvAt(x, z)) lamps.push([x, ROOF - 1.7, z]);
-        atmos = DFAtmos.create(T, scene, { lamps, shafts: { height: ROOF - 1.7, top: 0.4, bottom: 3 }, dust: { count: low ? 1200 : 3500, box: [70, 12, 70] } });
-        atmos.theme(theme === 'dark');
-      }
-      if (atmos) atmos.set(cine.on && quality !== 'low');
+      if (v) ensureAtmos();
+      syncAtmos();
       emit('cinematic', cine.on);
       buildComposer(); resize();
       if (v) {
@@ -1906,18 +2134,32 @@
     new ResizeObserver(resize).observe(canvas.parentElement);
     buildComposer(); resize();
     applyTheme();
+    // a progressive first frame: the plant appears over its first sixteen frames, a slice at a time, drawn without the
+    // post-processing until it is all there, so the shaders compile in small steps between frames instead of one long
+    // stall (objects wait on layer 1, which no camera draws)
+    const REVEAL = [];
+    for (const o of world.children) { const ms = []; o.traverse(m => { if ((m.isMesh || m.isLine || m.isPoints) && m.layers.isEnabled(0)) { m.layers.set(1); ms.push(m); } }); if (ms.length) REVEAL.push(ms); }
+    const revealN = Math.ceil(REVEAL.length / 16);
     function applyLevel(L) {
       // phones and small tablets (lowPower) keep one device pixel per CSS pixel at every level, as before
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, low ? 1 : L.dpr));
-      const was = quality, shadowsWere = renderer.shadowMap.enabled;
-      quality = L.q; buildComposer(); resize();
+      const was = quality, shadowsWere = renderer.shadowMap.enabled, wasUltra = ultra;
+      quality = L.q; ultra = !!L.ultra; buildComposer(); resize(); syncAtmos();
       renderer.shadowMap.enabled = quality !== 'low'; sun.castShadow = quality !== 'low';
       if (shadowsWere !== renderer.shadowMap.enabled) scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
-      if (was !== quality) emit('quality', quality);
+      if (was !== quality || wasUltra !== ultra) emit('quality', quality);
     }
+    // picture mode: 'ultra' and 'light' hold a level, 'standard' hands the choice back to the governor
+    function setMode(m) {
+      if (m === 'ultra') gov.set(0, true);
+      else if (m === 'light') gov.set(LADDER.length - 1, true);
+      else { gov.manual = false; if (gov.i === 0 || gov.i === LADDER.length - 1) gov.set(low ? LADDER.length - 1 : 1, false); }
+      emit('mode', mode());
+    }
+    const mode = () => (gov.manual && gov.i === 0 ? 'ultra' : gov.manual && gov.i === LADDER.length - 1 ? 'light' : 'standard');
     function setQuality(qv, manual) {
       if (manual === false) { gov.manual = false; return; }
-      const i = LADDER.findIndex(L => L.q === qv); if (i < 0) return;
+      const i = LADDER.findIndex(L => (L.ultra ? 'ultra' : L.q) === qv); if (i < 0) return;
       gov.set(i, manual !== undefined ? !!manual : gov.manual);
       if (LADDER[gov.i].q !== quality) applyLevel(LADDER[gov.i]);
     }
@@ -1936,6 +2178,7 @@
     }
     let lastFrame = 0;
     function render(dt) {
+      if (REVEAL.length) for (let i = 0; i < revealN && REVEAL.length; i++) REVEAL.shift().forEach(m => m.layers.set(0));
       const t0 = performance.now();
       if (lastFrame) gov.tick(t0 - lastFrame); lastFrame = t0;
       DFPerf.frame(t0); if (window.DFMotion) DFMotion.tick(t0);
@@ -1958,8 +2201,8 @@
       for (const f of frameFns) f(dt);
       if (vig) DFLook.frameGrade(vig, camera, frames);
       if (atmos) atmos.update(t0 / 1000, camera, Ht * renderer.getPixelRatio() / (2 * Math.tan(camera.fov * Math.PI / 360)));
-      if (bokeh) { bokeh.uniforms.focus.value = camera.position.distanceTo(controls.target); bokeh.uniforms.aspect.value = camera.aspect; }
-      if (composer) composer.render(dt); else renderer.render(scene, camera);
+      if (bokeh) { const fd = camera.position.distanceTo(controls.target); bokeh.uniforms.focus.value = fd; bokeh.uniforms.aspect.value = camera.aspect; bokeh.uniforms.aperture.value = 0.00006 * Math.min(1.5, Math.max(0.08, 30 / fd)); }   // a wide shot keeps its depth, a close one softens the background
+      if (composer && !REVEAL.length) composer.render(dt); else renderer.render(scene, camera);
       // CCTV feeds: one camera redrawn per frame, the rest keep their last image
       if (cctvOn) {
         const rects = cctvRects();
@@ -1996,9 +2239,14 @@
       setCinematic, get cinematic() { return cine.on; },
       setCctv(v) { cctvOn = !!v; emit('cctv', cctvOn); }, get cctv() { return cctvOn; }, cctvRects,
       setXray, get xray() { return xray; },
-      setQuality, get quality() { return quality; }, get governor() { return gov; },
+      setQuality, get quality() { return quality; }, get governor() { return gov; }, setMode, get mode() { return mode(); }, get ultra() { return ultra; },
+      setPresent, get presenting() { return present; },
       setLook, get look() { return look; },
       FL, lvAt: (x, z) => lvStatic(x, z), get overlayMode() { return overlay; },
+      // a camera move to an exact position and target (the presentation's hero shots), eased, wall-clock timed
+      camTo(p, t, dur = 2.4, fov) { if (walk.on) setWalk(false); moved = true; fly = { t: 0, dur: still ? 0.01 : dur, p0: camera.position.clone(), t0: controls.target.clone(), p1: new T.Vector3(...p), t1: new T.Vector3(...t) }; if (fov) { camera.fov = fov; camera.updateProjectionMatrix(); } },
+      setFov(f) { camera.fov = f || FOV_ORBIT; camera.updateProjectionMatrix(); },
+      get stationsPos() { return P.stations.map(s => ({ id: s.id, kind: s.kind, line: s.line, x: s.x, z: s.z, w: s.w, d: s.d, y: lvStatic(s.x, s.z) })); },
       unitPos, frames: () => frames
     };
   }

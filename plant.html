@@ -109,7 +109,10 @@
           <button type="button" data-nav="cine" aria-pressed="false" title="Fly through the plant"><span data-icon="sparkles"></span><span class="hide-md">Fly-through</span></button>
           <button type="button" data-nav="cctv" aria-pressed="false" title="Camera feeds"><span data-icon="eye"></span><span class="hide-md">Cameras</span></button>
           <button type="button" data-nav="xray" aria-pressed="false" title="See inside the machines"><span data-icon="layers"></span><span class="hide-md">X-ray</span></button>
+          <button type="button" data-nav="present" aria-pressed="false" title="Present the plant full screen, shot by shot"><span data-icon="maximize"></span><span class="hide-md">Present</span></button>
         </div>
+        <button type="button" class="btn btn-secondary btn-sm pl-qbtn" id="qualBtn" aria-expanded="false" aria-controls="qualMenu" aria-haspopup="menu" title="Picture quality"><span data-icon="settings"></span><span class="hide-md" id="qualName">Standard</span><span class="sr-only">Picture quality</span></button>
+        <div class="pl-menu pl-qmenu" id="qualMenu" role="menu" aria-label="Picture quality" hidden></div>
         <button type="button" class="btn btn-primary btn-sm" id="drillBtn" aria-expanded="false" aria-controls="drills"><span data-icon="wand"></span>Run a drill</button>
         <div class="pl-menu" id="drills" hidden></div>
       </div>
@@ -161,6 +164,7 @@
   <script src="assets/js/plant/views2d.js"></script>
   <script src="assets/js/plant/ui.js"></script>
   <script src="assets/js/plant/problems.js"></script>
+  <script src="assets/js/plant/present.js"></script>
   <script src="assets/js/plant/studio-models.js"></script>
   <script src="assets/js/plant/studio.js"></script>
   <script src="assets/js/plant/recorder.js"></script>

@@ -308,3 +308,73 @@ The floor paint does not cast shadows. The 8 new programs are the new materials:
 - `world-traffic.jpg`, `world-dock.jpg`: the floor.
 - `world-problems-dark.jpg`, `world-problems-fix.jpg`: problems, arcs and repairs.
 
+
+## 11. Machines in real detail, picture modes and the presentation
+
+The goal of this pass: take the plant from a clean 3D mock-up to a lived-in, working plant that holds up in a client
+meeting, without leaving the browser budget.
+
+**Finishes** (`DFShaders.surface`, world space, so merged and instanced geometry needs no UVs):
+
+| Finish | On | What it adds |
+|---|---|---|
+| `powder` | machine paint, frames, racks, steel beams, vehicles, robots, totes | orange-peel stipple in the normal (only close up, faded by pixel footprint), gloss that drifts from panel to panel, handling marks at waist height |
+| `brushed` | steel, aluminium | a long grain along the face in the roughness |
+| `cast` | cast and dark parts, plastics | a dull grain |
+| `rubber` | belts, tyres, mats | a dull stipple |
+| all | every finish above, and glass | grime and a contact shade in the last 30 cm above any floor (the ground, the deck and the mezzanines, at 5.4 m); smudged, dustier glass near the floor |
+
+The floor also gets **pools of light** under the high-bay lamps (stronger on the dark theme). A **contact shadow**
+(a soft rounded rectangle, one merged mesh) sits under every machine and rack, and travels with every vehicle.
+
+**Detail kit** (merged static geometry, skipped on low-power devices):
+- a decal sheet drawn in code: ISO 7010-style warnings, mandatory, fire, first-aid, exit and no-entry signs, a rating plate, a QR asset tag, a barcode, the AIR and 400 V labels, floor arrows;
+- on every cabinet: door seams and handles, the rating plate and asset tag, the electrical warning by the vents, an emergency stop beside the screen;
+- on the big machines (injection, presses, ovens, reflow, cushion): panelled enclosures with handles and vents, crush and hot-surface warnings, the mould water circuits;
+- cable chains over the moving heads; a power conduit down from the cable tray and a blue compressed-air drop with its filter-regulator behind every pneumatic machine;
+- welded-mesh guarding on yellow posts (`DFShaders.mesh`: a box-filtered wire grid as alpha, a fine grid close up and a light tint from across the hall) round the robot cells and the palletiser;
+- parts totes on the assembly stations' shelves and at each hand, with the work-instruction signs.
+
+**Robots:** a cast base, a yellow turret, joint housings with their servo motors, rounded links and a vacuum gripper
+held level by the wrist. The cycle runs in joint space (pick, dwell, lift, traverse, place, dwell, return) with
+smootherstep easing, so each move accelerates and decelerates; the cycle clock only runs while the machine runs, so a
+stopped robot holds its pose.
+
+**People:** a torso wider than it is deep, hands at the end of each swinging arm and safety shoes under each leg.
+
+**The building:** a yellow-black guard at the foot of every column, extinguisher points and PPE signs on alternate
+columns, distribution boards with a conduit to the roof on the outer wall, the red sprinkler main with its heads and
+the blue air ring under every truss line, exit signs over the doors, direction arrows on every vehicle lane.
+
+**Picture modes** (`V.setMode`, the picture button): Ultra (device pixels up to 2, finer GTAO, haze in the light, depth
+of field in the presentation, focused on the subject with an aperture that shrinks with distance), Standard (the
+governor, high to low) and Light (low). The governor never climbs into Ultra on its own (`top` in `DFPerf.governor`).
+
+**Presentation** (`assets/js/plant/present.js`): full screen, the cinematic grade, nine hero shots built from where the
+stations stand (overview, SMD, robot cell, injection, press, main line at eye level, aging, shipping, and the most
+urgent live problem with its cause and fix), each easing in then drifting under a lower-third caption. Keyboard and
+buttons step, pause and leave; reduced motion turns the moves into cuts. It only moves the camera.
+
+**Measured** (`docs/bench/machines-before.json` → `machines-after.json`; same machine, SwiftShader, high quality forced,
+the same poses):
+
+| Pose | Draw calls | Triangles drawn | Programs |
+|---|---|---|---|
+| desktop · overview | 485 → 537 (+11 %) | 1.33 M → 1.52 M (+15 %) | 48 → 63 |
+| desktop · mid | 424 → 400 | 1.77 M → 1.56 M | 54 → 69 |
+| desktop · close | 302 → 288 | 2.04 M → 2.05 M | 54 → 69 |
+| desktop · cinematic | 541 → 558 | 2.94 M → 3.38 M | 60 → 75 |
+| mobile · overview, high forced | 401 → 481 (+20 %) | 0.97 M → 1.12 M | 73 → 99 |
+
+- The scene's own geometry grew from 0.93 M to 1.07 M triangles (+15 %); the detail kit is merged by material, so it adds about one draw call per new material.
+- Small parts (handles, e-stop boxes, totes, filter bowls) are plain boxes and low-segment cylinders; rounded edges stay on the bodies, where the light shows them.
+- Phones (the low-power path) skip the whole detail kit and start at the Light level.
+- The new programs are the finishes and the new materials (decals, mesh, contact shadow, robot paint, e-stop, air, sprinkler, totes). They raised the time to the first frame on SwiftShader by about half, because a software GPU compiles shaders on the CPU; a real GPU compiles them in a fraction of that. Read the start-up time on a real device with `?perf=1`.
+- A trial of `renderer.compileAsync` before the first frame doubled the programs (48 → 104) and was taken out.
+- Instead the first frame is **progressive**: the plant appears over its first sixteen frames, a slice of objects at a time (they wait on a camera layer nothing draws), without the post-processing until it is all there. The shaders compile in small steps between frames, so the page answers input while the plant builds instead of freezing in one long stall.
+- Switching the theme no longer recompiles the machine materials (the x-ray switch only marks a material for recompile when its transparency really changes).
+- The design pipeline's QA probe has a 30 s budget per step. On this container's software GPU, `plant.html` at 1440 px misses it on `main` too (measured before this change); a 150 s budget did not help, while a direct browser test at 1440 px answers between frames throughout. The plant was gated at 390 and 820 px (0 FAIL) and checked at 1440 px for script errors in English, Arabic and admin mode (none); see `docs/ALLOWANCES.md`.
+- SwiftShader frame times swing by tens of percent between runs of the same build; they are not a frame rate.
+
+**Comparison images:** `docs/bench/machines-overview.jpg`, `machines-mid.jpg`, `machines-close.jpg` (before | after);
+`present-smd.jpg`, `present-robot.jpg`, `present-injection.jpg`, `present-main.jpg` (presentation shots in Ultra).

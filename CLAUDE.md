@@ -3,7 +3,7 @@
 Static site (no build): `index.html` (website), `app.html` (command room), `deck.html` (presentation), `guide.html` (bilingual reference guide), `plant.html` (live plant in 3D), `showroom.html` (product studio and motion studio). Plant data is simulated.
 When a screen, scenario, decision, slide or term changes, update `guide.html` (both languages) and `assets/js/guide-terms.js` to match.
 The command room and the live plant run one model of Plant EG-01, a TV plant with six main lines and the LCM, SMD, injection, press
-and cushion lines feeding them: `assets/js/plant/` (engine, erp, agents; plant.html adds scene, views2d, ui, recorder). The room lives in
+and cushion lines feeding them: `assets/js/plant/` (engine, erp, agents; plant.html adds scene, views2d, ui, recorder, problems, present). The room lives in
 `assets/js/room/` (copilot included). Change the plant only through the engine's commands (`E.apply`, `E.hmi`, `E.changeover`,
 `E.trigger`, `AG.decide`, `AG.publish`), never by writing to the world from a page, or the audit trail and the time machine lie.
 Never bring back the old five-line plant (SMT 1–2, Final Assembly A/B, phones, burn-in, futures, cases, twelve drills).
