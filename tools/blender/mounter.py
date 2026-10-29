@@ -860,7 +860,12 @@ if A.out and A.glass == 'thin':
     out_ = nt.nodes.new('ShaderNodeOutputMaterial'); mix = nt.nodes.new('ShaderNodeMixShader'); fr = nt.nodes.new('ShaderNodeFresnel')
     tr = nt.nodes.new('ShaderNodeBsdfTransparent'); gl = nt.nodes.new('ShaderNodeBsdfGlossy')
     fr.inputs['IOR'].default_value = 1.49; tr.inputs['Color'].default_value = (0.95, 0.96, 0.97, 1); gl.inputs['Roughness'].default_value = 0.02
-    nt.links.new(fr.outputs['Fac'], mix.inputs['Fac']); nt.links.new(tr.outputs['BSDF'], mix.inputs[1]); nt.links.new(gl.outputs['BSDF'], mix.inputs[2])
+    # reflect on the front face only: seen from inside a pane the Fresnel term flips toward total internal reflection
+    # and the far face turns into a dark mirror, so back faces stay plain transparent
+    geo = nt.nodes.new('ShaderNodeNewGeometry'); inv = nt.nodes.new('ShaderNodeMath'); mul = nt.nodes.new('ShaderNodeMath')
+    inv.operation = 'SUBTRACT'; inv.inputs[0].default_value = 1.0; mul.operation = 'MULTIPLY'
+    nt.links.new(geo.outputs['Backfacing'], inv.inputs[1]); nt.links.new(fr.outputs['Fac'], mul.inputs[0]); nt.links.new(inv.outputs['Value'], mul.inputs[1])
+    nt.links.new(mul.outputs['Value'], mix.inputs['Fac']); nt.links.new(tr.outputs['BSDF'], mix.inputs[1]); nt.links.new(gl.outputs['BSDF'], mix.inputs[2])
     nt.links.new(mix.outputs['Shader'], out_.inputs['Surface'])
 if A.out:
     if A.noisy:

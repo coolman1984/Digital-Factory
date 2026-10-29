@@ -80,3 +80,12 @@ dark because they reflect a dark world (E3).
 |---|---|---|---|
 | n1 (as found) | 96 / 0.02 / none | 280 s | raw: heavy grain behind the glass; denoised: nozzles, rails and edges smeared |
 | n2 | 256 / 0.01 / 10 | 731 s | denoised: rail grooves and edges stay sharp; raw grain remains behind the glass |
+| n3 | 512 / 0.005 / 10 | 1502 s | denoised: nearly identical to n2 at twice the time; raw still grainy behind the glass |
+
+| n4 | 256 / 0.01 / 10, thin glass (Fresnel on both faces) | 708 s | grain gone, but the interior went dark: seen from inside a pane the Fresnel term flips toward total reflection (shader error) |
+| **n5** | **256 / 0.01 / 10, thin glass, reflection on front faces only** | **687 s** | **raw far cleaner behind the hood; nozzles and rails crisp after denoising; interior correctly lit** |
+
+**Decision: stills use 256 spp, threshold 0.01, indirect clamp 10, OIDN with albedo/normal, and thin front-face glass
+(`mounter.py --glass thin`).** The GLB keeps the standard glass for the browser.
+
+Finding: past 256 spp the gain is small and the cost doubles; the remaining grain sits in the refractive hood panes, so the next lever is the glass shader, not samples.
