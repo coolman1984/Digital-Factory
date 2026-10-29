@@ -3,11 +3,11 @@
 # Measured on 4 CPU cores with software Vulkan: about 2x the throughput of one process using all cores.
 set -e
 OUT=${1:-out}; GODOT=${2:-godot}; N=${SLICES:-4}; FRAMES=180; PRE=30
-ARGS="--fsr=0.67 --no-msaa --exposure=1.1 --fill=2.0"
+ARGS="--fsr=0.67 --no-msaa --exposure=1.1 --fill=2.0 ${EXTRA:-}"; RES=${RES:-1920x1080}
 mkdir -p "$OUT"; DIR=$(cd "$(dirname "$0")" && pwd)
 [ -n "$ASSEMBLE_ONLY" ] || for i in $(seq 0 $((N - 1))); do
   a=$((i * FRAMES / N)); b=$(((i + 1) * FRAMES / N)); mkdir -p "$OUT/s$i"
-  LP_NUM_THREADS=${LP_NUM_THREADS:-1} $GODOT --path "$DIR" --write-movie "$OUT/s$i/f.png" --fixed-fps 30 --resolution 1920x1080 \
+  LP_NUM_THREADS=${LP_NUM_THREADS:-1} $GODOT --path "$DIR" --write-movie "$OUT/s$i/f.png" --fixed-fps 30 --resolution $RES \
     -- $ARGS --range=$a,$b > "$OUT/s$i.log" 2>&1 &
 done
 [ -n "$ASSEMBLE_ONLY" ] || wait

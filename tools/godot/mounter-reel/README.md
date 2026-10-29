@@ -15,6 +15,9 @@ without specular (lifts the shadow side without glare on the hood glass). Measur
 6 min 48 s for the reel (about 1.4 s a frame) against 9 min 22 s for one process at native resolution, same sharpness at
 100% crops. Details and the measurements: `docs/RENDER_QUALITY_AUDIT.md` E5.
 
+**9:16 social cut:** `RES=1080x1920 EXTRA=--portrait render.sh out-916 godot`: its own camera path for a tall frame (the
+whole machine with room above for a title, ending on the nozzles), never a crop of the 16:9 reel. 7 min 15 s on 4 cores.
+
 ## Run
 
 1. Export the model next to the project (Blender 5.2 as a Python module, or Blender itself):

@@ -20,6 +20,7 @@ var n0 := Vector3.ZERO
 const CYCLE := [[0, 0, 0, 0], [0.25, 0, 0, 1], [0.45, 0, 0, 0], [1.25, 0.73, -0.32, 0], [1.45, 0.73, -0.32, 1], [1.65, 0.73, -0.32, 0], [2.15, 0.52, 0.44, 0], [2.35, 0.52, 0.44, 0], [2.95, 0, 0.06, 0], [3.15, 0, 0.06, 1], [3.35, 0, 0.06, 0], [3.9, 0, 0, 0]]
 var only := -1               # --frame N in the user args renders one frame (look tests)
 var exposure := 1.0
+var portrait := false        # --portrait: the 9:16 social cut, its own camera path (never a crop of the 16:9 reel)
 var card := false
 var fill_energy := 0.6
 var rng := Vector2i(-1, -1)  # --range=a,b renders reel frames a..b-1 only (after its own warm-up), for parallel slices
@@ -36,6 +37,7 @@ func _ready() -> void:
 		if a == "--no-msaa": vp.msaa_3d = Viewport.MSAA_DISABLED
 		if a.begins_with("--exposure="): exposure = float(a.split("=")[1])
 		if a == "--card": card = true
+		if a == "--portrait": portrait = true
 		if a.begins_with("--fill="): fill_energy = float(a.split("=")[1])
 	_environment()
 	_studio()
@@ -129,6 +131,9 @@ func _pose(u: float) -> void:
 	var e := u * u * (3.0 - 2.0 * u)
 	var p0 := Vector3(3.45, 2.45, 4.35); var p1 := Vector3(1.35, 1.62, 2.05)
 	var l0 := Vector3(0.0, 0.95, 0.05); var l1 := Vector3(-0.08, 1.06, 0.0)
+	if portrait:
+		# a tall frame: start on the whole machine from further back and higher, end on the head and its nozzles
+		p0 = Vector3(5.4, 3.7, 7.2); p1 = Vector3(1.15, 1.5, 1.85); l0 = Vector3(-0.15, 0.85, 0.0); l1 = Vector3(0.2, 1.05, 0.05)
 	var a := deg_to_rad(8.0) * e
 	var p := p0.lerp(p1, e).rotated(Vector3.UP, -a)
 	cam.look_at_from_position(p, l0.lerp(l1, e), Vector3.UP)
