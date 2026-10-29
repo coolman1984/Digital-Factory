@@ -55,4 +55,28 @@ sent with the report).
 
 ## 4. Experiments and results
 
-(filled in as each A/B is rendered: settings, render time, full frame and 100% crop paths, verdict)
+### E1 · Colour and exposure (calibration chart, `tools/blender/lookdev.py`, studio rig v1, 128 spp)
+
+Measured on the cards and swatches (8-bit sRGB green channel for the cards; hue and saturation of each swatch against its
+authored hex). Target for a calibrated exposure: grey card about 118, white below clipping, black near 50.
+
+| View transform, exposure | Black 0.04 | Grey 0.18 | White 0.90 | Brand blue #1428A0 renders as | Mean hue shift | Mean saturation change |
+|---|---|---|---|---|---|---|
+| AgX Medium High Contrast, 0 (as found) | 133 | 199 | 242 | #6C8BE6 | 3.4° | 0.10 |
+| AgX base, 0 | 131 | 188 | 231 | #6C88D9 | 3.5° | 0.17 |
+| Khronos PBR Neutral, 0 | 120 | 224 | 253 | #5463F6 | 2.6° | 0.24 |
+| AgX Medium High Contrast, −2.25 | 48 | 113 | 197 | #003694 (13° toward cyan) | 4.0° | 0.10 |
+| **Khronos PBR Neutral, −1.9** | **43** | **116** | **237** | **#0D259F** | **1.5°** | **0.07** |
+
+Findings: the studio rig was about 1.5–2 stops over-exposed (the washed-out look). At a calibrated exposure, PBR Neutral
+keeps authored colours (paint white #E1E4E8 → #E5E7EA) and the full tonal range; AgX greys the whites and pushes the brand
+blue toward cyan. PBR Neutral is also what the browser uses (`NeutralToneMapping`), so one transform serves both paths.
+**Decision: Khronos PBR Neutral, exposure calibrated per light rig on the grey card.** Side effect seen: metals now read
+dark because they reflect a dark world (E3).
+
+### E2 · Sampling and denoising (Mounter B hero, 1600×1000, PBR Neutral −1.9, CPU 4 cores)
+
+| Run | Samples / threshold / clamp | Time (raw + denoised) | 100% crop through the hood |
+|---|---|---|---|
+| n1 (as found) | 96 / 0.02 / none | 280 s | raw: heavy grain behind the glass; denoised: nozzles, rails and edges smeared |
+| n2 | 256 / 0.01 / 10 | 731 s | denoised: rail grooves and edges stay sharp; raw grain remains behind the glass |
