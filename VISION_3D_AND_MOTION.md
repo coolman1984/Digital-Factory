@@ -2,6 +2,10 @@
 
 Owner direction recorded on 2026-10-29. **Mandatory reading before planning, implementing or reviewing visual, 3D, animation, editing or presentation work.** This is an enduring creative/engineering brief, not a claim that its features are implemented.
 
+## Required companion references
+
+Read [REFERENCE_PACK_3D_AND_DIGITAL_TWINS.md](REFERENCE_PACK_3D_AND_DIGITAL_TWINS.md) before relevant 3D, inspection, motion or editing work. Select and record applicable industrial, geometry and technical references; verify source rights and compatibility before reuse. These are external references, not installed features.
+
 ## Required behavior at the start of work
 
 Read this document and the repository's existing instructions before choosing tools or designing shots/screens. In the task plan, explicitly assess the relevant capabilities below: use, defer with a concrete reason, or not applicable. Never silently ignore them. Do not force every effect into every project: the effect must explain the product or process and support the owner's brief.
