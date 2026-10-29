@@ -24,12 +24,12 @@ results listed). Owner review before moving on. Nothing is merged or deployed.
 ## Checklist
 
 - [x] Audit (this file)
-- [ ] Reference-to-model matrix per station (`REFERENCES-TV-PLANT.md` §5)
-- [ ] Blender: per-pallet objects and per-step TV states so the line can index; packing station placed after the test
-- [ ] Export the slice GLBs (light for the browser), gates (`check-glb.mjs`)
-- [ ] `line.html`: the slice in the browser on the shared look system: views (overview, eye level, detail), labels AR/EN,
+- [x] Reference-to-model matrix per station (`REFERENCES-TV-PLANT.md` §5)
+- [x] Blender: per-pallet objects and per-step TV states so the line can index; packing station placed after the test
+- [x] Export the slice GLBs (light for the browser), gates (`check-glb.mjs`)
+- [x] `line.html`: the slice in the browser on the shared look system: views (overview, eye level, detail), labels AR/EN,
       deterministic animation (pallet indexing, screwdriver dips, robot fastening, test tilt, carton taping), reduced motion
-- [ ] Links: live plant main line ML-3 → slice; slice → plant; studio unaffected
+- [x] Links: live plant main line ML-3 → slice; slice → plant; studio unaffected
 - [ ] Evidence: real browser captures (wide, mid, close), 30 s walkthrough video rendered frame by frame from the page
 - [ ] Side-by-side with three or more reference images (internal, not committed where licences forbid)
 - [ ] Performance at fixed poses (frame time, calls, triangles, memory, load) on this machine's software GPU

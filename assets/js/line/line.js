@@ -38,7 +38,7 @@
   // views in three axes (x along the line, y up, z toward the visitor's side)
   const CAMS = {
     overview: { pos: [12.5, 5.0, 10.5], look: [1.0, 0.8, 0.5] },
-    eye: { pos: [-4.1, 1.62, 1.85], look: [-2.9, 1.0, -0.2] },          // standing between the operators of stations 1 and 2
+    eye: { pos: [-6.6, 1.65, 3.3], look: [-2.8, 0.95, -0.1] },          // eye level in the aisle, just behind the first operators
     cell: { pos: [-1.4, 3.4, 8.2], look: [-1.8, 0.8, 3.9] },
     robot: { pos: [0.1, 2.15, 2.35], look: [-1.0, 1.05, -0.5] },
     test: { pos: [8.4, 1.75, 3.4], look: [5.8, 1.1, 0.0] },
@@ -101,6 +101,7 @@
   const SX = [-5, -3, -1, 1, 3], ZT = 0.82;                    // stations (Blender x) and conveyor top
   const STATE_IN = [0, 1, 1, 1, 2], STATE_OUT = [1, 1, 1, 2, 3];
   const TEST = [5.2, 6.7], ZTEST = 1.14;                    // fixture top 0.72 + half the set's height
+  const TT = -78;                                             // test sets lean back about 12°, as on the reference lines
   const PK_Y = -3.0, ZPK = 0.77, JX = 9.0, TAPE = 10.7, STRAP = 11.9;
   // keyframes: [t, x, y, z, rx(deg), mesh]; a piece shows from its first key to its last
   function unitKeys(b) {
@@ -117,11 +118,11 @@
     const u0 = b + 5 * TC - MV;
     tv.push([u0 + 0.5, SX[4] + 0.3, 0, ZT + 0.5, -30, 'tv3']); tv.push([u0 + 1.2, SX[4] + 1.2, 0, ZT + 0.45, -75, 'tv3']);
     tv.push([u0 + 1.21, SX[4] + 1.2, 0, ZT + 0.45, -75, 'tv_up_flat']);
-    tv.push([b + 5 * TC, TEST[0], 0, ZTEST, -90, 'tv_up']);
-    tv.push([b + 6 * TC - MV, TEST[0], 0, ZTEST, -90, 'tv_up']); tv.push([b + 6 * TC, TEST[1], 0, ZTEST, -90, 'tv_up']);
+    tv.push([b + 5 * TC, TEST[0], 0, ZTEST, TT, 'tv_up']);
+    tv.push([b + 6 * TC - MV, TEST[0], 0, ZTEST, TT, 'tv_up']); tv.push([b + 6 * TC, TEST[1], 0, ZTEST, TT, 'tv_up']);
     // laid down and bagged at the transfer, down the transfer, along the packing line to the lift
     const d0 = b + 7 * TC - MV;
-    tv.push([d0, TEST[1], 0, ZTEST, -90, 'tv_up']); tv.push([d0 + 1.2, 7.5, -0.3, ZPK + 0.3, -20, 'tv3']);
+    tv.push([d0, TEST[1], 0, ZTEST, TT, 'tv_up']); tv.push([d0 + 1.2, 7.5, -0.3, ZPK + 0.3, -20, 'tv3']);
     tv.push([b + 7 * TC, 7.7, -0.35, ZPK, 0, 'tv3']); tv.push([b + 7 * TC + 0.01, 7.7, -0.35, ZPK, 0, 'bagged']);
     tv.push([b + 7 * TC + MV, 7.7, PK_Y, ZPK, 0, 'bagged']);
     tv.push([b + 7 * TC + 2 * MV, JX, PK_Y, ZPK + 0.25, 0, 'bagged']);                        // raised by the lift over the carton
