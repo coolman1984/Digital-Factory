@@ -1404,7 +1404,8 @@
       for (const k of uv ? ['position', 'normal', 'uv'] : ['position', 'normal']) {
         const a = g.attributes[k]; if (!a) continue;
         const n = a.count, sz = a.itemSize, arr = new Float32Array(n * sz);
-        for (let i = 0; i < n; i++) for (let c = 0; c < sz; c++) arr[i * sz + c] = a.getComponent(i, c);
+        const get = [a.getX, a.getY, a.getZ, a.getW];   // these undo the quantization (getComponent would not)
+        for (let i = 0; i < n; i++) for (let c = 0; c < sz; c++) arr[i * sz + c] = get[c].call(a, i);
         f.setAttribute(k, new T.BufferAttribute(arr, sz));
       }
       if (g.index) f.setIndex(new T.BufferAttribute(Uint32Array.from(g.index.array), 1));
@@ -1419,6 +1420,10 @@
         for (let q = o; q; q = q.parent) { if (q.name === 'MNT.head' && part === 'body') part = 'head'; if (q.name === 'MNT.gantry' && part === 'body') part = 'gantry'; if (q.userData && q.userData.shell) shell = true; }
         const m = o.material;
         if (m.transmission > 0) { m.transmission = 0; m.transparent = true; m.opacity = m.name === 'glass' ? 0.16 : 0.6; m.depthWrite = m.name !== 'glass'; }
+        // the floor copies drop what only the studio needs: anisotropy wants tangents (without them it can shade NaN,
+        // which bloom spreads over the whole frame) and the screen picture is too small to read from the aisle
+        if (m.anisotropy) m.anisotropy = 0;
+        if (m.map && !o.geometry.attributes.uv) { m.map = null; m.needsUpdate = true; }
         if (shell && !shellMats.includes(m)) shellMats.push(m);
         const g = toFloat(o.geometry, !!m.map); g.applyMatrix4(o.matrixWorld);
         const list = parts[part].get(m) || []; list.push(g); parts[part].set(m, list);
