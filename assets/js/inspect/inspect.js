@@ -335,7 +335,7 @@
 
   function applyTheme() {
     const dark = document.documentElement.dataset.theme === 'dark';
-    scene.background = new T.Color(dark ? 0x101216 : 0xEEF0F3); sweepMat.color.set(dark ? 0x1B1E24 : 0xEBEDF0); key.intensity = dark ? 1.8 : 2.3;
+    scene.background = new T.Color(dark ? 0x101216 : 0xB7BCC1); sweepMat.color.set(dark ? 0x1B1E24 : 0xC6CACE);   // light: the grey of the Blender studio, so a photo fades in without a jump key.intensity = dark ? 1.8 : 2.3;
     ghostMat.uniforms.color.value.set(dark ? 0x4DA3FF : 0x2189FF);
   }
   new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
