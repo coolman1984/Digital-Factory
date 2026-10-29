@@ -45,7 +45,7 @@ principled('shirt_navy', '#26324A', rough=0.8)
 principled('shirt_black', '#1E2024', rough=0.8)
 principled('shirt_red', '#9E2B2B', rough=0.8)
 principled('shirt_grey', '#7C838D', rough=0.8)
-SHIRTS = ['shirt', 'shirt_navy', 'shirt_black', 'shirt_grey', 'shirt_red', 'shirt_navy']
+SHIRTS = ['uniform_blue', 'uniform_blue', 'uniform_blue', 'shirt_grey', 'uniform_blue', 'shirt_navy']   # the plant's blue uniform, a few in their own jackets
 _who = [0]
 principled('apron', '#3F86C8', rough=0.75)
 principled('cap', '#F2F4F6', rough=0.7)
@@ -54,6 +54,14 @@ principled('shoe', '#15161A', rough=0.6)
 principled('cardboard', '#B98D5B', rough=0.85)
 principled('wood', '#9C7A52', rough=0.8)
 principled('speaker', '#1C1D20', rough=0.7)
+principled('tube_cream', '#E6DFCB', rough=0.45, coat=0.3)            # lean-tube (pipe and joint) frames
+principled('joint_black', '#1A1B1E', rough=0.4, metal=0.6)
+principled('balancer_yellow', '#F2C200', rough=0.35, coat=0.4)
+principled('monitor_white', '#E6E7E8', rough=0.4)
+principled('roller_beige', '#D8CBAA', rough=0.5)
+principled('uniform_blue', '#1F4FB5', rough=0.8)
+principled('sleeve_stripe', '#7A1F2B', rough=0.8)
+principled('bag_black', '#0E0F12', rough=0.25, coat=0.6, coat_rough=0.2)
 principled('robot_white', '#E9EAEC', rough=0.35, coat=0.4, coat_rough=0.15, noise_bump=0.15)
 principled('robot_orange', '#E8641E', rough=0.4, coat=0.3)
 principled('wall_panel', '#E4E7EA', rough=0.6, metal=0.2, noise_bump=0.2)
@@ -188,28 +196,38 @@ pal.build(); units.build()
 
 # ---------------------------------------------------------------- station frames: lights, screens, screwdrivers
 assembly('AREA.stations', 'Station frames over the line: LED task light, work-instruction screen, screwdrivers on balancers.', parent='AREA')
-fr = Part('AREA.stations.frames', 'Aluminium-profile station frames', 'AREA.stations', bevel=0.002)
-li = Part('AREA.stations.lights', 'LED task lights', 'AREA.stations', bevel=0)
-sc = Part('AREA.stations.screens', 'Work-instruction screens', 'AREA.stations', bevel=0.002)
-tools = Part('AREA.stations.tools', 'Electric screwdrivers on spring balancers and torque controllers', 'AREA.stations', bevel=0.0015)
+fr = Part('AREA.stations.frames', 'Lean-tube station frames (cream pipe, black joints)', 'AREA.stations', bevel=0.0)
+li = Part('AREA.stations.lights', 'LED task lights and stack lights', 'AREA.stations', bevel=0)
+sc = Part('AREA.stations.screens', 'Monitors, test generators and torque controllers', 'AREA.stations', bevel=0.002)
+tools = Part('AREA.stations.tools', 'Electric screwdrivers on yellow spring balancers', 'AREA.stations', bevel=0.0015)
+TR = 0.014                                                       # lean tube radius (28 mm pipe)
+def tube(a, b, part=None):
+    part = part or fr; a, b = Vector(a), Vector(b); d = b - a
+    part.cyl(TR, d.length, tuple((a + b) / 2), 'tube_cream', rot=tuple(d.to_track_quat('Z', 'Y').to_euler()), seg=12)
+def joint(p, part=None): (part or fr).box((0.045, 0.045, 0.045), p, 'joint_black')
 for i, x in enumerate(STATIONS):
-    for sy in (-1, 1):
-        fr.box((0.045, 0.045, 2.15), (x - PITCH / 2 + 0.1, sy * 0.78, 1.075), 'alu_brushed')
-    fr.box((0.045, 1.6, 0.045), (x - PITCH / 2 + 0.1, 0, 2.15), 'alu_brushed')
-    fr.box((PITCH, 0.045, 0.045), (x, -0.45, 2.1), 'alu_brushed'); fr.box((PITCH, 0.045, 0.045), (x, 0.45, 2.1), 'alu_brushed')
-    li.box((1.2, 0.08, 0.025), (x, -0.25, 1.95), 'led_white'); li.box((1.2, 0.1, 0.02), (x, -0.25, 1.975), 'alu_brushed')
-    # screen on an arm, facing the operator on the -Y side
-    fr.box((0.03, 0.3, 0.03), (x - 0.55, -0.62, 1.75), 'alu_brushed')
-    sc.box((0.56, 0.035, 0.34), (x - 0.55, -0.78, 1.62), 'plastic_black', rot=(math.radians(10), 0, 0))
-    screen_quad(f'AREA.stations.wi{i + 1}', 'Work-instruction picture', 'AREA.stations', x - 0.55, -0.8, 1.62, 0.52, 0.3, 'scr_wi', math.radians(10))
-    sc.box((0.18, 0.1, 0.12), (x + 0.6, -0.55, 1.92), 'anodised_dark')                   # torque controller
-    sc.cyl(0.03, 0.03, (x + 0.6, -0.61, 1.98), 'led_green', rot=(H, 0, 0), seg=16)
+    x0 = x - PITCH / 2 + 0.1
+    for sy in (-1, 1):                                           # posts and the top frame of each station
+        tube((x0, sy * 0.78, 0.0), (x0, sy * 0.78, 2.2)); joint((x0, sy * 0.78, 2.2)); joint((x0, sy * 0.78, 1.45))
+        tube((x0, sy * 0.78, 2.2), (x0 + PITCH - 0.05, sy * 0.78, 2.2)); tube((x0, sy * 0.78, 1.45), (x0 + 0.5, sy * 0.78, 1.45))
+    tube((x0, -0.78, 2.2), (x0, 0.78, 2.2)); tube((x0, -0.78, 1.45), (x0, -1.2, 1.45))
+    tube((x0 + 0.95, -0.78, 2.2), (x0 + 0.95, 0.78, 2.2)); joint((x0 + 0.95, -0.78, 2.2)); joint((x0 + 0.95, 0.78, 2.2))
+    tube((x0, -0.25, 2.1), (x0 + PITCH - 0.05, -0.25, 2.1))      # the balancer rail over the line
+    li.box((1.2, 0.08, 0.025), (x, -0.45, 2.12), 'led_white'); li.box((1.2, 0.1, 0.02), (x, -0.45, 2.145), 'alu_brushed')
+    # stack light: red, amber, green (green lit)
+    for k, m in enumerate(('led_green', 'lens_amber', 'lens_red')): li.cyl(0.03, 0.055, (x0 + 0.02, -0.78, 2.26 + k * 0.058), m, seg=20)
+    li.cyl(0.012, 0.06, (x0 + 0.02, -0.78, 2.22), 'joint_black', seg=10)
+    # a white monitor on the lower arm, facing the operator, and a test-signal generator on a shelf
+    sc.box((0.5, 0.04, 0.38), (x - 0.5, -0.86, 1.62), 'monitor_white', rot=(math.radians(8), 0, 0)); sc.box((0.06, 0.06, 0.18), (x - 0.5, -0.82, 1.46), 'monitor_white')
+    screen_quad(f'AREA.stations.wi{i + 1}', 'Work-instruction picture', 'AREA.stations', x - 0.5, -0.882, 1.63, 0.44, 0.3, 'scr_wi', math.radians(8))
+    tube((x0, -1.2, 1.2), (x0 + 0.9, -1.2, 1.2)); sc.box((0.42, 0.3, 0.12), (x + 0.15, -1.15, 1.27), 'monitor_white'); sc.box((0.3, 0.004, 0.05), (x + 0.15, -1.301, 1.29), 'plastic_black')
+    sc.box((0.18, 0.1, 0.12), (x + 0.6, -0.55, 2.02), 'anodised_dark'); sc.cyl(0.03, 0.03, (x + 0.6, -0.61, 2.08), 'led_green', rot=(H, 0, 0), seg=16)
     for k, dx in enumerate((-0.15, 0.25)):
-        bx = x + dx; tools.cyl(0.035, 0.07, (bx, -0.2, 2.04), 'paint_blue', seg=20)        # spring balancer
-        tools.sweep([(bx, -0.2, 2.0), (bx + 0.02, -0.2, 1.75), (bx - 0.01, -0.2, 1.55), (bx, -0.2, 1.4)], 0.003, 'steel_dark')
-        tools.cyl(0.022, 0.24, (bx, -0.2, 1.28), 'plastic_black', seg=20)                   # driver body
-        tools.cyl(0.005, 0.06, (bx, -0.2, 1.13), 'steel_polished', seg=10)                  # bit
-        tools.sweep([(bx, -0.2, 1.4), (bx + 0.1, -0.22, 1.5), (x + 0.6, -0.5, 1.86)], 0.004, 'cable_orange')
+        bx = x + dx; tools.cyl(0.05, 0.07, (bx, -0.25, 2.03), 'balancer_yellow', rot=(H, 0, 0), seg=24)   # spring balancer
+        tools.sweep([(bx, -0.25, 1.98), (bx + 0.02, -0.25, 1.75), (bx - 0.01, -0.25, 1.55), (bx, -0.25, 1.42)], 0.003, 'steel_dark')
+        tools.cyl(0.022, 0.24, (bx, -0.25, 1.3), 'plastic_black', seg=20)                  # driver body
+        tools.cyl(0.005, 0.06, (bx, -0.25, 1.15), 'steel_polished', seg=10)                # bit
+        tools.sweep([(bx, -0.25, 1.42), (bx + 0.1, -0.27, 1.52), (x + 0.6, -0.5, 1.96)], 0.004, 'plastic_black')
 fr.build(); li.build(); sc.build(); tools.build()
 
 # ---------------------------------------------------------------- flow racks with bins beside each operator
@@ -250,6 +268,7 @@ def person(x, y, face=0.0, reach=0.34):
     for sx in (-1, 1):
         ppl.sweep([P(sx * 0.22, 0, 1.38), P(sx * 0.25, 0.04, 1.16), P(sx * 0.16, reach * 0.7, 1.03), P(sx * 0.1, reach, 1.0)], 0.042, shirt)
         ppl.sphere(0.045, P(sx * 0.1, reach + 0.03, 1.0), 'cap', scale=(0.8, 1.2, 0.6))     # gloved hand
+        ppl.sweep([P(sx * 0.17, reach * 0.62, 1.035), P(sx * 0.12, reach * 0.92, 1.005)], 0.046, 'sleeve_stripe')     # sleeve cover
 for i, x in enumerate(STATIONS):
     person(x - 0.1, -1.18, face=0.0)
     if i % 2 == 0 and i != 2: person(x + 0.15, 1.18, face=math.pi)
@@ -297,7 +316,7 @@ for cx in (-4.2, 0.8):
         for sy in (-1, 1): cv.box((0.035, 0.035, 1.6), (rx, cy + sy * 1.05, 0.8), 'alu_brushed')
     # roller conveyor from the open end of the U to the line side
     for k in range(int(2.0 / 0.08)):
-        cv.cyl(0.025, 0.5, (cx, cy + 1.25 + k * 0.08, 0.84), 'steel_polished', rot=(0, H, 0), seg=14)
+        cv.cyl(0.025, 0.5, (cx, cy + 1.25 + k * 0.08, 0.84), 'roller_beige', rot=(0, H, 0), seg=14)
     for sx in (-1, 1): cv.box((0.04, 2.0, 0.08), (cx + sx * 0.27, cy + 2.25, 0.82), 'alu_brushed')
     for k in range(2): ck.box((0.34, 0.24, 0.04), (cx, cy + 1.6 + k * 0.9, 0.89), 'chassis')
 cb.build(); ck.build(); cv.build(); cbins.build()
@@ -379,6 +398,8 @@ bw.box((26, 0.1, 1.1), (0, 6.58, 7.1), 'window_sky'); bw.box((26, 0.14, 1.9), (0
 for k in range(int(16 / 1.0)):
     bw.box((0.12, 0.98, 6.4), (-13.0, -9.5 + 0.5 + k * 1.0, 3.2), 'wall_panel')
 bw.box((0.1, 16, 1.1), (-12.98, -1.5, 7.1), 'window_sky'); bw.box((0.14, 16, 1.9), (-13.02, -1.5, 8.65), 'wall_panel')
+for k in range(16): bw.box((0.12, 0.98, 6.4), (13.0, -9.5 + 0.5 + k * 1.0, 3.2), 'wall_panel')       # the far end of the hall
+bw.box((0.14, 16, 2.6), (13.02, -1.5, 7.7), 'wall_panel')
 bw.build()
 bs = Part('AREA.building.steel', 'Columns and roof beams', 'AREA.building', bevel=0.004)
 for cx in range(-12, 13, 6):
