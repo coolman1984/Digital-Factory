@@ -340,7 +340,7 @@
   resize(); buildComposer(); requestAnimationFrame(frame); load();
 
   window.Line = {
-    get ready() { return ready; }, get frames() { return frames; }, renderer, scene, camera, setCam, startTour, stopTour, byId,
+    get ready() { return ready; }, get frames() { return frames; }, renderer, scene, camera, controls, setCam, startTour, stopTour, byId,
     // deterministic capture: freeze the loop, put the clock and the camera at t, render one frame
     capture(t, walkT) {
       manual = true; tour.on = false; animate(simT = t);

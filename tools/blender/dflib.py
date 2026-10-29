@@ -290,9 +290,30 @@ def world(color='#3A3F47', strength=0.35):
     w = bpy.data.worlds.new('studio'); bpy.context.scene.world = w; w.use_nodes = True
     bg = w.node_tree.nodes['Background']; bg.inputs['Color'].default_value = srgb(color); bg.inputs['Strength'].default_value = strength
 
-def studio(scale=1.0, center=(0, 0, 0.9), rot_deg=30):
-    """Cyclorama, light rig and world in one call."""
-    cyclorama(scale, rot_deg); lights(scale, center); world()
+def gradient_world(top='#C4C9D0', bottom='#2A2E34', strength=1.0):
+    """A studio sky that metal can reflect: dark below the horizon, light above, like a lit stage over a dark floor."""
+    w = bpy.data.worlds.new('studio_gradient'); bpy.context.scene.world = w; w.use_nodes = True; nt = w.node_tree
+    tc = nt.nodes.new('ShaderNodeTexCoord'); sep = nt.nodes.new('ShaderNodeSeparateXYZ'); ramp = nt.nodes.new('ShaderNodeValToRGB')
+    nt.links.new(tc.outputs['Generated'], sep.inputs['Vector'])
+    ramp.color_ramp.elements[0].position = 0.42; ramp.color_ramp.elements[0].color = srgb(bottom)
+    ramp.color_ramp.elements[1].position = 0.72; ramp.color_ramp.elements[1].color = srgb(top)
+    mr = nt.nodes.new('ShaderNodeMapRange'); mr.inputs['From Min'].default_value = -1.0; mr.inputs['From Max'].default_value = 1.0
+    nt.links.new(sep.outputs['Z'], mr.inputs['Value']); nt.links.new(mr.outputs['Result'], ramp.inputs['Fac'])
+    bg = nt.nodes['Background']; nt.links.new(ramp.outputs['Color'], bg.inputs['Color']); bg.inputs['Strength'].default_value = strength
+
+def strips(scale=1.0, center=(0, 0, 0.9), power=420):
+    """Two tall strip softboxes beside the subject, hidden from the camera: long clean highlights on metal edges."""
+    cx, cy, cz = center
+    for name, x, y in (('light.strip_l', -2.4, 0.9), ('light.strip_r', 2.6, -0.6)):
+        o = area(name, (cx + x * scale, cy + y * scale, cz + 0.6 * scale), (cx, cy, cz), 0.35 * scale, power * scale * scale, (1, 1, 1), size_y=3.0 * scale)
+        o.visible_camera = False
+
+def studio(scale=1.0, center=(0, 0, 0.9), rot_deg=30, rig='v1'):
+    """Cyclorama, light rig and world in one call. rig 'v1' is the rig the first stills used; 'v2' adds what metal needs:
+    a gradient world to reflect and two strip softboxes (docs/RENDER_QUALITY_AUDIT.md)."""
+    cyclorama(scale, rot_deg); lights(scale, center)
+    if rig == 'v2': gradient_world(); strips(scale, center)
+    else: world()
 
 def camera(pos3, look3, fov=30, fstop=11):
     """A camera from a three.js pose (Y up, front +z) so stills line up with the browser studio; vertical fov in degrees."""
@@ -319,19 +340,30 @@ def use_gpu():
             continue
     print('GPU none found, rendering on the CPU'); return False
 
-def render(out, samples=96, res='1600x1000', gpu=False, look='AgX - Medium High Contrast'):
-    """Cycles with OpenImageDenoise and AgX; writes a PNG."""
+def render(out, samples=96, res='1600x1000', gpu=False, look='AgX - Medium High Contrast', view='AgX', threshold=0.02,
+           clamp=0.0, denoise=True, depth='8', exposure=0.0, noisy=''):
+    """Cycles with OpenImageDenoise (albedo + normal guides) and one view transform; writes a PNG.
+
+    The quality knobs are explicit so look-dev can change one variable at a time (docs/RENDER_QUALITY_AUDIT.md):
+    view 'AgX' (with look) or 'Khronos PBR Neutral', adaptive threshold, indirect clamp, 8/16-bit output, exposure, and
+    noisy='path.png' to also save the same frame without the denoiser."""
     sc = bpy.context.scene; r = sc.render; rx, ry = (int(v) for v in res.split('x'))
     r.engine = 'CYCLES'; r.resolution_x = rx; r.resolution_y = ry; r.resolution_percentage = 100
     sc.cycles.device = 'GPU' if (gpu and use_gpu()) else 'CPU'
-    sc.cycles.samples = samples; sc.cycles.use_adaptive_sampling = True; sc.cycles.adaptive_threshold = 0.02
-    sc.cycles.use_denoising = True; sc.cycles.denoiser = 'OPENIMAGEDENOISE'
+    sc.cycles.samples = samples; sc.cycles.use_adaptive_sampling = True; sc.cycles.adaptive_threshold = threshold
+    sc.cycles.use_denoising = denoise; sc.cycles.denoiser = 'OPENIMAGEDENOISE'
+    sc.cycles.denoising_input_passes = 'RGB_ALBEDO_NORMAL'; sc.cycles.denoising_prefilter = 'ACCURATE'
     sc.cycles.max_bounces = 10; sc.cycles.transmission_bounces = 10; sc.cycles.transparent_max_bounces = 24
     sc.cycles.caustics_reflective = False; sc.cycles.caustics_refractive = False; sc.cycles.blur_glossy = 1.0
-    sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = look
-    r.image_settings.file_format = 'PNG'; r.image_settings.color_depth = '8'
+    sc.cycles.sample_clamp_indirect = clamp; sc.cycles.use_light_tree = True
+    sc.view_settings.view_transform = view; sc.view_settings.exposure = exposure
+    if view == 'AgX': sc.view_settings.look = look
+    r.image_settings.file_format = 'PNG'; r.image_settings.color_depth = depth
     for o in bpy.data.objects:      # glass never casts black shadows over what is behind it
         if o.type == 'MESH' and any(m and m.name == 'glass' for m in o.data.materials): o.visible_shadow = False
+    if noisy and denoise:
+        sc.cycles.use_denoising = False; r.filepath = noisy; bpy.ops.render.render(write_still=True); print('WROTE', noisy)
+        sc.cycles.use_denoising = True
     r.filepath = out; bpy.ops.render.render(write_still=True); print('WROTE', out)
 
 def manifest(path, asset, title, disclosure, names=None):

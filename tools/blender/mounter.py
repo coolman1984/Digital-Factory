@@ -31,6 +31,11 @@ ap.add_argument('--anchors', default='', help='write each part\'s on-screen anch
 ap.add_argument('--explode', type=float, default=1.0, help='0 = assembled, 1 = fully exploded')
 ap.add_argument('--lod', default='full', choices=['full', 'web', 'far', 'plant'], help='full: stills and film; web: the studio model (2-segment bevels); far: a light model (no bevels, coarse cylinders, no board parts); plant: far without the internals, labels, text and signal tower, for 18 copies on the plant floor')
 ap.add_argument('--gpu', action='store_true', help='render on the graphics card (OptiX, CUDA, HIP, oneAPI or Metal, whichever works)')
+# look-dev knobs (docs/RENDER_QUALITY_AUDIT.md); the defaults reproduce the stills as they were first made
+ap.add_argument('--view', default='AgX', help='AgX or "Khronos PBR Neutral"'); ap.add_argument('--exposure', type=float, default=0.0)
+ap.add_argument('--threshold', type=float, default=0.02); ap.add_argument('--clamp', type=float, default=0.0)
+ap.add_argument('--depth', default='8', choices=['8', '16']); ap.add_argument('--noisy', default='', help='also save the frame without the denoiser')
+ap.add_argument('--glass', default='refract', choices=['refract', 'thin'], help='thin: the hood panes render as thin sheets (transparency + reflection, no refraction), far less noise; the GLB keeps the standard glass')
 A = ap.parse_args(argv)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -782,14 +787,17 @@ def use_gpu():
     print('GPU none found, rendering on the CPU'); return False
 scene.cycles.device = 'GPU' if (A.gpu and use_gpu()) else 'CPU'
 scene.cycles.samples = A.samples; scene.cycles.use_adaptive_sampling = True
-scene.cycles.adaptive_threshold = 0.02
+scene.cycles.adaptive_threshold = A.threshold
 scene.cycles.use_denoising = True; scene.cycles.denoiser = 'OPENIMAGEDENOISE'
+scene.cycles.denoising_input_passes = 'RGB_ALBEDO_NORMAL'; scene.cycles.denoising_prefilter = 'ACCURATE'
+scene.cycles.sample_clamp_indirect = A.clamp; scene.cycles.use_light_tree = True
 scene.cycles.max_bounces = 10; scene.cycles.transmission_bounces = 10; scene.cycles.transparent_max_bounces = 24
 scene.cycles.caustics_reflective = False; scene.cycles.caustics_refractive = False
 scene.cycles.blur_glossy = 1.0
-scene.view_settings.view_transform = 'AgX'; scene.view_settings.look = 'AgX - Medium High Contrast'
-scene.view_settings.exposure = 0.0
-r.image_settings.file_format = 'PNG'; r.image_settings.color_depth = '8'
+scene.view_settings.view_transform = A.view
+if A.view == 'AgX': scene.view_settings.look = 'AgX - Medium High Contrast'
+scene.view_settings.exposure = A.exposure
+r.image_settings.file_format = 'PNG'; r.image_settings.color_depth = A.depth
 
 # ---------------------------------------------------------------- outputs
 stats = {'parts': sum(1 for p_ in PARTS if p_['kind'] == 'part'), 'assemblies': sum(1 for p_ in PARTS if p_['kind'] == 'assembly'),
@@ -845,7 +853,19 @@ if A.glb:
         o.select_set(o.name.startswith('MNT') and o.type in ('MESH', 'EMPTY', 'FONT'))
     bpy.ops.export_scene.gltf(filepath=A.glb, export_format='GLB', use_selection=True, export_apply=True,
                               export_extras=True, export_yup=True)
+if A.out and A.glass == 'thin':
+    # 6 mm polycarbonate barely displaces what is behind it; refracting through two faces is the noisiest path in the
+    # scene, so stills treat the panes as thin sheets: Fresnel-weighted mirror over straight transparency
+    g = bpy.data.materials['glass']; nt = g.node_tree; nt.nodes.clear()
+    out_ = nt.nodes.new('ShaderNodeOutputMaterial'); mix = nt.nodes.new('ShaderNodeMixShader'); fr = nt.nodes.new('ShaderNodeFresnel')
+    tr = nt.nodes.new('ShaderNodeBsdfTransparent'); gl = nt.nodes.new('ShaderNodeBsdfGlossy')
+    fr.inputs['IOR'].default_value = 1.49; tr.inputs['Color'].default_value = (0.95, 0.96, 0.97, 1); gl.inputs['Roughness'].default_value = 0.02
+    nt.links.new(fr.outputs['Fac'], mix.inputs['Fac']); nt.links.new(tr.outputs['BSDF'], mix.inputs[1]); nt.links.new(gl.outputs['BSDF'], mix.inputs[2])
+    nt.links.new(mix.outputs['Shader'], out_.inputs['Surface'])
 if A.out:
+    if A.noisy:
+        scene.cycles.use_denoising = False; r.filepath = A.noisy; bpy.ops.render.render(write_still=True); print('WROTE', A.noisy)
+        scene.cycles.use_denoising = True
     r.filepath = A.out
     bpy.ops.render.render(write_still=True)
     print('WROTE', A.out)
