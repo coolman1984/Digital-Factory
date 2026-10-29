@@ -9,8 +9,15 @@ var frame := 0
 var cam: Camera3D
 var gantry: Node3D
 var head: Node3D
+var spindles: Node3D
+var nozzles: Node3D
 var g0 := Vector3.ZERO
 var h0 := Vector3.ZERO
+var s0 := Vector3.ZERO
+var n0 := Vector3.ZERO
+# the machine studio's pick-and-place cycle (assets/js/inspect/inspect.js CYCLE): [t, gantry z, head x, nozzle dip].
+# The head is a child of the gantry in the model, so it gets only its own x travel on top of the gantry's move.
+const CYCLE := [[0, 0, 0, 0], [0.25, 0, 0, 1], [0.45, 0, 0, 0], [1.25, 0.73, -0.32, 0], [1.45, 0.73, -0.32, 1], [1.65, 0.73, -0.32, 0], [2.15, 0.52, 0.44, 0], [2.35, 0.52, 0.44, 0], [2.95, 0, 0.06, 0], [3.15, 0, 0.06, 1], [3.35, 0, 0.06, 0], [3.9, 0, 0, 0]]
 var only := -1               # --frame N in the user args renders one frame (look tests)
 
 func _ready() -> void:
@@ -73,8 +80,13 @@ func _model() -> void:
 	var root: Node3D = doc.generate_scene(st); add_child(root)
 	gantry = root.find_child("*gantry*", true, false) as Node3D
 	head = root.find_child("*head*", true, false) as Node3D
+	spindles = root.find_child("*spindles*", true, false) as Node3D
+	nozzles = root.find_child("*nozzles*", true, false) as Node3D
 	if gantry: g0 = gantry.position
 	if head: h0 = head.position
+	if spindles: s0 = spindles.position
+	if nozzles: n0 = nozzles.position
+	print("moving parts: ", gantry.name if gantry else "-", " ", head.name if head else "-", " ", spindles.name if spindles else "-", " ", nozzles.name if nozzles else "-")
 	_fix_materials(root)
 
 func _fix_materials(n: Node) -> void:
@@ -98,11 +110,20 @@ func _pose(u: float) -> void:
 	var a := deg_to_rad(8.0) * e
 	var p := p0.lerp(p1, e).rotated(Vector3.UP, -a)
 	cam.look_at_from_position(p, l0.lerp(l1, e), Vector3.UP)
-	# the gantry sweeps to the feeders and back, the head shuttles along it (illustrative cycle, not a timing study)
-	var t := u * 6.0
-	if gantry: gantry.position = g0 + Vector3(0, 0, sin(t * 1.6) * 0.22)
-	if head:
-		head.position = h0 + Vector3(sin(t * 2.3) * 0.30, 0, sin(t * 1.6) * 0.22)
+	var c := _cycle(u * 6.0)
+	if gantry: gantry.position = g0 + Vector3(0, 0, c.x)
+	if head: head.position = h0 + Vector3(c.y, 0, 0)
+	if spindles: spindles.position = s0 - Vector3(0, 0.012 * c.z, 0)
+	if nozzles: nozzles.position = n0 - Vector3(0, 0.012 * c.z, 0)
+
+func _cycle(t: float) -> Vector3:
+	t = fmod(t, CYCLE[CYCLE.size() - 1][0])
+	for i in CYCLE.size() - 1:
+		var a: Array = CYCLE[i]; var b: Array = CYCLE[i + 1]
+		if t <= b[0]:
+			var k := clampf((t - a[0]) / (b[0] - a[0]), 0.0, 1.0); k = k * k * (3.0 - 2.0 * k)
+			return Vector3(lerpf(a[1], b[1], k), lerpf(a[2], b[2], k), lerpf(a[3], b[3], k))
+	return Vector3.ZERO
 
 func _process(_delta: float) -> void:
 	if only >= 0:
