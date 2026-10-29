@@ -327,7 +327,10 @@
   let camK = 1;
   const framed = c => { const k = camK = Math.pow(Math.max(1, 1.45 / Math.max(0.3, camera.aspect)), 0.9); return { look: c.look, pos: c.look.map((v, i) => v + (c.pos[i] - v) * k) }; };
   let userMoved = false; controls.addEventListener('start', () => { userMoved = true; if (tour.on) stopTour(); });
-  function resize() { const r = wrap.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height); camera.aspect = W / H; camera.updateProjectionMatrix(); if (!userMoved && !move) setCam(S.cam, true); renderer.setSize(W, H, false); if (composer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(W, H); } }
+  // the vertical field of view follows the Blender photos (30° at 16:10, shown with object-fit: cover), so at rest a
+  // photo and the live view line up exactly: wider frames keep the photo's horizontal angle
+  const fovFor = a => (a >= 1.6 ? 2 * Math.atan(Math.tan(T.MathUtils.degToRad(15)) * 1.6 / a) * 180 / Math.PI : 30);
+  function resize() { const r = wrap.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height); camera.aspect = W / H; camera.fov = fovFor(camera.aspect); camera.updateProjectionMatrix(); if (!userMoved && !move) setCam(S.cam, true); renderer.setSize(W, H, false); if (composer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(W, H); } }
   new ResizeObserver(resize).observe(wrap);
 
   function applyTheme() {
@@ -404,6 +407,7 @@
     else if (b.id === 'xray') setXray(!S.xray);
     else if (b.id === 'cut') setCut(!S.cut);
     else if (b.id === 'motion') setMotion(!S.motion);
+    else if (b.id === 'photos') { photoOn = !photoOn; b.setAttribute('aria-pressed', String(photoOn)); }
     else if (b.id === 'tourBtn') tour.on ? stopTour() : startTour();
     else if (b.id === 'resetBtn') reset();
     else if (b.id === 'isolate') { S.isolate = !S.isolate; b.setAttribute('aria-pressed', String(S.isolate)); applyLook(); if (S.isolate) frameOn(S.sel); }
@@ -433,9 +437,56 @@
     camera.position.copy(controls.target).add(off.setFromSpherical(sph));
   });
   window.addEventListener('langchange', () => setTimeout(() => {
-    if (!manifest) return; buildList(); select(S.sel, false);
+    station(); if (!manifest) return; buildList(); select(S.sel, false);
     if (tour.on) { $('#tourTitle').textContent = tr(TOUR[tour.i].t); $('#tourText').textContent = tr(TOUR[tour.i].s); $('#tourLbl').textContent = tr('Stop the tour'); }
   }, 0));
+
+  /* ---------- Blender photos at rest: at a preset pose and a settled state, the Cycles render of that exact view
+     fades in over the live view (same camera, from shots.json); any interaction returns to live 3D ---------- */
+  let PHOTOS = [], photoOn = true, shown = null;
+  const URL_SHOTS = `${DFLook.base}assets/models/machines/${KIND}/shots.json`;
+  const photoEl = document.createElement('img'); photoEl.className = 'photo'; photoEl.alt = ''; photoEl.setAttribute('aria-hidden', 'true');
+  const photoTag = document.createElement('span'); photoTag.className = 'photo-tag'; photoTag.textContent = 'Photo rendered in Blender';
+  wrap.insertBefore(photoEl, hotEl); wrap.insertBefore(photoTag, hotEl);
+  const imgs = {};
+  const busy = () => Object.values(tweens).some(t => t && t.isActive && t.isActive());
+  function photoWanted() {
+    if (!ready || !photoOn || !PHOTOS.length || document.documentElement.dataset.theme === 'dark' || camera.aspect < 1.45) return null;
+    if (userMoved || move || busy() || S.sel || S.isolate || S.motion) return null;
+    const st = S.cut ? 'cut' : S.xray ? 'ghost' : S.explode >= 0.999 ? 'exploded' : S.explode <= 0.001 ? 'assembled' : null;
+    return st && PHOTOS.find(p => p.shot === S.cam && p.state === st && (st !== 'cut' || Math.abs(S.cutPos - p.cutPos) < 0.006)) || null;
+  }
+  function photos() {
+    const p = photoWanted();
+    if (p && !imgs[p.id]) { const im = new Image(); im.decoding = 'async'; im.src = `${DFLook.base}assets/models/machines/${KIND}/photos/${p.id}.webp`; imgs[p.id] = im; im.onload = () => { im.ok = true; }; }
+    const want = p && imgs[p.id].ok ? p.id : null;
+    if (want !== shown) {
+      if (want) photoEl.src = imgs[want].src;
+      photoEl.classList.toggle('on', !!want); photoTag.classList.toggle('on', !!want); shown = want;
+    }
+  }
+  const resting = () => shown && photoEl.classList.contains('on') && !reduce ? performance.now() - shownAt > 600 : !!shown;
+  let shownAt = 0; new MutationObserver(() => { shownAt = performance.now(); }).observe(photoEl, { attributes: true, attributeFilter: ['class'] });
+
+  /* ---------- the station this studio was opened from (plant.html passes a snapshot in the address) ---------- */
+  const Q = new URLSearchParams(location.search), ST = Q.get('st');
+  const STATE = { run: 'Running', warn: 'Running slow', idle: 'Idle', starved: 'Starved', blocked: 'Blocked', down: 'Stopped', maint: 'Planned maintenance', micro: 'Short stop', changeover: 'Changeover', tripped: 'Tripped' };
+  const clock = t => { t = Math.max(0, +t || 0); const h = Math.floor(t / 3600) % 24, m = Math.floor(t / 60) % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; };
+  function station() {
+    if (!ST) return;
+    const name = Q.get('name') || ST, line = Q.get('line') || '', st = Q.get('state') || '';
+    const cls = st === 'down' || st === 'tripped' ? 'bad' : ['warn', 'starved', 'micro', 'changeover', 'blocked'].includes(st) ? 'warn' : '';
+    const row = (k, v) => `<div><dt>${tr(k)}</dt><dd>${v}</dd></div>`;
+    const esc = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    $('#plantInfo').innerHTML = row('Machine', esc(name)) + row('Line', esc(line)) + (st ? row('State', `<span class="st ${cls}"><i></i>${esc(tr(STATE[st] || st))}</span>`) : '')
+      + (Q.get('health') ? row('Health', esc(Q.get('health')) + ' %') : '') + (Q.get('made') ? row('Units done', esc(Q.get('made'))) : '') + (Q.get('t') ? row('Plant time', clock(Q.get('t'))) : '');
+    $('#backPlant').href = 'plant.html#st:' + encodeURIComponent(ST);
+    document.querySelectorAll('a[href^="plant.html#line"]').forEach(a => { a.href = 'plant.html#st:' + encodeURIComponent(ST); });
+    $('#plantSec').hidden = false;
+    $('.sr-sub').textContent = `${name} · ${line} · ${tr('illustrative reconstruction')}`;
+  }
+  // the nameplate text is modelled for Mounter B of line SMD-4; on any other mounter it is left off rather than wrong
+  function nameplate() { if (ST && ST !== 'SMD4-MounterB') machine.traverse(o => { if (/^MNT\.text\./.test(o.name)) o.visible = false; }); }
 
   /* ---------- load ---------- */
   async function load() {
@@ -446,8 +497,9 @@
         new Promise((res, rej) => { const l = new T.X.GLTFLoader(); l.setMeshoptDecoder(T.X.MeshoptDecoder); l.load(URL_GLB, g => res(g.scene), undefined, rej); }),
         fetch(URL_PARTS).then(r => { if (!r.ok) throw new Error('parts ' + r.status); return r.json(); })
       ]);
+      fetch(URL_SHOTS).then(r => r.ok ? r.json() : null).then(j => { if (!j) return; for (const [k, v] of Object.entries(j.shots)) CAMS[k] = { pos: v.pos, look: v.look }; PHOTOS = j.photos || []; }).catch(() => {});
       manifest = mf; prep(gl); machine.add(gl);
-      buildList(); applyLook(); placePlane(); ready = true; note('');
+      buildList(); applyLook(); placePlane(); nameplate(); ready = true; note('');
       const m = location.hash.match(/^#part:([\w.]+)/); if (m && byId[m[1]]) select(m[1], true);
       if (/^#tour/.test(location.hash)) startTour();
     } catch (err) { console.error(err); note('The machine could not be loaded. Reload to try again.'); }
@@ -465,11 +517,12 @@
     controls.update();
     if (!composer) return;
     if (grade && grade.isGrade) DFLook.frameGrade(grade, camera, frames);
-    composer.render(dt / 1000);
+    photos();
+    if (!resting()) composer.render(dt / 1000);   // a photo at rest covers the frame: the GPU can idle
     hotspots();
     if (hud) hud(now);
   }
-  resize(); buildComposer(); requestAnimationFrame(frame); load();
+  resize(); buildComposer(); requestAnimationFrame(frame); station(); load();
 
   window.Inspect = { get ready() { return ready; }, get frames() { return frames; }, S, byId, setExplode, setXray, setCut, setMotion, select, setCam, startTour, stopTour, reset, renderer, scene, camera,
     setCutPos(v) { S.cutPos = v; $('#cutPos').value = Math.round(v * 100); placePlane(); } };

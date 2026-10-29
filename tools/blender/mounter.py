@@ -19,7 +19,8 @@ from mathutils import Matrix, Vector, Euler
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
 ap = argparse.ArgumentParser()
 ap.add_argument('--state', default='assembled', choices=['assembled', 'exploded', 'ghost', 'cut'])
-ap.add_argument('--shot', default='hero', choices=['hero', 'wide', 'head', 'top'])
+ap.add_argument('--shot', default='hero', help='a pose from assets/models/machines/mounter/shots.json (hero, front, side, top, head, apart, inside); the studio uses the same poses')
+ap.add_argument('--cut-pos', type=float, default=0.45, help='section depth as in the studio slider: 0 front, 1 back')
 ap.add_argument('--out', default='')
 ap.add_argument('--samples', type=int, default=96)
 ap.add_argument('--res', default='1600x1000')
@@ -28,7 +29,7 @@ ap.add_argument('--glb', default='')
 ap.add_argument('--manifest', default='')
 ap.add_argument('--anchors', default='', help='write each part\'s on-screen anchor (pixels) for 2D labels')
 ap.add_argument('--explode', type=float, default=1.0, help='0 = assembled, 1 = fully exploded')
-ap.add_argument('--lod', default='full', choices=['full', 'web', 'far'], help='full: stills and film; web: the studio model (2-segment bevels); far: a light first-paint model (no bevels, coarse cylinders, no board parts)')
+ap.add_argument('--lod', default='full', choices=['full', 'web', 'far', 'plant'], help='full: stills and film; web: the studio model (2-segment bevels); far: a light model (no bevels, coarse cylinders, no board parts); plant: far without the internals, labels, text and signal tower, for 18 copies on the plant floor')
 ap.add_argument('--gpu', action='store_true', help='render on the graphics card (OptiX, CUDA, HIP, oneAPI or Metal, whichever works)')
 A = ap.parse_args(argv)
 
@@ -199,7 +200,7 @@ class Part:
         r = bmesh.ops.create_cube(self.bm, size=1.0, matrix=M); self._tag(r['verts'], mat); return self
 
     def cyl(self, r, depth, loc, mat, rot=(0, 0, 0), seg=32, r2=None):
-        if A.lod == 'far': seg = max(8, seg // 3)
+        if A.lod in ('far', 'plant'): seg = max(8, seg // 3)
         elif A.lod == 'web' and seg > 32: seg = 32
         M = Matrix.LocRotScale(Vector(loc), Euler(rot), Vector((1, 1, 1)))
         if self.anchor is None: self.anchor = tuple(loc)
@@ -228,6 +229,7 @@ class Part:
 
     def sweep(self, pts, r, mat, seg=10, steps=8):
         """A cable: a round tube swept along a Catmull-Rom curve through pts, with capped ends."""
+        if A.lod in ('far', 'plant'): seg, steps = 6, 3
         P = [Vector(p) for p in pts]; P = [P[0]] + P + [P[-1]]
         path = []
         for i in range(1, len(P) - 2):
@@ -263,7 +265,7 @@ class Part:
         ob.parent = ASSEMBLIES[self.asm]
         # the browser model drops bevels where they cannot be seen at studio distance: reel flanges and board chips
         web_flat = A.lod == 'web' and self.pid.endswith(('.reels', '.pcb', '.labels'))
-        if self.bevel > 0 and A.lod != 'far' and not web_flat:
+        if self.bevel > 0 and A.lod not in ('far', 'plant') and not web_flat:
             bv = ob.modifiers.new('bevel', 'BEVEL')
             bv.width = self.bevel; bv.segments = min(self.segments, 2) if A.lod == 'web' else self.segments; bv.limit_method = 'ANGLE'
             bv.angle_limit = math.radians(32); bv.harden_normals = True; bv.miter_outer = 'MITER_ARC'
@@ -497,7 +499,7 @@ for k in range(2):                                   # two large ICs with leads
             dx, dy = [(o, 0.0155), (o, -0.0155), (0.0155, o), (-0.0155, o)][side]
             p.box((0.0012 if side < 2 else 0.003, 0.003 if side < 2 else 0.0012, 0.0008), (cx + dx, 0.03 + dy, zt + 0.0004), 'steel_polished')
 placed = 0
-for gy in range(0 if A.lod == "far" else 9):                                # chip resistors and capacitors; the right side is still bare pads
+for gy in range(0 if A.lod in ("far", "plant") else 9):                                # chip resistors and capacitors; the right side is still bare pads
     for gx in range(22):
         x = HEAD_X - bx / 2 + 0.016 + gx * 0.0137
         y = -by / 2 + 0.03 + gy * 0.011
@@ -578,6 +580,8 @@ def feeder_bank(side):
         rz = max(rz, rr + 0.08)
         flange = ['reel_blue', 'reel_white', 'reel_black'][(i * 7) % 3]
         rot = (0, math.pi / 2, 0)
+        if A.lod == 'plant':          # seen from the aisle a reel is one disc in its flange colour
+            r.cyl(rr, w * 0.74, (x, ry, rz), flange, rot=rot, seg=12); rnd(); continue
         for s in (-1, 1):
             r.cyl(rr, 0.0018, (x + s * w * 0.36, ry, rz), flange, rot=rot, seg=48)
         r.cyl(rr * (0.55 + 0.4 * rnd()), w * 0.62, (x, ry, rz), 'tape_brown', rot=rot, seg=48)   # wound tape
@@ -684,10 +688,11 @@ if A.state == 'ghost':
         o.data.materials.clear(); o.data.materials.append(MATS['ghost'])
         o.visible_shadow = False
 if A.state == 'cut':
-    # quarter cutaway: remove the front-right block of every shell; the boolean transfers the cutter's material to the
-    # new faces, so the section caps read as solid section surfaces instead of hollow skins
+    # the studio's section: a plane across the whole machine at the slider's depth removes the front of every cover;
+    # the boolean transfers the cutter's material to the new faces, so the caps read as solid section surfaces
+    c3 = 0.95 - A.cut_pos * 1.9                       # the studio keeps three.js z <= c3, i.e. Blender y >= -c3
     cm = bpy.data.meshes.new('cutter'); bm = bmesh.new()
-    bmesh.ops.create_cube(bm, size=1.0, matrix=Matrix.LocRotScale(Vector((0.55, -0.62, 0.95)), None, Vector((1.1, 1.0, 1.5))))
+    bmesh.ops.create_cube(bm, size=1.0, matrix=Matrix.LocRotScale(Vector((0, -c3 - 2.0, 1.25)), None, Vector((6.0, 4.0, 3.5))))
     bm.to_mesh(cm); bm.free(); cm.materials.append(MATS['section'])
     cutter = bpy.data.objects.new('cutter', cm); ROOT_COL.objects.link(cutter)
     cutter.hide_render = True; cutter.display_type = 'WIRE'
@@ -740,15 +745,16 @@ area('light.top', (0.9, -1.4, 4.2), (0, 0, 1.0), 3.2, 260, (1, 1, 1), size_y=0.5
 world = bpy.data.worlds.new('studio'); scene.world = world; world.use_nodes = True
 bg = world.node_tree.nodes['Background']; bg.inputs['Color'].default_value = srgb('#3A3F47'); bg.inputs['Strength'].default_value = 0.35
 
-SHOTS = {   # camera position, aim point, focal length (mm)
-    'hero': ((3.55, -4.35, 2.45), (0.02, -0.05, 0.98), 46),
-    'wide': ((5.4, -6.4, 4.0), (0.0, -0.1, 1.25), 40),
-    'head': ((0.95, -1.75, 1.55), (HEAD_X + 0.02, GANTRY_Y - 0.12, Z_BED + 0.18), 55),
-    'top': ((0.0, -0.01, 6.5), (0.0, 0.0, 0.9), 40),
-}
-if A.state == 'exploded' and A.shot == 'hero': A.shot = 'wide'
-cpos, caim, focal = SHOTS[A.shot]
-cam_data = bpy.data.cameras.new('camera'); cam_data.lens = focal; cam_data.sensor_width = 36
+# camera poses come from the studio's shots.json (three.js axes), so a photo lines up with the live view
+import os as _os
+_shots = json.load(open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..', 'assets', 'models', 'machines', 'mounter', 'shots.json')))['shots']
+if A.shot == 'wide': A.shot = 'apart'
+if A.state == 'exploded' and A.shot == 'hero': A.shot = 'apart'
+_sh = _shots[A.shot]
+three2bl = lambda v: (v[0], -v[2], v[1])
+cpos, caim = three2bl(_sh['pos']), three2bl(_sh['look'])
+cam_data = bpy.data.cameras.new('camera'); cam_data.sensor_fit = 'VERTICAL'; cam_data.sensor_height = 24
+cam_data.lens_unit = 'FOV'; cam_data.angle_y = math.radians(_sh['fov'])
 cam_data.dof.use_dof = True; cam_data.dof.aperture_fstop = 11 if A.shot != 'head' else 5.6
 cam = bpy.data.objects.new('camera', cam_data); ROOT_COL.objects.link(cam); cam.location = cpos
 cam.rotation_euler = (Vector(caim) - Vector(cpos)).to_track_quat('-Z', 'Y').to_euler()
@@ -825,6 +831,10 @@ if A.anchors:
     with open(A.anchors, 'w') as fh: json.dump({'state': A.state, 'shot': A.shot, 'size': [rx, ry], 'anchors': out}, fh, indent=1)
 if A.blend:
     bpy.ops.wm.save_as_mainfile(filepath=A.blend)
+if A.glb and A.lod == 'plant':
+    # on the plant floor nothing inside the cabinet can be seen, and the plant draws its own live signal tower
+    drop = ('MNT.controls', 'MNT.hood.light', 'MNT.hood.tower', 'MNT.feeders_front.labels', 'MNT.feeders_rear.labels', 'MNT.text.', 'MNT.hood.nameplate', 'MNT.hood.handles')
+    for o in [o for o in bpy.data.objects if o.name.startswith(drop) and o.type != 'EMPTY']: bpy.data.objects.remove(o)
 if A.glb:
     # text curves become meshes so the nameplate travels in glTF; the studio set never leaves Blender
     for o in [o for o in bpy.data.objects if o.type == 'FONT']:

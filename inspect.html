@@ -53,6 +53,12 @@
           </div>
           <p class="hint">A guided look for a visitor: assembled, taken apart, seen through, cut open, the head at work, and back together.</p>
         </section>
+        <section id="plantSec" hidden>
+          <h2>In the plant</h2>
+          <dl class="plant-kv" id="plantInfo"></dl>
+          <a class="btn btn-secondary btn-sm" id="backPlant" href="plant.html"><span data-icon="globe"></span>Back to this machine in the plant</a>
+          <p class="hint">A snapshot from the moment you opened the studio. Every mounter in the plant uses this model; the studio never changes the plant.</p>
+        </section>
         <section>
           <h2>Take apart</h2>
           <label class="slider" for="explode"><span>Assembled</span><input type="range" id="explode" min="0" max="100" value="0" step="1" aria-describedby="explodeHint"><span>Apart</span></label>
@@ -77,7 +83,10 @@
             <button type="button" data-cam="top" aria-pressed="false">Top</button>
             <button type="button" data-cam="head" aria-pressed="false">Head close-up</button>
           </div>
-          <p class="hint">Drag to orbit, scroll or pinch to zoom, click a part to select it. Keys: arrows orbit, + and − zoom, 0 resets, Esc clears the selection.</p>
+          <div class="chips" role="group" aria-label="Picture">
+            <button type="button" id="photos" aria-pressed="true">Blender photo at rest</button>
+          </div>
+          <p class="hint">When the camera rests on a preset (light theme, wide window), the photo rendered in Blender for that exact view fades in; moving returns to the live model. Drag to orbit, scroll or pinch to zoom, click a part to select it. Keys: arrows orbit, + and − zoom, 0 resets, Esc clears the selection.</p>
         </section>
         <section class="parts">
           <h2>Parts</h2>
