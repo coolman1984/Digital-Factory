@@ -9,10 +9,10 @@ what each area should look like when it is rebuilt in Blender (`docs/BLENDER-PLA
 references to study, never assets to copy into the product. Our models stay original and our plant stays fictional (no real
 company or city named for it).
 
-**Access.** This cloud session can search the web but cannot open most pages or download pictures: the network policy
-denied digitaltrends.com, koreatimes.co.kr, koreajoongangdaily.com and opeetv.store. Everything below comes from search
-summaries; the pictures themselves have not been viewed yet. To let an agent look at them, allow those hosts (or a wider
-network level) in the environment's network settings, or ask an agent that can browse (Grok, through the shared mailbox).
+**Access.** The owner opened the session's network on 2026-10-29. Pages and pictures can now be fetched with curl
+(the WebFetch tool still refuses some hosts); YouTube refuses video downloads without a signed-in browser, so only its
+thumbnail frames were seen. Wikimedia Commons rate-limited the session. A request for more pictures went to Grok through
+the shared mailbox (`inbox/grok/2026-10-29-1512-claude-tv-plant-reference-photos.md`).
 
 ## 1. The flow the owner described (the brief)
 
@@ -56,6 +56,29 @@ network level) in the environment's network settings, or ask an agent that can b
 
 Licensed still photos (reference only): Getty Images, Samsung Suwon LCD TV line, 2003, and Samsung factory searches:
 [gettyimages.ie/photos/samsung-factory](https://www.gettyimages.ie/photos/samsung-factory).
+
+## 2b. What the pictures show (seen 2026-10-29)
+
+**LG Gumi TV plant, nine photos** in the [Digital Trends tour](https://www.digitaltrends.com/home-theater/exclusive-tour-of-lgs-manufacturing-and-assembly-lines/)
+(photos credited in the article; studied, not copied):
+- Sets are assembled **lying face down** on a blue- or green-matted belt; the operator stands beside it at hip height and
+  drives the main-board screws with an electric screwdriver (green bit) into the galvanised back chassis.
+- Above every station stands an **aluminium-profile frame** carrying a monitor (work instructions or test output), a blue
+  LED task light, a digital counter, balancers and a lot of cable. The frames repeat down a long straight line.
+- Further on, the sets **stand upright** on the conveyor for test: rows of lit panels with test patterns (colour bars,
+  "Power only" white fields, green fields), cables plugged into the back, an operator in front of each test station.
+- Operators wear their own clothes (blue, black, red, grey) with a **light-blue apron**, gloves and sleeve covers.
+- Floor: light epoxy, **green ESD mats** along the line, **yellow lane lines** marking the aisle; white parts shelves along
+  the line side; bright white ceiling light.
+- The article: the conveyor runs "straight as an arrow" for about a quarter mile; screens drop from the ceiling to the
+  stations; a machine sorts screws one at a time down a chute; dark rooms check the picture; finished sets are left
+  running for days in a separate room; packing ranges from "drop it in the box" to several pairs of hands.
+
+**Factory-tour thumbnails** (YouTube frames): sets face down on green padded pallets with cartons of parts beside the
+line ([smart TV factory tour](https://www.youtube.com/watch?v=VBDDFGXK8k4)); tilted test sets on a green line; a six-axis
+robot with a vacuum gripper handling a panel ([Samsung smart TV video](https://www.youtube.com/watch?v=ZNdC2KcHrXU));
+two people lifting a bagged set. **Not used:** the "world's biggest Samsung TV factory" video
+([OQ9iitRMPjU](https://www.youtube.com/watch?v=OQ9iitRMPjU)) shows clearly AI-generated frames; it is not a reference.
 
 ## 3. What each area should look like (modelling brief)
 
