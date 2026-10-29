@@ -31,7 +31,29 @@ results listed). Owner review before moving on. Nothing is merged or deployed.
       deterministic animation (pallet indexing, screwdriver dips, robot fastening, test tilt, carton taping), reduced motion
 - [x] Links: live plant main line ML-3 → slice; slice → plant; studio unaffected
 - [ ] Evidence: real browser captures (wide, mid, close), 30 s walkthrough video rendered frame by frame from the page
-- [ ] Side-by-side with three or more reference images (internal, not committed where licences forbid)
+- [x] Side-by-side with three or more reference images (internal, not committed where licences forbid)
 - [ ] Performance at fixed poses (frame time, calls, triangles, memory, load) on this machine's software GPU
 - [ ] Regression checks: QA gate, impeccable detect, check-glb, windows.mjs, studio and plant smoke runs
 - [ ] Owner review request with links to the evidence
+
+## Side-by-side with the references (2026-10-29)
+
+Five boards, reference photo left and our view right (kept outside the repository, because the photos are not ours to
+publish): LG Gumi main line vs the Blender still; Samsung Kaluga assembly vs the browser eye level; LG Gumi screwing
+vs the robot station; LG Gumi functional test vs the browser test; Samsung Kaluga roller line vs the Blender robot still.
+
+| What matches | What does not yet |
+|---|---|
+| Line layout: lean-tube frames over the line, monitors per station, stack lights, yellow balancers, beige rollers, green ESD mats, blue uniforms and caps | People are stylised figures (no faces, hands or poses); real lines are much denser with cables, labels, small tools and parts |
+| Sets face down on pallets, upright for test with colour bars, then bag, carton, tape and strap | Materials are flat in the browser: no wear, reflections or fine texture; the reference metal and screens are glossy |
+| Process order and station count | Test fixtures are plain bars; real fixtures have clamps, cables and connectors; QA aging racks are simplified |
+| Test sets now lean back about 12° (fixed after this comparison) | Lighting is even and soft; references have strong ceiling-panel reflections on the floor |
+
+Next realism steps in order of effect: rigged human figures with poses (MPFB or a CC0 base mesh), baked
+material detail (roughness and normal maps from Blender), denser line-side clutter, floor reflections.
+
+## Gates
+
+- `node tools/assets/check-glb.mjs assets/models/areas/ml3/slice.glb --max-tris 300000 --max-kb 1600 --size 10,30`: PASS
+  (266 k triangles, 1456 KB, 26.3 m, 7427 zero-area triangles reported as a warning).
+- `impeccable detect line.html inspect.html assets/js/line`: only `overused-font` (Inter, the pinned brand face; allowance in `docs/ALLOWANCES.md`).
