@@ -1,5 +1,10 @@
 # Digital Factory
 
+## Mandatory first read — owner direction (2026-10-29)
+@VISION_3D_AND_MOTION.md
+
+Read this vision before planning, changing or reviewing the project; evaluate applicable techniques explicitly. These are required goals to consider, not claims of implemented features or permission to execute the entire roadmap. Other coding agents enter through `AGENTS.md`.
+
 Static site (no build): `index.html` (website), `app.html` (command room), `deck.html` (presentation), `guide.html` (bilingual reference guide), `plant.html` (live plant in 3D), `showroom.html` (product studio and motion studio). Plant data is simulated.
 When a screen, scenario, decision, slide or term changes, update `guide.html` (both languages) and `assets/js/guide-terms.js` to match.
 The command room and the live plant run one model of Plant EG-01, a TV plant with six main lines and the LCM, SMD, injection, press
