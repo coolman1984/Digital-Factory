@@ -83,7 +83,7 @@ for pid, fx, fy in LAYOUT.get(view, []):
     lx, ly = ax + fx * W, ay + fy * W
     pad = 14 * s
     w_ar = d.textlength(t_ar, font=f_ar, direction='rtl', language='ar'); w_en = d.textlength(t_en, font=f_en)
-    bw = max(w_ar, w_en) + 2 * pad; bh = 74 * s
+    bw = max(w_ar, w_en) + 2 * pad; bh = 92 * s
     bx = min(max(lx - bw / 2, 24 * s), W - bw - 24 * s); by = min(max(ly - bh / 2, 24 * s), H - bh - 120 * s)
     # leader: from the anchor to the nearest edge of the card
     ex = min(max(ax, bx), bx + bw); ey = by + bh if ay > by + bh else (by if ay < by else ay)
@@ -93,8 +93,8 @@ for pid, fx, fy in LAYOUT.get(view, []):
     d.ellipse([ax - r * 0.35, ay - r * 0.35, ax + r * 0.35, ay + r * 0.35], fill=BLUE)
     d.rounded_rectangle([bx, by, bx + bw, by + bh], radius=6 * s, fill=CARD, outline=(14, 20, 34, 40), width=1)
     d.rectangle([bx + bw - 4 * s, by + 10 * s, bx + bw, by + bh - 10 * s], fill=BLUE)
-    ar(d, (bx + bw - pad, by + 8 * s), t_ar, f_ar, INK)
-    d.text((bx + bw - pad, by + bh - 10 * s), t_en, font=f_en, fill=MUTED, anchor='rd')
+    ar(d, (bx + bw - pad, by + 6 * s), t_ar, f_ar, INK)
+    d.text((bx + bw - pad, by + bh - 10 * s), t_en, font=f_en, fill=MUTED, anchor="rd")
 
 # view tag, top right (Arabic reads first), and the honest footer
 t_ar, t_en = STATE.get(data['state'], ('', ''))
@@ -102,11 +102,11 @@ if data['shot'] == 'head': t_ar, t_en = 'رأس التركيب من قريب', '
 tw = max(d.textlength(t_ar, font=f_tag_ar, direction='rtl', language='ar'), d.textlength(t_en, font=f_tag_en)) + 40 * s
 d.rounded_rectangle([W - tw - 32 * s, 32 * s, W - 32 * s, 32 * s + 92 * s], radius=6 * s, fill=(14, 20, 34, 225))
 ar(d, (W - 52 * s, 42 * s), t_ar, f_tag_ar, (255, 255, 255, 255))
-d.text((W - 52 * s, 112 * s), t_en, font=f_tag_en, fill=(170, 190, 255, 255), anchor='rd')
+d.text((W - 52 * s, 112 * s), t_en, font=f_tag_en, fill=(170, 190, 255, 255), anchor="rd")
 foot_ar = 'ماكينة تركيب القطع · خط اللوح الإلكتروني ٤ · مصنع EG-01 (مصنع خيالي)'
 foot_en = 'SMD placement machine, Mounter B, line SMD-4, Plant EG-01 (fictional). Illustrative reconstruction, not a vendor model.'
 d.rectangle([0, H - 84 * s, W, H], fill=(14, 20, 34, 200))
 ar(d, (W - 32 * s, H - 76 * s), foot_ar, f_small_ar, (255, 255, 255, 255))
-d.text((W - 32 * s, H - 14 * s), foot_en, font=f_small, fill=(190, 198, 214, 255), anchor='rd')
+d.text((W - 32 * s, H - 14 * s), foot_en, font=f_small, fill=(190, 198, 214, 255), anchor="rd")
 Image.alpha_composite(img, over).convert('RGB').save(A.out, quality=92)
 print('WROTE', A.out)
