@@ -524,6 +524,6 @@
   }
   resize(); buildComposer(); requestAnimationFrame(frame); station(); load();
 
-  window.Inspect = { get ready() { return ready; }, get frames() { return frames; }, S, byId, setExplode, setXray, setCut, setMotion, select, setCam, startTour, stopTour, reset, renderer, scene, camera,
+  window.Inspect = { get ready() { return ready; }, get frames() { return frames; }, S, byId, setExplode, setXray, setCut, setMotion, select, setCam, startTour, stopTour, reset, renderer, scene, camera, controls,
     setCutPos(v) { S.cutPos = v; $('#cutPos').value = Math.round(v * 100); placePlane(); } };
 })();
