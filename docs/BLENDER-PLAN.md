@@ -79,17 +79,22 @@ X-ray keep reading the engine; the look system (`DFLook`, `DFMaterials`) and the
 | 0 | Mounter B in Blender, four states, bilingual labels | **Done** (2026-10-29) |
 | 1 | Pipeline: `lib/`, GLB export with baked textures, gates; a standalone inspection studio for Mounter B with explode, X-ray, cut, parts list, labels | **Studio built** (`inspect.html`, 2026-10-29); waiting for the owner's review. Not yet done: the shared `lib/` split and baked textures |
 | 2 | The studio inside the plant: click any mounter → studio → back; the 18 mounters on the floor become Blender LODs | Works from every mounter; benchmark not worse than the agreed budget |
-| 3 | The whole SMD line: loader, printer, SPI, reflow, AOI, unloader, writer, ICT (8 more kinds) | Each kind has its inspect model, LODs and tour |
-| 4 | The building: epoxy floor with joints and markings, wall and column kit, roof trusses, skylights, high-bay lights, ducts and trays, baked lighting | Before/after screenshots at the bench poses; frame time within budget |
-| 5 | Main assembly lines: robot, bench, FCT, aging, WB, QA, packer, palletizer | as phase 3 |
-| 6 | LCM lines: loader, BLU, bonding, lighting test | as phase 3 |
-| 7 | Parts plants: injection, press, oven, sub-assembly, cushion, repair | as phase 3 |
-| 8 | Vehicles, people, racks, docks, offices | as phase 3 |
+| 3 | The main assembly area as in real TV plants (`docs/REFERENCES-TV-PLANT.md`): square and U-shaped sub-assembly cells with standing operators, bins, flow racks and screwdrivers on balancers; the straight pallet conveyor with stoppers and operators on both sides; dark white-balance booths, sound booths and function test; the repair loop; the aging loop of lit sets | Each piece compared side by side with the references and recorded; the area reads as people at work, not machines in a row |
+| 4 | End of line: carton erecting, cushions, sealing and strapping; palletizing and the stretch-wrapper; the finished-goods racks with forklifts; the docks with 40 ft containers being loaded | as phase 3 |
+| 5 | The building: epoxy floor with joints and markings (ESD in SMD, lanes and walkways), wall and column kit, roof trusses, skylights, high-bay lights, ducts and trays, baked lighting | Before/after screenshots at the bench poses; frame time within budget |
+| 6 | The rest of the SMD line: loader, printer, SPI, reflow, AOI, unloader, writer, ICT (identical machines only where real lines repeat them) | Each kind has its inspect model, LODs and tour |
+| 7 | Panel and backlight (LCM) clean room: glass partitions, LED strips and films, robots with cameras placing the open cell | as phase 3 |
+| 8 | Parts plants and the rest: injection with moulds and robots, presses and dies, powder coating, EPS moulding; vehicles, people, offices | as phase 3 |
 | 9 | Film: a cinematic reel from the same assets in the Animation studio (house method, sound, titles) | One finished, reviewed film |
 | 10 | Real-device pass: measured on the owner's Windows machine and a phone; budgets tuned | Numbers recorded with the machine named |
 
-Order: the SMD line first because Mounter B is done and its neighbours share parts (conveyors, hoods, cabinets); then the
-building, because it is in every shot; then the remaining lines by how often customers see them.
+Order (revised 2026-10-29 on the owner's direction): after Mounter B, the main assembly area and the end of line, because
+they carry the story a visitor follows (cells, the line, testing, packing, pallets, containers) and they must look like real
+TV plants, each area different; then the building; then the remaining machines.
+
+**Realism rule.** Every area is modelled from references (`docs/REFERENCES-TV-PLANT.md`), never from one shape repeated.
+Repeat a machine only where real plants repeat it (an SMD line's identical mounters). Before an area is called done, put
+our render beside its references and record what matches and what does not.
 
 ## Each technique from the owner vision
 
