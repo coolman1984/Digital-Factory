@@ -21,7 +21,7 @@ from dflib import Part, assembly, principled, srgb, rnd
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
 ap = argparse.ArgumentParser()
-ap.add_argument('--out', default=''); ap.add_argument('--shot', default='hero', choices=['hero', 'line', 'cell', 'test', 'top'])
+ap.add_argument('--out', default=''); ap.add_argument('--shot', default='hero', choices=['hero', 'line', 'cell', 'test', 'top', 'qa', 'robot', 'wide'])
 ap.add_argument('--samples', type=int, default=96); ap.add_argument('--res', default='1600x1000')
 ap.add_argument('--manifest', default=''); ap.add_argument('--glb', default=''); ap.add_argument('--anchors', default='')
 ap.add_argument('--lod', default='full', choices=['full', 'plant']); ap.add_argument('--gpu', action='store_true')
@@ -54,6 +54,12 @@ principled('shoe', '#15161A', rough=0.6)
 principled('cardboard', '#B98D5B', rough=0.85)
 principled('wood', '#9C7A52', rough=0.8)
 principled('speaker', '#1C1D20', rough=0.7)
+principled('robot_white', '#E9EAEC', rough=0.35, coat=0.4, coat_rough=0.15, noise_bump=0.15)
+principled('robot_orange', '#E8641E', rough=0.4, coat=0.3)
+principled('wall_panel', '#E4E7EA', rough=0.6, metal=0.2, noise_bump=0.2)
+principled('steel_beam', '#7E8792', rough=0.5, metal=0.6)
+principled('ceiling_light', '#FFFFFF', emission='#F6F8FF', strength=9.0)
+principled('window_sky', '#FFFFFF', emission='#DCE8F5', strength=2.5)
 
 def screen(name, kind, W=320, Hh=200):
     """An emissive picture drawn in code: work instructions, colour bars, white field, green field."""
@@ -88,12 +94,23 @@ def uv_plane(ob, axis_u, axis_v, u0, v0, du, dv):
             co = me.vertices[me.loops[li].vertex_index].co
             uv.data[li].uv = ((co[axis_u] - u0) / du, (co[axis_v] - v0) / dv)
 
+def screen_quad(pid, role, asm, x, y, z, w, h, mat, tilt=0.0):
+    """A lit screen face as its own object, with UVs spanning its picture (tilt: lean back about X, radians)."""
+    q = Part(pid, role, asm, bevel=0); q.box((w, 0.003, h), (x, y, z), mat, rot=(tilt, 0, 0)); ob = q.build()
+    me = ob.data; uv = me.uv_layers.new(name='UVMap'); c, sn = math.cos(tilt), math.sin(tilt)
+    for poly in me.polygons:
+        for li in poly.loop_indices:
+            co = me.vertices[me.loops[li].vertex_index].co
+            dz = (co.z - z) * c - (co.y - y) * sn          # undo the lean to find the height on the screen
+            uv.data[li].uv = ((co.x - (x - w / 2)) / w, dz / h + 0.5)
+    return ob
+
 # ---------------------------------------------------------------- dimensions
 LINE_X0, LINE_X1 = -7.0, 7.0          # main conveyor length 14 m
 Z_TOP = 0.82                          # conveyor top: pallets ride at hip height for standing work
 PITCH = 2.0                           # one station every 2 m
 STATIONS = [-5.0, -3.0, -1.0, 1.0, 3.0]
-TEST_X = [5.0, 6.1]                   # the upright test section at the end
+TEST_X = [4.6, 6.3]                   # the upright test section at the end, one set per fixture
 TVW, TVD = 1.45, 0.84                 # a 65-inch set
 PAL_W, PAL_D = 1.62, 1.0
 
@@ -102,7 +119,7 @@ assembly('AREA', 'Main assembly area, line ML-3 (illustrative reconstruction aft
 # ---------------------------------------------------------------- floor: epoxy, ESD mats, lanes
 assembly('AREA.floor', 'Epoxy floor with green ESD mats at the workstations and yellow lane lines.', parent='AREA')
 p = Part('AREA.floor.slab', 'Epoxy floor', 'AREA.floor', bevel=0)
-p.box((26, 16, 0.02), (0, -1.5, -0.008), 'epoxy'); p.build()
+p.box((26, 16.2, 0.02), (0, -1.4, -0.008), 'epoxy'); p.build()
 p = Part('AREA.floor.marks', 'ESD mats and lane lines', 'AREA.floor', bevel=0.002)
 for sy in (-1, 1):
     p.box((LINE_X1 - LINE_X0 - 0.4, 0.9, 0.008), (0, sy * 1.15, 0.004), 'esd_mat')
@@ -138,7 +155,8 @@ def tv(part, x, y, z, step, upright=False, screen_mat='scr_bars'):
     """A 65-inch set. step 0 backlight chassis, 1 + boards, 2 + speakers and cables, 3 back cover on."""
     if upright:   # standing on the test conveyor, screen facing -Y (the camera side)
         part.box((TVW, 0.06, TVD), (x, y, z + TVD / 2 + 0.05), 'cover_black')
-        part.box((TVW - 0.02, 0.004, TVD - 0.02), (x, y - 0.032, z + TVD / 2 + 0.05), screen_mat)
+        screen_quad(f'AREA.test.screen_{int(x * 10)}', 'Test pattern', 'AREA.test', x, y - 0.032, z + TVD / 2 + 0.05, TVW - 0.03, TVD - 0.03, screen_mat)
+        for k in range(3): part.sweep([(x + 0.3 + k * 0.04, y + 0.04, z + 0.2), (x + 0.32 + k * 0.04, y + 0.2, z + 0.05), (x + 0.5 + k * 0.1, y + 0.3, z - 0.1)], 0.005, ['plastic_black', 'reel_blue', 'cable_orange'][k])
         part.box((0.4, 0.25, 0.05), (x, y + 0.05, z + 0.025), 'steel_dark')           # test fixture
         return
     part.box((TVW, TVD, 0.012), (x, y, z + 0.006), 'panel_black')
@@ -183,7 +201,7 @@ for i, x in enumerate(STATIONS):
     # screen on an arm, facing the operator on the -Y side
     fr.box((0.03, 0.3, 0.03), (x - 0.55, -0.62, 1.75), 'alu_brushed')
     sc.box((0.56, 0.035, 0.34), (x - 0.55, -0.78, 1.62), 'plastic_black', rot=(math.radians(10), 0, 0))
-    sc.box((0.52, 0.004, 0.3), (x - 0.55, -0.799, 1.62), 'scr_wi', rot=(math.radians(10), 0, 0))
+    screen_quad(f'AREA.stations.wi{i + 1}', 'Work-instruction picture', 'AREA.stations', x - 0.55, -0.8, 1.62, 0.52, 0.3, 'scr_wi', math.radians(10))
     sc.box((0.18, 0.1, 0.12), (x + 0.6, -0.55, 1.92), 'anodised_dark')                   # torque controller
     sc.cyl(0.03, 0.03, (x + 0.6, -0.61, 1.98), 'led_green', rot=(H, 0, 0), seg=16)
     for k, dx in enumerate((-0.15, 0.25)):
@@ -193,8 +211,6 @@ for i, x in enumerate(STATIONS):
         tools.cyl(0.005, 0.06, (bx, -0.2, 1.13), 'steel_polished', seg=10)                  # bit
         tools.sweep([(bx, -0.2, 1.4), (bx + 0.1, -0.22, 1.5), (x + 0.6, -0.5, 1.86)], 0.004, 'cable_orange')
 fr.build(); li.build(); sc.build(); tools.build()
-for o in bpy.data.objects:
-    if o.name == 'AREA.stations.screens': uv_plane(o, 0, 2, 0, 0, 1, 1)
 
 # ---------------------------------------------------------------- flow racks with bins beside each operator
 assembly('AREA.racks', 'Gravity flow racks with blue bins: parts slide to the operator, empties go back on the top shelf.', parent='AREA')
@@ -236,7 +252,7 @@ def person(x, y, face=0.0, reach=0.34):
         ppl.sphere(0.045, P(sx * 0.1, reach + 0.03, 1.0), 'cap', scale=(0.8, 1.2, 0.6))     # gloved hand
 for i, x in enumerate(STATIONS):
     person(x - 0.1, -1.18, face=0.0)
-    if i % 2 == 0: person(x + 0.15, 1.18, face=math.pi)
+    if i % 2 == 0 and i != 2: person(x + 0.15, 1.18, face=math.pi)
 
 # ---------------------------------------------------------------- U-shaped sub-assembly cells beside the line
 assembly('AREA.cells', 'U-shaped sub-assembly cells: operators stand one behind another; kits leave on a roller conveyor to the line.', parent='AREA')
@@ -290,8 +306,8 @@ cb.build(); ck.build(); cv.build(); cbins.build()
 assembly('AREA.test', 'Test conveyor: sets stand upright and show test patterns (power, white balance, function).', parent='AREA')
 tc = Part('AREA.test.conveyor', 'Upright test conveyor and fixtures', 'AREA.test', bevel=0.003)
 ts = Part('AREA.test.sets', 'Sets under test showing patterns', 'AREA.test', bevel=0.002)
-tc.box((3.2, 0.5, 0.1), (5.55, 0, 0.62), 'alu_brushed')
-for x in (4.1, 5.55, 7.0):
+tc.box((3.6, 0.5, 0.1), (5.45, 0, 0.62), 'alu_brushed')
+for x in (3.8, 5.45, 7.1):
     for sy in (-1, 1): tc.box((0.05, 0.05, 0.6), (x, sy * 0.2, 0.3), 'alu_brushed')
 for x, m in zip(TEST_X + [7.2], ['scr_bars', 'scr_white', 'scr_green']):
     if x > 7.0: continue
@@ -299,6 +315,83 @@ for x, m in zip(TEST_X + [7.2], ['scr_bars', 'scr_white', 'scr_green']):
 tc.build(); ts.build()
 person(5.0, -0.9, face=0.0)
 ppl.build()
+
+# ---------------------------------------------------------------- a robot that fixes the boards (the LG Gumi line: people place, robots fasten)
+assembly('AREA.robot', 'Six-axis robot with a screwdriver tool: operators place the boards, the robot drives the screws.', parent='AREA')
+rb = Part('AREA.robot.arm', 'Six-axis robot arm on its pedestal, with screwdriver tool and cable dress', 'AREA.robot', bevel=0.004)
+rx, ry = -1.0, 0.95                                         # station 3, far side of the line
+rb.box((0.5, 0.5, 0.55), (rx, ry, 0.275), 'steel_dark')                                    # pedestal
+rb.cyl(0.2, 0.18, (rx, ry, 0.64), 'robot_white', seg=32)                                    # base
+rb.cyl(0.16, 0.22, (rx, ry, 0.84), 'robot_white', seg=32)                                   # turret
+rb.cyl(0.13, 0.22, (rx, ry - 0.0, 0.98), 'robot_orange', rot=(0, H, 0), seg=28)              # shoulder joint
+sh, el, wr = Vector((rx, ry, 0.98)), Vector((rx + 0.05, ry - 0.25, 1.62)), Vector((rx + 0.08, ry - 0.82, 1.42))
+def link(a, b, r, mat):
+    d = b - a; m = (a + b) / 2; q = d.to_track_quat('Z', 'Y').to_euler()
+    rb.cyl(r, d.length, tuple(m), mat, rot=tuple(q), seg=24)
+link(sh, el, 0.085, 'robot_white'); rb.cyl(0.1, 0.2, tuple(el), 'robot_orange', rot=(0, H, 0), seg=24)
+link(el, wr, 0.065, 'robot_white'); rb.sphere(0.075, tuple(wr), 'robot_orange')
+tool_top = wr + Vector((0, 0, -0.05))
+rb.cyl(0.035, 0.26, tuple(tool_top + Vector((0, 0, -0.13))), 'anodised_dark', seg=20)       # screwdriver spindle
+rb.cyl(0.006, 0.08, tuple(tool_top + Vector((0, 0, -0.3))), 'steel_polished', seg=10)
+rb.sweep([tuple(sh + Vector((0.12, 0.05, 0.05))), tuple(el + Vector((0.08, 0.06, 0.08))), tuple(wr + Vector((0.06, 0.06, 0.1)))], 0.018, 'plastic_black')
+rb.build()
+# light curtain posts around the robot's reach
+lc = Part('AREA.robot.guard', 'Light-curtain posts and a mesh guard behind the robot', 'AREA.robot', bevel=0.002)
+for dx in (-0.75, 0.75):
+    lc.box((0.05, 0.05, 1.7), (rx + dx, 0.62, 0.85), 'estop_yellow'); lc.box((0.02, 0.03, 1.5), (rx + dx, 0.6, 0.9), 'led_white')
+lc.box((1.6, 0.02, 1.4), (rx, 1.55, 0.9), 'steel_dark'); lc.build()
+
+# a screw feeder: sorts screws and rolls them one at a time down a chute (as described at Gumi)
+sf = Part('AREA.stations.screwfeeder', 'Screw feeder with chute and pick point', 'AREA.stations', bevel=0.003)
+sx_ = -3.0 + 0.55
+sf.box((0.22, 0.18, 0.16), (sx_, -0.62, 0.9), 'paint_blue'); sf.cyl(0.07, 0.04, (sx_, -0.62, 1.0), 'steel_polished', seg=24)
+sf.box((0.18, 0.02, 0.01), (sx_ + 0.1, -0.58, 0.95), 'steel_polished', rot=(0, -0.3, 0)); sf.build()
+
+# ---------------------------------------------------------------- the QA aging room beside the line: sets left running for hours
+assembly('AREA.qa', 'QA aging room behind glass: finished sets stand in rows on the floor, switched on for hours of tests.', parent='AREA')
+qw = Part('AREA.qa.walls', 'Glass partition with aluminium frame', 'AREA.qa', bevel=0.002)
+qx0, qx1, qy0, qy1 = 8.4, 12.6, -1.6, 5.4
+for (ax, ay, bx, by) in ((qx0, qy0, qx0, qy1), (qx0, qy0, qx1, qy0)):
+    n = int(max(abs(bx - ax), abs(by - ay)) / 1.2)
+    for k in range(n + 1):
+        px_, py_ = ax + (bx - ax) * k / n, ay + (by - ay) * k / n
+        qw.box((0.05, 0.05, 2.6), (px_, py_, 1.3), 'alu_brushed')
+    qw.box((abs(bx - ax) + 0.05, abs(by - ay) + 0.05, 0.06), ((ax + bx) / 2, (ay + by) / 2, 2.6), 'alu_brushed')
+    qw.box((max(abs(bx - ax), 0.012), max(abs(by - ay), 0.012), 2.5), ((ax + bx) / 2, (ay + by) / 2, 1.3), 'glass')
+qw.build()
+qs = Part('AREA.qa.sets', 'Sets on stands under test', 'AREA.qa', bevel=0.002)
+pats = ['scr_bars', 'scr_white', 'scr_green', 'scr_white', 'scr_bars']
+k = 0
+for row in range(4):
+    for col in range(4):
+        x = qx0 + 0.55 + col * 1.0; y = qy0 + 0.9 + row * 1.6
+        qs.box((0.36, 0.22, 0.02), (x, y, 0.01), 'steel_dark'); qs.box((0.06, 0.04, 0.32), (x, y + 0.04, 0.17), 'steel_dark')
+        qs.box((0.95, 0.05, 0.56), (x, y + 0.05, 0.62), 'cover_black')
+        screen_quad(f'AREA.qa.screen{k}', 'Test pattern', 'AREA.qa', x, y + 0.022, 0.62, 0.93, 0.54, pats[k % len(pats)]); k += 1
+qs.build()
+
+# ---------------------------------------------------------------- the building: wall panels, columns, roof steel and high-bay lights
+assembly('AREA.building', 'Insulated wall panels with a clerestory band, steel columns, roof beams and LED high-bay lights.', parent='AREA')
+bw = Part('AREA.building.walls', 'Wall panels and clerestory', 'AREA.building', bevel=0)
+for k in range(int(26 / 1.0)):
+    bw.box((0.98, 0.12, 6.4), (-13 + 0.5 + k * 1.0, 6.6, 3.2), 'wall_panel')
+bw.box((26, 0.1, 1.1), (0, 6.58, 7.1), 'window_sky'); bw.box((26, 0.14, 1.9), (0, 6.62, 8.65), 'wall_panel')
+for k in range(int(16 / 1.0)):
+    bw.box((0.12, 0.98, 6.4), (-13.0, -9.5 + 0.5 + k * 1.0, 3.2), 'wall_panel')
+bw.box((0.1, 16, 1.1), (-12.98, -1.5, 7.1), 'window_sky'); bw.box((0.14, 16, 1.9), (-13.02, -1.5, 8.65), 'wall_panel')
+bw.build()
+bs = Part('AREA.building.steel', 'Columns and roof beams', 'AREA.building', bevel=0.004)
+for cx in range(-12, 13, 6):
+    bs.box((0.3, 0.3, 9.6), (cx, 6.3, 4.8), 'steel_beam'); bs.box((0.6, 0.6, 0.3), (cx, 6.3, 0.15), 'epoxy')
+    bs.box((0.25, 16, 0.6), (cx, -1.5, 9.3), 'steel_beam')
+for cy in (-6.5, -0.5, 5.5): bs.box((26, 0.18, 0.4), (0, cy, 9.0), 'steel_beam')
+bs.build()
+bl = Part('AREA.building.lights', 'LED high-bay light fittings', 'AREA.building', bevel=0)
+for gx in range(-9, 10, 3):
+    for gy in (-6.5, -3.5, -0.5, 2.5):
+        bl.box((1.2, 0.6, 0.04), (gx, gy, 6.62), 'ceiling_light'); bl.box((1.25, 0.65, 0.08), (gx, gy, 6.7), 'steel_dark')
+        bl.box((0.02, 0.02, 2.2), (gx, gy, 7.8), 'steel_dark')
+bl.build()
 
 # ---------------------------------------------------------------- station numbers
 def label(body, size, loc):
@@ -316,6 +409,9 @@ SHOTS = {   # three.js poses (x, y up, z toward the viewer = -Blender Y)
     'cell': ((-1.4, 3.4, 8.2), (-1.8, 0.8, 3.9), 40),
     'test': ((8.2, 1.7, 3.2), (5.4, 1.1, 0.0), 34),
     'top': ((0.01, 22.0, 2.6), (0.0, 0.0, 2.0), 40),
+    'qa': ((13.6, 2.6, 5.4), (8.6, 1.0, -1.6), 40),
+    'robot': ((1.5, 1.85, 1.55), (-1.0, 1.05, -0.55), 42),
+    'wide': ((12.5, 5.0, 10.5), (1.0, 0.8, -0.5), 38),
 }
 if A.manifest:
     L.manifest(A.manifest, 'AREA', 'Main assembly area, line ML-3, Plant EG-01',
@@ -323,7 +419,7 @@ if A.manifest:
 if A.glb: L.export_glb(A.glb, 'AREA')
 if A.out:
     # a bright factory: a grid of high-bay LED panels over the floor, a soft key for modelling, a pale grey world
-    L.cyclorama(scale=3.0, rot_deg=0); L.world('#C9CED6', 0.55)
+    L.world('#C9CED6', 0.65)
     for gx in range(-9, 10, 3):
         for gy in (-6.5, -3.5, -0.5, 2.5):
             L.area(f'light.bay{gx}_{gy}', (gx, gy, 6.5), (gx, gy, 0), 1.2, 260, (1.0, 0.98, 0.95), size_y=0.6)
