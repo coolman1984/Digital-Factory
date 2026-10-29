@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build site
-        run: mkdir -p _site && cp -r index.html app.html deck.html guide.html plant.html showroom.html assets _site/ && touch _site/.nojekyll
+        run: mkdir -p _site && cp -r index.html app.html deck.html guide.html plant.html showroom.html inspect.html line.html assets _site/ && touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

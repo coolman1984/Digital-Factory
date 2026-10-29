@@ -48,7 +48,7 @@ LAYOUT = {
                   ('MNT.feeders_front.feeders', -0.16, 0.06), ('MNT.feeders_front.reels', -0.06, 0.2),
                   ('MNT.conveyor.rails', 0.14, 0.05)],
     'exploded': [('MNT.hood.frame', 0.2, -0.04), ('MNT.gantry.beam', -0.24, -0.05), ('MNT.head.spindles', -0.22, 0.02),
-                 ('MNT.yaxis.beam_left', -0.2, 0.0), ('MNT.conveyor.rails', 0.22, -0.07), ('MNT.feeders_front.feeders', -0.12, -0.12),
+                 ('MNT.yaxis.beam_left', -0.2, -0.02), ('MNT.conveyor.rails', 0.22, -0.07), ('MNT.feeders_front.feeders', -0.15, 0.1),
                  ('MNT.cabinet.side_right', 0.16, 0.1), ('MNT.controls.pc', 0.02, 0.2)],
     'ghost': [('MNT.controls.vacuum', 0.16, 0.03), ('MNT.controls.servo_rack', -0.02, 0.22), ('MNT.controls.pc', 0.14, 0.16),
               ('MNT.head.spindles', -0.18, -0.2), ('MNT.conveyor.rails', 0.18, -0.08)],

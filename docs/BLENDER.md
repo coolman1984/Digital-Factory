@@ -9,11 +9,13 @@ Read `VISION_3D_AND_MOTION.md` and `EXPERIMENT_FIRST_INDUSTRIAL_SCENE.md` first.
 | Item | State | Evidence |
 |---|---|---|
 | Blender in the cloud session | **Works** | `pip install bpy==5.2.3` (Blender 5.2.3 LTS as a Python module, from PyPI). Cycles on the CPU, OpenImageDenoise, AgX. `download.blender.org` is blocked by the session's network policy; PyPI is not. |
-| Blender on the owner's PC | **Not connected** | No Remote Control folder was shared with the session. The vendored Blender MCP add-on (Animation repo, `studio/toolkit/blender-mcp`) is still unverified there. |
+| Blender on the owner's PC | **Not reachable from the cloud** | The PC ("Fawzy") lists its folders for Remote Control, but cloud sessions cannot attach to it (most likely because it runs Windows). Two routes work: double-click `tools/blender/render-on-pc.bat` (renders on the graphics card with `--gpu`), or run Claude Code on the PC itself in this folder. The vendored Blender MCP add-on (Animation repo) is still unverified there. |
 | Mounter B, built from code | **Implemented** | `tools/blender/mounter.py`: 40 named parts in 14 assemblies, about 0.4 M triangles after bevels. |
 | Assembled, exploded, X-ray, cutaway stills | **Rendered** | 1920x1200, 128 samples, Cycles CPU, 4 cores. Not committed (renders are outputs); the commands below rebuild them. |
 | Bilingual callouts | **Implemented** | `tools/blender/label.py`, anchored to each part's projected position. |
-| Working motion, film, browser GLB in the plant | **Planned** | The part manifest and the gantry/head transforms are ready for animation and glTF export (`--glb`). Not yet exported, checked with `check-glb.mjs` or shown in `plant.html`. |
+| Browser model | **Implemented** | `--lod web` (2-segment bevels, flat reels and board chips): 177 k triangles, 961 KB after `tools/assets/pack-machine.mjs` (meshopt); `check-glb.mjs` PASS. `assets/models/machines/mounter/` with `parts.json` (Arabic and English names from `tools/blender/names.py`). |
+| Machine studio (`inspect.html`) | **Implemented** | Explode slider, X-ray, section with stencil caps, parts list and picking, illustrative head cycle, customer tour, AR/EN, light/dark. Checked in headless Chromium (software GPU) at 1280, 390 px and in Arabic; QA gate READY (0 FAIL). Not measured on a real GPU. |
+| In the live plant, film | **Planned** | Phase 2 of `docs/BLENDER-PLAN.md`: click a mounter in `plant.html` to open the studio, and Blender LODs for the 18 mounters. |
 
 ## Commands
 
@@ -24,9 +26,12 @@ $P tools/blender/mounter.py --state assembled --samples 128 --res 1920x1200 --ou
 $P tools/blender/mounter.py --state exploded  ...      # also: ghost, cut; --shot hero|wide|head|top
 $P tools/blender/mounter.py --manifest out/parts.json --blend out/mounter.blend --glb out/mounter.glb
 python3 tools/blender/label.py out/assembled.png out/assembled.json out/assembled-labelled.jpg   # Pillow with raqm
+$P tools/blender/mounter.py --lod web --glb out/raw.glb --manifest assets/models/machines/mounter/parts.json
+(cd tools/assets && node pack-machine.mjs ../../out/raw.glb ../../assets/models/machines/mounter/mounter.glb \
+   && node check-glb.mjs ../../assets/models/machines/mounter/mounter.glb --max-tris 300000 --max-kb 1500 --size 1,4)
 ```
 
-On a desktop Blender: `blender -b -P tools/blender/mounter.py -- --state cut --out cut.png`.
+On a desktop Blender: `blender -b -P tools/blender/mounter.py -- --state cut --out cut.png` (add `--gpu` to render on the graphics card). On Windows, `tools/blender/render-on-pc.bat` does all five stills at 2560x1600.
 A quick look: `--samples 16 --res 800x500` renders in about 15 s here.
 
 ## How the asset is built (the rules we follow)
@@ -52,6 +57,15 @@ A quick look: `--samples 16 --res 800x500` renders in about 15 s here.
 - **Studio.** A curved cyclorama, a large key softbox front-left, a broad dim fill, two rims behind and a top strip for a
   long highlight on the glass; AgX with the Medium High Contrast look; depth of field at f/11 (f/5.6 for close-ups).
 - **Determinism.** A seeded generator places the board's components, so the same command gives the same scene.
+
+## Pitfalls met in the browser
+
+- **Transmission glass** (KHR_materials_transmission) costs a second render of the scene and left white blotches on a
+  software GPU; the studio turns glass and translucent reels into plain alpha materials on load.
+- **Shared materials:** clipping is set on materials, and the exporter shares one material between covers and frames, so
+  a section cut the frame and the screen arm too. Covers get their own material copies on load.
+- **Node offsets:** `KHR_mesh_quantization` moves geometry into node transforms, so an authored point (label anchor) is
+  placed with the parent's matrix, not the node's.
 
 ## Pitfalls met (Blender 5.2)
 

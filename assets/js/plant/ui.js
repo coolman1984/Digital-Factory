@@ -107,6 +107,7 @@
   if (V) V.on((t, d) => {
     if (t === 'select') { if (d !== sel) { sel = d; kpiView = null; render(true); } }
     if (t === 'hover') hover(d);
+    if (t === 'open' && typeof d === 'string' && d.startsWith('st:')) { const s = P.byId[d.slice(3)]; if (s && STUDIO[s.kind]) location.href = studioHref(s); }
   });
 
   const insp = $('#inspBody');
@@ -128,6 +129,7 @@
     if (b.dataset.ref) return select(b.dataset.ref, { fly: true });
     if (b.dataset.act) { act(b.dataset.act); return; }
     if (b.dataset.dismiss) { E.dismiss(b.dataset.dismiss); render(true); return; }
+    if (b.dataset.studio) { const st = P.byId[b.dataset.studio]; if (st) location.href = studioHref(st); return; }
     if (b.dataset.back !== undefined) { select(null); return; }
     if (b.dataset.follow !== undefined && V) { if (mode !== '3d') setMode('3d'); V.setFollow(!V.follow); if (V.follow && sel) V.select(sel, { follow: true }); render(true); return; }
     if (b.dataset.show3d !== undefined && V && sel) { setMode('3d'); V.select(sel, { fly: true }); return; }
@@ -143,6 +145,11 @@
   const sect = (title, body, note = '') => body ? `<section class="is"><h3>${esc(title)}${note ? `<span>${note}</span>` : ''}</h3>${body}</section>` : '';
   const evRows = list => list.length ? `<ol class="ev">${list.map(e => `<li class="${e.level}"><time>${e.time}</time><span><b>${esc(e.src)}</b> ${esc(e.msg)}</span></li>`).join('')}</ol>` : '<p class="quiet">Nothing logged yet.</p>';
   const msgRows = list => list.length ? `<ol class="ev">${list.map(m => `<li><time>${m.time}</time><span><b>${esc(m.from)} → ${esc(m.to)}</b> ${esc(m.text)}</span></li>`).join('')}</ol>` : '<p class="quiet">No messages yet.</p>';
+  // machines that have a Blender model in the machine studio (inspect.html); the link carries a snapshot of the station
+  const STUDIO = { mounter: 'mounter' };
+  const studioHref = s => { const L = P.lines[s.line]; return `inspect.html?m=${STUDIO[s.kind]}&st=${encodeURIComponent(s.id)}&name=${encodeURIComponent(s.name)}&line=${encodeURIComponent(L ? L.name : '')}&state=${encodeURIComponent(s.state)}&health=${Math.round(s.health)}&made=${s.counters.made}&t=${Math.round(P.t)}`; };
+  // a button, not a link: the snapshot is taken at the click, so the panel does not change every second
+  const studioLink = s => (STUDIO[s.kind] ? `<div class="ia"><button type="button" class="btn btn-primary btn-sm" data-studio="${esc(s.id)}" data-key="studio">${icon('layers')}Open in the machine studio</button><p class="quiet">Take it apart, see inside, cut it open. Or double-click the machine in 3D.</p></div>` : '');
   const show3d = () => (V && mode !== '3d' ? `<div class="ia"><button type="button" class="btn btn-secondary btn-sm" data-show3d data-key="show3d">${icon('eye')}Show in 3D</button></div>` : '');
   const stLink = id => { const s = P.byId[id]; return s ? link('st:' + id, s.name) : esc(id); };
   const unitLink = u => (u ? link('unit:' + u.sn, u.sn) : '—');
@@ -285,7 +292,7 @@
     const who = [...(s.crew || []).map(p => `${esc(p.name)}${p.present ? '' : ' (absent)'}${p.cover ? ` · covering (${esc(p.cover)})` : ''}`), s.tech ? `${esc(s.tech.name)} · technician` : ''].filter(Boolean).join('<br>');
     const out = s.kind === 'injection' ? kv([['Part', `${esc(s.part)} · mould ${esc(s.mold)}`], ['Cycle', `${s.base} s · ${s.batchOut} ${s.batchOut > 1 ? 'parts' : 'part'} a shot`], ['Goes to', link('buf:INJ:' + s.part, 'Injection supermarket')]]) : '';
     return head(s.name, `${esc(L ? L.name : 'Support')} · ${esc(KINDN[s.kind] || s.kind)}`, `<p class="ih-st">${chip(s.state === 'idle' && L && L.tripped ? 'tripped' : s.state, s.why)} <small>for ${mins(P.t - s.since)}</small></p>`)
-      + show3d()
+      + show3d() + studioLink(s)
       + (recs.length ? sect('Needs a decision', recCards(recs, X)) : '')
       + sect('Live signals', sensorsBlock(s))
       + sect('Control · HMI', hmiBlock(s), 'interlocked, simulated first')
@@ -311,8 +318,10 @@
       + (feeders ? sect('Sub-lines feeding it', `<ul class="li">${feeders}</ul>`) : '')
       + (ls ? sect('Line-side stock', `<ul class="li">${ls}</ul>`) : '')
       + sect('Stations', `<ul class="li">${sts}</ul>`)
-      + (L.kind === 'main' ? `<div class="ia"><button type="button" class="btn btn-secondary btn-sm" data-act="boost:${L.id}" data-key="boost">Raise line speed to 108%</button></div>` : '');
+      + (L.kind === 'main' ? `<div class="ia"><button type="button" class="btn btn-secondary btn-sm" data-act="boost:${L.id}" data-key="boost">Raise line speed to 108%</button></div>` : '')
+      + (SLICE[L.id] ? `<div class="ia"><a class="btn btn-primary btn-sm" href="${SLICE[L.id]}" data-key="slice">${icon('layers')}Walk this line up close</a><p class="quiet">A cell, the conveyor, the test and packing, working in 3D.</p></div>` : '');
   }
+  const SLICE = { ML3: 'line.html' };   // lines with a close-up slice page (built in Blender)
 
   function bufferDetail(id) {
     const b = P.bufs[id]; if (!b) return plantNow();

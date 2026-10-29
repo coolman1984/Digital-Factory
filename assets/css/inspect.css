@@ -1,0 +1,62 @@
+/* Digital Factory — Machine studio (inspect.html). Built on the showroom's grammar (showroom.css): the machine is the
+   hero on a studio sweep, a narrow panel of bare controls beside it. Adds the sliders, the parts list and the tour caption. */
+.ins .sr-actions { margin-inline-start: auto; }
+
+/* sliders: the two ends are named in words, so the control explains itself */
+.slider { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 44px; font-size: 13px; color: var(--text-2); }
+.slider input { width: 100%; accent-color: var(--brand); height: 44px; margin: 0; cursor: pointer; }
+.slider input:focus-visible { outline: 3px solid var(--brand-2); outline-offset: 2px; border-radius: 6px; }
+.slider[hidden] { display: none; }
+
+/* the station this studio was opened from (a snapshot from the live plant) */
+.plant-kv { margin: 0 0 10px; display: grid; gap: 6px; }
+.plant-kv div { display: grid; grid-template-columns: 104px 1fr; gap: 10px; font-size: 14px; }
+.plant-kv dt { color: var(--text-3); }
+.plant-kv dd { margin: 0; }
+.plant-kv .st { display: inline-flex; align-items: center; gap: 6px; font-weight: 650; }
+.plant-kv .st i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok, #0F9D58); }
+.plant-kv .st.warn i { background: var(--warn, #E08A00); }
+.plant-kv .st.bad i { background: var(--danger, #E5383B); }
+
+/* the selected part */
+.part-card { padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface); margin-bottom: 12px; }
+.part-card[hidden] { display: none; }
+.part-card b { display: block; font-size: 16px; font-weight: 750; letter-spacing: -.01em; }
+.part-card .alt { display: block; font-size: 13px; color: var(--text-2); margin-top: 2px; }
+.part-card p { font-size: 14px; line-height: 1.5; margin: 8px 0 10px; }
+.part-card .btn { height: 40px; margin-bottom: 0; }
+
+/* the parts, grouped by assembly */
+.part-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.part-list .grp { font-size: 12px; font-weight: 750; color: var(--text-3); padding: 10px 2px 4px; }
+.part-list button { width: 100%; min-height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: var(--text); font-size: 14px; text-align: start; cursor: pointer; transition: background-color var(--dur-ui) var(--ease-out); }
+.part-list button::before { content: ""; width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--text-3); flex: none; }
+.part-list button:hover { background: var(--surface); }
+.part-list button[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+.part-list button[aria-pressed="true"]::before { border-color: var(--bg); background: var(--bg); }
+.part-list button:focus-visible { outline: 3px solid var(--brand-2); outline-offset: -1px; }
+
+/* callouts: the showroom's hairline labels, with the selected one in brand blue */
+.hot .h.sel::before { border-color: var(--brand-2); background: var(--brand-2); }
+.hot .h.sel span { color: var(--bg); background: var(--text); }
+
+/* the Blender photo for the resting view, under the labels */
+.photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; pointer-events: none; transition: opacity 450ms var(--ease-out); }
+.photo.on { opacity: 1; }
+.photo-tag { position: absolute; inset-inline-end: 14px; bottom: 14px; font-size: 12px; font-weight: 650; color: var(--text-2); background: color-mix(in srgb, var(--bg) 85%, transparent); padding: 4px 9px; border-radius: 7px; opacity: 0; transition: opacity 450ms var(--ease-out); pointer-events: none; }
+.photo-tag.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .photo, .photo-tag { transition: none; } }
+
+/* the tour caption: one sentence per step and a thin progress line */
+.tour-cap { position: absolute; inset-inline-start: 20px; top: 18px; max-width: min(460px, calc(100% - 40px)); padding: 12px 16px 14px; border-radius: 12px; background: color-mix(in srgb, var(--bg) 90%, transparent); border: 1px solid var(--border); box-shadow: 0 6px 24px rgba(10, 16, 36, .08); }
+.tour-cap[hidden] { display: none; }
+.tour-cap b { display: block; font-size: 17px; font-weight: 750; letter-spacing: -.01em; }
+.tour-cap span { display: block; font-size: 14px; line-height: 1.5; color: var(--text-2); margin-top: 4px; }
+.tour-cap i { display: block; height: 3px; margin-top: 10px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.tour-cap em { display: block; height: 100%; width: 0; background: var(--brand-2); }
+
+@media (max-width: 899px) {
+  .part-list button { min-height: 44px; }
+  .tour-cap { inset-inline: 12px; top: 12px; max-width: none; }
+}
+@media (prefers-reduced-motion: reduce) { .part-list button { transition: none; } }

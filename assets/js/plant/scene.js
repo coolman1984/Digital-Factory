@@ -335,7 +335,11 @@
     const mtx = new T.Matrix4(), q = new T.Quaternion(), eul = new T.Euler(), pos = new T.Vector3(), scl = new T.Vector3(1, 1, 1);
     const place = (g, x, y, z, ry = 0, rx = 0, rz = 0) => { eul.set(rx, ry, rz); q.setFromEuler(eul); mtx.compose(pos.set(x, y, z), q, scl.set(1, 1, 1)); g.applyMatrix4(mtx); return g; };
     const strip = g => { for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal' && k !== 'uv') g.deleteAttribute(k); return g.index ? g : g; };
-    const push = (key, g) => { (BAG[key] = BAG[key] || []).push(liftGeo(strip(g))); };
+    // machines with a Blender model build their procedural stand-in into a bag of their own (KBAG), so it can be
+    // hidden when the model arrives; contact shades stay in the plant's bag
+    const KBAG = {}, PROC = {};
+    let bagNow = BAG;
+    const push = (key, g) => { const bag = key === 'contact' ? BAG : bagNow; (bag[key] = bag[key] || []).push(liftGeo(strip(g))); };
     // a box; rounded boxes for machine bodies so the light catches their edges
     function sbox(key, w, h, d, x, y, z, o = {}) {
       const r = o.r && !low ? Math.min(o.r, w / 2 - 0.001, h / 2 - 0.001, d / 2 - 0.001) : 0;
@@ -365,9 +369,9 @@
     // a soft contact shade on the floor under a footprint (machines, racks, benches)
     const contact = (x, z, w, d, y = 0) => { const g = new T.PlaneGeometry(w + 0.7, d + 0.7); g.rotateX(-Math.PI / 2); g.translate(x, y + 0.004, z); push('contact', g); };
     const world = new T.Group(); scene.add(world);
-    function finalize() {
-      for (const key in BAG) {
-        const list = BAG[key]; if (!list.length) continue;
+    function finalize(bag = BAG, parent = world) {
+      for (const key in bag) {
+        const list = bag[key]; if (!list.length) continue;
         const idx = list.filter(g => g.index), non = list.filter(g => !g.index);
         for (const set of [idx, non]) for (let i = 0; i < set.length; i += 3000) {
           const g = T.mergeGeometries(set.slice(i, i + 3000), false); if (!g) continue;
@@ -375,9 +379,9 @@
           m.castShadow = !['glass', 'zone', 'floorLine', 'screen', 'white', 'hmi', 'sop', 'fixture', 'lights', 'carpet', 'roof', 'markY', 'markG', 'markW', 'markHaz', 'decal', 'contact', 'mesh'].includes(key); m.receiveShadow = !['glass', 'fixture', 'contact'].includes(key);
           m.raycast = () => {};
           if (key === 'glass' || key === 'zone' || key === 'mesh') m.renderOrder = 2; if (key === 'contact') m.renderOrder = 1;
-          world.add(m);
+          parent.add(m);
         }
-        list.forEach(g => g.dispose()); BAG[key] = [];
+        list.forEach(g => g.dispose()); bag[key] = [];
       }
     }
     function lines(parent, pts, mat, y = 0.02) {
@@ -824,7 +828,11 @@
         decal('air', 0.1, 0.06, ax, 1.34, az - 0.045, Math.PI);
       }
     }
-    P.stations.forEach(buildStation);
+    // Blender models replace procedural machines kind by kind (docs/BLENDER-PLAN.md); until a model has loaded, and
+    // on low quality, the procedural machine stays
+    const ML_KIT = 'assets/models/machines/mainline/mainline-plant.glb';   // tools/blender/main_line_kit.py: one file, a node ML.<kind> per station kind
+    const BLENDER = low ? {} : { mounter: 'assets/models/machines/mounter/mounter-plant.glb', bench: ML_KIT, robot: ML_KIT, fct: ML_KIT, wb: ML_KIT, qa: ML_KIT, packer: ML_KIT };
+    P.stations.forEach(s => { bagNow = BLENDER[s.kind] ? (KBAG[s.kind] = KBAG[s.kind] || {}) : BAG; buildStation(s); bagNow = BAG; });
     // clean booths around the LCM lines; overhead cable trays and line signs above every line
     const SIGNS = [];
     for (const Ln of Object.values(P.lines)) {
@@ -1136,6 +1144,7 @@
       LOBBY = wall.material;
     }
     finalize();
+    for (const k in KBAG) { const g = new T.Group(); g.name = 'procedural:' + k; world.add(g); finalize(KBAG[k], g); PROC[k] = g; }
     // what the floor plan put upstairs and was not merged above (signs, floor names) goes up too
     for (const o of world.children) { if (o.isInstancedMesh || o === floor || o.userData.ground) continue; const p = o.position; if (p.y < FL * 0.6 && (p.x || p.z) && lvStatic(p.x, p.z)) p.y += FL; }
 
@@ -1176,6 +1185,7 @@
       palWrap: inst(unitBoxB, M.wrap, 420)
     };
     const modelOf = m => E.MODELS[m] || E.MODELS.M55;
+    const TILT = 0.21, TILT_C = Math.cos(TILT), TILT_S = Math.sin(TILT);   // sets under test lean back about 12°, as on the reference lines
     const unitPos = new Map();
     function polyAt(p, s) {
       for (let i = 1; i < p.length; i++) {
@@ -1212,12 +1222,21 @@
           continue;
         }
         if (!s.procs.length || s.batchOut) continue;
-        const y = s.kind === 'reflow' ? 0.86 : s.kind === 'bench' || s.kind === 'blu' || s.kind === 'repair' ? 0.92 : s.kind === 'robot' || s.kind === 'lcmload' ? 0.84 : Math.min(0.95, s.h * 0.5);
+        // a main-line station drawn from the Blender kit carries the set on its pallet conveyor (0.74 m, like the belts
+        // between stations); at function test, white balance and QA the set stands upright, leaning back, its picture on
+        const kit = MODELS[s.kind] && BLENDER[s.kind] === ML_KIT, upright = kit && (s.kind === 'fct' || s.kind === 'wb' || s.kind === 'qa');
+        const y = kit ? 0.74 : s.kind === 'reflow' ? 0.86 : s.kind === 'bench' || s.kind === 'blu' || s.kind === 'repair' ? 0.92 : s.kind === 'robot' || s.kind === 'lcmload' ? 0.84 : Math.min(0.95, s.h * 0.5);
         s.procs.forEach((pr, i) => {
           let x = s.x;
           if (s.kind === 'reflow') { const tot = s.base * s.slots; x = s.x - s.w * 0.42 + s.w * 0.84 * (1 - Math.max(0, pr.left) / tot); }
           else if (s.slots > 1) x += (i - (s.procs.length - 1) / 2) * (s.w / (s.slots + 1));
-          if (pr.u) drawUnit(pr.u, x, y, s.z, s.kind !== 'bench' && s.kind !== 'blu');
+          if (!pr.u) return;
+          if (upright && pr.u.type !== 'pba' && !pr.u.packed) {
+            const m = modelOf(pr.u.model), sc = Math.min(1, (s.w - 0.4) / m.w), w = m.w * sc, h = m.h * sc, yc = y + 0.05 + h / 2 * TILT_C, zc = s.z - h / 2 * TILT_S;
+            put(U.panel, x, yc, zc, w, h, 0.06, 0, -TILT, 0, 'unit:' + pr.u.sn);
+            put(U.screen, x, yc + 0.031 * TILT_S, zc + 0.031 * TILT_C, w * 0.96, h * 0.94, 1, 0, -TILT);
+            unitPos.set(pr.u, [x, yc, zc]);
+          } else drawUnit(pr.u, x, y, s.z, kit || (s.kind !== 'bench' && s.kind !== 'blu'));
         });
       }
       for (const p of P.pallets) {
@@ -1385,6 +1404,98 @@
 
     /* ---------------- theme ---------------- */
     let xray = false;
+    /* ---------------- Blender machine models on the floor ----------------
+       The plant LOD of a kind (tools/blender/<kind>.py --lod plant) is split into its still body, its gantry and its head,
+       each merged by material into one InstancedMesh with a copy per station of that kind. The gantry and head copies move
+       like the procedural gantries did (only while the station runs). Picking, the signal lamps and the engine stay as
+       they are; the procedural stand-in is hidden once the model is placed. */
+    const MODELS = {};
+    const toFloat = (g, uv) => {
+      const f = new T.BufferGeometry();
+      for (const k of uv ? ['position', 'normal', 'uv'] : ['position', 'normal']) {
+        const a = g.attributes[k]; if (!a) continue;
+        const n = a.count, sz = a.itemSize, arr = new Float32Array(n * sz);
+        const get = [a.getX, a.getY, a.getZ, a.getW];   // these undo the quantization (getComponent would not)
+        for (let i = 0; i < n; i++) for (let c = 0; c < sz; c++) arr[i * sz + c] = get[c].call(a, i);
+        f.setAttribute(k, new T.BufferAttribute(arr, sz));
+      }
+      if (g.index) f.setIndex(new T.BufferAttribute(Uint32Array.from(g.index.array), 1));
+      return f;
+    };
+    function placeModel(kind, root, sts) {
+      root.updateMatrixWorld(true);
+      const parts = { body: new Map(), gantry: new Map(), head: new Map() }, shellMats = [];
+      root.traverse(o => {
+        if (!o.isMesh) return;
+        let part = 'body', shell = false;
+        for (let q = o; q; q = q.parent) { const id = q.userData && q.userData.part_id; if (id === 'MNT.head' && part === 'body') part = 'head'; if (id === 'MNT.gantry' && part === 'body') part = 'gantry'; if (q.userData && q.userData.shell) shell = true; }
+        const m = o.material;
+        if (m.transmission > 0) { m.transmission = 0; m.transparent = true; m.opacity = m.name === 'glass' ? 0.16 : 0.6; m.depthWrite = m.name !== 'glass'; }
+        // the floor copies drop what only the studio needs: anisotropy wants tangents (without them it can shade NaN,
+        // which bloom spreads over the whole frame) and the screen picture is too small to read from the aisle
+        if (m.anisotropy) m.anisotropy = 0;
+        if (m.map && !o.geometry.attributes.uv) { m.map = null; m.needsUpdate = true; }
+        if (shell && !shellMats.includes(m)) shellMats.push(m);
+        const g = toFloat(o.geometry, !!m.map); g.applyMatrix4(o.matrixWorld);
+        const list = parts[part].get(m) || []; list.push(g); parts[part].set(m, list);
+      });
+      const n = sts.length, made = { body: [], gantry: [], head: [] };
+      for (const part of ['body', 'gantry', 'head']) for (const [m, list] of parts[part]) {
+        const g = T.mergeGeometries(list, false); list.forEach(x => x.dispose()); if (!g) continue;
+        const im = new T.InstancedMesh(g, m, n); im.castShadow = !m.transparent; im.receiveShadow = true; im.raycast = () => {};
+        if (m.transparent) im.renderOrder = 2;
+        world.add(im); made[part].push(im);
+      }
+      // the paint follows the plant's theme (a dark plant dims the white powder coat like its own machines)
+      const paints = [];
+      for (const part of Object.values(made)) for (const im of part) { const m = im.material; if (/^paint/.test(m.name) && !paints.some(p => p.m === m)) paints.push({ m, c: m.color.clone() }); }
+      const M4 = new T.Matrix4();
+      sts.forEach((st, i) => { M4.makeTranslation(st.x, lvStatic(st.x, st.z), st.z); for (const im of made.body) im.setMatrixAt(i, M4); });
+      for (const im of made.body) im.instanceMatrix.needsUpdate = true;
+      MODELS[kind] = { sts, made, shellMats: shellMats.map(m => ({ m, o: m.opacity, t: m.transparent })), paints };
+      if (PROC[kind]) PROC[kind].visible = false;
+      modelTheme(); setXray(xray); updateModels();
+    }
+    function updateModels() {
+      const M4 = new T.Matrix4(), on = s => s && (s.state === 'run' || s.state === 'warn');
+      for (const k in MODELS) {
+        const { sts, made } = MODELS[k];
+        sts.forEach((st, i) => {
+          const t = on(st) ? tAnim * 2.1 * (st.state === 'warn' ? 0.6 : 1) : 0, y = lvStatic(st.x, st.z);
+          const gz = Math.sin(t + st.x) * 0.32, hx = Math.sin(t * 2.4 + st.z) * 0.38;
+          M4.makeTranslation(st.x, y, st.z + gz); for (const im of made.gantry) im.setMatrixAt(i, M4);
+          M4.makeTranslation(st.x + hx, y, st.z + gz); for (const im of made.head) im.setMatrixAt(i, M4);
+        });
+        for (const im of [...made.gantry, ...made.head]) im.instanceMatrix.needsUpdate = true;
+      }
+    }
+    function modelTheme() {
+      for (const k in MODELS) for (const p of MODELS[k].paints) p.m.color.copy(p.c).multiplyScalar(theme === 'dark' ? 0.55 : 1);
+    }
+    function modelXray(on) {
+      for (const k in MODELS) for (const sm of MODELS[k].shellMats) {
+        const m = sm.m; m.opacity = on ? Math.min(sm.o, 0.16) : sm.o; m.depthWrite = !on && !(sm.t && m.name === 'glass');
+        const tr = on || sm.t; if (m.transparent !== tr) { m.transparent = tr; m.needsUpdate = true; }
+      }
+    }
+    (async function loadModels() {
+      const kinds = Object.keys(BLENDER).filter(k => PROC[k]); if (!kinds.length || !window.DFLook) return;
+      try { await DFLook.extras(); } catch (e) { return; }   // offline: the procedural machines stay
+      // one load per file; a kit file holds a node ML.<kind> for each kind it serves, a single-machine file is the kind itself
+      for (const url of new Set(kinds.map(k => BLENDER[k]))) {
+        const loader = new T.X.GLTFLoader(); loader.setMeshoptDecoder(T.X.MeshoptDecoder);
+        loader.load(DFLook.base + url, g => {
+          for (const kind of kinds.filter(k => BLENDER[k] === url)) {
+            // the loader strips dots from node names (ML.bench becomes MLbench); the part id survives in the extras
+            let root = null; g.scene.traverse(o => { if (!root && o.userData && o.userData.part_id === 'ML.' + kind) root = o; });
+            if (!root && url === ML_KIT) { console.warn('plant model: no node for', kind); continue; }
+            root = root || g.scene;
+            try { placeModel(kind, root, P.stations.filter(s => s.kind === kind)); } catch (e) { console.warn('plant model', kind, e); }
+          }
+        }, undefined, e => console.warn('plant model', url, e));
+      }
+    })();
+
     function applyTheme() {
       C = PAL[theme]; S = STATUS[theme];
       scene.background = new T.Color(C.bg); scene.fog.color.set(C.fog); if (vig && !cine.on) vig.uniforms.amount.value = theme === 'dark' ? 0.75 : 0.45; if (atmos) atmos.theme(theme === 'dark');
@@ -1396,11 +1507,13 @@
       M.sel.color.set(S.info); M.route.color.set(S.info); chev.material.color.set(S.info); M.pkt.color.set(C.pkt); M.net.color.set(C.net);
       world.traverse(o => { if (o.userData && o.userData.floorWord) o.material.opacity = theme === 'dark' ? 0.22 : 0.55; });
       if (bloom) bloom.strength = C.bloom;
+      modelTheme();
       setXray(xray);
     }
     function setXray(v) {
       xray = !!v;
       for (const k of XRAY) { const m = M[k]; if (k === 'glass') continue; m.opacity = xray ? 0.16 : 1; m.depthWrite = !xray; if (m.transparent !== xray) { m.transparent = xray; m.needsUpdate = true; } }   // recompile only on a real change (a theme switch calls this too)
+      modelXray(xray);
     }
 
     /* ---------------- per-frame view ---------------- */
@@ -1432,6 +1545,7 @@
     };
     function updateMachines(dt) {
       tAnim += dt;
+      updateModels();
       stackI.count = poleI.count = stripI.count = tileI.count = hitI.count = 0;
       for (const s of P.stations) {
         const v = SV.get(s.id), st = s.state;
@@ -1459,6 +1573,7 @@
       beamI.count = baseI.count = turretI.count = linkI.count = jointI.count = motorI.count = toolI.count = platenI.count = fanI.count = 0;
       const on = s => s && (s.state === 'run' || s.state === 'warn');
       for (const a of ANIM.gantry) {
+        if (MODELS[a.s.kind]) continue;   // a Blender model carries its own gantry
         const s = a.s, t = on(s) ? tAnim * a.rate * (s.state === 'warn' ? 0.6 : 1) : 0;
         const bx = s.x + (a.offX || 0) + Math.sin(t + s.x) * a.amp;
         put(beamI, bx, a.y, s.z, 0.12, 0.08, a.len); put(beamI, bx, a.y - 0.14, s.z + Math.sin(t * 2.4 + s.z) * a.len * 0.38, 0.2, 0.2, 0.2);
@@ -2073,6 +2188,8 @@
       const h = hit(e.clientX, e.clientY);
       if (h) select(h.ref); else { selRef = null; reticle.visible = false; emit('select', null); }
     });
+    // a double click asks to open what is under the pointer (the page decides: a machine with a studio model opens there)
+    canvas.addEventListener('dblclick', e => { if (walk.on) return; const h = hit(e.clientX, e.clientY); if (h) emit('open', h.ref); });
     let hoverT = 0;
     canvas.addEventListener('pointermove', e => {
       if (e.pointerType !== 'mouse' || walk.on) return;

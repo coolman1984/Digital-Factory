@@ -16,6 +16,8 @@ window.DF_MARK = {"factory":"M7 23.8V9.4a.7.7 0 0 1 1.1-.57L11.5 11.3V9.4a.7.7 0
       try {
         if (kind === 'plant') return !!(window.Plant && Plant.V && (Plant.V.ready ?? Plant.V.frames() > 1));
         if (kind === 'showroom') return !!(window.Showroom && Showroom.product && Showroom.product.ready);
+        if (kind === 'inspect') return !!(window.Inspect && Inspect.ready);
+        if (kind === 'line') return !!(window.Line && Line.ready);
       } catch (e) { return true; }
       return document.readyState === 'complete';
     };

@@ -1,0 +1,1368 @@
+{
+ "asset": "AREA",
+ "title": "Main assembly area, line ML-3, Plant EG-01",
+ "disclosure": "Illustrative reconstruction after real TV plants (docs/REFERENCES-TV-PLANT.md); not any real plant.",
+ "units": "metres",
+ "vectors": "explode and anchor are Blender axes (x, y, z); in glTF / three.js they are (x, z, -y)",
+ "parts": [
+  {
+   "id": "AREA",
+   "kind": "assembly",
+   "role": "Main assembly area, line ML-3 (illustrative reconstruction after real TV plants).",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "AREA.floor",
+   "kind": "assembly",
+   "role": "Epoxy floor with green ESD mats at the workstations and yellow lane lines.",
+   "parent": "AREA",
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "AREA.floor.slab",
+   "kind": "part",
+   "role": "Epoxy floor",
+   "parent": "AREA.floor",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "epoxy"
+   ]
+  },
+  {
+   "id": "AREA.floor.marks",
+   "kind": "part",
+   "role": "ESD mats and lane lines",
+   "parent": "AREA.floor",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "esd_mat",
+    "lane_yellow"
+   ]
+  },
+  {
+   "id": "AREA.conveyor",
+   "kind": "assembly",
+   "role": "Twin-strand pallet conveyor with stoppers at every station and a return run below.",
+   "parent": "AREA",
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "AREA.conveyor.frame",
+   "kind": "part",
+   "role": "Aluminium conveyor frame, legs and the lower return run",
+   "parent": "AREA.conveyor",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "plastic_black",
+    "rubber"
+   ]
+  },
+  {
+   "id": "AREA.conveyor.stoppers",
+   "kind": "part",
+   "role": "Pneumatic pallet stoppers and position sensors",
+   "parent": "AREA.conveyor",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "steel_dark",
+    "led_green"
+   ]
+  },
+  {
+   "id": "AREA.units",
+   "kind": "assembly",
+   "role": "TVs on padded pallets, each a step further on.",
+   "parent": "AREA",
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "AREA.units.pallets",
+   "kind": "part",
+   "role": "Padded pallets (green felt on an aluminium frame)",
+   "parent": "AREA.units",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "felt_green"
+   ]
+  },
+  {
+   "id": "AREA.units.tvs",
+   "kind": "part",
+   "role": "TV sets on the line (backlight chassis, boards, speakers, back cover)",
+   "parent": "AREA.units",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "panel_black",
+    "chassis",
+    "pcb_green",
+    "plastic_black",
+    "steel_polished",
+    "speaker",
+    "cable_orange",
+    "reel_white",
+    "cover_black",
+    "steel_dark",
+    "label_white"
+   ]
+  },
+  {
+   "id": "AREA.stations",
+   "kind": "assembly",
+   "role": "Station frames over the line: LED task light, work-instruction screen, screwdrivers on balancers.",
+   "parent": "AREA",
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "AREA.stations.wi1",
+   "kind": "part",
+   "role": "Work-instruction picture",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_wi"
+   ]
+  },
+  {
+   "id": "AREA.stations.wi2",
+   "kind": "part",
+   "role": "Work-instruction picture",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_wi"
+   ]
+  },
+  {
+   "id": "AREA.stations.wi3",
+   "kind": "part",
+   "role": "Work-instruction picture",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_wi"
+   ]
+  },
+  {
+   "id": "AREA.stations.wi4",
+   "kind": "part",
+   "role": "Work-instruction picture",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_wi"
+   ]
+  },
+  {
+   "id": "AREA.stations.wi5",
+   "kind": "part",
+   "role": "Work-instruction picture",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_wi"
+   ]
+  },
+  {
+   "id": "AREA.stations.frames",
+   "kind": "part",
+   "role": "Lean-tube station frames (cream pipe, black joints)",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "tube_cream",
+    "joint_black"
+   ]
+  },
+  {
+   "id": "AREA.stations.lights",
+   "kind": "part",
+   "role": "LED task lights and stack lights",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "led_white",
+    "alu_brushed",
+    "led_green",
+    "lens_amber",
+    "lens_red",
+    "joint_black"
+   ]
+  },
+  {
+   "id": "AREA.stations.screens",
+   "kind": "part",
+   "role": "Monitors, test generators and torque controllers",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "monitor_white",
+    "plastic_black",
+    "anodised_dark",
+    "led_green"
+   ]
+  },
+  {
+   "id": "AREA.stations.tools",
+   "kind": "part",
+   "role": "Electric screwdrivers on yellow spring balancers",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "balancer_yellow",
+    "steel_dark",
+    "plastic_black",
+    "steel_polished"
+   ]
+  },
+  {
+   "id": "AREA.racks",
+   "kind": "assembly",
+   "role": "Gravity flow racks with blue bins: parts slide to the operator, empties go back on the top shelf.",
+   "parent": "AREA",
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "AREA.racks.frames",
+   "kind": "part",
+   "role": "Flow rack frames and roller shelves",
+   "parent": "AREA.racks",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "steel_dark"
+   ]
+  },
+  {
+   "id": "AREA.racks.bins",
+   "kind": "part",
+   "role": "Part bins (blue for parts, red for rejects)",
+   "parent": "AREA.racks",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "bin_blue",
+    "bin_red"
+   ]
+  },
+  {
+   "id": "AREA.people",
+   "kind": "assembly",
+   "role": "Operators in blue aprons, caps and gloves (stylised figures).",
+   "parent": "AREA",
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "AREA.cells",
+   "kind": "assembly",
+   "role": "U-shaped sub-assembly cells: operators stand one behind another; kits leave on a roller conveyor to the line.",
+   "parent": "AREA",
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "AREA.cells.benches",
+   "kind": "part",
+   "role": "Cell workbenches with ESD tops and overhead frames",
+   "parent": "AREA.cells",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "esd_mat",
+    "alu_brushed",
+    "led_white"
+   ]
+  },
+  {
+   "id": "AREA.cells.kits",
+   "kind": "part",
+   "role": "Sub-assemblies in progress: board brackets and stand kits",
+   "parent": "AREA.cells",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "chassis",
+    "pcb_green",
+    "plastic_black"
+   ]
+  },
+  {
+   "id": "AREA.cells.feed",
+   "kind": "part",
+   "role": "Roller conveyors from the cells to the line, and the cell flow racks",
+   "parent": "AREA.cells",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "steel_dark",
+    "alu_brushed",
+    "roller_beige"
+   ]
+  },
+  {
+   "id": "AREA.cells.bins",
+   "kind": "part",
+   "role": "Cell part bins, fed from the aisle",
+   "parent": "AREA.cells",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "bin_blue"
+   ]
+  },
+  {
+   "id": "AREA.test",
+   "kind": "assembly",
+   "role": "Test conveyor: sets stand upright and show test patterns (power, white balance, function).",
+   "parent": "AREA",
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "AREA.test.screen_52",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.test",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_bars"
+   ]
+  },
+  {
+   "id": "AREA.test.screen_67",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.test",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_white"
+   ]
+  },
+  {
+   "id": "AREA.test.conveyor",
+   "kind": "part",
+   "role": "Upright test conveyor and fixtures",
+   "parent": "AREA.test",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed"
+   ]
+  },
+  {
+   "id": "AREA.test.sets",
+   "kind": "part",
+   "role": "Sets under test showing patterns",
+   "parent": "AREA.test",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "cover_black",
+    "plastic_black",
+    "reel_blue",
+    "cable_orange",
+    "steel_dark"
+   ]
+  },
+  {
+   "id": "AREA.robot",
+   "kind": "assembly",
+   "role": "Six-axis robot with a screwdriver tool: operators place the boards, the robot drives the screws.",
+   "parent": "AREA",
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "AREA.robot.arm",
+   "kind": "part",
+   "role": "Six-axis robot arm on its pedestal, with screwdriver tool and cable dress",
+   "parent": "AREA.robot",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "steel_dark",
+    "robot_white",
+    "robot_orange",
+    "anodised_dark",
+    "steel_polished",
+    "plastic_black"
+   ]
+  },
+  {
+   "id": "AREA.robot.guard",
+   "kind": "part",
+   "role": "Light-curtain posts and a mesh guard behind the robot",
+   "parent": "AREA.robot",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "estop_yellow",
+    "led_white",
+    "steel_dark"
+   ]
+  },
+  {
+   "id": "AREA.stations.screwfeeder",
+   "kind": "part",
+   "role": "Screw feeder with chute and pick point",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "paint_blue",
+    "steel_polished"
+   ]
+  },
+  {
+   "id": "AREA.qa",
+   "kind": "assembly",
+   "role": "QA aging room behind glass: finished sets stand in rows on the floor, switched on for hours of tests.",
+   "parent": "AREA",
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "AREA.qa.walls",
+   "kind": "part",
+   "role": "Glass partition with aluminium frame",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "glass"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen0",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_bars"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen1",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_white"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen2",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_green"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen3",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_white"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen4",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_bars"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen5",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_bars"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen6",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_white"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen7",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_green"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen8",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_white"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen9",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_bars"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen10",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_bars"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen11",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_white"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen12",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_green"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen13",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_white"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen14",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_bars"
+   ]
+  },
+  {
+   "id": "AREA.qa.screen15",
+   "kind": "part",
+   "role": "Test pattern",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "scr_bars"
+   ]
+  },
+  {
+   "id": "AREA.qa.sets",
+   "kind": "part",
+   "role": "Sets on stands under test",
+   "parent": "AREA.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "steel_dark",
+    "cover_black"
+   ]
+  },
+  {
+   "id": "AREA.pack",
+   "kind": "assembly",
+   "role": "Packing after test: the set is bagged and lowered into its carton with EPS cushions; the carton is taped and strapped.",
+   "parent": "AREA",
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "AREA.pack.conveyor",
+   "kind": "part",
+   "role": "Transfer and packing roller conveyors (beige rollers)",
+   "parent": "AREA.pack",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "roller_beige"
+   ]
+  },
+  {
+   "id": "AREA.pack.machines",
+   "kind": "part",
+   "role": "Lift assist, carton taping machine and strapping arch",
+   "parent": "AREA.pack",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "paint_white",
+    "steel_dark",
+    "alu_brushed",
+    "anodised_dark",
+    "rubber",
+    "paint_blue",
+    "tape",
+    "strap"
+   ]
+  },
+  {
+   "id": "AREA.pack.eps",
+   "kind": "part",
+   "role": "Stacks of EPS cushions and flat cartons beside packing",
+   "parent": "AREA.pack",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "eps",
+    "cardboard",
+    "wood"
+   ]
+  },
+  {
+   "id": "AREA.pack.cartons",
+   "kind": "part",
+   "role": "Cartons on the packing line (open under the lift, then taped and strapped)",
+   "parent": "AREA.pack",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "cardboard",
+    "eps",
+    "tape",
+    "carton_print",
+    "strap"
+   ]
+  },
+  {
+   "id": "AREA.pack.set",
+   "kind": "part",
+   "role": "A tested set in its black protective bag, held by the lift",
+   "parent": "AREA.pack",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "bag_black"
+   ]
+  },
+  {
+   "id": "AREA.people.operators",
+   "kind": "part",
+   "role": "Operators",
+   "parent": "AREA.people",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "trousers",
+    "shoe",
+    "uniform_blue",
+    "apron",
+    "skin",
+    "cap",
+    "sleeve_stripe",
+    "shirt_grey",
+    "shirt_navy"
+   ]
+  },
+  {
+   "id": "AREA.tpl",
+   "kind": "assembly",
+   "role": "Templates for the browser slice: a pallet, the TV at each assembly step, the upright set, cartons and the bagged set.",
+   "parent": "AREA",
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "AREA.tpl.pallet",
+   "kind": "part",
+   "role": "Padded pallet",
+   "parent": "AREA.tpl",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "felt_green"
+   ]
+  },
+  {
+   "id": "AREA.tpl.tv0",
+   "kind": "part",
+   "role": "TV at assembly step 0",
+   "parent": "AREA.tpl",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "panel_black",
+    "chassis"
+   ]
+  },
+  {
+   "id": "AREA.tpl.tv1",
+   "kind": "part",
+   "role": "TV at assembly step 1",
+   "parent": "AREA.tpl",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "panel_black",
+    "chassis",
+    "pcb_green",
+    "plastic_black",
+    "steel_polished"
+   ]
+  },
+  {
+   "id": "AREA.tpl.tv2",
+   "kind": "part",
+   "role": "TV at assembly step 2",
+   "parent": "AREA.tpl",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "panel_black",
+    "chassis",
+    "pcb_green",
+    "plastic_black",
+    "steel_polished",
+    "speaker",
+    "cable_orange",
+    "reel_white"
+   ]
+  },
+  {
+   "id": "AREA.tpl.tv3",
+   "kind": "part",
+   "role": "TV at assembly step 3",
+   "parent": "AREA.tpl",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "panel_black",
+    "chassis",
+    "pcb_green",
+    "plastic_black",
+    "steel_polished",
+    "speaker",
+    "cable_orange",
+    "reel_white",
+    "cover_black",
+    "steel_dark",
+    "label_white"
+   ]
+  },
+  {
+   "id": "AREA.tpl.tv_up",
+   "kind": "part",
+   "role": "TV standing for test (screen picture separate)",
+   "parent": "AREA.tpl",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "cover_black"
+   ]
+  },
+  {
+   "id": "AREA.tpl.carton_open",
+   "kind": "part",
+   "role": "Open carton with cushions",
+   "parent": "AREA.tpl",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "cardboard",
+    "eps"
+   ]
+  },
+  {
+   "id": "AREA.tpl.carton_closed",
+   "kind": "part",
+   "role": "Taped and strapped carton",
+   "parent": "AREA.tpl",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "cardboard",
+    "tape",
+    "carton_print",
+    "strap"
+   ]
+  },
+  {
+   "id": "AREA.tpl.bagged",
+   "kind": "part",
+   "role": "Bagged set",
+   "parent": "AREA.tpl",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "bag_black"
+   ]
+  },
+  {
+   "id": "AREA.building",
+   "kind": "assembly",
+   "role": "Insulated wall panels with a clerestory band, steel columns, roof beams and LED high-bay lights.",
+   "parent": "AREA",
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "AREA.building.walls",
+   "kind": "part",
+   "role": "Wall panels and clerestory",
+   "parent": "AREA.building",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "wall_panel",
+    "window_sky"
+   ]
+  },
+  {
+   "id": "AREA.building.steel",
+   "kind": "part",
+   "role": "Columns and roof beams",
+   "parent": "AREA.building",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "steel_beam",
+    "epoxy"
+   ]
+  },
+  {
+   "id": "AREA.building.lights",
+   "kind": "part",
+   "role": "LED high-bay light fittings",
+   "parent": "AREA.building",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "ceiling_light",
+    "steel_dark"
+   ]
+  },
+  {
+   "id": "AREA.stations.sign1",
+   "kind": "part",
+   "role": "Station sign",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "label_white"
+   ]
+  },
+  {
+   "id": "AREA.stations.sign2",
+   "kind": "part",
+   "role": "Station sign",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "label_white"
+   ]
+  },
+  {
+   "id": "AREA.stations.sign3",
+   "kind": "part",
+   "role": "Station sign",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "label_white"
+   ]
+  },
+  {
+   "id": "AREA.stations.sign4",
+   "kind": "part",
+   "role": "Station sign",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "label_white"
+   ]
+  },
+  {
+   "id": "AREA.stations.sign5",
+   "kind": "part",
+   "role": "Station sign",
+   "parent": "AREA.stations",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "label_white"
+   ]
+  }
+ ]
+}

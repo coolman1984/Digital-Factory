@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Digital Factory · Machine studio</title>
+  <meta name="description" content="Inspect a machine of Plant EG-01 in a white studio: take it apart, see through its covers, cut it open and name every part. Illustrative reconstruction built in Blender.">
+  <script>try{var t=localStorage.getItem('df-theme')}catch(e){}document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')</script>
+  <link rel="icon" href="assets/brand/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/brand/icon-180.png">
+  <meta name="theme-color" content="#1428A0">
+  <link rel="stylesheet" href="assets/kit/fonts.css">
+  <link rel="stylesheet" href="assets/kit/brand-ui.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/showroom.css">
+  <link rel="stylesheet" href="assets/css/inspect.css">
+  <script>try{if((localStorage.getItem('df-lang')||localStorage.getItem('df-guide-lang'))==='ar'){var r=document.documentElement;r.lang='ar';r.dir='rtl';r.setAttribute('data-i18n-wait','');setTimeout(function(){r.removeAttribute('data-i18n-wait')},1200)}}catch(e){}</script>
+</head>
+<body class="sr ins">
+  <div class="df-splash" id="dfSplash" data-ready="inspect" aria-hidden="true">
+  <svg class="df-splash-mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="dfSg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2D5BFF"/><stop offset="1" stop-color="#1428A0"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#dfSg)"/><path class="f" fill="#fff" d="M7 23.8V9.4a.7.7 0 0 1 1.1-.57L11.5 11.3V9.4a.7.7 0 0 1 1.1-.57L16 11.3v12.5z"/><rect class="c c1" x="17.2" y="20.4" width="3.4" height="3.4" rx=".7" fill="#fff"/><rect class="c c2" x="21.4" y="20.4" width="3.4" height="3.4" rx=".7" fill="#fff"/><rect class="c c3" x="17.2" y="16.2" width="3.4" height="3.4" rx=".7" fill="#fff"/><rect class="c c4" x="21.4" y="16.2" width="3.4" height="3.4" rx=".7" fill="#fff" opacity="0.72"/><rect class="c c5" x="17.2" y="12" width="3.4" height="3.4" rx=".7" fill="#fff" opacity="0.72"/><rect class="c live" x="21.4" y="12" width="3.4" height="3.4" rx=".7" fill="#7FE4FF"/></svg>
+  <b>Digital Factory</b><p data-ar="تجهيز استوديو الماكينة…">Starting the machine studio…</p></div>
+  <script src="assets/js/brand.js"></script>
+  <a class="skip" href="#controls">Skip to the controls</a>
+  <header class="sr-top">
+    <a class="logo" href="./" aria-label="Digital Factory home"><span class="logo-mark" aria-hidden="true"></span><span class="logo-word">Digital Factory</span></a>
+    <div class="sr-title">
+      <h1>Machine studio</h1>
+      <span class="sr-sub">Mounter B · line SMD-4 · illustrative reconstruction</span>
+    </div>
+    <div class="sr-actions">
+      <button type="button" class="btn btn-secondary btn-sm theme-btn" data-theme-toggle title="Light / dark"><span class="ti" aria-hidden="true"></span><span class="tl hide-md">Light</span></button>
+      <a class="btn btn-secondary btn-sm hide-sm" href="plant.html#line:SMD4"><span data-icon="globe"></span><span class="hide-md">Live plant</span></a>
+    </div>
+  </header>
+
+  <main class="sr-main" id="main">
+    <section class="stage" id="stage-inspect" aria-label="Machine studio">
+      <div class="stage-gl">
+        <canvas id="gl" role="img" aria-label="The SMD placement machine Mounter B in a white studio. The controls beside it take it apart, make its covers transparent, cut it open and name its parts."></canvas>
+        <div class="hot" id="hot" aria-hidden="true"></div>
+        <div class="tour-cap" id="tourCap" hidden aria-live="polite"><b id="tourTitle"></b><span id="tourText"></span><i><em id="tourFill"></em></i></div>
+        <p class="stage-note" id="note" aria-live="polite"></p>
+        <noscript><p class="stage-note">The studio needs JavaScript and WebGL 2. The parts are listed beside it.</p></noscript>
+      </div>
+      <aside class="panel" id="controls" aria-label="Studio controls">
+        <section>
+          <h2>Present</h2>
+          <div class="row">
+            <button type="button" class="btn btn-primary btn-sm" id="tourBtn" aria-pressed="false"><span data-icon="play"></span><span id="tourLbl">Customer tour</span></button>
+            <button type="button" class="btn btn-secondary btn-sm" id="resetBtn">Reset</button>
+          </div>
+          <p class="hint">A guided look for a visitor: assembled, taken apart, seen through, cut open, the head at work, and back together.</p>
+        </section>
+        <section id="plantSec" hidden>
+          <h2>In the plant</h2>
+          <dl class="plant-kv" id="plantInfo"></dl>
+          <a class="btn btn-secondary btn-sm" id="backPlant" href="plant.html"><span data-icon="globe"></span>Back to this machine in the plant</a>
+          <p class="hint">A snapshot from the moment you opened the studio. Every mounter in the plant uses this model; the studio never changes the plant.</p>
+        </section>
+        <section>
+          <h2>Take apart</h2>
+          <label class="slider" for="explode"><span>Assembled</span><input type="range" id="explode" min="0" max="100" value="0" step="1" aria-describedby="explodeHint"><span>Apart</span></label>
+          <p class="hint" id="explodeHint">Each assembly moves out along its own path, in order; back to 0 it returns exactly to its place. Key: E.</p>
+        </section>
+        <section>
+          <h2>See inside</h2>
+          <div class="chips" role="group" aria-label="See inside">
+            <button type="button" id="xray" aria-pressed="false">X-ray covers</button>
+            <button type="button" id="cut" aria-pressed="false">Cut open</button>
+            <button type="button" id="motion" aria-pressed="false">Run the head</button>
+          </div>
+          <label class="slider" for="cutPos" id="cutRow" hidden><span>Front</span><input type="range" id="cutPos" min="0" max="100" value="45" step="1" aria-label="Section depth"><span>Back</span></label>
+          <p class="hint">X-ray turns the covers to glass outlines (key X). Cut open slices the covers with a movable section; the red faces are the cut (key C). The front feeder trolley is wheeled away while the machine is cut. Run the head plays a pick-and-place cycle (Space).</p>
+        </section>
+        <section>
+          <h2>Camera</h2>
+          <div class="chips" role="group" aria-label="Camera">
+            <button type="button" data-cam="hero" aria-pressed="true">Three-quarter</button>
+            <button type="button" data-cam="front" aria-pressed="false">Front</button>
+            <button type="button" data-cam="side" aria-pressed="false">Side</button>
+            <button type="button" data-cam="top" aria-pressed="false">Top</button>
+            <button type="button" data-cam="head" aria-pressed="false">Head close-up</button>
+          </div>
+          <div class="chips" role="group" aria-label="Picture">
+            <button type="button" id="photos" aria-pressed="true">Blender photo at rest</button>
+          </div>
+          <p class="hint">When the camera rests on a preset (light theme, wide window), the photo rendered in Blender for that exact view fades in; moving returns to the live model. Drag to orbit, scroll or pinch to zoom, click a part to select it. Keys: arrows orbit, + and − zoom, 0 resets, Esc clears the selection.</p>
+        </section>
+        <section class="parts">
+          <h2>Parts</h2>
+          <div class="part-card" id="partCard" hidden>
+            <b id="partName"></b><span id="partAlt" class="alt"></span>
+            <p id="partAbout"></p>
+            <div class="row">
+              <button type="button" class="btn btn-secondary btn-sm" id="isolate" aria-pressed="false">Show only this</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="frameBtn">Frame it</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="clearSel">Clear</button>
+            </div>
+          </div>
+          <ul class="part-list" id="partList" data-no-i18n aria-label="Parts of the machine"></ul>
+        </section>
+        <section class="facts">
+          <h2>About this model</h2>
+          <p class="hint">An illustrative educational reconstruction of a generic gantry pick-and-place machine, built from code in Blender (tools/blender/mounter.py): 40 named parts in 14 assemblies. It is not a vendor's machine and is not for maintenance or safety work. Plant EG-01 is fictional.</p>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="assets/kit/icons.js"></script>
+  <script src="assets/js/theme.js"></script>
+  <script src="assets/vendor/three/three.iife.min.js"></script>
+  <script src="assets/vendor/gsap/gsap.min.js"></script>
+  <script src="assets/js/plant/shaders.js"></script>
+  <script src="assets/js/vfx/look.js"></script>
+  <script src="assets/js/vfx/perf.js"></script>
+  <script src="assets/js/vfx/presets.js"></script>
+  <script src="assets/js/inspect/inspect.js"></script>
+  <script src="assets/js/i18n/i18n.js"></script>
+  <script src="assets/js/i18n/ar-common.js"></script>
+  <script src="assets/js/i18n/ar-inspect.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+/* Arabic for the machine studio (inspect.html): controls, tour, messages. Part names come from the asset's manifest. */
+DFI18N.add({
+  exact: {
+    'Digital Factory · Machine studio': 'المصنع الرقمي · استوديو الماكينة', 'Machine studio': 'استوديو الماكينة',
+    'Mounter B · line SMD-4 · illustrative reconstruction': 'ماكينة التركيب B · خط SMD-4 · إعادة بناء توضيحية',
+    'Skip to the controls': 'انتقل إلى أدوات التحكم', 'Studio controls': 'أدوات تحكم الاستوديو', 'Live plant': 'المصنع الحي',
+    'Present': 'العرض', 'Customer tour': 'جولة للعميل', 'Stop the tour': 'إيقاف الجولة', 'Reset': 'إعادة الضبط',
+    'A guided look for a visitor: assembled, taken apart, seen through, cut open, the head at work, and back together.': 'جولة موجَّهة للزائر: الماكينة مركَّبة، ثم مفكَّكة، ثم بغطاء شفاف، ثم مقطوعة، ثم رأس التركيب وهو يعمل، ثم تعود كما كانت.',
+    'Take apart': 'التفكيك', 'Assembled': 'مركَّبة', 'Apart': 'مفكَّكة',
+    'Each assembly moves out along its own path, in order; back to 0 it returns exactly to its place. Key: E.': 'تخرج كل مجموعة في مسارها الخاص بالترتيب، وعند العودة إلى الصفر ترجع إلى مكانها بالضبط. المفتاح: E.',
+    'See inside': 'رؤية الداخل', 'X-ray covers': 'أغطية شفافة', 'Cut open': 'مقطع', 'Run the head': 'تشغيل الرأس', 'Front': 'الأمام', 'Back': 'الخلف', 'Section depth': 'عمق المقطع',
+    'X-ray turns the covers to glass outlines (key X). Cut open slices the covers with a movable section; the red faces are the cut (key C). The front feeder trolley is wheeled away while the machine is cut. Run the head plays a pick-and-place cycle (Space).': 'الأغطية الشفافة تحوّل الأغطية إلى حدود زجاجية (المفتاح X). والمقطع يشق الأغطية بمستوى قطع متحرك، والأسطح الحمراء هي موضع القطع (المفتاح C). وتبتعد عربة المغذّيات الأمامية أثناء القطع. وتشغيل الرأس يعرض دورة التقاط وتركيب (مفتاح المسافة).',
+    'Camera': 'الكاميرا', 'Three-quarter': 'منظور ثلاثي الأرباع', 'Side': 'جانبي', 'Top': 'من أعلى', 'Head close-up': 'الرأس من قريب',
+    'Drag to orbit, scroll or pinch to zoom, click a part to select it. Keys: arrows orbit, + and − zoom, 0 resets, Esc clears the selection.': 'اسحب للدوران، ومرّر أو قرّب بإصبعين للتكبير، وانقر على قطعة لاختيارها. لوحة المفاتيح: الأسهم للدوران، و+ و− للتكبير والتصغير، و0 لإعادة الضبط، وEsc لإلغاء الاختيار.',
+    'Parts': 'القطع', 'Parts of the machine': 'قطع الماكينة', 'Show only this': 'اعرضها وحدها', 'Frame it': 'قرّب عليها', 'Clear': 'إلغاء', 'Part of': 'جزء من',
+    'About this model': 'عن هذا النموذج',
+    'An illustrative educational reconstruction of a generic gantry pick-and-place machine, built from code in Blender (tools/blender/mounter.py): 40 named parts in 14 assemblies. It is not a vendor\'s machine and is not for maintenance or safety work. Plant EG-01 is fictional.': 'إعادة بناء تعليمية توضيحية لماكينة التقاط وتركيب عامة بجسر متحرك، مبنية برمجيًا في بلندر (tools/blender/mounter.py): 40 قطعة مسمّاة في 14 مجموعة. ليست ماكينة شركة بعينها، ولا تصلح للصيانة أو أعمال السلامة. والمصنع EG-01 افتراضي.',
+    'Loading the machine…': 'جارٍ تحميل الماكينة…', 'The machine could not be loaded. Reload to try again.': 'تعذّر تحميل الماكينة. أعد تحميل الصفحة للمحاولة مرة أخرى.',
+    'The model loader could not be fetched. Check the connection and reload.': 'تعذّر جلب أداة تحميل النموذج. تحقّق من الاتصال وأعد التحميل.',
+    'This browser cannot start WebGL 2, so the studio lists the parts only.': 'لا يستطيع هذا المتصفح تشغيل WebGL 2، لذلك يعرض الاستوديو قائمة القطع فقط.',
+    'The studio needs JavaScript and WebGL 2. The parts are listed beside it.': 'يحتاج الاستوديو إلى JavaScript وWebGL 2. والقطع مذكورة بجانبه.',
+    'The machine': 'الماكينة', 'An SMD placement machine: it picks tiny parts from tape reels and places them on the board, hundreds a minute.': 'ماكينة تركيب قطع إلكترونية: تلتقط قطعًا صغيرة جدًا من بكرات الشريط وتضعها على اللوحة، مئات القطع في الدقيقة.',
+    'Taken apart': 'مفكَّكة', 'Every assembly lifts out along its own path: hood, gantry, head, axes, conveyor, feeders and cabinet.': 'كل مجموعة تخرج في مسارها: الغطاء، والجسر، والرأس، والمحاور، والسير، والمغذّيات، والخزانة.',
+    'Back together': 'تعود كما كانت', 'And it returns exactly to its assembled place.': 'وترجع كل قطعة إلى مكانها بالضبط.',
+    'Seen through': 'من خلال الغطاء', 'The covers turn to outlines: the gantry, the head and the control bay below stay solid.': 'تتحول الأغطية إلى حدود شفافة، ويبقى الجسر والرأس وحجرة التحكم في الأسفل ظاهرة بوضوح.',
+    'A section through the covers. The red faces are the cut; behind them the vacuum pump, the drives and the computer.': 'مقطع عبر الأغطية. الأسطح الحمراء موضع القطع، وخلفها مضخة التفريغ والمشغّلات والكمبيوتر.',
+    'The head at work': 'رأس التركيب وهو يعمل', 'The gantry carries the head to a feeder, a nozzle picks a part, the camera checks it, and the head places it on the board.': 'يحمل الجسر الرأس إلى المغذّي، فيلتقط الشفّاط قطعة، وتفحصها الكاميرا، ثم يضعها الرأس على اللوحة.',
+    'Plant EG-01, line SMD-4': 'المصنع EG-01، خط SMD-4', 'One of 18 placement machines in the plant. An illustrative reconstruction, built in Blender.': 'واحدة من 18 ماكينة تركيب في المصنع. إعادة بناء توضيحية مبنية في بلندر.',
+    'In the plant': 'في المصنع', 'Back to this machine in the plant': 'العودة إلى هذه الماكينة في المصنع', 'Machine': 'الماكينة', 'Line': 'الخط', 'State': 'الحالة', 'Health': 'الحالة الفنية', 'Units done': 'الوحدات المنجزة', 'Plant time': 'وقت المصنع', 'illustrative reconstruction': 'إعادة بناء توضيحية',
+    'A snapshot from the moment you opened the studio. Every mounter in the plant uses this model; the studio never changes the plant.': 'لقطة من لحظة فتح الاستوديو. وكل ماكينات التركيب في المصنع تستخدم هذا النموذج، والاستوديو لا يغيّر المصنع أبدًا.',
+    'Running': 'يعمل', 'Running slow': 'يعمل ببطء', 'Idle': 'خامل', 'Starved': 'متوقف لنقص المواد', 'Blocked': 'متوقف لامتلاء المرحلة التالية', 'Stopped': 'متوقف', 'Planned maintenance': 'صيانة مخططة', 'Short stop': 'توقف قصير', 'Changeover': 'تغيير الموديل', 'Tripped': 'مفصول',
+    'Picture': 'الصورة', 'Blender photo at rest': 'صورة بلندر عند التوقف', 'Photo rendered in Blender': 'صورة منتَجة في بلندر',
+    'When the camera rests on a preset (light theme, wide window), the photo rendered in Blender for that exact view fades in; moving returns to the live model. Drag to orbit, scroll or pinch to zoom, click a part to select it. Keys: arrows orbit, + and − zoom, 0 resets, Esc clears the selection.': 'عندما تستقر الكاميرا على لقطة جاهزة (في الوضع الفاتح ونافذة عريضة)، تظهر صورة بلندر لهذه الزاوية نفسها، وأي حركة تعيد النموذج الحي. اسحب للدوران، ومرّر أو قرّب بإصبعين للتكبير، وانقر على قطعة لاختيارها. لوحة المفاتيح: الأسهم للدوران، و+ و− للتكبير والتصغير، و0 لإعادة الضبط، وEsc لإلغاء الاختيار.',
+    'Starting the machine studio…': 'تجهيز استوديو الماكينة…', 'Machine studio controls': 'أدوات استوديو الماكينة'
+  }
+});

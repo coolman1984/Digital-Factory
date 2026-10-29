@@ -1,0 +1,20 @@
+{
+  "about": "Camera poses shared by Blender (tools/blender/mounter.py --shot) and the machine studio (inspect.html), so a Blender photo and the live view line up exactly. Positions in three.js axes (metres, Y up, the machine's front faces +z). fov is the vertical field of view in degrees for a 16:10 frame; photos are rendered at 1920x1200.",
+  "aspect": 1.6,
+  "shots": {
+    "hero": { "pos": [3.45, 2.45, 4.35], "look": [0, 0.95, 0.05], "fov": 30 },
+    "front": { "pos": [0, 1.45, 6.0], "look": [0, 0.95, 0], "fov": 30 },
+    "side": { "pos": [6.2, 1.45, 0], "look": [0, 0.95, 0], "fov": 30 },
+    "top": { "pos": [0.01, 6.6, 0.9], "look": [0, 0.9, 0], "fov": 30 },
+    "head": { "pos": [0.95, 1.55, 1.75], "look": [-0.1, 1.08, 0.0], "fov": 30 },
+    "apart": { "pos": [4.9, 3.7, 6.1], "look": [0, 1.35, 0.1], "fov": 30 },
+    "inside": { "pos": [2.5, 1.35, 3.6], "look": [0.05, 0.7, 0], "fov": 30 }
+  },
+  "photos": [
+    { "id": "hero-assembled", "shot": "hero", "state": "assembled" },
+    { "id": "hero-ghost", "shot": "hero", "state": "ghost" },
+    { "id": "apart-exploded", "shot": "apart", "state": "exploded" },
+    { "id": "inside-cut", "shot": "inside", "state": "cut", "cutPos": 0.45 },
+    { "id": "head-assembled", "shot": "head", "state": "assembled" }
+  ]
+}

@@ -1,3 +1,5 @@
 .design-pipeline/
 .taste-skill/
 tools/assets/node_modules/
+out/
+__pycache__/
