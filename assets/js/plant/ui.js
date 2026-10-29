@@ -318,8 +318,10 @@
       + (feeders ? sect('Sub-lines feeding it', `<ul class="li">${feeders}</ul>`) : '')
       + (ls ? sect('Line-side stock', `<ul class="li">${ls}</ul>`) : '')
       + sect('Stations', `<ul class="li">${sts}</ul>`)
-      + (L.kind === 'main' ? `<div class="ia"><button type="button" class="btn btn-secondary btn-sm" data-act="boost:${L.id}" data-key="boost">Raise line speed to 108%</button></div>` : '');
+      + (L.kind === 'main' ? `<div class="ia"><button type="button" class="btn btn-secondary btn-sm" data-act="boost:${L.id}" data-key="boost">Raise line speed to 108%</button></div>` : '')
+      + (SLICE[L.id] ? `<div class="ia"><a class="btn btn-primary btn-sm" href="${SLICE[L.id]}" data-key="slice">${icon('layers')}Walk this line up close</a><p class="quiet">A cell, the conveyor, the test and packing, working in 3D.</p></div>` : '');
   }
+  const SLICE = { ML3: 'line.html' };   // lines with a close-up slice page (built in Blender)
 
   function bufferDetail(id) {
     const b = P.bufs[id]; if (!b) return plantNow();

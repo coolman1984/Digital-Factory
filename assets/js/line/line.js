@@ -42,7 +42,7 @@
     cell: { pos: [-1.4, 3.4, 8.2], look: [-1.8, 0.8, 3.9] },
     robot: { pos: [0.1, 2.15, 2.35], look: [-1.0, 1.05, -0.5] },
     test: { pos: [8.4, 1.75, 3.4], look: [5.8, 1.1, 0.0] },
-    pack: { pos: [6.2, 2.4, 6.6], look: [10.2, 1.0, 3.0] }
+    pack: { pos: [12.3, 3.0, 6.9], look: [9.8, 0.9, 3.0] }
   };
 
   /* ---------- light: a bright hall: soft-box environment, a shadowed key from the roof, a pale sky fill ---------- */
@@ -237,8 +237,8 @@
     [10, [0.6, 1.9, 2.0], [-1.0, 1.05, -0.4], 'People place, the robot fastens', 'Operators fit boards, speakers and cables; a robot drives the screws.'],
     [15, [2.6, 1.8, 2.6], [3.4, 1.0, 0.0], 'Back cover, then upright', 'The back cover goes on, and the set is turned upright for test.'],
     [20, [8.4, 1.75, 3.4], [5.8, 1.1, 0.0], 'Functional test', 'Each set shows test patterns while it is checked.'],
-    [25, [6.2, 2.4, 6.6], [10.2, 1.0, 3.0], 'Packing', 'The set is bagged, lowered into its carton with cushions, taped and strapped.'],
-    [30, [13.5, 5.4, 11.5], [2.0, 0.8, 0.0], 'Line ML-3, Plant EG-01', 'An illustrative reconstruction, built in Blender from photos of real TV lines.']
+    [25, [12.3, 3.0, 6.9], [9.8, 0.9, 3.0], 'Packing', 'The set is bagged, lowered into its carton with cushions, taped and strapped.'],
+    [30, [12.4, 5.4, 11.5], [2.0, 0.8, 0.0], 'Line ML-3, Plant EG-01', 'An illustrative reconstruction, built in Blender from photos of real TV lines.']
   ];
   const tour = { on: false, t0: 0, step: -1 };
   function camAt(t) {
