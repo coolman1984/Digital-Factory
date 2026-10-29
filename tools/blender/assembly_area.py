@@ -21,10 +21,11 @@ from dflib import Part, assembly, principled, srgb, rnd
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
 ap = argparse.ArgumentParser()
-ap.add_argument('--out', default=''); ap.add_argument('--shot', default='hero', choices=['hero', 'line', 'cell', 'test', 'top', 'qa', 'robot', 'wide'])
+ap.add_argument('--out', default=''); ap.add_argument('--shot', default='hero', choices=['hero', 'line', 'cell', 'test', 'top', 'qa', 'robot', 'wide', 'pack'])
 ap.add_argument('--samples', type=int, default=96); ap.add_argument('--res', default='1600x1000')
 ap.add_argument('--manifest', default=''); ap.add_argument('--glb', default=''); ap.add_argument('--anchors', default='')
-ap.add_argument('--lod', default='full', choices=['full', 'plant']); ap.add_argument('--gpu', action='store_true')
+ap.add_argument('--lod', default='full', choices=['full', 'web', 'plant']); ap.add_argument('--gpu', action='store_true')
+ap.add_argument('--templates', action='store_true', help='also export the moving pieces (pallet, TV at each step, cartons) as templates for the browser slice')
 A = ap.parse_args(argv)
 L.init(lod=A.lod)
 H = math.pi / 2
@@ -51,7 +52,11 @@ principled('apron', '#3F86C8', rough=0.75)
 principled('cap', '#F2F4F6', rough=0.7)
 principled('trousers', '#2B2F38', rough=0.85)
 principled('shoe', '#15161A', rough=0.6)
-principled('cardboard', '#B98D5B', rough=0.85)
+principled('cardboard', '#B98D5B', rough=0.85, noise_bump=0.5)
+principled('carton_print', '#1E2A44', rough=0.7)
+principled('eps', '#F3F3EF', rough=0.9, noise_bump=0.8)
+principled('tape', '#C9A86A', rough=0.3, coat=0.5)
+principled('strap', '#1C1C1C', rough=0.5)
 principled('wood', '#9C7A52', rough=0.8)
 principled('speaker', '#1C1D20', rough=0.7)
 principled('tube_cream', '#E6DFCB', rough=0.45, coat=0.3)            # lean-tube (pipe and joint) frames
@@ -114,11 +119,11 @@ def screen_quad(pid, role, asm, x, y, z, w, h, mat, tilt=0.0):
     return ob
 
 # ---------------------------------------------------------------- dimensions
-LINE_X0, LINE_X1 = -7.0, 7.0          # main conveyor length 14 m
+LINE_X0, LINE_X1 = -7.0, 4.1          # main conveyor 11 m; the upright test conveyor follows it
 Z_TOP = 0.82                          # conveyor top: pallets ride at hip height for standing work
 PITCH = 2.0                           # one station every 2 m
 STATIONS = [-5.0, -3.0, -1.0, 1.0, 3.0]
-TEST_X = [4.6, 6.3]                   # the upright test section at the end, one set per fixture
+TEST_X = [5.2, 6.7]                   # the upright test section after the line, one set per fixture
 TVW, TVD = 1.45, 0.84                 # a 65-inch set
 PAL_W, PAL_D = 1.62, 1.0
 
@@ -127,10 +132,10 @@ assembly('AREA', 'Main assembly area, line ML-3 (illustrative reconstruction aft
 # ---------------------------------------------------------------- floor: epoxy, ESD mats, lanes
 assembly('AREA.floor', 'Epoxy floor with green ESD mats at the workstations and yellow lane lines.', parent='AREA')
 p = Part('AREA.floor.slab', 'Epoxy floor', 'AREA.floor', bevel=0)
-p.box((26, 16.2, 0.02), (0, -1.4, -0.008), 'epoxy'); p.build()
+p.box((26, 16.2, 0.002), (0, -1.4, -0.001), 'epoxy'); p.build()
 p = Part('AREA.floor.marks', 'ESD mats and lane lines', 'AREA.floor', bevel=0.002)
 for sy in (-1, 1):
-    p.box((LINE_X1 - LINE_X0 - 0.4, 0.9, 0.008), (0, sy * 1.15, 0.004), 'esd_mat')
+    p.box((LINE_X1 - LINE_X0 - 0.4, 0.9, 0.008), ((LINE_X0 + LINE_X1) / 2, sy * 1.15, 0.004), 'esd_mat')
     p.box((22, 0.08, 0.004), (0, sy * 1.75, 0.002), 'lane_yellow')
 p.box((22, 0.08, 0.004), (0, -6.4, 0.002), 'lane_yellow')
 for cx in (-4.2, 0.8):
@@ -141,11 +146,12 @@ p.build()
 assembly('AREA.conveyor', 'Twin-strand pallet conveyor with stoppers at every station and a return run below.', parent='AREA')
 p = Part('AREA.conveyor.frame', 'Aluminium conveyor frame, legs and the lower return run', 'AREA.conveyor', bevel=0.003)
 LL = LINE_X1 - LINE_X0
+XC = (LINE_X0 + LINE_X1) / 2
 for sy in (-1, 1):
     y = sy * (PAL_D / 2 - 0.06)
-    p.box((LL, 0.08, 0.12), (0, y, Z_TOP - 0.1), 'alu_brushed')               # side profile
-    p.box((LL, 0.05, 0.012), (0, y, Z_TOP - 0.034), 'plastic_black')          # chain strand
-    p.box((LL, 0.06, 0.08), (0, y, 0.32), 'alu_brushed')                       # return run
+    p.box((LL, 0.08, 0.12), (XC, y, Z_TOP - 0.1), 'alu_brushed')               # side profile
+    p.box((LL, 0.05, 0.012), (XC, y, Z_TOP - 0.034), 'plastic_black')          # chain strand
+    p.box((LL, 0.06, 0.08), (XC, y, 0.32), 'alu_brushed')                       # return run
     for x in [LINE_X0 + 0.3 + k * 1.5 for k in range(int(LL / 1.5) + 1)]:
         p.box((0.06, 0.06, Z_TOP - 0.16), (x, y, (Z_TOP - 0.16) / 2), 'alu_brushed')
         p.cyl(0.035, 0.02, (x, y, 0.01), 'rubber', seg=16)
@@ -190,7 +196,7 @@ units = Part('AREA.units.tvs', 'TV sets on the line (backlight chassis, boards, 
 for i, x in enumerate(STATIONS):
     pal.box((PAL_W, PAL_D, 0.03), (x, 0, Z_TOP + 0.015), 'alu_brushed'); pal.box((PAL_W - 0.06, PAL_D - 0.06, 0.02), (x, 0, Z_TOP + 0.04), 'felt_green')
     tv(units, x, 0, Z_TOP + 0.05, min(3, i * 3 // (len(STATIONS) - 1) if i else 0))
-for x in (LINE_X0 + 1.0, -1.9, 2.1):                                          # empty pallets on the return run
+for x in (LINE_X0 + 1.0, -1.9, 1.6):                                           # empty pallets on the return run
     pal.box((PAL_W, PAL_D, 0.03), (x, 0, 0.38), 'alu_brushed'); pal.box((PAL_W - 0.06, PAL_D - 0.06, 0.02), (x, 0, 0.405), 'felt_green')
 pal.build(); units.build()
 
@@ -325,15 +331,14 @@ cb.build(); ck.build(); cv.build(); cbins.build()
 assembly('AREA.test', 'Test conveyor: sets stand upright and show test patterns (power, white balance, function).', parent='AREA')
 tc = Part('AREA.test.conveyor', 'Upright test conveyor and fixtures', 'AREA.test', bevel=0.003)
 ts = Part('AREA.test.sets', 'Sets under test showing patterns', 'AREA.test', bevel=0.002)
-tc.box((3.6, 0.5, 0.1), (5.45, 0, 0.62), 'alu_brushed')
-for x in (3.8, 5.45, 7.1):
+tc.box((3.0, 0.5, 0.1), (5.85, 0, 0.62), 'alu_brushed')
+for x in (4.45, 5.85, 7.25):
     for sy in (-1, 1): tc.box((0.05, 0.05, 0.6), (x, sy * 0.2, 0.3), 'alu_brushed')
 for x, m in zip(TEST_X + [7.2], ['scr_bars', 'scr_white', 'scr_green']):
     if x > 7.0: continue
     tv(ts, x, 0, 0.67, 3, upright=True, screen_mat=m)
 tc.build(); ts.build()
 person(5.0, -0.9, face=0.0)
-ppl.build()
 
 # ---------------------------------------------------------------- a robot that fixes the boards (the LG Gumi line: people place, robots fasten)
 assembly('AREA.robot', 'Six-axis robot with a screwdriver tool: operators place the boards, the robot drives the screws.', parent='AREA')
@@ -369,7 +374,7 @@ sf.box((0.18, 0.02, 0.01), (sx_ + 0.1, -0.58, 0.95), 'steel_polished', rot=(0, -
 # ---------------------------------------------------------------- the QA aging room beside the line: sets left running for hours
 assembly('AREA.qa', 'QA aging room behind glass: finished sets stand in rows on the floor, switched on for hours of tests.', parent='AREA')
 qw = Part('AREA.qa.walls', 'Glass partition with aluminium frame', 'AREA.qa', bevel=0.002)
-qx0, qx1, qy0, qy1 = 8.4, 12.6, -1.6, 5.4
+qx0, qx1, qy0, qy1 = 8.4, 12.6, 0.8, 5.6          # behind the packing line
 for (ax, ay, bx, by) in ((qx0, qy0, qx0, qy1), (qx0, qy0, qx1, qy0)):
     n = int(max(abs(bx - ax), abs(by - ay)) / 1.2)
     for k in range(n + 1):
@@ -388,6 +393,79 @@ for row in range(4):
         qs.box((0.95, 0.05, 0.56), (x, y + 0.05, 0.62), 'cover_black')
         screen_quad(f'AREA.qa.screen{k}', 'Test pattern', 'AREA.qa', x, y + 0.022, 0.62, 0.93, 0.54, pats[k % len(pats)]); k += 1
 qs.build()
+
+# ---------------------------------------------------------------- packing: a transfer from the test, then bag, carton, tape and strap
+assembly('AREA.pack', 'Packing after test: the set is bagged and lowered into its carton with EPS cushions; the carton is taped and strapped.', parent='AREA')
+PK_Y, PK_X0, PK_X1 = -3.0, 7.6, 12.7
+CW, CD, CT = 1.63, 1.0, 0.19
+pk = Part('AREA.pack.conveyor', 'Transfer and packing roller conveyors (beige rollers)', 'AREA.pack', bevel=0.002)
+def rollers(x0, x1, y0, y1, along_x=True, z=0.74):
+    L_ = (x1 - x0) if along_x else (y1 - y0); W_ = (y1 - y0) if along_x else (x1 - x0)
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    for sd in (-1, 1):
+        if along_x: pk.box((L_, 0.06, 0.1), (cx, cy + sd * W_ / 2, z - 0.02), 'alu_brushed')
+        else: pk.box((0.06, L_, 0.1), (cx + sd * W_ / 2, cy, z - 0.02), 'alu_brushed')
+    for k in range(int(L_ / 0.12)):
+        t = (x0 + 0.06 + k * 0.12) if along_x else (y0 + 0.06 + k * 0.12)
+        pk.cyl(0.03, W_ - 0.04, (t, cy, z) if along_x else (cx, t, z), 'roller_beige', rot=(H, 0, 0) if along_x else (0, H, 0), seg=12)
+    for k in range(int(L_ / 1.4) + 1):
+        t = (x0 + 0.1 + k * 1.4) if along_x else (y0 + 0.1 + k * 1.4)
+        for sd in (-1, 1):
+            pk.box((0.05, 0.05, z - 0.07), ((t, cy + sd * W_ / 2, (z - 0.07) / 2) if along_x else (cx + sd * W_ / 2, t, (z - 0.07) / 2)), 'alu_brushed')
+rollers(7.1, 8.3, PK_Y - 0.6, -0.1, along_x=False)                         # transfer from the test end
+rollers(PK_X0, PK_X1, PK_Y - 0.6, PK_Y + 0.6)                               # packing line
+pk.build()
+pm = Part('AREA.pack.machines', 'Lift assist, carton taping machine and strapping arch', 'AREA.pack', bevel=0.004)
+jx = 9.0                                                                    # lift assist on a jib, over the open carton
+pm.cyl(0.09, 3.0, (jx - 0.2, PK_Y - 1.3, 1.5), 'paint_white', seg=24); pm.box((0.6, 0.6, 0.06), (jx - 0.2, PK_Y - 1.3, 0.03), 'steel_dark')
+pm.box((0.12, 1.4, 0.14), (jx - 0.2, PK_Y - 0.6, 2.95), 'paint_white'); pm.cyl(0.05, 1.0, (jx, PK_Y, 2.4), 'alu_brushed', seg=16)
+pm.box((0.9, 0.5, 0.06), (jx, PK_Y, 1.86), 'anodised_dark')
+for sx in (-1, 1):
+    for sy in (-1, 1): pm.cyl(0.05, 0.04, (jx + sx * 0.35, PK_Y + sy * 0.18, 1.81), 'rubber', seg=16)
+tx = 10.7                                                                   # taping machine
+pm.box((1.0, 1.4, 0.12), (tx, PK_Y, 1.62), 'paint_blue')
+for sx in (-1, 1):
+    for sy in (-1, 1): pm.box((0.08, 0.08, 0.95), (tx + sx * 0.46, PK_Y + sy * 0.66, 1.08), 'paint_blue')
+pm.box((0.25, 0.3, 0.3), (tx, PK_Y, 1.42), 'anodised_dark'); pm.cyl(0.12, 0.08, (tx, PK_Y + 0.25, 1.47), 'tape', rot=(H, 0, 0), seg=24)
+sx_ = 11.9                                                                  # strapping arch
+pm.box((0.12, 1.7, 0.14), (sx_, PK_Y, 1.2), 'paint_white')
+for sy in (-1, 1): pm.box((0.14, 0.14, 1.2), (sx_, PK_Y + sy * 0.8, 0.6), 'paint_white')
+pm.box((0.5, 0.5, 0.7), (sx_, PK_Y - 1.15, 0.35), 'paint_white'); pm.cyl(0.18, 0.08, (sx_, PK_Y - 1.15, 0.82), 'strap', rot=(H, 0, 0), seg=24)
+pm.build()
+pe = Part('AREA.pack.eps', 'Stacks of EPS cushions and flat cartons beside packing', 'AREA.pack', bevel=0.006)
+for k in range(5): pe.box((0.5, 0.4, 0.16), (8.2, PK_Y - 1.4, 0.08 + k * 0.165), 'eps'); pe.box((0.5, 0.4, 0.16), (8.75, PK_Y - 1.4, 0.08 + k * 0.165), 'eps')
+for k in range(8): pe.box((CW + 0.1, CD + 0.6, 0.02), (10.0, PK_Y + 1.5, 0.12 + k * 0.022), 'cardboard')
+pe.box((CW + 0.2, CD + 0.7, 0.1), (10.0, PK_Y + 1.5, 0.05), 'pallet_wood' if 'pallet_wood' in L.MATS else 'wood')
+pe.build()
+pc = Part('AREA.pack.cartons', 'Cartons on the packing line (open under the lift, then taped and strapped)', 'AREA.pack', bevel=0.008)
+def carton(part, x, y, z, closed=True):
+    part.box((CW, CD, CT), (x, y, z + CT / 2), 'cardboard')
+    if closed:
+        part.box((CW * 0.7, 0.06, 0.003), (x, y, z + CT + 0.0015), 'tape'); part.box((0.9, 0.5, 0.002), (x + 0.1, y - 0.05, z + CT + 0.002), 'carton_print')
+        for dx in (-0.4, 0.4): part.box((0.025, CD + 0.004, CT + 0.004), (x + dx, y, z + CT / 2), 'strap')
+    else:
+        for sx in (-1, 1):
+            for sy in (-1, 1): part.box((0.2, 0.2, 0.15), (x + sx * (CW / 2 - 0.12), y + sy * (CD / 2 - 0.12), z + CT + 0.06), 'eps')
+carton(pc, jx, PK_Y, 0.77, closed=False); carton(pc, 12.4, PK_Y, 0.77, closed=True)
+pc.build()
+bag = Part('AREA.pack.set', 'A tested set in its black protective bag, held by the lift', 'AREA.pack', bevel=0.01)
+bag.box((TVW + 0.04, TVD + 0.04, 0.09), (jx, PK_Y, 1.72), 'bag_black'); bag.build()
+person(jx - 0.2, PK_Y - 0.95, face=0.0); person(jx + 0.75, PK_Y + 0.95, face=math.pi)
+ppl.build()
+
+# ---------------------------------------------------------------- templates: the moving pieces, for the browser slice to clone and animate
+if A.templates:
+    assembly('AREA.tpl', 'Templates for the browser slice: a pallet, the TV at each assembly step, the upright set, cartons and the bagged set.', parent='AREA')
+    TY = -14.0                                                              # off the floor, centred at x = 0
+    t = Part('AREA.tpl.pallet', 'Padded pallet', 'AREA.tpl', bevel=0.004)
+    t.box((PAL_W, PAL_D, 0.03), (0, TY, 0.015), 'alu_brushed'); t.box((PAL_W - 0.06, PAL_D - 0.06, 0.02), (0, TY, 0.04), 'felt_green'); t.build()
+    for st in range(4):
+        t = Part(f'AREA.tpl.tv{st}', f'TV at assembly step {st}', 'AREA.tpl', bevel=0.002); tv(t, 0, TY, 0.05, st); t.build()
+    t = Part('AREA.tpl.tv_up', 'TV standing for test (screen picture separate)', 'AREA.tpl', bevel=0.002)
+    t.box((TVW, 0.06, TVD), (0, TY, TVD / 2), 'cover_black'); t.build()
+    t = Part('AREA.tpl.carton_open', 'Open carton with cushions', 'AREA.tpl', bevel=0.008); carton(t, 0, TY, 0, closed=False); t.build()
+    t = Part('AREA.tpl.carton_closed', 'Taped and strapped carton', 'AREA.tpl', bevel=0.008); carton(t, 0, TY, 0, closed=True); t.build()
+    t = Part('AREA.tpl.bagged', 'Bagged set', 'AREA.tpl', bevel=0.01); t.box((TVW + 0.04, TVD + 0.04, 0.09), (0, TY, 0.045), 'bag_black'); t.build()
 
 # ---------------------------------------------------------------- the building: wall panels, columns, roof steel and high-bay lights
 assembly('AREA.building', 'Insulated wall panels with a clerestory band, steel columns, roof beams and LED high-bay lights.', parent='AREA')
@@ -430,7 +508,8 @@ SHOTS = {   # three.js poses (x, y up, z toward the viewer = -Blender Y)
     'cell': ((-1.4, 3.4, 8.2), (-1.8, 0.8, 3.9), 40),
     'test': ((8.2, 1.7, 3.2), (5.4, 1.1, 0.0), 34),
     'top': ((0.01, 22.0, 2.6), (0.0, 0.0, 2.0), 40),
-    'qa': ((13.6, 2.6, 5.4), (8.6, 1.0, -1.6), 40),
+    'qa': ((12.4, 2.6, 7.4), (9.8, 1.0, 1.6), 44),
+    'pack': ((6.2, 2.4, 6.6), (10.2, 1.0, 3.0), 44),
     'robot': ((1.5, 1.85, 1.55), (-1.0, 1.05, -0.55), 42),
     'wide': ((12.5, 5.0, 10.5), (1.0, 0.8, -0.5), 38),
 }

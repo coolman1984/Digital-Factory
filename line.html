@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Digital Factory · Line ML-3 slice</title>
+  <meta name="description" content="One stretch of a TV assembly line of Plant EG-01, working in 3D: a sub-assembly cell, the main conveyor, a functional test and packing. Built in Blender from real plant references; illustrative reconstruction.">
+  <script>try{var t=localStorage.getItem('df-theme')}catch(e){}document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')</script>
+  <link rel="icon" href="assets/brand/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/brand/icon-32.png" sizes="32x32" type="image/png">
+  <meta name="theme-color" content="#1428A0">
+  <link rel="stylesheet" href="assets/kit/fonts.css">
+  <link rel="stylesheet" href="assets/kit/brand-ui.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/showroom.css">
+  <link rel="stylesheet" href="assets/css/inspect.css">
+  <script>try{if((localStorage.getItem('df-lang')||localStorage.getItem('df-guide-lang'))==='ar'){var r=document.documentElement;r.lang='ar';r.dir='rtl';r.setAttribute('data-i18n-wait','');setTimeout(function(){r.removeAttribute('data-i18n-wait')},1200)}}catch(e){}</script>
+</head>
+<body class="sr ins">
+  <div class="df-splash" id="dfSplash" data-ready="line" aria-hidden="true">
+  <svg class="df-splash-mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="dfSg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2D5BFF"/><stop offset="1" stop-color="#1428A0"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#dfSg)"/><path class="f" fill="#fff" d="M7 23.8V9.4a.7.7 0 0 1 1.1-.57L11.5 11.3V9.4a.7.7 0 0 1 1.1-.57L16 11.3v12.5z"/><rect class="c c1" x="17.2" y="20.4" width="3.4" height="3.4" rx=".7" fill="#fff"/><rect class="c c2" x="21.4" y="20.4" width="3.4" height="3.4" rx=".7" fill="#fff"/><rect class="c c3" x="17.2" y="16.2" width="3.4" height="3.4" rx=".7" fill="#fff"/><rect class="c c4" x="21.4" y="16.2" width="3.4" height="3.4" rx=".7" fill="#fff" opacity="0.72"/><rect class="c c5" x="17.2" y="12" width="3.4" height="3.4" rx=".7" fill="#fff" opacity="0.72"/><rect class="c live" x="21.4" y="12" width="3.4" height="3.4" rx=".7" fill="#7FE4FF"/></svg>
+  <b>Digital Factory</b><p data-ar="تجهيز الخط…">Starting the line…</p></div>
+  <script src="assets/js/brand.js"></script>
+  <a class="skip" href="#controls">Skip to the controls</a>
+  <header class="sr-top">
+    <a class="logo" href="./" aria-label="Digital Factory home"><span class="logo-mark" aria-hidden="true"></span><span class="logo-word">Digital Factory</span></a>
+    <div class="sr-title">
+      <h1>Line ML-3, one stretch</h1>
+      <span class="sr-sub">Cell, assembly line, test and packing · illustrative reconstruction</span>
+    </div>
+    <div class="sr-actions">
+      <button type="button" class="btn btn-secondary btn-sm theme-btn" data-theme-toggle title="Light / dark"><span class="ti" aria-hidden="true"></span><span class="tl hide-md">Light</span></button>
+      <a class="btn btn-secondary btn-sm hide-sm" id="toPlant" href="plant.html#line:ML3"><span data-icon="globe"></span><span class="hide-md">Live plant</span></a>
+    </div>
+  </header>
+
+  <main class="sr-main" id="main">
+    <section class="stage" id="stage-line" aria-label="Line slice">
+      <div class="stage-gl">
+        <canvas id="gl" role="img" aria-label="A stretch of a TV assembly line in 3D: a U-shaped cell, the main conveyor with sets face down on pallets, a robot driving screws, the upright functional test and packing. The sets move from station to station."></canvas>
+        <div class="hot" id="hot" aria-hidden="true"></div>
+        <div class="tour-cap" id="tourCap" hidden aria-live="polite"><b id="tourTitle"></b><span id="tourText"></span><i><em id="tourFill"></em></i></div>
+        <p class="stage-note" id="note" aria-live="polite"></p>
+        <noscript><p class="stage-note">The line needs JavaScript and WebGL 2. The stations are described beside it.</p></noscript>
+      </div>
+      <aside class="panel" id="controls" aria-label="Line controls">
+        <section>
+          <h2>Present</h2>
+          <div class="row">
+            <button type="button" class="btn btn-primary btn-sm" id="tourBtn" aria-pressed="false"><span data-icon="play"></span><span id="tourLbl">Walk the line</span></button>
+            <button type="button" class="btn btn-secondary btn-sm" id="playBtn" aria-pressed="true">Pause</button>
+          </div>
+          <div class="chips" role="group" aria-label="Speed">
+            <button type="button" data-speed="1" aria-pressed="true">1×</button>
+            <button type="button" data-speed="3" aria-pressed="false">3×</button>
+          </div>
+          <p class="hint">A 30-second walk from the cell to packing. The line indexes every 8 seconds: each set moves one station on, and the work of each station is added while it stands there.</p>
+        </section>
+        <section>
+          <h2>Views</h2>
+          <div class="chips" role="group" aria-label="Views">
+            <button type="button" data-cam="overview" aria-pressed="true">Overview</button>
+            <button type="button" data-cam="eye" aria-pressed="false">Operator's eye</button>
+            <button type="button" data-cam="cell" aria-pressed="false">Cell</button>
+            <button type="button" data-cam="robot" aria-pressed="false">Robot</button>
+            <button type="button" data-cam="test" aria-pressed="false">Test</button>
+            <button type="button" data-cam="pack" aria-pressed="false">Packing</button>
+          </div>
+          <div class="chips" role="group" aria-label="Labels">
+            <button type="button" id="labels" aria-pressed="true">Labels</button>
+          </div>
+          <p class="hint">Drag to orbit, scroll or pinch to zoom. Keys: arrows orbit, + and − zoom, 0 returns to the overview, Space pauses, T walks the line.</p>
+        </section>
+        <section class="parts">
+          <h2>Stations</h2>
+          <ul class="part-list" id="stations"></ul>
+        </section>
+        <section class="facts">
+          <h2>About this slice</h2>
+          <p class="hint">Final assembly only: panels, backlight units and main boards arrive from the plant's LCM and SMD lines. Built in Blender from code (tools/blender/assembly_area.py) after photos of real TV lines (docs/REFERENCES-TV-PLANT.md). People are stylised figures; the motion is illustrative, not a timing study. Plant EG-01 is fictional.</p>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="assets/kit/icons.js"></script>
+  <script src="assets/js/theme.js"></script>
+  <script src="assets/vendor/three/three.iife.min.js"></script>
+  <script src="assets/vendor/gsap/gsap.min.js"></script>
+  <script src="assets/js/plant/shaders.js"></script>
+  <script src="assets/js/vfx/look.js"></script>
+  <script src="assets/js/vfx/perf.js"></script>
+  <script src="assets/js/vfx/presets.js"></script>
+  <script src="assets/js/line/line.js"></script>
+  <script src="assets/js/i18n/i18n.js"></script>
+  <script src="assets/js/i18n/ar-common.js"></script>
+  <script src="assets/js/i18n/ar-line.js"></script>
+</body>
+</html>
