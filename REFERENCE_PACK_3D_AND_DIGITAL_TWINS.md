@@ -75,3 +75,8 @@ A photograph can guide shape and finish; it does not reveal hidden parts. For ac
 ## Research and maintenance
 
 Primary repositories, official documentation, manufacturer catalogs and official case studies were consulted. Some links describe changing products or version-specific examples; recheck before adoption and pin the exact revision once an asset or integration is selected. No third-party images, clips, models or code were copied into either project by this documentation update. Maintain credits in the destination project's asset records and film credits when actual reuse happens.
+
+
+## Owner's concrete next experiment (2026-10-29)
+
+[EXPERIMENT_FIRST_INDUSTRIAL_SCENE.md](EXPERIMENT_FIRST_INDUSTRIAL_SCENE.md) turns these references into a proposed single-assembly, 30-second inspection/cinematic test. Private learning, documented only; no scene execution or separate rights-review assignment requested in this scope.

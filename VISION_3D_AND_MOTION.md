@@ -12,6 +12,10 @@ Read this document and the repository's existing instructions before choosing to
 
 The present request authorizes documentation only. It does not authorize installing software, rewriting engines, producing a new film, changing live factory data, or automatically executing this entire roadmap. On a future implementation request, use these goals to propose and execute a bounded, reviewable slice. Preserve the existing house method, brand, approvals, testing and production rules.
 
+## First proposed practical experiment
+
+Read [EXPERIMENT_FIRST_INDUSTRIAL_SCENE.md](EXPERIMENT_FIRST_INDUSTRIAL_SCENE.md) when planning the first practical scene: one detailed assembly, staged explosion/reassembly, ghosted working internals, a cutaway and cinematic presentation. Owner scope is personal learning; this is a documented candidate for future implementation, not an automatic task or a completed scene.
+
 ## North star
 
 Build a polished, technically credible industrial presentation experience: detailed equipment, convincing materials and light, deliberate camera work, readable explanations and smooth interaction. Aim for leading professional examples; prove progress with reference comparisons and actual output, never claim "world best" from code or test passes alone.
