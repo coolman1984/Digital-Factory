@@ -89,3 +89,19 @@ dark because they reflect a dark world (E3).
 (`mounter.py --glass thin`).** The GLB keeps the standard glass for the browser.
 
 Finding: past 256 spp the gain is small and the cost doubles; the remaining grain sits in the refractive hood panes, so the next lever is the glass shader, not samples.
+
+### E5 · Godot on the CPU: speed and look (Mounter B reel, frame-150 pose, 41-frame benches incl. start-up)
+
+| Variant (one change at a time) | Bench time | Note |
+|---|---|---|
+| Native 1080p, MSAA 2 + TAA | 150 s | reel v2 settings |
+| FSR 2 at 67% + MSAA 2 | 120 s | same sharpness at 100% |
+| **FSR 2 at 67%, no MSAA** | **105 s** | same sharpness, slightly crisper (FSR sharpening) |
+| 2 processes × 2 threads | 136 s for 2 × 41 frames | 1.5× throughput |
+| **4 processes × 1 thread** | **223 s for 4 × 41 frames** | **1.9× throughput; full reel 6 min 48 s vs 9 min 22 s** |
+
+Look: a darker-below studio sky, a reflection probe, weaker glass reflection and a no-specular fill. Exposure was tested
+on an 18% card: raising it (1.0 → 2.0) lowered interior contrast from 35 to 26 (stdev, frame crop) because the card read
+low from facing the shadow side, not because the scene was dark. Kept exposure 1.1 with fill 2.0: interior contrast 33.5
+(was 36.1), mean 149 (was 135), clipping 0.01%. A moderate look gain; the clear gain is speed. Joins between slices show
+no jump (frame-to-frame difference at the joins within the camera move's own range).

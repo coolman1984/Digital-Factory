@@ -7,6 +7,14 @@ Blender asset the machine studio uses, loaded at run time.
 Why a game engine next to Blender: Blender (Cycles) gives the reference stills and film frames; Godot draws a frame in a
 fraction of a second on a graphics card, so moves, previews and social cuts are fast to iterate. Same asset, two paths.
 
+## Fast render (recommended)
+
+`render.sh out godot` renders the reel in four parallel slices (one renderer thread each), drops each slice's warm-up and
+joins them into `out/mounter-reel.mp4`. Settings: FSR 2 at 67% internal resolution, no MSAA, exposure 1.1, a fill light
+without specular (lifts the shadow side without glare on the hood glass). Measured on 4 CPU cores with software Vulkan:
+6 min 48 s for the reel (about 1.4 s a frame) against 9 min 22 s for one process at native resolution, same sharpness at
+100% crops. Details and the measurements: `docs/RENDER_QUALITY_AUDIT.md` E5.
+
 ## Run
 
 1. Export the model next to the project (Blender 5.2 as a Python module, or Blender itself):
