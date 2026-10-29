@@ -77,7 +77,7 @@ X-ray keep reading the engine; the look system (`DFLook`, `DFMaterials`) and the
 | # | Phase | Done when |
 |---|---|---|
 | 0 | Mounter B in Blender, four states, bilingual labels | **Done** (2026-10-29) |
-| 1 | Pipeline: `lib/`, GLB export with baked textures, gates; a standalone inspection studio for Mounter B with explode, X-ray, cut, parts list, labels | The owner uses it in a browser and approves the feel |
+| 1 | Pipeline: `lib/`, GLB export with baked textures, gates; a standalone inspection studio for Mounter B with explode, X-ray, cut, parts list, labels | **Studio built** (`inspect.html`, 2026-10-29); waiting for the owner's review. Not yet done: the shared `lib/` split and baked textures |
 | 2 | The studio inside the plant: click any mounter → studio → back; the 18 mounters on the floor become Blender LODs | Works from every mounter; benchmark not worse than the agreed budget |
 | 3 | The whole SMD line: loader, printer, SPI, reflow, AOI, unloader, writer, ICT (8 more kinds) | Each kind has its inspect model, LODs and tour |
 | 4 | The building: epoxy floor with joints and markings, wall and column kit, roof trusses, skylights, high-bay lights, ducts and trays, baked lighting | Before/after screenshots at the bench poses; frame time within budget |

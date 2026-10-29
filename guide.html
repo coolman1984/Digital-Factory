@@ -2447,6 +2447,40 @@
         </div>
       </div>
     </section>
+    <section class="ch" id="ch-inspect">
+      <div class="ch-head bi">
+        <div class="ar" lang="ar" dir="rtl"><p class="ch-no">الفصل 19</p><h2>استوديو الماكينة: تفكيك ورؤية من الداخل ومقطع</h2></div>
+        <div class="en" lang="en" dir="ltr"><p class="ch-no">Chapter 19</p><h2>The machine studio: take apart, see inside, cut open</h2></div>
+      </div>
+      <div class="bi">
+        <div class="ar" lang="ar" dir="rtl">
+          <p class="lede">استوديو الماكينة (inspect.html) يعرض ماكينة التركيب B من خط SMD-4 في استوديو أبيض. النموذج مبني برمجيًا في بلندر من 40 قطعة مسمّاة في 14 مجموعة (tools/blender)، ومُتحقَّق منه بأداة Khronos (tools/assets). وهو <b>إعادة بناء توضيحية</b> لماكينة عامة، لا ماكينة شركة بعينها، ولا يقرأ حالة المصنع ولا يغيّرها.</p>
+          <ul>
+            <li><b>Customer tour:</b> جولة جاهزة للزائر من سبع خطوات: الماكينة مركّبة، ثم <a class="t" data-term="exploded">مفكّكة</a>، ثم تعود كما كانت، ثم بأغطية شفافة، ثم <a class="t" data-term="section">مقطع</a>، ثم رأس التركيب وهو يعمل، ثم الختام. أي حركة للكاميرا توقف الجولة. المفتاح T.</li>
+            <li><b>Take apart:</b> مؤشر من «مركّبة» إلى «مفكّكة»: تخرج كل مجموعة في مسارها المرسوم في بلندر بالترتيب (الغطاء أولًا)، وعند الصفر ترجع إلى مكانها بالضبط. المفتاح E.</li>
+            <li><b>X-ray covers:</b> تتحول الأغطية إلى حدود زجاجية زرقاء، وتبقى القطع الداخلية واضحة. المفتاح X.</li>
+            <li><b>Cut open:</b> مستوى قطع متحرك يشق الأغطية وحدها من الأمام إلى الخلف، والأسطح الحمراء هي موضع القطع (مرسومة بمخزن الاستنسل حتى لا يظهر الغطاء مجوفًا). وتُبعَد عربة المغذّيات الأمامية أثناء القطع. المفتاح C.</li>
+            <li><b>Run the head:</b> دورة التقاط وتركيب توضيحية: يذهب الجسر إلى المغذّي، وينزل الشفّاط، ويمر فوق كاميرا الفحص، ثم يضع القطعة على اللوحة. ليست دراسة توقيت. مفتاح المسافة.</li>
+            <li><b>Parts:</b> كل القطع بالعربية والإنجليزية، مجمّعة حسب المجموعة. انقر قطعة (في القائمة أو على الماكينة) لتظهر بلون العلامة مع وصفها، ثم Show only this أو Frame it. ويمكن فتح قطعة مباشرة: inspect.html#part:MNT.head.spindles.</li>
+            <li><b>Camera:</b> منظور ثلاثي الأرباع، والأمام، والجانب، ومن أعلى، والرأس من قريب. الأسهم و+ و− و0، وEsc لإلغاء الاختيار.</li>
+          </ul>
+          <div class="note"><b>حدود استوديو الماكينة</b><p>القطع الداخلية (حجرة التحكم ومضخة التفريغ) ترتيب توضيحي، لا يصلح للصيانة أو السلامة. والنموذج في المتصفح أخف من نموذج الصور الثابتة (حواف مشطوفة أقل)، فلا يطابق صور بلندر تمامًا. ولم يُقَس الأداء على أجهزة العملاء بعد؛ أضف ?perf=1 للقراءة على جهازك، و?q=0 إلى ?q=3 لتثبيت مستوى الجودة.</p></div>
+        </div>
+        <div class="en" lang="en" dir="ltr">
+          <p class="lede">The machine studio (inspect.html) shows Mounter B of line SMD-4 in a white studio. The model is built from code in Blender as 40 named parts in 14 assemblies (tools/blender) and checked with the Khronos validator (tools/assets). It is an <b>illustrative reconstruction</b> of a generic machine, not a vendor's machine, and it neither reads nor changes the plant.</p>
+          <ul>
+            <li><b>Customer tour:</b> a seven-step guided look for a visitor: assembled, <a class="t" data-term="exploded">taken apart</a>, back together, covers seen through, <a class="t" data-term="section">cut open</a>, the head at work, and the close. Any camera move stops it. Key T.</li>
+            <li><b>Take apart:</b> a slider from Assembled to Apart: each assembly leaves along the path authored in Blender, in order (the hood first), and at 0 returns exactly to its place. Key E.</li>
+            <li><b>X-ray covers:</b> the covers turn to blue glass outlines; the parts inside stay solid. Key X.</li>
+            <li><b>Cut open:</b> a movable section slices the covers only, front to back; the red faces are the cut (drawn with the stencil buffer, so a cover never looks hollow). The front feeder trolley is wheeled away while the machine is cut. Key C.</li>
+            <li><b>Run the head:</b> an illustrative pick-and-place cycle: the gantry goes to a feeder, a nozzle dips, passes over the inspection camera and places the part on the board. Not a timing study. Space.</li>
+            <li><b>Parts:</b> every part in Arabic and English, grouped by assembly. Click a part (in the list or on the machine) to tint it in the brand colour with its description, then Show only this or Frame it. A part opens directly: inspect.html#part:MNT.head.spindles.</li>
+            <li><b>Camera:</b> three-quarter, front, side, top and head close-up. Arrows, + and −, 0, and Esc to clear the selection.</li>
+          </ul>
+          <div class="note"><b>Limits of the machine studio</b><p>The internals (the control bay and the vacuum pump) are an illustrative layout, not for maintenance or safety. The browser model is lighter than the stills model (fewer bevel segments), so it does not match the Blender renders exactly. No frame rates have been measured on client devices yet: add ?perf=1 to read them on your device, and ?q=0 to ?q=3 to pin a quality level.</p></div>
+        </div>
+      </div>
+    </section>
 
     </main>
   </div>

@@ -1,0 +1,1075 @@
+{
+ "asset": "MNT",
+ "title": "SMD placement machine (Mounter B, line SMD-4, Plant EG-01)",
+ "disclosure": "Illustrative educational reconstruction of a generic gantry pick-and-place machine; not a real vendor model, not for maintenance or safety use.",
+ "units": "metres",
+ "up": "Z (Blender) / Y (glTF)",
+ "vectors": "explode and anchor are Blender axes (x, y, z); in glTF / three.js they are (x, z, -y)",
+ "stats": {
+  "parts": 40,
+  "assemblies": 14,
+  "placed_chips": 113,
+  "triangles": 406912
+ },
+ "parts": [
+  {
+   "id": "MNT",
+   "kind": "assembly",
+   "role": "SMD placement machine (Mounter B, line SMD-4, Plant EG-01). Illustrative reconstruction.",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "name_ar": "\u0645\u0627\u0643\u064a\u0646\u0629 \u062a\u0631\u0643\u064a\u0628 \u0627\u0644\u0642\u0637\u0639",
+   "name_en": "SMD placement machine",
+   "about_ar": "\u062a\u0644\u062a\u0642\u0637 \u0627\u0644\u0642\u0637\u0639 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a\u0629 \u0627\u0644\u0635\u063a\u064a\u0631\u0629 \u0645\u0646 \u0627\u0644\u0628\u0643\u0631\u0627\u062a \u0648\u062a\u0636\u0639\u0647\u0627 \u0639\u0644\u0649 \u0627\u0644\u0644\u0648\u062d\u0629 \u0641\u064a \u0645\u0643\u0627\u0646\u0647\u0627 \u0628\u062f\u0642\u0629 \u0643\u0628\u064a\u0631\u0629."
+  },
+  {
+   "id": "MNT.base",
+   "kind": "assembly",
+   "role": "Welded steel base frame on levelling feet: carries the bed and isolates the floor.",
+   "parent": "MNT",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "name_ar": "\u0627\u0644\u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u062d\u062f\u064a\u062f\u064a\u0629",
+   "name_en": "Base frame",
+   "about_ar": "\u0625\u0637\u0627\u0631 \u0645\u0646 \u0627\u0644\u062d\u062f\u064a\u062f \u0627\u0644\u0645\u0644\u062d\u0648\u0645 \u0639\u0644\u0649 \u0623\u0631\u062c\u0644 \u0642\u0627\u0628\u0644\u0629 \u0644\u0644\u0636\u0628\u0637\u060c \u064a\u062d\u0645\u0644 \u0627\u0644\u0645\u0627\u0643\u064a\u0646\u0629 \u0648\u064a\u0639\u0632\u0644\u0647\u0627 \u0639\u0646 \u0627\u0647\u062a\u0632\u0627\u0632 \u0627\u0644\u0623\u0631\u0636."
+  },
+  {
+   "id": "MNT.base.frame",
+   "kind": "part",
+   "role": "Welded box-section base frame",
+   "parent": "MNT.base",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "paint_grey"
+   ],
+   "name_ar": "\u0627\u0644\u0625\u0637\u0627\u0631 \u0627\u0644\u0645\u0644\u062d\u0648\u0645",
+   "name_en": "Welded frame",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.base.feet",
+   "kind": "part",
+   "role": "Levelling feet with anti-vibration pads",
+   "parent": "MNT.base",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "rubber",
+    "steel_dark",
+    "steel_polished"
+   ],
+   "name_ar": "\u0623\u0631\u062c\u0644 \u0627\u0644\u0636\u0628\u0637",
+   "name_en": "Levelling feet",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.cabinet",
+   "kind": "assembly",
+   "role": "Lower cabinet: sheet-steel doors and panels around the drives, controls and vacuum system.",
+   "parent": "MNT",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "name_ar": "\u0627\u0644\u062e\u0632\u0627\u0646\u0629 \u0627\u0644\u0633\u0641\u0644\u064a\u0629",
+   "name_en": "Lower cabinet",
+   "about_ar": "\u0623\u0644\u0648\u0627\u062d \u0648\u0623\u0628\u0648\u0627\u0628 \u0635\u064a\u0627\u0646\u0629 \u062a\u062d\u0645\u064a \u0627\u0644\u0645\u062d\u0631\u0643\u0627\u062a \u0648\u0627\u0644\u062a\u062d\u0643\u0645 \u0648\u0646\u0638\u0627\u0645 \u0627\u0644\u062a\u0641\u0631\u064a\u063a."
+  },
+  {
+   "id": "MNT.cabinet.front",
+   "kind": "part",
+   "role": "Front service doors (hinged, keyed)",
+   "parent": "MNT.cabinet",
+   "explode": [
+    0,
+    -0.42,
+    0
+   ],
+   "shell": true,
+   "source": "illustrative",
+   "materials": [
+    "paint_white",
+    "paint_grey",
+    "plastic_black",
+    "anodised_dark",
+    "steel_polished",
+    "paint_blue"
+   ],
+   "name_ar": "\u0623\u0628\u0648\u0627\u0628 \u0627\u0644\u0635\u064a\u0627\u0646\u0629 \u0627\u0644\u0623\u0645\u0627\u0645\u064a\u0629",
+   "name_en": "Front service doors",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.cabinet.rear",
+   "kind": "part",
+   "role": "Rear service doors",
+   "parent": "MNT.cabinet",
+   "explode": [
+    0,
+    0.42,
+    0
+   ],
+   "shell": true,
+   "source": "illustrative",
+   "materials": [
+    "paint_white",
+    "paint_grey",
+    "plastic_black",
+    "anodised_dark",
+    "steel_polished",
+    "paint_blue"
+   ],
+   "name_ar": "\u0623\u0628\u0648\u0627\u0628 \u0627\u0644\u0635\u064a\u0627\u0646\u0629 \u0627\u0644\u062e\u0644\u0641\u064a\u0629",
+   "name_en": "Rear service doors",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.cabinet.side_left",
+   "kind": "part",
+   "role": "Side panel with the SMEMA board pass-through",
+   "parent": "MNT.cabinet",
+   "explode": [
+    -0.6,
+    0,
+    0
+   ],
+   "shell": true,
+   "source": "illustrative",
+   "materials": [
+    "paint_white",
+    "paint_grey",
+    "paint_blue",
+    "plastic_black"
+   ],
+   "name_ar": "\u0627\u0644\u0644\u0648\u062d \u0627\u0644\u062c\u0627\u0646\u0628\u064a \u0627\u0644\u0623\u064a\u0633\u0631",
+   "name_en": "Left side panel",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.cabinet.side_right",
+   "kind": "part",
+   "role": "Side panel with the SMEMA board pass-through",
+   "parent": "MNT.cabinet",
+   "explode": [
+    0.6,
+    0,
+    0
+   ],
+   "shell": true,
+   "source": "illustrative",
+   "materials": [
+    "paint_white",
+    "paint_grey",
+    "paint_blue",
+    "plastic_black"
+   ],
+   "name_ar": "\u0627\u0644\u0644\u0648\u062d \u0627\u0644\u062c\u0627\u0646\u0628\u064a \u0627\u0644\u0623\u064a\u0645\u0646",
+   "name_en": "Right side panel",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.controls",
+   "kind": "assembly",
+   "role": "Control and drive bay inside the cabinet (illustrative layout).",
+   "parent": "MNT",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "name_ar": "\u062d\u062c\u0631\u0629 \u0627\u0644\u062a\u062d\u0643\u0645",
+   "name_en": "Control bay",
+   "about_ar": "\u0645\u0634\u063a\u0651\u0644\u0627\u062a \u0627\u0644\u0645\u062d\u0627\u0648\u0631 \u0648\u0643\u0645\u0628\u064a\u0648\u062a\u0631 \u0627\u0644\u062a\u062d\u0643\u0645 \u0648\u0627\u0644\u0631\u0624\u064a\u0629 \u0648\u0645\u0636\u062e\u0629 \u0627\u0644\u062a\u0641\u0631\u064a\u063a (\u062a\u0631\u062a\u064a\u0628 \u062a\u0648\u0636\u064a\u062d\u064a)."
+  },
+  {
+   "id": "MNT.controls.servo_rack",
+   "kind": "part",
+   "role": "Servo amplifiers for the X, Y, Z and theta axes",
+   "parent": "MNT.controls",
+   "explode": [
+    0,
+    -0.2,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "anodised_dark",
+    "plastic_grey",
+    "led_green",
+    "alu_brushed",
+    "steel_dark"
+   ],
+   "name_ar": "\u0645\u0634\u063a\u0651\u0644\u0627\u062a \u0627\u0644\u0645\u062d\u0627\u0648\u0631",
+   "name_en": "Servo amplifiers",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.controls.pc",
+   "kind": "part",
+   "role": "Machine controller and vision computer",
+   "parent": "MNT.controls",
+   "explode": [
+    0,
+    -0.2,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "plastic_black",
+    "anodised_dark",
+    "led_white",
+    "led_green"
+   ],
+   "name_ar": "\u0643\u0645\u0628\u064a\u0648\u062a\u0631 \u0627\u0644\u062a\u062d\u0643\u0645 \u0648\u0627\u0644\u0631\u0624\u064a\u0629",
+   "name_en": "Control and vision computer",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.controls.vacuum",
+   "kind": "part",
+   "role": "Vacuum pump and manifold for the pick-up nozzles",
+   "parent": "MNT.controls",
+   "explode": [
+    0,
+    0.2,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "paint_blue",
+    "steel_dark",
+    "alu_brushed",
+    "cable_orange"
+   ],
+   "name_ar": "\u0645\u0636\u062e\u0629 \u0627\u0644\u062a\u0641\u0631\u064a\u063a",
+   "name_en": "Vacuum pump",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.controls.cable_tray",
+   "kind": "part",
+   "role": "Cable trays and wiring looms",
+   "parent": "MNT.controls",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "steel_dark",
+    "cable_orange",
+    "plastic_black",
+    "plastic_grey"
+   ],
+   "name_ar": "\u0645\u062c\u0627\u0631\u064a \u0627\u0644\u0643\u0627\u0628\u0644\u0627\u062a",
+   "name_en": "Cable trays",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.bed",
+   "kind": "assembly",
+   "role": "Mineral-cast machine bed: the stiff, vibration-damped reference surface for every axis.",
+   "parent": "MNT",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "name_ar": "\u0627\u0644\u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0645\u0635\u0628\u0648\u0628\u0629",
+   "name_en": "Machine bed",
+   "about_ar": "\u0633\u0637\u062d \u0645\u0635\u0628\u0648\u0628 \u062b\u0642\u064a\u0644 \u064a\u0645\u062a\u0635 \u0627\u0644\u0627\u0647\u062a\u0632\u0627\u0632\u060c \u0648\u0643\u0644 \u0627\u0644\u0645\u062d\u0627\u0648\u0631 \u062a\u0642\u064a\u0633 \u0645\u0646\u0647."
+  },
+  {
+   "id": "MNT.bed.casting",
+   "kind": "part",
+   "role": "Machine bed casting",
+   "parent": "MNT.bed",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": true,
+   "source": "illustrative",
+   "materials": [
+    "cast_bed"
+   ],
+   "name_ar": "\u0627\u0644\u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0645\u0635\u0628\u0648\u0628\u0629",
+   "name_en": "Mineral-cast bed",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.yaxis",
+   "kind": "assembly",
+   "role": "Y axis: two side beams with linear guides and linear motors that carry the gantry beam.",
+   "parent": "MNT",
+   "explode": [
+    0,
+    0,
+    0.45
+   ],
+   "name_ar": "\u0627\u0644\u0645\u062d\u0648\u0631 \u0627\u0644\u0637\u0648\u0644\u064a",
+   "name_en": "Y axis",
+   "about_ar": "\u0639\u0627\u0631\u0636\u062a\u0627\u0646 \u062c\u0627\u0646\u0628\u064a\u062a\u0627\u0646 \u0639\u0644\u064a\u0647\u0645\u0627 \u0642\u0636\u0628\u0627\u0646 \u062f\u0642\u064a\u0642\u0629 \u0648\u0645\u062d\u0631\u0643\u0627\u062a \u062e\u0637\u064a\u0629 \u062a\u062d\u0645\u0644 \u0627\u0644\u062c\u0633\u0631."
+  },
+  {
+   "id": "MNT.yaxis.beam_left",
+   "kind": "part",
+   "role": "Y side beam with precision guide rail and magnet track",
+   "parent": "MNT.yaxis",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "anodised_dark",
+    "steel_polished",
+    "steel_dark",
+    "rubber"
+   ],
+   "name_ar": "\u0627\u0644\u0639\u0627\u0631\u0636\u0629 \u0627\u0644\u064a\u0633\u0631\u0649",
+   "name_en": "Left Y beam",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.yaxis.beam_right",
+   "kind": "part",
+   "role": "Y side beam with precision guide rail and magnet track",
+   "parent": "MNT.yaxis",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "anodised_dark",
+    "steel_polished",
+    "steel_dark",
+    "rubber"
+   ],
+   "name_ar": "\u0627\u0644\u0639\u0627\u0631\u0636\u0629 \u0627\u0644\u064a\u0645\u0646\u0649",
+   "name_en": "Right Y beam",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.yaxis.cable_chain",
+   "kind": "part",
+   "role": "Energy chain carrying power, encoder and vacuum lines to the gantry",
+   "parent": "MNT.yaxis",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "plastic_black",
+    "steel_dark"
+   ],
+   "name_ar": "\u0633\u0644\u0633\u0644\u0629 \u0627\u0644\u0643\u0627\u0628\u0644\u0627\u062a",
+   "name_en": "Energy chain",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.gantry",
+   "kind": "assembly",
+   "role": "X gantry beam: a stiff carbon beam that travels in Y and carries the head in X.",
+   "parent": "MNT",
+   "explode": [
+    0,
+    0,
+    0.9
+   ],
+   "name_ar": "\u0627\u0644\u062c\u0633\u0631 \u0627\u0644\u0645\u062a\u062d\u0631\u0643",
+   "name_en": "Gantry",
+   "about_ar": "\u062c\u0633\u0631 \u0645\u0646 \u0623\u0644\u064a\u0627\u0641 \u0627\u0644\u0643\u0631\u0628\u0648\u0646 \u064a\u062a\u062d\u0631\u0643 \u0644\u0644\u0623\u0645\u0627\u0645 \u0648\u0627\u0644\u062e\u0644\u0641 \u0648\u064a\u062d\u0645\u0644 \u0631\u0623\u0633 \u0627\u0644\u062a\u0631\u0643\u064a\u0628 \u064a\u0645\u064a\u0646\u064b\u0627 \u0648\u064a\u0633\u0627\u0631\u064b\u0627."
+  },
+  {
+   "id": "MNT.gantry.beam",
+   "kind": "part",
+   "role": "Carbon-fibre gantry beam with X guide rail and magnet track",
+   "parent": "MNT.gantry",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "carbon",
+    "steel_polished",
+    "anodised_dark",
+    "alu_brushed",
+    "label_white"
+   ],
+   "name_ar": "\u0639\u0627\u0631\u0636\u0629 \u0627\u0644\u062c\u0633\u0631",
+   "name_en": "Carbon gantry beam",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.head",
+   "kind": "assembly",
+   "role": "Placement head: eight vacuum spindles, each with its own Z and theta drive, plus the board camera.",
+   "parent": "MNT.gantry",
+   "explode": [
+    0,
+    -0.32,
+    0.22
+   ],
+   "name_ar": "\u0631\u0623\u0633 \u0627\u0644\u062a\u0631\u0643\u064a\u0628",
+   "name_en": "Placement head",
+   "about_ar": "\u062b\u0645\u0627\u0646\u064a\u0629 \u0623\u0639\u0645\u062f\u0629 \u0634\u0641\u0637\u060c \u0644\u0643\u0644 \u0639\u0645\u0648\u062f \u0645\u062d\u0631\u0643 \u0644\u0644\u0646\u0632\u0648\u0644 \u0648\u0645\u062d\u0631\u0643 \u0644\u0644\u062f\u0648\u0631\u0627\u0646\u060c \u0648\u0645\u0639\u0647\u0627 \u0643\u0627\u0645\u064a\u0631\u0627 \u0627\u0644\u0644\u0648\u062d\u0629."
+  },
+  {
+   "id": "MNT.head.carriage",
+   "kind": "part",
+   "role": "Head carriage riding the X rails",
+   "parent": "MNT.head",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "anodised_dark",
+    "paint_white",
+    "paint_blue"
+   ],
+   "name_ar": "\u062d\u0627\u0645\u0644 \u0627\u0644\u0631\u0623\u0633",
+   "name_en": "Head carriage",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.head.spindles",
+   "kind": "part",
+   "role": "Eight spindles: Z motors on top, ball-spline shafts, theta motors, nozzle holders",
+   "parent": "MNT.head",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "anodised_dark",
+    "plastic_black",
+    "steel_polished",
+    "steel_dark"
+   ],
+   "name_ar": "\u0623\u0639\u0645\u062f\u0629 \u0627\u0644\u0634\u0641\u0637",
+   "name_en": "Vacuum spindles",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.head.nozzles",
+   "kind": "part",
+   "role": "Vacuum pick-up nozzles (sized per component)",
+   "parent": "MNT.head",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "reel_black",
+    "reel_white"
+   ],
+   "name_ar": "\u0627\u0644\u0634\u0641\u0651\u0627\u0637\u0627\u062a",
+   "name_en": "Vacuum nozzles",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.head.camera",
+   "kind": "part",
+   "role": "Downward board camera with ring light: finds the fiducial marks",
+   "parent": "MNT.head",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "anodised_dark",
+    "led_ring",
+    "plastic_black"
+   ],
+   "name_ar": "\u0643\u0627\u0645\u064a\u0631\u0627 \u0639\u0644\u0627\u0645\u0627\u062a \u0627\u0644\u0644\u0648\u062d\u0629",
+   "name_en": "Fiducial camera",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.head.cables",
+   "kind": "part",
+   "role": "Head cable loom: power, encoder and vacuum lines into the beam",
+   "parent": "MNT.head",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "cable_orange",
+    "plastic_black",
+    "anodised_dark"
+   ],
+   "name_ar": "\u0643\u0627\u0628\u0644\u0627\u062a \u0627\u0644\u0631\u0623\u0633",
+   "name_en": "Head cables",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.conveyor",
+   "kind": "assembly",
+   "role": "Dual-rail board conveyor: brings the board in, clamps it for placement, passes it on.",
+   "parent": "MNT",
+   "explode": [
+    0,
+    0,
+    0.2
+   ],
+   "name_ar": "\u0633\u064a\u0631 \u0646\u0642\u0644 \u0627\u0644\u0644\u0648\u062d\u0627\u062a",
+   "name_en": "Board conveyor",
+   "about_ar": "\u064a\u062f\u062e\u0644 \u0627\u0644\u0644\u0648\u062d\u0629 \u0648\u064a\u062b\u0628\u062a\u0647\u0627 \u0623\u062b\u0646\u0627\u0621 \u0627\u0644\u062a\u0631\u0643\u064a\u0628 \u062b\u0645 \u064a\u0645\u0631\u0631\u0647\u0627 \u0644\u0644\u0645\u0627\u0643\u064a\u0646\u0629 \u0627\u0644\u062a\u0627\u0644\u064a\u0629."
+  },
+  {
+   "id": "MNT.conveyor.rails",
+   "kind": "part",
+   "role": "Conveyor rails with flat belts, board clamps and stopper",
+   "parent": "MNT.conveyor",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "rubber",
+    "steel_dark",
+    "anodised_dark",
+    "paint_blue"
+   ],
+   "name_ar": "\u0642\u0636\u0628\u0627\u0646 \u0627\u0644\u0633\u064a\u0631",
+   "name_en": "Conveyor rails",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.board",
+   "kind": "assembly",
+   "role": "The board being populated (illustrative layout).",
+   "parent": "MNT.conveyor",
+   "explode": [
+    0,
+    0,
+    0.12
+   ],
+   "name_ar": "\u0627\u0644\u0644\u0648\u062d\u0629",
+   "name_en": "Board",
+   "about_ar": "\u0644\u0648\u062d\u0629 \u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a\u0629 \u0623\u062b\u0646\u0627\u0621 \u0627\u0644\u062a\u0631\u0643\u064a\u0628: \u0646\u0635\u0641\u0647\u0627 \u0639\u0644\u064a\u0647 \u0627\u0644\u0642\u0637\u0639\u060c \u0648\u0646\u0635\u0641\u0647\u0627 \u0644\u0633\u0647 \u0639\u0644\u064a\u0647 \u0645\u0639\u062c\u0648\u0646 \u0627\u0644\u0644\u062d\u0627\u0645."
+  },
+  {
+   "id": "MNT.board.pcb",
+   "kind": "part",
+   "role": "Main board under placement: solder paste printed, parts being placed",
+   "parent": "MNT.board",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "pcb_green",
+    "pad_gold",
+    "comp_black",
+    "steel_polished",
+    "comp_beige",
+    "steel_dark"
+   ],
+   "name_ar": "\u0627\u0644\u0644\u0648\u062d\u0629 \u0623\u062b\u0646\u0627\u0621 \u0627\u0644\u062a\u0631\u0643\u064a\u0628",
+   "name_en": "Board being populated",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.tooling",
+   "kind": "assembly",
+   "role": "Fixed tooling on the bed: the upward component camera and the nozzle changer.",
+   "parent": "MNT",
+   "explode": [
+    0,
+    0,
+    0.25
+   ],
+   "name_ar": "\u0623\u062f\u0648\u0627\u062a \u0627\u0644\u0642\u0627\u0639\u062f\u0629",
+   "name_en": "Bed tooling",
+   "about_ar": "\u0643\u0627\u0645\u064a\u0631\u0627 \u062a\u0641\u062d\u0635 \u0627\u0644\u0642\u0637\u0639\u0629 \u0648\u0647\u064a \u0639\u0644\u0649 \u0627\u0644\u0634\u0641\u0651\u0627\u0637\u060c \u0648\u0645\u0628\u062f\u0651\u0644 \u064a\u063a\u064a\u0651\u0631 \u0627\u0644\u0634\u0641\u0651\u0627\u0637\u0627\u062a \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627."
+  },
+  {
+   "id": "MNT.tooling.up_camera",
+   "kind": "part",
+   "role": "Upward component camera: checks each part on the nozzle in flight",
+   "parent": "MNT.tooling",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "anodised_dark",
+    "led_ring",
+    "glass"
+   ],
+   "name_ar": "\u0643\u0627\u0645\u064a\u0631\u0627 \u0641\u062d\u0635 \u0627\u0644\u0642\u0637\u0639\u0629",
+   "name_en": "Upward component camera",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.tooling.nozzle_changer",
+   "kind": "part",
+   "role": "Nozzle changer: spare nozzles the head swaps automatically",
+   "parent": "MNT.tooling",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "reel_black",
+    "reel_white"
+   ],
+   "name_ar": "\u0645\u0628\u062f\u0651\u0644 \u0627\u0644\u0634\u0641\u0651\u0627\u0637\u0627\u062a",
+   "name_en": "Nozzle changer",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.feeders_front",
+   "kind": "assembly",
+   "role": "Front feeder trolley: tape feeders present parts at a fixed pick point; reels hold the tape.",
+   "parent": "MNT",
+   "explode": [
+    0,
+    -1.05,
+    0
+   ],
+   "name_ar": "\u0639\u0631\u0628\u0629 \u0627\u0644\u0645\u063a\u0630\u0651\u064a\u0627\u062a \u0627\u0644\u0623\u0645\u0627\u0645\u064a\u0629",
+   "name_en": "Front feeder trolley",
+   "about_ar": "\u0645\u063a\u0630\u0651\u064a\u0627\u062a \u0627\u0644\u0634\u0631\u064a\u0637 \u062a\u0642\u062f\u0651\u0645 \u0627\u0644\u0642\u0637\u0639 \u0639\u0646\u062f \u0646\u0642\u0637\u0629 \u0627\u0644\u062a\u0642\u0627\u0637 \u062b\u0627\u0628\u062a\u0629\u060c \u0648\u0627\u0644\u0628\u0643\u0631\u0627\u062a \u062a\u062d\u0645\u0644 \u0627\u0644\u0634\u0631\u064a\u0637."
+  },
+  {
+   "id": "MNT.feeders_front.trolley",
+   "kind": "part",
+   "role": "Feeder trolley: docking frame, casters, handle and reel holders",
+   "parent": "MNT.feeders_front",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "paint_grey",
+    "alu_brushed",
+    "rubber",
+    "steel_dark",
+    "steel_polished"
+   ],
+   "name_ar": "\u0627\u0644\u0639\u0631\u0628\u0629",
+   "name_en": "Trolley",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.feeders_front.feeders",
+   "kind": "part",
+   "role": "28 tape feeders (8 to 24 mm tape)",
+   "parent": "MNT.feeders_front",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "anodised_dark",
+    "steel_polished",
+    "tape_brown",
+    "steel_dark",
+    "plastic_black",
+    "lens_amber",
+    "led_green"
+   ],
+   "name_ar": "\u0645\u063a\u0630\u0651\u064a\u0627\u062a \u0627\u0644\u0634\u0631\u064a\u0637",
+   "name_en": "Tape feeders",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.feeders_front.reels",
+   "kind": "part",
+   "role": "Component reels: the tape wound with parts, in plastic flanges",
+   "parent": "MNT.feeders_front",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "reel_blue",
+    "tape_brown",
+    "reel_white",
+    "reel_black"
+   ],
+   "name_ar": "\u0628\u0643\u0631\u0627\u062a \u0627\u0644\u0642\u0637\u0639",
+   "name_en": "Component reels",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.feeders_front.labels",
+   "kind": "part",
+   "role": "Reel and feeder barcode labels",
+   "parent": "MNT.feeders_front",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "label_white"
+   ],
+   "name_ar": "\u0645\u0644\u0635\u0642\u0627\u062a \u0627\u0644\u0628\u0627\u0631\u0643\u0648\u062f",
+   "name_en": "Barcode labels",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.feeders_rear",
+   "kind": "assembly",
+   "role": "Rear feeder trolley: tape feeders present parts at a fixed pick point; reels hold the tape.",
+   "parent": "MNT",
+   "explode": [
+    0,
+    1.05,
+    0
+   ],
+   "name_ar": "\u0639\u0631\u0628\u0629 \u0627\u0644\u0645\u063a\u0630\u0651\u064a\u0627\u062a \u0627\u0644\u062e\u0644\u0641\u064a\u0629",
+   "name_en": "Rear feeder trolley",
+   "about_ar": "\u0645\u062c\u0645\u0648\u0639\u0629 \u062b\u0627\u0646\u064a\u0629 \u0645\u0646 \u0627\u0644\u0645\u063a\u0630\u0651\u064a\u0627\u062a \u062e\u0644\u0641 \u0627\u0644\u0645\u0627\u0643\u064a\u0646\u0629."
+  },
+  {
+   "id": "MNT.feeders_rear.trolley",
+   "kind": "part",
+   "role": "Feeder trolley: docking frame, casters, handle and reel holders",
+   "parent": "MNT.feeders_rear",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "paint_grey",
+    "alu_brushed",
+    "rubber",
+    "steel_dark",
+    "steel_polished"
+   ],
+   "name_ar": "\u0627\u0644\u0639\u0631\u0628\u0629",
+   "name_en": "Trolley",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.feeders_rear.feeders",
+   "kind": "part",
+   "role": "28 tape feeders (8 to 24 mm tape)",
+   "parent": "MNT.feeders_rear",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "anodised_dark",
+    "steel_polished",
+    "tape_brown",
+    "steel_dark",
+    "plastic_black",
+    "lens_amber",
+    "led_green"
+   ],
+   "name_ar": "\u0645\u063a\u0630\u0651\u064a\u0627\u062a \u0627\u0644\u0634\u0631\u064a\u0637",
+   "name_en": "Tape feeders",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.feeders_rear.reels",
+   "kind": "part",
+   "role": "Component reels: the tape wound with parts, in plastic flanges",
+   "parent": "MNT.feeders_rear",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "reel_blue",
+    "tape_brown",
+    "reel_white",
+    "reel_black"
+   ],
+   "name_ar": "\u0628\u0643\u0631\u0627\u062a \u0627\u0644\u0642\u0637\u0639",
+   "name_en": "Component reels",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.feeders_rear.labels",
+   "kind": "part",
+   "role": "Reel and feeder barcode labels",
+   "parent": "MNT.feeders_rear",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "label_white"
+   ],
+   "name_ar": "\u0645\u0644\u0635\u0642\u0627\u062a \u0627\u0644\u0628\u0627\u0631\u0643\u0648\u062f",
+   "name_en": "Barcode labels",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.hood",
+   "kind": "assembly",
+   "role": "Safety hood: interlocked polycarbonate panes over the moving axes, with signal tower and HMI.",
+   "parent": "MNT",
+   "explode": [
+    0,
+    0,
+    1.5
+   ],
+   "name_ar": "\u063a\u0637\u0627\u0621 \u0627\u0644\u0623\u0645\u0627\u0646",
+   "name_en": "Safety hood",
+   "about_ar": "\u0623\u0644\u0648\u0627\u062d \u0634\u0641\u0627\u0641\u0629 \u0641\u0648\u0642 \u0627\u0644\u0623\u062c\u0632\u0627\u0621 \u0627\u0644\u0645\u062a\u062d\u0631\u0643\u0629\u061b \u0641\u062a\u062d \u0623\u064a \u0644\u0648\u062d \u064a\u0648\u0642\u0641 \u0627\u0644\u0645\u062d\u0627\u0648\u0631\u060c \u0648\u0645\u0639\u0647 \u0628\u0631\u062c \u0627\u0644\u0625\u0634\u0627\u0631\u0629 \u0648\u0627\u0644\u0634\u0627\u0634\u0629."
+  },
+  {
+   "id": "MNT.hood.frame",
+   "kind": "part",
+   "role": "Hood frame: anodised extrusions and the top cover",
+   "parent": "MNT.hood",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": true,
+   "source": "illustrative",
+   "materials": [
+    "anodised_dark",
+    "paint_white",
+    "paint_blue"
+   ],
+   "name_ar": "\u0625\u0637\u0627\u0631 \u0627\u0644\u063a\u0637\u0627\u0621",
+   "name_en": "Hood frame",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.hood.panes",
+   "kind": "part",
+   "role": "Polycarbonate panes (interlocked: opening one stops the axes)",
+   "parent": "MNT.hood",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": true,
+   "source": "illustrative",
+   "materials": [
+    "glass"
+   ],
+   "name_ar": "\u0627\u0644\u0623\u0644\u0648\u0627\u062d \u0627\u0644\u0634\u0641\u0627\u0641\u0629",
+   "name_en": "Polycarbonate panes",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.hood.handles",
+   "kind": "part",
+   "role": "Pane handles and interlock switches",
+   "parent": "MNT.hood",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "steel_polished",
+    "estop_yellow"
+   ],
+   "name_ar": "\u0627\u0644\u0645\u0642\u0627\u0628\u0636 \u0648\u0645\u0641\u0627\u062a\u064a\u062d \u0627\u0644\u0623\u0645\u0627\u0646",
+   "name_en": "Handles and interlocks",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.hood.light",
+   "kind": "part",
+   "role": "Interior LED light bars",
+   "parent": "MNT.hood",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "led_white"
+   ],
+   "name_ar": "\u0625\u0636\u0627\u0621\u0629 \u062f\u0627\u062e\u0644\u064a\u0629",
+   "name_en": "Interior light",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.hood.tower",
+   "kind": "part",
+   "role": "Signal tower: green running, amber warning, red stopped",
+   "parent": "MNT.hood",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "steel_polished",
+    "led_green",
+    "plastic_grey",
+    "lens_amber",
+    "lens_red"
+   ],
+   "name_ar": "\u0628\u0631\u062c \u0627\u0644\u0625\u0634\u0627\u0631\u0629",
+   "name_en": "Signal tower",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.hood.hmi",
+   "kind": "part",
+   "role": "Operator screen on a swing arm, with emergency stop",
+   "parent": "MNT.hood",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "anodised_dark",
+    "plastic_black",
+    "estop_yellow",
+    "estop_red"
+   ],
+   "name_ar": "\u0634\u0627\u0634\u0629 \u0627\u0644\u0645\u0634\u063a\u0651\u0644",
+   "name_en": "Operator screen",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.hood.hmi_screen",
+   "kind": "part",
+   "role": "Operator screen display",
+   "parent": "MNT.hood",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "hmi_screen"
+   ],
+   "name_ar": "\u0639\u0631\u0636 \u0627\u0644\u0634\u0627\u0634\u0629",
+   "name_en": "Screen display",
+   "about_ar": ""
+  },
+  {
+   "id": "MNT.hood.nameplate",
+   "kind": "part",
+   "role": "Machine nameplate",
+   "parent": "MNT.hood",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "label_white"
+   ],
+   "name_ar": "\u0644\u0648\u062d\u0629 \u0627\u0644\u0627\u0633\u0645",
+   "name_en": "Nameplate",
+   "about_ar": ""
+  }
+ ]
+}

@@ -28,6 +28,8 @@ ap.add_argument('--glb', default='')
 ap.add_argument('--manifest', default='')
 ap.add_argument('--anchors', default='', help='write each part\'s on-screen anchor (pixels) for 2D labels')
 ap.add_argument('--explode', type=float, default=1.0, help='0 = assembled, 1 = fully exploded')
+ap.add_argument('--lod', default='full', choices=['full', 'web', 'far'], help='full: stills and film; web: the studio model (2-segment bevels); far: a light first-paint model (no bevels, coarse cylinders, no board parts)')
+ap.add_argument('--gpu', action='store_true', help='render on the graphics card (OptiX, CUDA, HIP, oneAPI or Metal, whichever works)')
 A = ap.parse_args(argv)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -181,6 +183,7 @@ class Part:
         self.pid, self.role, self.asm, self.bevel, self.segments, self.shell = pid, role, asm, bevel, segments, shell
         self.explode, self.source = explode, source
         self.bm = bmesh.new(); self.mats = []
+        self.anchor = None   # where a label points: the centre of the first primitive (the part's main body)
 
     def _mi(self, mat):
         if mat not in self.mats: self.mats.append(mat)
@@ -192,10 +195,14 @@ class Part:
 
     def box(self, size, loc, mat, rot=(0, 0, 0)):
         M = Matrix.LocRotScale(Vector(loc), Euler(rot), Vector(size))
+        if self.anchor is None: self.anchor = tuple(loc)
         r = bmesh.ops.create_cube(self.bm, size=1.0, matrix=M); self._tag(r['verts'], mat); return self
 
     def cyl(self, r, depth, loc, mat, rot=(0, 0, 0), seg=32, r2=None):
+        if A.lod == 'far': seg = max(8, seg // 3)
+        elif A.lod == 'web' and seg > 32: seg = 32
         M = Matrix.LocRotScale(Vector(loc), Euler(rot), Vector((1, 1, 1)))
+        if self.anchor is None: self.anchor = tuple(loc)
         res = bmesh.ops.create_cone(self.bm, cap_ends=True, cap_tris=False, segments=seg, radius1=r,
                                     radius2=r if r2 is None else r2, depth=depth, matrix=M)
         self._tag(res['verts'], mat); return self
@@ -219,6 +226,31 @@ class Part:
         for f in vs: f.material_index = mi
         return self
 
+    def sweep(self, pts, r, mat, seg=10, steps=8):
+        """A cable: a round tube swept along a Catmull-Rom curve through pts, with capped ends."""
+        P = [Vector(p) for p in pts]; P = [P[0]] + P + [P[-1]]
+        path = []
+        for i in range(1, len(P) - 2):
+            p0, p1, p2, p3 = P[i - 1], P[i], P[i + 1], P[i + 2]
+            for k in range(steps):
+                t = k / steps
+                path.append(0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t ** 3))
+        path.append(P[-2])
+        if self.anchor is None: self.anchor = tuple(path[len(path) // 2])
+        bm = self.bm; rings = []; ref = Vector((1, 0, 0))
+        for i, c in enumerate(path):
+            t = (path[min(i + 1, len(path) - 1)] - path[max(i - 1, 0)]).normalized()
+            u = (ref - t * ref.dot(t)); u = u.normalized() if u.length > 1e-6 else Vector((0, 1, 0)); v = t.cross(u)
+            rings.append([bm.verts.new(c + (u * math.cos(2 * math.pi * j / seg) + v * math.sin(2 * math.pi * j / seg)) * r) for j in range(seg)])
+        faces = []
+        for a, b in zip(rings, rings[1:]):
+            for j in range(seg):
+                faces.append(bm.faces.new((a[j], a[(j + 1) % seg], b[(j + 1) % seg], b[j])))
+        faces.append(bm.faces.new(rings[0][::-1])); faces.append(bm.faces.new(rings[-1]))
+        mi = self._mi(mat)
+        for f in faces: f.material_index = mi
+        return self
+
     def build(self):
         bm = self.bm
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
@@ -229,13 +261,16 @@ class Part:
         for m in self.mats: me.materials.append(MATS[m])
         ob = bpy.data.objects.new(self.pid, me); ROOT_COL.objects.link(ob)
         ob.parent = ASSEMBLIES[self.asm]
-        if self.bevel > 0:
+        # the browser model drops bevels where they cannot be seen at studio distance: reel flanges and board chips
+        web_flat = A.lod == 'web' and self.pid.endswith(('.reels', '.pcb', '.labels'))
+        if self.bevel > 0 and A.lod != 'far' and not web_flat:
             bv = ob.modifiers.new('bevel', 'BEVEL')
-            bv.width = self.bevel; bv.segments = self.segments; bv.limit_method = 'ANGLE'
+            bv.width = self.bevel; bv.segments = min(self.segments, 2) if A.lod == 'web' else self.segments; bv.limit_method = 'ANGLE'
             bv.angle_limit = math.radians(32); bv.harden_normals = True; bv.miter_outer = 'MITER_ARC'
             wn = ob.modifiers.new('weighted_normal', 'WEIGHTED_NORMAL'); wn.keep_sharp = True
         ob['part_id'] = self.pid; ob['role'] = self.role; ob['explode'] = list(self.explode); ob['source'] = self.source
         ob['shell'] = self.shell
+        ob['anchor'] = list(self.anchor or (0, 0, 0))
         PARTS.append({'id': self.pid, 'kind': 'part', 'role': self.role, 'parent': self.asm, 'explode': list(self.explode),
                       'shell': self.shell, 'source': self.source, 'materials': list(self.mats)})
         return ob
@@ -422,11 +457,11 @@ p.cyl(0.018, 0.012, (0.18, yh - 0.03, zb - 0.121), 'led_ring', seg=28)
 p.cyl(0.01, 0.014, (0.18, yh - 0.03, zb - 0.125), 'plastic_black', seg=24)
 p.build()
 p = Part('MNT.head.cables', 'Head cable loom: power, encoder and vacuum lines into the beam', 'MNT.head', bevel=0.0)
-for k in range(4):   # a short service loop from the carriage top into the beam's cable duct
-    for j in range(7):
-        a_ = math.pi * j / 6
-        p.cyl(0.004, 0.022, (-0.06 + k * 0.012, yh + 0.035 + 0.03 * math.sin(a_), zb + 0.1 + 0.035 * (1 - math.cos(a_))),
-              ['cable_orange', 'plastic_black'][k % 2], rot=(a_, 0, 0), seg=10)
+for k in range(4):   # a short service loop from the back of the carriage top into the beam's cable duct
+    x = -0.05 + k * 0.011
+    p.sweep([(x, yh + 0.035, zb + 0.09), (x, yh + 0.045, zb + 0.13), (x, yh + 0.09, zb + 0.15), (x, -0.025, zb + 0.105),
+             (x, -0.01, zb + 0.066)], 0.0042, ['cable_orange', 'plastic_black'][k % 2])
+p.box((0.06, 0.03, 0.012), (-0.034, -0.012, zb + 0.07), 'anodised_dark')   # cable clamp on the beam
 p.build()
 
 # ---------------------------------------------------------------- board conveyor and the board being built
@@ -462,7 +497,7 @@ for k in range(2):                                   # two large ICs with leads
             dx, dy = [(o, 0.0155), (o, -0.0155), (0.0155, o), (-0.0155, o)][side]
             p.box((0.0012 if side < 2 else 0.003, 0.003 if side < 2 else 0.0012, 0.0008), (cx + dx, 0.03 + dy, zt + 0.0004), 'steel_polished')
 placed = 0
-for gy in range(9):                                  # chip resistors and capacitors; the right side is still bare pads
+for gy in range(0 if A.lod == "far" else 9):                                # chip resistors and capacitors; the right side is still bare pads
     for gx in range(22):
         x = HEAD_X - bx / 2 + 0.016 + gx * 0.0137
         y = -by / 2 + 0.03 + gy * 0.011
@@ -725,7 +760,22 @@ rx, ry = (int(v) for v in A.res.split('x'))
 r = scene.render
 r.engine = 'CYCLES'; r.resolution_x = rx; r.resolution_y = ry; r.resolution_percentage = 100
 r.film_transparent = False
-scene.cycles.device = 'CPU'; scene.cycles.samples = A.samples; scene.cycles.use_adaptive_sampling = True
+def use_gpu():
+    """Pick the first GPU backend Cycles can open on this machine; fall back to the CPU and say so."""
+    prefs = bpy.context.preferences.addons['cycles'].preferences
+    for kind in ('OPTIX', 'CUDA', 'HIP', 'ONEAPI', 'METAL'):
+        try:
+            prefs.compute_device_type = kind
+            prefs.refresh_devices()
+            gpus = [d for d in prefs.devices if d.type == kind]
+            if gpus:
+                for d in prefs.devices: d.use = d.type == kind
+                print('GPU', kind, ', '.join(d.name for d in gpus)); return True
+        except TypeError:
+            continue
+    print('GPU none found, rendering on the CPU'); return False
+scene.cycles.device = 'GPU' if (A.gpu and use_gpu()) else 'CPU'
+scene.cycles.samples = A.samples; scene.cycles.use_adaptive_sampling = True
 scene.cycles.adaptive_threshold = 0.02
 scene.cycles.use_denoising = True; scene.cycles.denoiser = 'OPENIMAGEDENOISE'
 scene.cycles.max_bounces = 10; scene.cycles.transmission_bounces = 10; scene.cycles.transparent_max_bounces = 24
@@ -746,11 +796,19 @@ for o in bpy.data.objects:
 stats['triangles'] = tris
 print('STATS', json.dumps(stats))
 if A.manifest:
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from names import NAMES
+    for p_ in PARTS:
+        ar_, en_, about_ = NAMES.get(p_['id'], ('', '', ''))
+        if not en_: print('WARNING no display name for', p_['id'])
+        p_.update({'name_ar': ar_, 'name_en': en_, 'about_ar': about_})
     with open(A.manifest, 'w') as fh:
         json.dump({'asset': 'MNT', 'title': 'SMD placement machine (Mounter B, line SMD-4, Plant EG-01)',
                    'disclosure': 'Illustrative educational reconstruction of a generic gantry pick-and-place machine; '
                                  'not a real vendor model, not for maintenance or safety use.',
-                   'units': 'metres', 'up': 'Z (Blender) / Y (glTF)', 'stats': stats, 'parts': PARTS}, fh, indent=1)
+                   'units': 'metres', 'up': 'Z (Blender) / Y (glTF)',
+                   'vectors': 'explode and anchor are Blender axes (x, y, z); in glTF / three.js they are (x, z, -y)', 'stats': stats, 'parts': PARTS}, fh, indent=1)
 if A.anchors:
     # label anchors: each part's evaluated bounding-box centre projected through the camera, so 2D callouts stay
     # attached to the real geometry in every state (assembled, exploded, ghost, cut)
@@ -760,7 +818,7 @@ if A.anchors:
         if o.type != 'MESH' or not o.name.startswith('MNT') or o.hide_render: continue
         ev = o.evaluated_get(dg)
         if not len(ev.data.vertices): continue
-        c = sum((ev.matrix_world @ Vector(b) for b in ev.bound_box), Vector()) / 8
+        c = ev.matrix_world @ Vector(o['anchor']) if o.get('anchor') else sum((ev.matrix_world @ Vector(b) for b in ev.bound_box), Vector()) / 8
         top = max((ev.matrix_world @ Vector(b)).z for b in ev.bound_box)
         v = world_to_camera_view(scene, cam, c)
         out[o.name] = {'x': round(v.x * rx, 1), 'y': round((1 - v.y) * ry, 1), 'depth': round(v.z, 3), 'top_z': round(top, 3)}
@@ -768,6 +826,11 @@ if A.anchors:
 if A.blend:
     bpy.ops.wm.save_as_mainfile(filepath=A.blend)
 if A.glb:
+    # text curves become meshes so the nameplate travels in glTF; the studio set never leaves Blender
+    for o in [o for o in bpy.data.objects if o.type == 'FONT']:
+        me_ = bpy.data.meshes.new_from_object(o.evaluated_get(bpy.context.evaluated_depsgraph_get()))
+        mo = bpy.data.objects.new(o.name, me_); ROOT_COL.objects.link(mo)
+        mo.parent = o.parent; mo.matrix_world = o.matrix_world.copy(); bpy.data.objects.remove(o)
     for o in bpy.data.objects:
         o.select_set(o.name.startswith('MNT') and o.type in ('MESH', 'EMPTY', 'FONT'))
     bpy.ops.export_scene.gltf(filepath=A.glb, export_format='GLB', use_selection=True, export_apply=True,
