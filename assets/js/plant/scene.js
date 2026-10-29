@@ -830,7 +830,8 @@
     }
     // Blender models replace procedural machines kind by kind (docs/BLENDER-PLAN.md); until a model has loaded, and
     // on low quality, the procedural machine stays
-    const BLENDER = low ? {} : { mounter: 'assets/models/machines/mounter/mounter-plant.glb' };
+    const ML_KIT = 'assets/models/machines/mainline/mainline-plant.glb';   // tools/blender/main_line_kit.py: one file, a node ML.<kind> per station kind
+    const BLENDER = low ? {} : { mounter: 'assets/models/machines/mounter/mounter-plant.glb', bench: ML_KIT, robot: ML_KIT, fct: ML_KIT, wb: ML_KIT, qa: ML_KIT, packer: ML_KIT };
     P.stations.forEach(s => { bagNow = BLENDER[s.kind] ? (KBAG[s.kind] = KBAG[s.kind] || {}) : BAG; buildStation(s); bagNow = BAG; });
     // clean booths around the LCM lines; overhead cable trays and line signs above every line
     const SIGNS = [];
@@ -1184,6 +1185,7 @@
       palWrap: inst(unitBoxB, M.wrap, 420)
     };
     const modelOf = m => E.MODELS[m] || E.MODELS.M55;
+    const TILT = 0.21, TILT_C = Math.cos(TILT), TILT_S = Math.sin(TILT);   // sets under test lean back about 12°, as on the reference lines
     const unitPos = new Map();
     function polyAt(p, s) {
       for (let i = 1; i < p.length; i++) {
@@ -1220,12 +1222,21 @@
           continue;
         }
         if (!s.procs.length || s.batchOut) continue;
-        const y = s.kind === 'reflow' ? 0.86 : s.kind === 'bench' || s.kind === 'blu' || s.kind === 'repair' ? 0.92 : s.kind === 'robot' || s.kind === 'lcmload' ? 0.84 : Math.min(0.95, s.h * 0.5);
+        // a main-line station drawn from the Blender kit carries the set on its pallet conveyor (0.74 m, like the belts
+        // between stations); at function test, white balance and QA the set stands upright, leaning back, its picture on
+        const kit = MODELS[s.kind] && BLENDER[s.kind] === ML_KIT, upright = kit && (s.kind === 'fct' || s.kind === 'wb' || s.kind === 'qa');
+        const y = kit ? 0.74 : s.kind === 'reflow' ? 0.86 : s.kind === 'bench' || s.kind === 'blu' || s.kind === 'repair' ? 0.92 : s.kind === 'robot' || s.kind === 'lcmload' ? 0.84 : Math.min(0.95, s.h * 0.5);
         s.procs.forEach((pr, i) => {
           let x = s.x;
           if (s.kind === 'reflow') { const tot = s.base * s.slots; x = s.x - s.w * 0.42 + s.w * 0.84 * (1 - Math.max(0, pr.left) / tot); }
           else if (s.slots > 1) x += (i - (s.procs.length - 1) / 2) * (s.w / (s.slots + 1));
-          if (pr.u) drawUnit(pr.u, x, y, s.z, s.kind !== 'bench' && s.kind !== 'blu');
+          if (!pr.u) return;
+          if (upright && pr.u.type !== 'pba' && !pr.u.packed) {
+            const m = modelOf(pr.u.model), sc = Math.min(1, (s.w - 0.4) / m.w), w = m.w * sc, h = m.h * sc, yc = y + 0.05 + h / 2 * TILT_C, zc = s.z - h / 2 * TILT_S;
+            put(U.panel, x, yc, zc, w, h, 0.06, 0, -TILT, 0, 'unit:' + pr.u.sn);
+            put(U.screen, x, yc + 0.031 * TILT_S, zc + 0.031 * TILT_C, w * 0.96, h * 0.94, 1, 0, -TILT);
+            unitPos.set(pr.u, [x, yc, zc]);
+          } else drawUnit(pr.u, x, y, s.z, kit || (s.kind !== 'bench' && s.kind !== 'blu'));
         });
       }
       for (const p of P.pallets) {
@@ -1417,7 +1428,7 @@
       root.traverse(o => {
         if (!o.isMesh) return;
         let part = 'body', shell = false;
-        for (let q = o; q; q = q.parent) { if (q.name === 'MNT.head' && part === 'body') part = 'head'; if (q.name === 'MNT.gantry' && part === 'body') part = 'gantry'; if (q.userData && q.userData.shell) shell = true; }
+        for (let q = o; q; q = q.parent) { const id = q.userData && q.userData.part_id; if (id === 'MNT.head' && part === 'body') part = 'head'; if (id === 'MNT.gantry' && part === 'body') part = 'gantry'; if (q.userData && q.userData.shell) shell = true; }
         const m = o.material;
         if (m.transmission > 0) { m.transmission = 0; m.transparent = true; m.opacity = m.name === 'glass' ? 0.16 : 0.6; m.depthWrite = m.name !== 'glass'; }
         // the floor copies drop what only the studio needs: anisotropy wants tangents (without them it can shade NaN,
@@ -1470,10 +1481,18 @@
     (async function loadModels() {
       const kinds = Object.keys(BLENDER).filter(k => PROC[k]); if (!kinds.length || !window.DFLook) return;
       try { await DFLook.extras(); } catch (e) { return; }   // offline: the procedural machines stay
-      for (const kind of kinds) {
+      // one load per file; a kit file holds a node ML.<kind> for each kind it serves, a single-machine file is the kind itself
+      for (const url of new Set(kinds.map(k => BLENDER[k]))) {
         const loader = new T.X.GLTFLoader(); loader.setMeshoptDecoder(T.X.MeshoptDecoder);
-        loader.load(DFLook.base + BLENDER[kind], g => { try { placeModel(kind, g.scene, P.stations.filter(s => s.kind === kind)); } catch (e) { console.warn('plant model', kind, e); } },
-          undefined, e => console.warn('plant model', kind, e));
+        loader.load(DFLook.base + url, g => {
+          for (const kind of kinds.filter(k => BLENDER[k] === url)) {
+            // the loader strips dots from node names (ML.bench becomes MLbench); the part id survives in the extras
+            let root = null; g.scene.traverse(o => { if (!root && o.userData && o.userData.part_id === 'ML.' + kind) root = o; });
+            if (!root && url === ML_KIT) { console.warn('plant model: no node for', kind); continue; }
+            root = root || g.scene;
+            try { placeModel(kind, root, P.stations.filter(s => s.kind === kind)); } catch (e) { console.warn('plant model', kind, e); }
+          }
+        }, undefined, e => console.warn('plant model', url, e));
       }
     })();
 

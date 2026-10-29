@@ -1,0 +1,400 @@
+{
+ "asset": "mainline",
+ "title": "Main-line station kit (plant level of detail)",
+ "disclosure": "Illustrative reconstruction after public photos of real TV lines; not a real plant or vendor design.",
+ "units": "metres",
+ "vectors": "explode and anchor are Blender axes (x, y, z); in glTF / three.js they are (x, z, -y)",
+ "parts": [
+  {
+   "id": "ML.bench",
+   "kind": "assembly",
+   "role": "Manual station on the pallet conveyor: lean-tube frames, screwdrivers on balancers, monitors, flow racks",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "ML.bench.frame",
+   "kind": "part",
+   "role": "Pallet conveyor, lean frames and task lights",
+   "parent": "ML.bench",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "plastic_black",
+    "steel_dark",
+    "tube_cream",
+    "joint_black",
+    "monitor_white",
+    "led_white",
+    "esd_mat"
+   ]
+  },
+  {
+   "id": "ML.bench.tools",
+   "kind": "part",
+   "role": "Screwdrivers on spring balancers and work-instruction monitors",
+   "parent": "ML.bench",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "balancer_yellow",
+    "joint_black",
+    "plastic_black",
+    "steel_polished",
+    "monitor_white",
+    "ui_page",
+    "ui_blue",
+    "ui_green",
+    "alu_brushed",
+    "bin_blue"
+   ]
+  },
+  {
+   "id": "ML.bench.racks",
+   "kind": "part",
+   "role": "Flow racks of part bins, fed from the aisle",
+   "parent": "ML.bench",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "tube_cream",
+    "alu_brushed",
+    "bin_blue",
+    "bin_red"
+   ]
+  },
+  {
+   "id": "ML.robot",
+   "kind": "assembly",
+   "role": "Robot screw-fastening cell: mesh guard, light curtains, pedestal, screw feeder, controller",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "ML.robot.guard",
+   "kind": "part",
+   "role": "Mesh guard with yellow posts; the conveyor openings carry light curtains",
+   "parent": "ML.robot",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "plastic_black",
+    "steel_dark",
+    "safety_yellow",
+    "mesh_fence",
+    "lens_red"
+   ]
+  },
+  {
+   "id": "ML.robot.equipment",
+   "kind": "part",
+   "role": "Robot pedestal, screw feeder, controller cabinet and HMI",
+   "parent": "ML.robot",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "paint_grey",
+    "steel_dark",
+    "paint_white",
+    "steel_polished",
+    "paint_blue",
+    "joint_black",
+    "ui_page",
+    "estop_yellow",
+    "estop_red"
+   ]
+  },
+  {
+   "id": "ML.fct",
+   "kind": "assembly",
+   "role": "Function test: sets stand upright on the test conveyor, leaning back, showing test patterns",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "ML.fct.conveyor",
+   "kind": "part",
+   "role": "Test conveyor with a back rest and the fixture clamps",
+   "parent": "ML.fct",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "plastic_black",
+    "steel_dark",
+    "tube_cream",
+    "joint_black",
+    "monitor_white",
+    "led_white"
+   ]
+  },
+  {
+   "id": "ML.fct.sets",
+   "kind": "part",
+   "role": "Sets under test showing colour bars (the plant draws the moving set; these are the fixtures)",
+   "parent": "ML.fct",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "esd_mat"
+   ]
+  },
+  {
+   "id": "ML.fct.generator",
+   "kind": "part",
+   "role": "Pattern generator shelf, test monitor and signal cables",
+   "parent": "ML.fct",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "plastic_black",
+    "led_green",
+    "tube_cream",
+    "monitor_white",
+    "joint_black",
+    "ui_page",
+    "ui_blue",
+    "ui_green",
+    "balancer_yellow",
+    "steel_polished"
+   ]
+  },
+  {
+   "id": "ML.wb",
+   "kind": "assembly",
+   "role": "White balance: dark booth, colour analyser probe on an arm, alignment PC",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "ML.wb.booth",
+   "kind": "part",
+   "role": "Dark booth: black panels, roof and an entry curtain",
+   "parent": "ML.wb",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "plastic_black",
+    "steel_dark",
+    "curtain_black"
+   ]
+  },
+  {
+   "id": "ML.wb.analyser",
+   "kind": "part",
+   "role": "Colour analyser probe on a swing arm and the alignment PC",
+   "parent": "ML.wb",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "plastic_black",
+    "lens_amber",
+    "ui_page",
+    "paint_white",
+    "monitor_white",
+    "joint_black",
+    "ui_blue",
+    "ui_green"
+   ]
+  },
+  {
+   "id": "ML.qa",
+   "kind": "assembly",
+   "role": "Final QA: lit inspection booth, inspection lamp, checklist screen, reject rack",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "ML.qa.booth",
+   "kind": "part",
+   "role": "Grey inspection booth with a light ceiling",
+   "parent": "ML.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "plastic_black",
+    "steel_dark",
+    "booth_grey",
+    "led_white"
+   ]
+  },
+  {
+   "id": "ML.qa.station",
+   "kind": "part",
+   "role": "Inspection lamp, checklist screen, the set under inspection and the reject rack",
+   "parent": "ML.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "plastic_black",
+    "bar_w",
+    "tube_cream",
+    "monitor_white",
+    "led_white",
+    "joint_black",
+    "ui_page",
+    "ui_blue",
+    "ui_green",
+    "alu_brushed",
+    "bin_red",
+    "esd_mat"
+   ]
+  },
+  {
+   "id": "ML.packer",
+   "kind": "assembly",
+   "role": "Packing: rollers, lift assist with a vacuum frame, carton table, EPS cushions, taping head, accessory bins",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "ML.packer.conveyor",
+   "kind": "part",
+   "role": "Roller conveyor and the carton table",
+   "parent": "ML.packer",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "roller_beige",
+    "steel_dark"
+   ]
+  },
+  {
+   "id": "ML.packer.lift",
+   "kind": "part",
+   "role": "Lift assist: a gantry over the conveyor with a vacuum frame that lowers the set into its carton",
+   "parent": "ML.packer",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "safety_yellow",
+    "paint_grey",
+    "steel_polished",
+    "alu_brushed",
+    "rubber"
+   ]
+  },
+  {
+   "id": "ML.packer.materials",
+   "kind": "part",
+   "role": "Flat cartons, EPS cushion stacks, accessory bins and the taping head",
+   "parent": "ML.packer",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "cardboard",
+    "eps",
+    "bin_blue",
+    "alu_brushed",
+    "paint_white",
+    "tape"
+   ]
+  }
+ ]
+}

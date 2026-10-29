@@ -121,3 +121,38 @@ estimates from people's height (about 1.7 m) and a 65-inch set (1.45 × 0.84 m).
 | Functional test | Upright test conveyor, fixtures holding the set, signal cables, monitor and generator | Set standing, screen to the operator | Set top at 1.6–1.8 m | Standing in front, reading the screen, remote or keyboard | Assembled set in, tested set out; failures to the repair loop | Belt or rollers with upright fixtures | Low risk; cables | Eye level | H | LG Gumi photos; Kaluga test patterns; Korea Times |
 | Packing | Roller conveyor, open carton, EPS cushions, lift assist or two people lifting a bagged set | Set lowered flat into the carton | Carton about 1.63 × 1.0 × 0.19 m | Two people or a vacuum lift; set in a black protective bag | Bagged set and accessories in, closed carton out | Rollers; taping machine, strapping arch | Lift assist load; strapping head | Eye level, detail | H (Kaluga packing photos), M (lift assist) | Kaluga tour; tour thumbnails; Digital Trends text |
 | Taping and strapping | Carton sealer with tape head, strapping arch | Carton flat | Arch about 1.9 m wide | Unattended | Open carton in, sealed and strapped out | Rollers through the machines | Guarded heads | Detail | M | CSTRANS; OpeeTV |
+
+## 6. The Commons gallery, checked (2026-10-29)
+
+`docs/tv-factory-photo-gallery.html` links 15 Wikimedia Commons files. All 15 pages exist; licence, author and date below
+come from the Commons API (`extmetadata`). Nine images were opened and looked at; six thumbnails were refused with
+HTTP 429 (rate limit) and are judged from their Commons description only (marked *desc*). All are CC BY or CC BY-SA:
+reusable with attribution (BY-SA also requires sharing derivatives alike). They are still kept as links, not copied in.
+
+| File | Licence · author · date | What it shows (checked) | Stage | TV-specific? | Use for the model |
+|---|---|---|---|---|---|
+| Tv Assembly Line 1.jpg | CC BY-SA 4.0 · Digital World Pakistan · 2014 | Operator in gloves fitting boards and brackets into a face-down set on a padded bench | Main assembly | **Yes** | Face-down set on a soft mat, white gloves, small brackets |
+| Tv Assembly Line 2.jpg | CC BY-SA 4.0 · Digital World Pakistan · 2014 | *desc*: TV assembly line | Main assembly | Yes (desc) | — |
+| Tv Assembly Line 3.jpg | CC BY-SA 4.0 · Digital World Pakistan · 2014 | Picture test: sets on an aluminium-profile bench with green top, colour-bar and grey-scale patterns, operator with a remote | Picture test | **Yes** | Test bench in lean profile, two tiers, pattern screens, remote in hand |
+| TV assembly line.jpg | CC BY-SA 3.0 · Rajandatta · 2008 | *desc*: no description | Main assembly | Unknown | — |
+| SMT-Bestueckung.jpg | CC BY-SA 3.0 · ECD Dresden · 2011 | SMT line: light-grey placement machines and a reflow oven, overhead exhaust ducts, operator at the line screen, yellow floor line | SMT/PBA | Generic | Exhaust ducts above the reflow, light-grey cabinets, stack lights |
+| THT-Bestueckung.jpg | CC BY-SA 3.0 · ECD Dresden · 2011 | *desc*: manual soldering of cables and connectors | THT/manual | Generic | — |
+| Juki KE-2080L by Megger.jpg | CC BY 3.0 · Megger Ltd · 2008 | Placement machine front: reel feeders on a trolley, monitor arm, keyboard, e-stop, light tower | SMT/PBA | Generic | Reel trolley at the front, monitor arm, e-stop |
+| Pick and place internals of surface mount machine.JPG | CC BY-SA 3.0 · Peripitus · 2007 | Inside a 4-head placement machine: gantry, cable chain, nozzles, feeder bank | SMT/PBA | Generic | Already used for Mounter B (gantry, cable chain, feeder bank) |
+| Surface mount component feeder.jpg | CC BY-SA 3.0 · Peripitus · 2007 | One tape feeder with a white reel | SMT/PBA | Generic | Feeder proportions (reel vs body) |
+| Machine places components… .jpg | CC BY 2.0 · Shixart1985 · 2026 | Close-up of a dispensing/placement head over a board | SMT/PBA | Generic | Head close-up |
+| Samsung CP40CV SMT placement machine in 2004.jpg | CC BY 4.0 · Ossewa · 2004 | A crated placement machine on a pallet outdoors, being installed | Logistics (machine delivery) | No | Not production; ignore for the line |
+| Rigging SM482.jpg | CC BY 4.0 · Ossewa · 2025 | A forklift moving a placement machine through a door | Logistics (machine delivery) | No | Forklift proportions only |
+| Electronics factory in Shenzhen.jpg | CC BY 2.0 · Steve Jurvetson · 2005 | Long rows of seated operators in clean-room suits at benches | Generic electronics hand assembly | No | Shows seated bench work; TV final assembly is standing at a moving line |
+| Depanelization.jpg | CC BY 2.5 · — · — | *desc*: a PCB panel before separation | SMT/PBA | Generic | — |
+| PCBA Conformal Coating.gif | CC BY-SA 4.0 · Encik Tekateki · 2023 | *desc*: conformal coating of a phone board | Phone PCBA | No | Not part of a TV plant's own flow; ignore |
+
+Verdict: only two of the fifteen are confirmed TV-plant pictures (assembly on a padded bench, picture test). Seven are
+generic SMT or electronics and useful for the SMD lines; four are not production at all. The TV-specific coverage comes
+from §2–§5 (LG Gumi, Samsung Kaluga, Hisense, JoongAng), which are linked, not reusable.
+
+**Owner's target pictures (2026-10-29):** an exploded cutaway of a servo gear motor on white (the studio level for
+exploded/cut views: real metal, clean section faces, readable internals), a stainless filling machine in a photo studio
+(look only; its lens flare and lighting suggest an AI image, so it is not a fact reference), and a MAUSER digital-twin
+screenshot (dense real machinery, yellow-post mesh safety fences with door states, live KPI tiles and a part card with
+article number and documents). The last one sets the target for the live plant.
