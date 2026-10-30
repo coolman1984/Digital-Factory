@@ -7,6 +7,24 @@ Blender asset the machine studio uses, loaded at run time.
 Why a game engine next to Blender: Blender (Cycles) gives the reference stills and film frames; Godot draws a frame in a
 fraction of a second on a graphics card, so moves, previews and social cuts are fast to iterate. Same asset, two paths.
 
+## Blender light in Godot (baked mode, best)
+
+Cycles computes the light once; Godot draws every frame with it. `tools/blender/bake_lighting.py` bakes Cycles' full
+diffuse lighting (direct + bounce + contact shadows, the machine's shadow on the studio floor) into a lightmap per part
+and embeds it in the GLB. In `--baked` mode the scene uses Blender's studio floor and world colour, turns baked
+surfaces' albedo and ambient off (their diffuse light comes only from the bake), shows Blender's five area lights as
+softboxes that only the reflection probe sees (metal and glass reflect the same sources as in Blender), drops SSAO and
+SSIL, and lights only the moving gantry and head with a dynamic key.
+
+```
+python tools/blender/mounter.py --lod web --blend mounter.blend
+python tools/blender/bake_lighting.py --blend mounter.blend --glb tools/godot/mounter-reel/mounter-baked.glb --samples 512 --floor 2048
+EXTRA="--baked --softbox-gain=0.2 --exposure=1.12" tools/godot/mounter-reel/render.sh out godot
+```
+Measured against the Cycles still at the same camera (`docs/RENDER_QUALITY_AUDIT.md` E6): region brightness within a few
+levels (floor 153 vs 151, white panel 159 vs 177) at about 1 s a frame on 4 CPU cores, against 687 s for the Cycles
+frame. The bake takes about 10 min on the CPU, once.
+
 ## Fast render (recommended)
 
 `render.sh out godot` renders the reel in four parallel slices (one renderer thread each), drops each slice's warm-up and

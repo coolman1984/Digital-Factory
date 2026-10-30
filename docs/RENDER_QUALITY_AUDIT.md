@@ -105,3 +105,23 @@ on an 18% card: raising it (1.0 → 2.0) lowered interior contrast from 35 to 26
 low from facing the shadow side, not because the scene was dark. Kept exposure 1.1 with fill 2.0: interior contrast 33.5
 (was 36.1), mean 149 (was 135), clipping 0.01%. A moderate look gain; the clear gain is speed. Joins between slices show
 no jump (frame-to-frame difference at the joins within the camera move's own range).
+
+### E6 · Cycles light baked into Godot (Mounter B, hero camera, same framing as the Cycles still)
+
+`tools/blender/bake_lighting.py` bakes Cycles' full diffuse light (512 spp, 33 parts + the studio cyclorama at 2048 px,
+10 min on 4 CPU cores, once); Godot `--baked` shows it with Blender's world colour and Blender's five area lights as
+probe-only softboxes (reflections). Region means (8-bit luma), Cycles still vs Godot frame:
+
+| Region | Cycles (687 s) | Godot first try (sky reflections) | Godot, Blender rig transferred |
+|---|---|---|---|
+| White side panel | 177 | 163 | 159 |
+| Floor, right | 151 | 143 | 153 |
+| Background wall | 90 | 164 | 107 |
+| Floor, front left | 180 | 185 | 169 |
+| Blue reels | 59 | 137 | 72 |
+
+Bugs found on the way, fixed: lightmaps unwrapped together left each part's image mostly empty; float lightmaps
+overflowed 8 bits (now the -1.9 EV is folded in); the material check counted the bake node as an image and dropped
+the wiring; the cyclorama wall faced away (Godot culls back faces); code-drawn screens reopened blank from a saved
+.blend. Limits: the moving gantry and head are not baked (dynamically lit, slightly darker interior); shadows of moving
+parts on baked surfaces are not shown; lightmaps make the GLB 35 MB (fine for film, too large for the website as is).

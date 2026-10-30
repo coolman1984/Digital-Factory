@@ -838,6 +838,9 @@ if A.anchors:
         out[o.name] = {'x': round(v.x * rx, 1), 'y': round((1 - v.y) * ry, 1), 'depth': round(v.z, 3), 'top_z': round(top, 3)}
     with open(A.anchors, 'w') as fh: json.dump({'state': A.state, 'shot': A.shot, 'size': [rx, ry], 'anchors': out}, fh, indent=1)
 if A.blend:
+    # the screen pictures are drawn in code: pack them, or the saved file reopens with blank screens
+    for img in bpy.data.images:
+        if img.source == 'GENERATED' and not img.packed_file: img.pack()
     bpy.ops.wm.save_as_mainfile(filepath=A.blend)
 if A.glb and A.lod == 'plant':
     # on the plant floor nothing inside the cabinet can be seen, and the plant draws its own live signal tower
