@@ -73,3 +73,13 @@ what they add. Gates: `check-glb` PASS on both kits (`--max-tris 200000 --max-kb
 
 Honest gap: in the browser the hall's lighting is dim and the models read far darker than in the Blender stills; the bright
 Kaluga hall (white roof, rows of linear lights, light floor) belongs to the building and lighting work (plan phase 4).
+
+## Hall lighting and matte people (2026-10-30)
+
+- The dark theme now darkens the page, not the hall: the dark palette keeps the hall lit a little below the light theme
+  (floor, walls, paint, sun 2.0, hemisphere 0.62, exposure 0.95, bloom 0.32), and model paint and stock are no longer
+  dimmed to 55 %. Only the sky outside stays dark. Light theme unchanged.
+- The owner saw faces and hands glowing: the plant's own figures used the library's fabric sheen and wrapped skin, which
+  bloom lit like lamps. They now use plain matte surfaces.
+- Same counts as before (lighting only): ml3-eye p95 10 ms, 735 calls, 3.35 M; cinematic p95 14.9 ms, 1,400 calls, 5.70 M.
+  Picture: `docs/bench/kline/plant-lit-dark-theme.jpg`.

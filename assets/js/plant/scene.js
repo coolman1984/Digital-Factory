@@ -18,12 +18,14 @@
       agv: 0xF2F4F6, stripe: 0x1428A0, truck: 0xF0F2F4, cab: 0x4A5260, mag: 0x5C6573, plastic: 0x24282F, desk: 0xD9D4CC, carpet: 0x737C88,
       wall: 0xE9ECEF, pkt: 0x2D5BFF, net: 0x1428A0, env: 0.44, hemi: [0xFFFFFF, 0x8A929D, 0.55], sun: 2.6, amb: 0.04, exp: 0.95, bloom: 0.3, fixture: 2.2
     },
+    // the dark theme darkens the page, not the hall: a working plant has its lights on (the Kaluga photos, docs/REFERENCES-TV-PLANT.md
+    // §2d), so the hall stays lit a little below the light theme and only the sky outside goes dark
     dark: {
-      bg: 0x07090D, fog: 0x07090D, floor: 0x24282F, floorLine: 0x59616D, zone: 0x2C3139, paint: 0x7D8590, paint2: 0x5B636E, frame: 0x1A1D23,
-      dark: 0x0F1115, steel: 0x7D8794, alu: 0x9AA3AE, rubber: 0x1A1D22, glass: 0x4E6075, rack: 0x3E4856, beam: 0x3C4450,
-      pcb: 0x2E7A57, tv: 0x07080A, carton: 0x9E7E5A, pallet: 0x8A6A46, tray: 0x4A515C, person: 0x8C9AB0, skin: 0xC8A58A, tech: 0x4DA3FF, office: 0x7A869A,
-      agv: 0xCED4DB, stripe: 0x2189FF, truck: 0xBFC6CE, cab: 0x2F353F, mag: 0x3E4652, plastic: 0x15181D, desk: 0x3A3F48, carpet: 0x1C2027,
-      wall: 0x2A2F37, pkt: 0x5AA8FF, net: 0x2189FF, env: 0.22, hemi: [0x8EA0BA, 0x07090D, 0.55], sun: 0.55, amb: 0.04, exp: 1.05, bloom: 0.7, fixture: 4.5
+      bg: 0x07090D, fog: 0x07090D, floor: 0x8A9199, floorLine: 0xD9DEE4, zone: 0x7C838D, paint: 0xCDD2D8, paint2: 0xA6AEB8, frame: 0x2A3038,
+      dark: 0x1C2026, steel: 0x9AA3AE, alu: 0xBAC1C9, rubber: 0x24282E, glass: 0x9FB2C6, rack: 0x56637A, beam: 0x707A88,
+      pcb: 0x2F6B4F, tv: 0x0D0E11, carton: 0xBD9870, pallet: 0xA8835A, tray: 0xA3ABB4, person: 0x2E3A4F, skin: 0xC8A58A, tech: 0x2F7BE8, office: 0x5C6778,
+      agv: 0xDDE2E7, stripe: 0x2189FF, truck: 0xDADFE4, cab: 0x434B58, mag: 0x56606C, plastic: 0x1F2329, desk: 0xBDB8B0, carpet: 0x5E6774,
+      wall: 0xC2C8CF, pkt: 0x5AA8FF, net: 0x2189FF, env: 0.4, hemi: [0xF2F6FF, 0x5C636D, 0.62], sun: 2.0, amb: 0.04, exp: 0.95, bloom: 0.32, fixture: 2.6
     }
   };
   const STATUS = {
@@ -121,7 +123,7 @@
       composer.addPass(new T.OutputPass());
       // the finish: grade, natural (cos⁴) vignette in linear light, letterbox in the fly-through, ±1 LSB dither
       composer.addPass(vig = DFLook.gradePass(T)); DFLook.applyGrade(vig, P);
-      if (!cine.on && !present) vig.uniforms.amount.value = theme === 'dark' ? 0.75 : 0.45;
+      if (!cine.on && !present) vig.uniforms.amount.value = theme === 'dark' ? 0.55 : 0.45;
       DFLook.frameGrade(vig, camera, frames);
       DFLook.setToon(T, scene, art.art === 'toon', { bands: art.bands, rim: art.rim });
     }
@@ -294,9 +296,10 @@
       contact: new T.MeshBasicMaterial({ color: 0x000000, alphaMap: contactTex, transparent: true, opacity: 0.5, depthWrite: false, toneMapped: false })
     });
     for (const k of ['estop', 'air', 'sprink', 'bin', 'robot']) DFShaders.surface(M[k], k === 'robot' || k === 'bin' ? 'powder' : 'cast', { fl: 5.4 });
-    // people: uniforms are woven fabric (sheen), skin uses a wrapped diffuse so the light bleeds past the terminator
-    M.person = DFMaterials.make(T, 'fabric'); M.person.color.set(0xffffff); M.person.sheenColor.set(0xbfc4cc); M.person.roughness = 0.85;
-    M.skin = DFMaterials.make(T, 'skin'); M.skin.color.set(0xffffff);
+    // people: matte cloth and matte skin. The fabric sheen and the wrapped skin of the material library glowed at plant
+    // distance under the hall lights and bloom (faces and hands lit like lamps), so the figures take plain diffuse surfaces
+    M.person = new T.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0 });
+    M.skin = new T.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7, metalness: 0 });
     M.alu = new T.MeshPhysicalMaterial({ color: C.alu, roughness: 0.28, metalness: 0.9, anisotropy: 0.6 });
     // worn finishes in world space (shaders.js): powder-coat stipple and gloss drift on paint, grain on brushed metal,
     // a dull grain on cast parts and rubber, handling marks at waist height, grime and a contact shade at every floor;
@@ -430,7 +433,7 @@
       const x1 = z.id === 'lcm' ? LV2[0].x1 : z.x1, w = x1 - z.x0, d = z.z1 - z.z0;
       const g = new T.PlaneGeometry(w, d); g.rotateX(-Math.PI / 2); g.translate(z.x0 + w / 2, 0.006, z.z0 + d / 2); push('zone', g);
       // the zone's name painted on the floor
-      const word = new T.Mesh(new T.PlaneGeometry(Math.min(w - 4, 30), Math.min(w - 4, 30) * 0.156), new T.MeshBasicMaterial({ map: floorWord(z.name), transparent: true, opacity: theme === 'dark' ? 0.22 : 0.55, depthWrite: false }));
+      const word = new T.Mesh(new T.PlaneGeometry(Math.min(w - 4, 30), Math.min(w - 4, 30) * 0.156), new T.MeshBasicMaterial({ map: floorWord(z.name), transparent: true, opacity: theme === 'dark' ? 0.45 : 0.55, depthWrite: false }));
       word.userData.zoneName = z.name;
       word.rotation.x = -Math.PI / 2; word.position.set(z.x0 + 2 + Math.min(w - 4, 30) / 2, 0.02, z.z1 - 2.2); word.raycast = () => {}; word.userData.floorWord = true; world.add(word);
     }
@@ -1470,7 +1473,7 @@
       }
     }
     function modelTheme() {
-      for (const k in MODELS) for (const p of MODELS[k].paints) p.m.color.copy(p.c).multiplyScalar(theme === 'dark' ? 0.55 : 1);
+      for (const k in MODELS) for (const p of MODELS[k].paints) p.m.color.copy(p.c).multiplyScalar(theme === 'dark' ? 0.92 : 1);
     }
     function modelXray(on) {
       for (const k in MODELS) for (const sm of MODELS[k].shellMats) {
@@ -1531,14 +1534,14 @@
 
     function applyTheme() {
       C = PAL[theme]; S = STATUS[theme];
-      scene.background = new T.Color(C.bg); scene.fog.color.set(C.fog); if (vig && !cine.on) vig.uniforms.amount.value = theme === 'dark' ? 0.75 : 0.45; if (atmos) atmos.theme(theme === 'dark');
+      scene.background = new T.Color(C.bg); scene.fog.color.set(C.fog); if (vig && !cine.on) vig.uniforms.amount.value = theme === 'dark' ? 0.55 : 0.45; if (atmos) atmos.theme(theme === 'dark');
       scene.environmentIntensity = C.env;
       hemi.color.set(C.hemi[0]); hemi.groundColor.set(C.hemi[1]); hemi.intensity = C.hemi[2]; sun.intensity = C.sun; amb.intensity = C.amb;
       renderer.toneMappingExposure = C.exp;
       for (const k of ['floor', 'zone', 'paint', 'paint2', 'frame', 'dark', 'steel', 'alu', 'rubber', 'rack', 'beam', 'glass', 'pcb', 'tv', 'carton', 'pallet', 'tray', 'agv', 'stripe', 'truck', 'cab', 'mag', 'plastic', 'desk', 'carpet', 'wall', 'skin']) M[k].color.set(C[k]);
-      M.floorLine.color.set(C.floorLine); M.slab.color.set(C.floor); M.clad.color.set(C.wall); M.fixture.emissiveIntensity = C.fixture; M.lights.emissiveIntensity = C.fixture; M.roof.color.set(C.beam); if (M.floor.userData.pool) M.floor.userData.pool.value = theme === 'dark' ? 0.55 : 0.16;
+      M.floorLine.color.set(C.floorLine); M.slab.color.set(C.floor); M.clad.color.set(C.wall); M.fixture.emissiveIntensity = C.fixture; M.lights.emissiveIntensity = C.fixture; M.roof.color.set(C.beam); if (M.floor.userData.pool) M.floor.userData.pool.value = theme === 'dark' ? 0.22 : 0.16;
       M.sel.color.set(S.info); M.route.color.set(S.info); chev.material.color.set(S.info); M.pkt.color.set(C.pkt); M.net.color.set(C.net);
-      world.traverse(o => { if (o.userData && o.userData.floorWord) o.material.opacity = theme === 'dark' ? 0.22 : 0.55; });
+      world.traverse(o => { if (o.userData && o.userData.floorWord) o.material.opacity = theme === 'dark' ? 0.45 : 0.55; });
       if (bloom) bloom.strength = C.bloom;
       modelTheme();
       setXray(xray);
@@ -1653,7 +1656,7 @@
     }
     function updateStock() {
       loadsI.count = 0; palletsI.count = 0;
-      const dk = theme === 'dark' ? 0.55 : 1;
+      const dk = theme === 'dark' ? 0.92 : 1;
       const lc = code => col.set(LOADC[fam(code)] || 0xB8BEC8).multiplyScalar(dk).getHex();
       for (const id in BV) {
         const v = BV[id], b = P.bufs[id]; if (!b) continue;
