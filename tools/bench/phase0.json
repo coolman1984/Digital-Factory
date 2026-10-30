@@ -19,6 +19,7 @@
         { "id": "lcm", "js": "Plant.V.view([76, 76, 35])", "settle": 3000 },
         { "id": "injection", "js": "Plant.V.view([22, 81, 45])", "settle": 3000 },
         { "id": "press", "js": "Plant.V.view([35, 144, 35])", "settle": 3000 },
+        { "id": "press-eye", "js": "(function(){var V=Plant.V;V.view([10,147,18]);setTimeout(function(){V.camera.position.set(24,4.5,136);V.controls.target.set(9.5,2.0,147);V.controls.update();},1800)})()", "settle": 3500 },
         { "id": "fg-docks", "js": "Plant.V.view([233, 82, 45])", "settle": 3000 },
         { "id": "cinematic", "js": "Plant.V.setCinematic(true)", "settle": 6000 }
       ] },

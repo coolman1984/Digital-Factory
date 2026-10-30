@@ -101,3 +101,23 @@ helmets and high-visibility vests only for drivers; vests matte (their sheen glo
 
 Pictures: `docs/bench/kline/line-end-blender.jpg` (Blender stills), `docs/bench/kline/plant-line-end.jpg` (in the plant).
 The cinematic pose is at the edge of the 1,500-call budget: the injection and press kits must keep few materials.
+
+# Areas B and C: injection and presses (2026-10-30)
+
+`tools/blender/heavy_kit.py`: ML.injection after the Kaluga moulding hall (Gigazine 2010 tour: dark machines in a row, white
+hopper dryers on platforms with yellow railings and ladders, white take-out robots, blue moulds, blue part carts, yellow floor
+outlines) and ML.press (pigeon-blue straight-side press, flywheel under a yellow guard, light curtains, coil reel and feed,
+part rack, crown walkway). Eleven materials on purpose. Packed `assets/models/machines/heavy/heavy-plant.glb` (60 KB, 2,504
+triangles). The plant's own moving platen, robot beam and press slide keep animating over the frames. New pose `press-eye`
+(the old `press` pose looks at the coating ovens).
+
+| Pose | fps | p95 (ms) | calls | triangles |
+|---|---|---|---|---|
+| injection | 197 | 5.1 | 351 | 2.03 M |
+| press-eye | 198 | 5.1 | 350 | 1.96 M |
+| cinematic | 104 | 10.1 | 1,498 | 5.45 M |
+
+Budget decision: the cinematic pose now meets the 1,500-call line while its p95 stays at 10 ms on the RTX 3060 (fps above
+100). Draw calls are not this machine's limit; phones never load the kits. Before the next areas, the call budget needs either
+a material merge across the kits (one material set shared by every kit) or an owner decision to raise it for desktop.
+Pictures: `docs/bench/kline/heavy-blender.jpg`, `docs/bench/kline/plant-heavy.jpg`.

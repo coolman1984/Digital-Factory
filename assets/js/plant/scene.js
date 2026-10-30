@@ -835,8 +835,9 @@
     // on low quality, the procedural machine stays
     const ML_KIT = 'assets/models/machines/mainline/mainline-plant.glb';   // tools/blender/main_line_kit.py: one file, a node ML.<kind> per station kind
     const LE_KIT = 'assets/models/machines/lineend/lineend-plant.glb';   // tools/blender/line_end_kit.py: test, aging, white balance, QA, packing after LG Gumi and Kaluga
-    const BLENDER = low ? {} : { mounter: 'assets/models/machines/mounter/mounter-plant.glb', bench: ML_KIT, robot: ML_KIT, fct: LE_KIT, aging: LE_KIT, wb: LE_KIT, qa: LE_KIT, packer: LE_KIT };
-    const KIT_FILES = new Set([ML_KIT, LE_KIT]);   // kit files hold one node ML.<kind> per kind they serve
+    const HV_KIT = 'assets/models/machines/heavy/heavy-plant.glb';   // tools/blender/heavy_kit.py: injection after the Kaluga moulding hall, the stamping press
+    const BLENDER = low ? {} : { mounter: 'assets/models/machines/mounter/mounter-plant.glb', bench: ML_KIT, robot: ML_KIT, fct: LE_KIT, aging: LE_KIT, wb: LE_KIT, qa: LE_KIT, packer: LE_KIT, injection: HV_KIT, press: HV_KIT };
+    const KIT_FILES = new Set([ML_KIT, LE_KIT, HV_KIT]);   // kit files hold one node ML.<kind> per kind they serve
     P.stations.forEach(s => { bagNow = BLENDER[s.kind] ? (KBAG[s.kind] = KBAG[s.kind] || {}) : BAG; buildStation(s); bagNow = BAG; });
     // clean booths around the LCM lines; overhead cable trays and line signs above every line
     const SIGNS = [];

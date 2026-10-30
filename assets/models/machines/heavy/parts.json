@@ -1,0 +1,204 @@
+{
+ "asset": "heavy",
+ "title": "Injection and press machines (plant level of detail)",
+ "disclosure": "Illustrative reconstruction after public photos of a real moulding hall (Samsung Kaluga, 2010) and generic stamping presses; not a vendor design.",
+ "units": "metres",
+ "vectors": "explode and anchor are Blender axes (x, y, z); in glTF / three.js they are (x, z, -y)",
+ "parts": [
+  {
+   "id": "ML.injection",
+   "kind": "assembly",
+   "role": "Injection moulding machine: clamp unit, blue mould, injection unit, hopper dryer on a platform, take-out robot rail, cabinet",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "ML.injection.machine",
+   "kind": "part",
+   "role": "Machine bed, clamp unit with tie bars and platens, injection unit with barrel and heater bands",
+   "parent": "ML.injection",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "mach_charcoal",
+    "mach_grey",
+    "steel_polished",
+    "steel_dark"
+   ]
+  },
+  {
+   "id": "ML.injection.mould",
+   "kind": "part",
+   "role": "The blue mould on the fixed platen",
+   "parent": "ML.injection",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "mould_blue",
+    "steel_dark"
+   ]
+  },
+  {
+   "id": "ML.injection.guards",
+   "kind": "part",
+   "role": "Sliding guard doors over the clamp, the dryer platform and the take-out robot rail",
+   "parent": "ML.injection",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "guard_glass",
+    "mach_grey",
+    "mach_white",
+    "safety_yellow",
+    "hose_black"
+   ]
+  },
+  {
+   "id": "ML.injection.equipment",
+   "kind": "part",
+   "role": "HMI pedestal, electrical cabinet, water manifolds, part cart, floor outline",
+   "parent": "ML.injection",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "mach_grey",
+    "mach_charcoal",
+    "ui_page",
+    "cabinet_blue",
+    "hose_black",
+    "steel_dark",
+    "tape_yellow"
+   ]
+  },
+  {
+   "id": "ML.press",
+   "kind": "assembly",
+   "role": "Straight-side stamping press: crown, uprights, flywheel and guard, bolster and die, light curtains, coil line, part rack",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "ML.press.frame",
+   "kind": "part",
+   "role": "Pigeon-blue frame: bed, uprights, crown, walkway with railings",
+   "parent": "ML.press",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "mach_blue",
+    "mach_grey",
+    "safety_yellow"
+   ]
+  },
+  {
+   "id": "ML.press.die",
+   "kind": "part",
+   "role": "Bolster, lower die and the die cushion",
+   "parent": "ML.press",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "steel_dark",
+    "mach_charcoal",
+    "steel_polished"
+   ]
+  },
+  {
+   "id": "ML.press.drive",
+   "kind": "part",
+   "role": "Flywheel, its yellow guard, the drive motor and the clutch housing",
+   "parent": "ML.press",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "mach_charcoal",
+    "safety_yellow",
+    "mach_grey",
+    "cabinet_blue"
+   ]
+  },
+  {
+   "id": "ML.press.safety",
+   "kind": "part",
+   "role": "Light curtains at the front opening, HMI, two-hand station",
+   "parent": "ML.press",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "safety_yellow",
+    "cabinet_blue",
+    "mach_grey",
+    "mach_charcoal",
+    "ui_page"
+   ]
+  },
+  {
+   "id": "ML.press.coil",
+   "kind": "part",
+   "role": "Coil reel, straightener and servo feed at the entry, part rack at the exit, floor outline",
+   "parent": "ML.press",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "mach_grey",
+    "mach_blue",
+    "steel_polished",
+    "steel_dark",
+    "tape_yellow"
+   ]
+  }
+ ]
+}
