@@ -19,27 +19,48 @@ var n0 := Vector3.ZERO
 # The head is a child of the gantry in the model, so it gets only its own x travel on top of the gantry's move.
 const CYCLE := [[0, 0, 0, 0], [0.25, 0, 0, 1], [0.45, 0, 0, 0], [1.25, 0.73, -0.32, 0], [1.45, 0.73, -0.32, 1], [1.65, 0.73, -0.32, 0], [2.15, 0.52, 0.44, 0], [2.35, 0.52, 0.44, 0], [2.95, 0, 0.06, 0], [3.15, 0, 0.06, 1], [3.35, 0, 0.06, 0], [3.9, 0, 0, 0]]
 var only := -1               # --frame N in the user args renders one frame (look tests)
+var exposure := 1.0
+var portrait := false        # --portrait: the 9:16 social cut, its own camera path (never a crop of the 16:9 reel)
+var card := false
+var fill_energy := 0.6
+var rng := Vector2i(-1, -1)  # --range=a,b renders reel frames a..b-1 only (after its own warm-up), for parallel slices
 
 func _ready() -> void:
-	for a in OS.get_cmdline_user_args():
+	var args := OS.get_cmdline_user_args()
+	for a in args:
 		if a.begins_with("--frame="): only = int(a.split("=")[1])
+		if a.begins_with("--range="): rng = Vector2i(int(a.split("=")[1].split(",")[0]), int(a.split("=")[1].split(",")[1]))
+	# speed knobs (docs/RENDER_QUALITY_AUDIT.md E5): internal resolution with FSR 2 temporal upscaling, MSAA on/off
+	var vp := get_viewport()
+	for a in args:
+		if a.begins_with("--fsr="): vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR2; vp.scaling_3d_scale = float(a.split("=")[1]); vp.use_taa = false
+		if a == "--no-msaa": vp.msaa_3d = Viewport.MSAA_DISABLED
+		if a.begins_with("--exposure="): exposure = float(a.split("=")[1])
+		if a == "--card": card = true
+		if a == "--portrait": portrait = true
+		if a.begins_with("--fill="): fill_energy = float(a.split("=")[1])
 	_environment()
 	_studio()
 	_model()
+	if card:
+		var c := MeshInstance3D.new(); var cm := QuadMesh.new(); cm.size = Vector2(0.25, 0.25); c.mesh = cm
+		var mm := StandardMaterial3D.new(); mm.albedo_color = Color(0.18, 0.18, 0.18); mm.roughness = 1.0; mm.metallic_specular = 0.2
+		c.material_override = mm; add_child(c); c.look_at_from_position(Vector3(0.75, 1.15, 0.9), Vector3(1.6, 1.4, 2.6), Vector3.UP); c.rotate_object_local(Vector3.UP, PI)
 	cam = Camera3D.new(); cam.fov = 30.0; cam.near = 0.05; cam.far = 80.0; add_child(cam)
 	_pose(0.0 if only < 0 else float(only) / FRAMES)
 
 func _environment() -> void:
 	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color(0.78, 0.80, 0.84); sky_mat.sky_horizon_color = Color(0.55, 0.57, 0.60)
-	sky_mat.ground_horizon_color = Color(0.30, 0.31, 0.33); sky_mat.ground_bottom_color = Color(0.10, 0.10, 0.11)
+	sky_mat.sky_top_color = Color(0.85, 0.87, 0.90); sky_mat.sky_horizon_color = Color(0.36, 0.38, 0.41)
+	sky_mat.ground_horizon_color = Color(0.16, 0.17, 0.18); sky_mat.ground_bottom_color = Color(0.05, 0.05, 0.06)
+	sky_mat.sky_curve = 0.25
 	sky_mat.sun_angle_max = 0.0; sky_mat.energy_multiplier = 1.0
 	var sky := Sky.new(); sky.sky_material = sky_mat
 	var env := Environment.new()
-	env.background_mode = Environment.BG_SKY
+	env.background_mode = Environment.BG_COLOR; env.background_color = Color(0.40, 0.42, 0.45)
 	env.sky = sky; env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY; env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	env.ambient_light_energy = 0.55
-	env.tonemap_mode = Environment.TONE_MAPPER_AGX; env.tonemap_exposure = 1.0
+	env.tonemap_mode = Environment.TONE_MAPPER_AGX; env.tonemap_exposure = exposure
 	env.ssao_enabled = true; env.ssao_radius = 0.6; env.ssao_intensity = 1.6; env.ssao_detail = 0.8
 	env.ssil_enabled = true; env.ssil_radius = 1.5; env.ssil_intensity = 0.8
 	env.sdfgi_enabled = OS.get_cmdline_user_args().has("--sdfgi"); env.sdfgi_use_occlusion = true; env.sdfgi_min_cell_size = 0.05; env.sdfgi_energy = 0.9
@@ -69,7 +90,7 @@ func _studio() -> void:
 	add_child(key); key.look_at_from_position(Vector3(-3.2, 3.6, 3.6), Vector3(0, 0.9, 0), Vector3.UP)
 	var rim := SpotLight3D.new(); rim.light_energy = 18.0; rim.spot_range = 12.0; rim.spot_angle = 38.0; rim.light_color = Color(0.85, 0.92, 1.0)
 	rim.shadow_enabled = true; add_child(rim); rim.look_at_from_position(Vector3(-2.8, 3.0, -3.4), Vector3(0, 1.0, 0), Vector3.UP)
-	var fill := OmniLight3D.new(); fill.light_energy = 0.6; fill.omni_range = 9.0; fill.light_color = Color(0.9, 0.95, 1.0)
+	var fill := OmniLight3D.new(); fill.light_energy = fill_energy; fill.omni_range = 9.0; fill.light_color = Color(0.9, 0.95, 1.0); fill.light_specular = 0.0   # a fill without glare: it lifts the shadow side but makes no reflection on the hood glass
 	fill.position = Vector3(4.2, 1.8, 3.0); add_child(fill)
 	_panel(Vector2(3.2, 1.2), Vector3(0.6, 4.4, 1.2), Vector3(0, 0.9, 0), 3.0)
 
@@ -88,6 +109,9 @@ func _model() -> void:
 	if nozzles: n0 = nozzles.position
 	print("moving parts: ", gantry.name if gantry else "-", " ", head.name if head else "-", " ", spindles.name if spindles else "-", " ", nozzles.name if nozzles else "-")
 	_fix_materials(root)
+	var probe := ReflectionProbe.new(); probe.size = Vector3(7, 4, 7); probe.position = Vector3(0, 1.4, 0)
+	probe.box_projection = true; probe.interior = false; probe.update_mode = ReflectionProbe.UPDATE_ONCE; probe.intensity = 1.0
+	add_child(probe)
 
 func _fix_materials(n: Node) -> void:
 	# Godot does not read KHR_materials_transmission: the hood panes come in opaque, so make them clear sheets
@@ -97,8 +121,8 @@ func _fix_materials(n: Node) -> void:
 			var m := mi.get_active_material(i)
 			if m is StandardMaterial3D and m.resource_name.begins_with("glass"):
 				var g := (m as StandardMaterial3D).duplicate() as StandardMaterial3D
-				g.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; g.albedo_color = Color(0.92, 0.95, 0.97, 0.04)
-				g.roughness = 0.02; g.metallic = 0.0; g.metallic_specular = 0.3
+				g.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; g.albedo_color = Color(0.92, 0.95, 0.97, 0.03)
+				g.roughness = 0.02; g.metallic = 0.0; g.metallic_specular = 0.05
 				mi.set_surface_override_material(i, g); mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for c in n.get_children(): _fix_materials(c)
 
@@ -107,6 +131,9 @@ func _pose(u: float) -> void:
 	var e := u * u * (3.0 - 2.0 * u)
 	var p0 := Vector3(3.45, 2.45, 4.35); var p1 := Vector3(1.35, 1.62, 2.05)
 	var l0 := Vector3(0.0, 0.95, 0.05); var l1 := Vector3(-0.08, 1.06, 0.0)
+	if portrait:
+		# a tall frame: start on the whole machine from further back and higher, end on the head and its nozzles
+		p0 = Vector3(5.4, 3.7, 7.2); p1 = Vector3(1.15, 1.5, 1.85); l0 = Vector3(-0.15, 0.85, 0.0); l1 = Vector3(0.2, 1.05, 0.05)
 	var a := deg_to_rad(8.0) * e
 	var p := p0.lerp(p1, e).rotated(Vector3.UP, -a)
 	cam.look_at_from_position(p, l0.lerp(l1, e), Vector3.UP)
@@ -130,6 +157,8 @@ func _process(_delta: float) -> void:
 		frame += 1
 		if frame > 40: get_tree().quit()      # let SDFGI and TAA settle on the still frame
 		return
-	_pose(max(0.0, float(frame - PRE) / FRAMES))
+	var f := frame - PRE
+	if rng.x >= 0: f = rng.x + max(0, frame - PRE)          # a slice warms up on its own first pose
+	_pose(max(0.0, float(f) / FRAMES))
 	frame += 1
-	if frame > PRE + FRAMES: get_tree().quit()
+	if (rng.x >= 0 and frame > PRE + (rng.y - rng.x)) or frame > PRE + FRAMES: get_tree().quit()
