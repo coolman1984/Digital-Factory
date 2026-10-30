@@ -20,6 +20,9 @@ var n0 := Vector3.ZERO
 const CYCLE := [[0, 0, 0, 0], [0.25, 0, 0, 1], [0.45, 0, 0, 0], [1.25, 0.73, -0.32, 0], [1.45, 0.73, -0.32, 1], [1.65, 0.73, -0.32, 0], [2.15, 0.52, 0.44, 0], [2.35, 0.52, 0.44, 0], [2.95, 0, 0.06, 0], [3.15, 0, 0.06, 1], [3.35, 0, 0.06, 0], [3.9, 0, 0, 0]]
 var only := -1               # --frame N in the user args renders one frame (look tests)
 var exposure := 1.0
+var baked := false          # --baked: Cycles light baked into the model (tools/blender/bake_lighting.py) carries all diffuse light
+var bake_gain := 1.0
+var softbox_gain := 1.0
 var portrait := false        # --portrait: the 9:16 social cut, its own camera path (never a crop of the 16:9 reel)
 var card := false
 var fill_energy := 0.6
@@ -38,6 +41,9 @@ func _ready() -> void:
 		if a.begins_with("--exposure="): exposure = float(a.split("=")[1])
 		if a == "--card": card = true
 		if a == "--portrait": portrait = true
+		if a == "--baked": baked = true
+		if a.begins_with("--bake-gain="): bake_gain = float(a.split("=")[1])
+		if a.begins_with("--softbox-gain="): softbox_gain = float(a.split("=")[1])
 		if a.begins_with("--fill="): fill_energy = float(a.split("=")[1])
 	_environment()
 	_studio()
@@ -46,7 +52,7 @@ func _ready() -> void:
 		var c := MeshInstance3D.new(); var cm := QuadMesh.new(); cm.size = Vector2(0.25, 0.25); c.mesh = cm
 		var mm := StandardMaterial3D.new(); mm.albedo_color = Color(0.18, 0.18, 0.18); mm.roughness = 1.0; mm.metallic_specular = 0.2
 		c.material_override = mm; add_child(c); c.look_at_from_position(Vector3(0.75, 1.15, 0.9), Vector3(1.6, 1.4, 2.6), Vector3.UP); c.rotate_object_local(Vector3.UP, PI)
-	cam = Camera3D.new(); cam.fov = 30.0; cam.near = 0.05; cam.far = 80.0; add_child(cam)
+	cam = Camera3D.new(); cam.cull_mask = 0xFFFFF & ~PROBE_ONLY; cam.fov = 30.0; cam.near = 0.05; cam.far = 80.0; add_child(cam)
 	_pose(0.0 if only < 0 else float(only) / FRAMES)
 
 func _environment() -> void:
@@ -61,12 +67,17 @@ func _environment() -> void:
 	env.sky = sky; env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY; env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	env.ambient_light_energy = 0.55
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX; env.tonemap_exposure = exposure
-	env.ssao_enabled = true; env.ssao_radius = 0.6; env.ssao_intensity = 1.6; env.ssao_detail = 0.8
-	env.ssil_enabled = true; env.ssil_radius = 1.5; env.ssil_intensity = 0.8
+	env.ssao_enabled = not baked; env.ssao_radius = 0.6; env.ssao_intensity = 1.6; env.ssao_detail = 0.8
+	env.ssil_enabled = not baked; env.ssil_radius = 1.5; env.ssil_intensity = 0.8
 	env.sdfgi_enabled = OS.get_cmdline_user_args().has("--sdfgi"); env.sdfgi_use_occlusion = true; env.sdfgi_min_cell_size = 0.05; env.sdfgi_energy = 0.9
 	env.ssr_enabled = true; env.ssr_max_steps = 96; env.ssr_fade_in = 0.1; env.ssr_fade_out = 2.0
 	env.glow_enabled = true; env.glow_intensity = 0.25; env.glow_bloom = 0.0; env.glow_hdr_threshold = 1.6
 	env.volumetric_fog_enabled = false; env.volumetric_fog_density = 0.0; env.volumetric_fog_albedo = Color(0.9, 0.92, 0.95)
+	if baked:
+		var w := Color(0.0423, 0.0497, 0.0612) * 0.35 * EV
+		env.background_mode = Environment.BG_COLOR; env.background_color = w
+		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR; env.ambient_light_color = w; env.ambient_light_energy = 1.0
+		env.reflected_light_source = Environment.REFLECTION_SOURCE_BG
 	var we := WorldEnvironment.new(); we.environment = env; add_child(we)
 
 func _panel(size: Vector2, pos: Vector3, look: Vector3, energy: float, tint := Color(1, 1, 1)) -> void:
@@ -78,12 +89,41 @@ func _panel(size: Vector2, pos: Vector3, look: Vector3, energy: float, tint := C
 	add_child(q); q.look_at_from_position(pos, look, Vector3.UP)
 
 func _studio() -> void:
-	# a seamless floor that bends up into a back wall (the cyclorama of the Blender studio)
+	# a seamless floor that bends up into a back wall (the cyclorama of the Blender studio); the baked model brings the
+	# real one, with the machine's shadow from Cycles
+	if baked: _blender_rig(); return
 	var floor := MeshInstance3D.new(); var pm := PlaneMesh.new(); pm.size = Vector2(40, 40); floor.mesh = pm
 	var fm := StandardMaterial3D.new(); fm.albedo_color = Color(0.42, 0.44, 0.47); fm.roughness = 0.38; fm.metallic = 0.0
 	floor.material_override = fm; add_child(floor)
 	var wall := MeshInstance3D.new(); var wm := PlaneMesh.new(); wm.size = Vector2(40, 14); wall.mesh = wm
 	wall.material_override = fm; wall.rotation_degrees = Vector3(90, 0, 0); wall.position = Vector3(0, 7, -9); add_child(wall)
+	_lights()
+
+# tools/blender/mounter.py's studio rig: [name, position (Blender x, y, z), size x, size y, power W, colour]; the bake
+# holds their diffuse light, the probe sees them as softboxes so metal and glass reflect exactly these sources
+const BL_LIGHTS := [["key", Vector3(-3.2, -3.6, 3.6), 2.4, 1.6, 1100.0, Color(1.0, 0.97, 0.93)], ["fill", Vector3(4.2, -3.0, 1.8), 3.0, 3.0, 260.0, Color(0.9, 0.95, 1.0)],
+	["rim_l", Vector3(-3.0, 3.4, 2.6), 1.2, 2.4, 700.0, Color(0.85, 0.92, 1.0)], ["rim_r", Vector3(3.2, 3.0, 2.4), 1.2, 2.4, 600.0, Color(1.0, 0.95, 0.9)],
+	["top", Vector3(0.9, -1.4, 4.2), 3.2, 0.5, 260.0, Color(1, 1, 1)]]
+const EV := 0.268                # 2^-1.9: the stills' exposure, already folded into the bake
+const PROBE_ONLY := 4            # visual layer 3: seen by the reflection probe, never by the camera
+
+func _blender_rig() -> void:
+	var target := Vector3(0, 0.9, 0)
+	for L in BL_LIGHTS:
+		var bp: Vector3 = L[1]; var pos := Vector3(bp.x, bp.z, -bp.y)
+		var q := MeshInstance3D.new(); var qm := QuadMesh.new(); qm.size = Vector2(L[2], L[3]); q.mesh = qm
+		var m := StandardMaterial3D.new(); m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		# radiance of a Lambertian area light: P / (pi * A), times the exposure folded into the bake
+		var radiance: float = L[4] / (PI * L[2] * L[3]) * EV * softbox_gain
+		m.albedo_color = Color(L[5].r * radiance, L[5].g * radiance, L[5].b * radiance)
+		q.material_override = m; q.layers = PROBE_ONLY; q.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(q); q.look_at_from_position(pos, target, Vector3.UP)
+	# the moving parts are not baked: a key from the Blender key's direction lights them alone (layer 2)
+	var key := DirectionalLight3D.new(); key.light_energy = 1.6; key.light_color = Color(1.0, 0.97, 0.93); key.light_cull_mask = 2
+	key.shadow_enabled = true; key.light_angular_distance = 3.0; add_child(key)
+	key.look_at_from_position(Vector3(-3.2, 3.6, 3.6), target, Vector3.UP)
+
+func _lights() -> void:
 	# key: a soft sun from front-left above, the shaping light; rim and fill as in the Blender rig
 	var key := DirectionalLight3D.new(); key.light_energy = 2.2; key.light_color = Color(1.0, 0.97, 0.93)
 	key.shadow_enabled = true; key.light_angular_distance = 3.0; key.directional_shadow_max_distance = 14.0
@@ -96,13 +136,16 @@ func _studio() -> void:
 
 func _model() -> void:
 	var doc := GLTFDocument.new(); var st := GLTFState.new()
-	var err := doc.append_from_file(ProjectSettings.globalize_path("res://mounter.glb"), st)
+	var err := doc.append_from_file(ProjectSettings.globalize_path("res://mounter-baked.glb" if baked else "res://mounter.glb"), st)
 	if err != OK: push_error("glTF load failed: %s" % err); return
 	var root: Node3D = doc.generate_scene(st); add_child(root)
 	gantry = root.find_child("*gantry*", true, false) as Node3D
 	head = root.find_child("*head*", true, false) as Node3D
 	spindles = root.find_child("*spindles*", true, false) as Node3D
 	nozzles = root.find_child("*nozzles*", true, false) as Node3D
+	if baked:
+		for part in [gantry, head]:
+			if part: _set_layers(part, 1 | 2)
 	if gantry: g0 = gantry.position
 	if head: h0 = head.position
 	if spindles: s0 = spindles.position
@@ -110,15 +153,30 @@ func _model() -> void:
 	print("moving parts: ", gantry.name if gantry else "-", " ", head.name if head else "-", " ", spindles.name if spindles else "-", " ", nozzles.name if nozzles else "-")
 	_fix_materials(root)
 	var probe := ReflectionProbe.new(); probe.size = Vector3(7, 4, 7); probe.position = Vector3(0, 1.4, 0)
-	probe.box_projection = true; probe.interior = false; probe.update_mode = ReflectionProbe.UPDATE_ONCE; probe.intensity = 1.0
+	probe.box_projection = true; probe.interior = baked; probe.cull_mask = 0xFFFFF; probe.update_mode = ReflectionProbe.UPDATE_ONCE; probe.intensity = 1.0
 	add_child(probe)
+
+func _set_layers(n: Node, l: int) -> void:
+	if n is VisualInstance3D: (n as VisualInstance3D).layers = l
+	for c in n.get_children(): _set_layers(c, l)
 
 func _fix_materials(n: Node) -> void:
 	# Godot does not read KHR_materials_transmission: the hood panes come in opaque, so make them clear sheets
 	if n is MeshInstance3D:
 		var mi := n as MeshInstance3D
+		var two_sided := "cyclorama" in String(mi.name)     # Blender draws both faces; the cyclorama's wall faces away
 		for i in mi.mesh.get_surface_count():
 			var m := mi.get_active_material(i)
+			if baked and m is StandardMaterial3D and "@" in m.resource_name and (m as StandardMaterial3D).emission_texture:
+				# a baked surface: Cycles' diffuse light (direct + bounce, times colour) arrives as emission; the engine
+				# adds only view-dependent light (reflections, highlights), so albedo goes black and ambient off
+				var b := (m as StandardMaterial3D).duplicate() as StandardMaterial3D
+				b.albedo_color = Color(0, 0, 0); b.albedo_texture = null; b.disable_ambient_light = true
+				b.emission_enabled = true; b.emission = Color(0, 0, 0); b.emission_energy_multiplier = bake_gain
+				b.emission_operator = BaseMaterial3D.EMISSION_OP_ADD
+				if two_sided: b.cull_mode = BaseMaterial3D.CULL_DISABLED
+				mi.set_surface_override_material(i, b)
+				continue
 			if m is StandardMaterial3D and m.resource_name.begins_with("glass"):
 				var g := (m as StandardMaterial3D).duplicate() as StandardMaterial3D
 				g.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; g.albedo_color = Color(0.92, 0.95, 0.97, 0.03)
