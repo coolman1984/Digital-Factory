@@ -175,3 +175,18 @@ exploded/cut views: real metal, clean section faces, readable internals), a stai
 (look only; its lens flare and lighting suggest an AI image, so it is not a fact reference), and a MAUSER digital-twin
 screenshot (dense real machinery, yellow-post mesh safety fences with door states, live KPI tiles and a part card with
 article number and documents). The last one sets the target for the live plant.
+
+## 2d. Photo study for the Blender line bay (2026-10-30)
+
+Looked at, not copied or stored in the repo: the 28-300.ru report on Kaluga (39 photos, chistoprudov.livejournal.com/32631.html),
+the iXBT Kaluga tour (27 photos) and the LG Gumi tour (9 photos, Digital Trends). What `tools/blender/kaluga_line.py` and
+`tools/blender/people.py` take from them:
+- Kaluga main line: free-roller conveyor of beige plastic rollers on aluminium rails at about 0.9 m, TVs face-down on grey
+  jigs; cream lean pipe (28 mm) with dark joints for legs, knee rails and the overhead frame; yellow spring balancers on a
+  centre rail with screwdrivers on coiled cords; black monitors with the test sequence; stack lights; white test instruments
+  with green displays on a shelf; a wire cable tray; green ESD walkways; a bright hall, white roof, dark brown steel trusses,
+  long rows of linear lights, yellow and blue floor tape.
+- Kaluga people: royal-blue jackets or quilted blue vests over light knit tops, dark trousers or jeans, black gloves, hair tied back.
+- LG Gumi (for the test and aging slice still to come): silver aluminium-profile frames, green belt conveyors, sets standing
+  upright on test fixtures with colour bars and noise patterns, long rows of lit sets in aging, operators in aprons and sleeve covers.
+Side-by-side check: `docs/bench/kline/` holds our renders; the comparison with the photos stays on the owner's PC (E:\df-bench\kline\compare.jpg).
