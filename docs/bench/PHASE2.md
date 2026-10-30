@@ -83,3 +83,21 @@ Kaluga hall (white roof, rows of linear lights, light floor) belongs to the buil
   bloom lit like lamps. They now use plain matte surfaces.
 - Same counts as before (lighting only): ml3-eye p95 10 ms, 735 calls, 3.35 M; cinematic p95 14.9 ms, 1,400 calls, 5.70 M.
   Picture: `docs/bench/kline/plant-lit-dark-theme.jpg`.
+
+# Area A: the main-line end (2026-10-30)
+
+`tools/blender/line_end_kit.py` (LG Gumi test and aging, Kaluga packing): ML.fct, ML.aging, ML.wb, ML.qa, ML.packer in the
+engine's footprints; packed `assets/models/machines/lineend/lineend-plant.glb` (193 KB, 13,192 triangles). `scene.js` maps
+those five kinds to it (aging joins the Blender kinds; the moving sets stay the engine's). The plant's own figures now dress
+as the Kaluga staff: royal-blue jackets, dark gloves on operators, hair instead of hard hats, the leader in a beige vest;
+helmets and high-visibility vests only for drivers; vests matte (their sheen glowed). New poses `ml3-end`, `ml3-pack`.
+
+| Pose | fps | p95 (ms) | calls | triangles |
+|---|---|---|---|---|
+| ml3-eye | 154 | 10.0 | 791 | 3.46 M |
+| ml3-end | 157 | 10.1 | 732 | 3.46 M |
+| ml3-pack | 173 | 10.0 | 596 | 3.17 M |
+| cinematic | 104 | 10.1 | 1,477 | 5.86 M |
+
+Pictures: `docs/bench/kline/line-end-blender.jpg` (Blender stills), `docs/bench/kline/plant-line-end.jpg` (in the plant).
+The cinematic pose is at the edge of the 1,500-call budget: the injection and press kits must keep few materials.

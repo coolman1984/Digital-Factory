@@ -1,0 +1,335 @@
+{
+ "asset": "lineend",
+ "title": "Main-line end kit (plant level of detail)",
+ "disclosure": "Illustrative reconstruction after public photos of real TV lines (LG Gumi test and aging, Samsung Kaluga packing); not a real plant or vendor design.",
+ "units": "metres",
+ "vectors": "explode and anchor are Blender axes (x, y, z); in glTF / three.js they are (x, z, -y)",
+ "parts": [
+  {
+   "id": "ML.fct",
+   "kind": "assembly",
+   "role": "Function test: green-belt conveyor, profile fixture, signal harness, pattern generator rack, scanner, stack light",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "ML.fct.conveyor",
+   "kind": "part",
+   "role": "Green-belt test conveyor with the profile fixture and back rest",
+   "parent": "ML.fct",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "profile",
+    "belt_green",
+    "roller_grey",
+    "profile_cap",
+    "paint_grey",
+    "panel_white",
+    "led_panel",
+    "esd_green"
+   ]
+  },
+  {
+   "id": "ML.fct.equipment",
+   "kind": "part",
+   "role": "Pattern generator rack, test PC, barcode scanner, monitor, signal harness and stack light",
+   "parent": "ML.fct",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "rack_19",
+    "ui_green",
+    "panel_white",
+    "bezel_black",
+    "ui_page",
+    "ui_blue",
+    "profile_cap",
+    "profile",
+    "stack_red",
+    "stack_white",
+    "stack_green",
+    "stack_amber",
+    "cable_black"
+   ]
+  },
+  {
+   "id": "ML.aging",
+   "kind": "assembly",
+   "role": "Aging rack: ten bays, two tiers a side, roller shelves, power strips and a cable to every slot, lit canopy, lift towers",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "ML.aging.frame",
+   "kind": "part",
+   "role": "Profile rack: spine, bay posts, roller shelves, canopy and floor guard",
+   "parent": "ML.aging",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "profile",
+    "profile_cap",
+    "roller_grey",
+    "panel_black",
+    "panel_white",
+    "led_panel",
+    "safety_yellow"
+   ]
+  },
+  {
+   "id": "ML.aging.power",
+   "kind": "part",
+   "role": "Power and signal strips on the spine, a cable to every slot",
+   "parent": "ML.aging",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "panel_white",
+    "stack_green"
+   ]
+  },
+  {
+   "id": "ML.aging.lifts",
+   "kind": "part",
+   "role": "Lift towers at both ends: sets ride up to the top tier and down again",
+   "parent": "ML.aging",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "profile",
+    "panel_white",
+    "paint_grey",
+    "stack_white",
+    "stack_green",
+    "stack_amber",
+    "stack_red"
+   ]
+  },
+  {
+   "id": "ML.wb",
+   "kind": "assembly",
+   "role": "White balance: black booth on a profile frame, strip curtain, colour analyser on a swing arm, alignment PC",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "ML.wb.booth",
+   "kind": "part",
+   "role": "Black booth on a profile frame, with the belt conveyor through it",
+   "parent": "ML.wb",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "profile",
+    "belt_green",
+    "roller_grey",
+    "profile_cap",
+    "paint_grey",
+    "panel_black",
+    "stack_white",
+    "stack_green",
+    "stack_amber",
+    "stack_red"
+   ]
+  },
+  {
+   "id": "ML.wb.analyser",
+   "kind": "part",
+   "role": "Colour analyser probe on a swing arm and the alignment PC",
+   "parent": "ML.wb",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "profile",
+    "profile_cap",
+    "stack_amber",
+    "panel_white",
+    "bezel_black",
+    "ui_page",
+    "ui_blue",
+    "ui_green"
+   ]
+  },
+  {
+   "id": "ML.qa",
+   "kind": "assembly",
+   "role": "Final QA: white inspection booth with LED panels, checklist screen, reject rack",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "ML.qa.booth",
+   "kind": "part",
+   "role": "White inspection booth on a profile frame, LED ceiling panels, belt conveyor",
+   "parent": "ML.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "profile",
+    "belt_green",
+    "roller_grey",
+    "profile_cap",
+    "paint_grey",
+    "panel_white",
+    "led_panel",
+    "esd_green"
+   ]
+  },
+  {
+   "id": "ML.qa.station",
+   "kind": "part",
+   "role": "Checklist screen, inspection lamp, reject rack",
+   "parent": "ML.qa",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "bezel_black",
+    "ui_page",
+    "ui_blue",
+    "ui_green",
+    "profile_cap",
+    "profile",
+    "bin_red"
+   ]
+  },
+  {
+   "id": "ML.packer",
+   "kind": "assembly",
+   "role": "Packing: rollers, lift assist, carton table, EPS stacks, carton sealer, label printer, accessory bins",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "ML.packer.conveyor",
+   "kind": "part",
+   "role": "Roller conveyor and the carton table",
+   "parent": "ML.packer",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "profile",
+    "roller_grey",
+    "profile_cap"
+   ]
+  },
+  {
+   "id": "ML.packer.lift",
+   "kind": "part",
+   "role": "Lift assist: a gantry over the conveyor and a vacuum frame that lowers the set into its carton",
+   "parent": "ML.packer",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "safety_yellow",
+    "paint_grey",
+    "steel_polished",
+    "profile",
+    "rubber"
+   ]
+  },
+  {
+   "id": "ML.packer.materials",
+   "kind": "part",
+   "role": "Flat cartons, EPS cushion stacks, accessory bins, carton sealer and label printer",
+   "parent": "ML.packer",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "cardboard",
+    "eps",
+    "profile",
+    "bin_blue",
+    "profile_cap",
+    "panel_white",
+    "rubber",
+    "tape_brown",
+    "ui_green",
+    "stack_white",
+    "stack_green",
+    "stack_amber",
+    "stack_red"
+   ]
+  }
+ ]
+}

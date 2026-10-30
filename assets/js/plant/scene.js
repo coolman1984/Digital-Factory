@@ -14,7 +14,7 @@
     light: {
       bg: 0xD6DCE3, fog: 0xD6DCE3, floor: 0x969DA6, floorLine: 0xEEF1F4, zone: 0x8A919B, paint: 0xE4E8EC, paint2: 0xBFC6CF, frame: 0x313843,
       dark: 0x23272E, steel: 0xA9B1BC, alu: 0xC8CED6, rubber: 0x2B2F36, glass: 0xC9D8E6, rack: 0x5E6B7C, beam: 0x8A95A3,
-      pcb: 0x2F6B4F, tv: 0x111317, carton: 0xC9A37A, pallet: 0xB98F60, tray: 0xCDD3DA, person: 0x2E3A4F, skin: 0xC8A58A, tech: 0x1565D8, office: 0x5C6778,
+      pcb: 0x2F6B4F, tv: 0x111317, carton: 0xC9A37A, pallet: 0xB98F60, tray: 0xCDD3DA, person: 0x2148B0, skin: 0xC8A58A, tech: 0x1565D8, office: 0x5C6778,
       agv: 0xF2F4F6, stripe: 0x1428A0, truck: 0xF0F2F4, cab: 0x4A5260, mag: 0x5C6573, plastic: 0x24282F, desk: 0xD9D4CC, carpet: 0x737C88,
       wall: 0xE9ECEF, pkt: 0x2D5BFF, net: 0x1428A0, env: 0.44, hemi: [0xFFFFFF, 0x8A929D, 0.55], sun: 2.6, amb: 0.04, exp: 0.95, bloom: 0.3, fixture: 2.2
     },
@@ -23,7 +23,7 @@
     dark: {
       bg: 0x07090D, fog: 0x07090D, floor: 0x8A9199, floorLine: 0xD9DEE4, zone: 0x7C838D, paint: 0xCDD2D8, paint2: 0xA6AEB8, frame: 0x2A3038,
       dark: 0x1C2026, steel: 0x9AA3AE, alu: 0xBAC1C9, rubber: 0x24282E, glass: 0x9FB2C6, rack: 0x56637A, beam: 0x707A88,
-      pcb: 0x2F6B4F, tv: 0x0D0E11, carton: 0xBD9870, pallet: 0xA8835A, tray: 0xA3ABB4, person: 0x2E3A4F, skin: 0xC8A58A, tech: 0x2F7BE8, office: 0x5C6778,
+      pcb: 0x2F6B4F, tv: 0x0D0E11, carton: 0xBD9870, pallet: 0xA8835A, tray: 0xA3ABB4, person: 0x2148B0, skin: 0xC8A58A, tech: 0x2F7BE8, office: 0x5C6778,
       agv: 0xDDE2E7, stripe: 0x2189FF, truck: 0xDADFE4, cab: 0x434B58, mag: 0x56606C, plastic: 0x1F2329, desk: 0xBDB8B0, carpet: 0x5E6774,
       wall: 0xC2C8CF, pkt: 0x5AA8FF, net: 0x2189FF, env: 0.4, hemi: [0xF2F6FF, 0x5C636D, 0.62], sun: 2.0, amb: 0.04, exp: 0.95, bloom: 0.32, fixture: 2.6
     }
@@ -277,7 +277,7 @@
       pkt: new T.MeshBasicMaterial({ color: C.pkt, toneMapped: false }), net: new T.LineBasicMaterial({ color: C.net, transparent: true, opacity: 0.4 }),
       hit: new T.MeshBasicMaterial({ visible: false }),
       slab: DFShaders.floor(phys(C.floor, { roughness: 0.42, clearcoat: 0.3, clearcoatRoughness: 0.32 }), { joint: 3 }), safety: phys(0xF2B705, { roughness: 0.4, clearcoat: 0.5 }),
-      hatW: std(0xffffff, { roughness: 0.32 }), vest: phys(0xffffff, { roughness: 0.6, sheen: 0.6, sheenColor: 0xffffff, sheenRoughness: 0.4 }), leaf: std(0x3E7D4F, { roughness: 0.8 }),
+      hatW: std(0xffffff, { roughness: 0.55 }), vest: std(0xffffff, { roughness: 0.85 }), leaf: std(0x3E7D4F, { roughness: 0.8 }),
       // floor paint for the traffic system (ISO 3864 / OSHA practice): yellow vehicle lanes and junctions, green walkways,
       // white crossings and symbols, yellow-black hatching on hazard zones; a little gloss, like paint on epoxy
       markY: phys(0xF2B705, { roughness: 0.45, clearcoat: 0.3 }), markG: phys(0x2E9E5B, { roughness: 0.5, clearcoat: 0.3 }), markW: phys(0xF4F5F2, { roughness: 0.45, clearcoat: 0.3 }), markHaz: DFShaders.hazard(phys(0xffffff, { roughness: 0.48, clearcoat: 0.3 })),
@@ -834,7 +834,9 @@
     // Blender models replace procedural machines kind by kind (docs/BLENDER-PLAN.md); until a model has loaded, and
     // on low quality, the procedural machine stays
     const ML_KIT = 'assets/models/machines/mainline/mainline-plant.glb';   // tools/blender/main_line_kit.py: one file, a node ML.<kind> per station kind
-    const BLENDER = low ? {} : { mounter: 'assets/models/machines/mounter/mounter-plant.glb', bench: ML_KIT, robot: ML_KIT, fct: ML_KIT, wb: ML_KIT, qa: ML_KIT, packer: ML_KIT };
+    const LE_KIT = 'assets/models/machines/lineend/lineend-plant.glb';   // tools/blender/line_end_kit.py: test, aging, white balance, QA, packing after LG Gumi and Kaluga
+    const BLENDER = low ? {} : { mounter: 'assets/models/machines/mounter/mounter-plant.glb', bench: ML_KIT, robot: ML_KIT, fct: LE_KIT, aging: LE_KIT, wb: LE_KIT, qa: LE_KIT, packer: LE_KIT };
+    const KIT_FILES = new Set([ML_KIT, LE_KIT]);   // kit files hold one node ML.<kind> per kind they serve
     P.stations.forEach(s => { bagNow = BLENDER[s.kind] ? (KBAG[s.kind] = KBAG[s.kind] || {}) : BAG; buildStation(s); bagNow = BAG; });
     // clean booths around the LCM lines; overhead cable trays and line signs above every line
     const SIGNS = [];
@@ -1227,7 +1229,7 @@
         if (!s.procs.length || s.batchOut) continue;
         // a main-line station drawn from the Blender kit carries the set on its pallet conveyor (0.74 m, like the belts
         // between stations); at function test, white balance and QA the set stands upright, leaning back, its picture on
-        const kit = MODELS[s.kind] && BLENDER[s.kind] === ML_KIT, upright = kit && (s.kind === 'fct' || s.kind === 'wb' || s.kind === 'qa');
+        const kit = MODELS[s.kind] && KIT_FILES.has(BLENDER[s.kind]), upright = kit && (s.kind === 'fct' || s.kind === 'wb' || s.kind === 'qa');
         const y = kit ? 0.74 : s.kind === 'reflow' ? 0.86 : s.kind === 'bench' || s.kind === 'blu' || s.kind === 'repair' ? 0.92 : s.kind === 'robot' || s.kind === 'lcmload' ? 0.84 : Math.min(0.95, s.h * 0.5);
         s.procs.forEach((pr, i) => {
           let x = s.x;
@@ -1320,8 +1322,13 @@
     const handI = inst(new T.SphereGeometry(0.05, 7, 5).scale(1, 1.25, 0.8), M.skin, 1800, { color: true });
     const shoeI = inst(new T.BoxGeometry(0.27, 0.09, 0.12).translate(0.04, 0.045, 0), M.rubber, 1800, { shadow: true });
     for (const m of [bodyI, headI, legI, armI, hatI, vestI, handI, shoeI]) m.userData.noLift = true;   // people climb: their level is eased per person
-    const HAT = { Operator: 0xF2B705, 'Line leader': 0xFFFFFF, Technician: 0x1F6FEB, 'Rework technician': 0xF2B705, 'Milk-run driver': 0xFFFFFF, 'Forklift driver': 0xFFFFFF, office: 0xFFFFFF };
-    const VEST = { Operator: 0xC6F432, 'Line leader': 0xFF7A1A, Technician: 0xFF7A1A, 'Rework technician': 0xC6F432, 'Milk-run driver': 0xC6F432, 'Forklift driver': 0xC6F432 };
+    // dressed as the Kaluga photos show (docs/REFERENCES-TV-PLANT.md §2d): line staff in royal-blue jackets with dark gloves and
+    // no hard hats, the line leader in a beige vest; only the drivers keep a helmet and a high-visibility vest
+    const HAT = { 'Milk-run driver': 0xFFFFFF, 'Forklift driver': 0xFFFFFF };
+    const VEST = { 'Line leader': 0xD8CDB4, 'Milk-run driver': 0xC6F432, 'Forklift driver': 0xC6F432 };
+    const GLOVE = { Operator: 0x1C1D20, 'Rework technician': 0x1C1D20 };
+    const HAIRS = [0x2A211C, 0x4B3222, 0x1D1A18, 0x6E5034, 0xB89466, 0x8C3A1C, 0x8E8A84];
+    const hairOf = k => HAIRS[(toneOf(k + 'h') >>> 3) % HAIRS.length];
     function person(x, y, z, h, swing, tc, role, ref, seated) {
       const c = Math.cos(h), s2 = Math.sin(h), px = -s2, pz = c;   // across the body
       const hip = seated ? 0.5 : 0.86 + Math.abs(swing) * 0.02;
@@ -1330,9 +1337,11 @@
       put(bodyI, x, y + hip + 0.34, z, 0.8, 1, 1.18, -h, 0, 0, ref, tc);
       if (VEST[role]) put(vestI, x, y + hip + 0.32, z, 0.82, 1, 1.2, -h, 0, 0, undefined, VEST[role]);
       const tone = toneOf(ref && ref.startsWith('person:') ? ref : (ref || role) + x.toFixed(1) + z.toFixed(1));
-      for (const sd of [-1, 1]) { const a = seated ? 0.9 : -sd * swing * 0.45, sx2 = x + px * sd * 0.26, sz2 = z + pz * sd * 0.26; put(armI, sx2, y + hip + 0.6, sz2, 1, 1, 1, -h, sd * 0.08, a, undefined, tc); put(handI, sx2 + c * Math.sin(a) * 0.6, y + hip + 0.6 - Math.cos(a) * 0.6, sz2 + s2 * Math.sin(a) * 0.6, 1, 1, 1, -h, 0, 0, undefined, tone); }
+      const hand = GLOVE[role] || tone;
+      for (const sd of [-1, 1]) { const a = seated ? 0.9 : -sd * swing * 0.45, sx2 = x + px * sd * 0.26, sz2 = z + pz * sd * 0.26; put(armI, sx2, y + hip + 0.6, sz2, 1, 1, 1, -h, sd * 0.08, a, undefined, tc); put(handI, sx2 + c * Math.sin(a) * 0.6, y + hip + 0.6 - Math.cos(a) * 0.6, sz2 + s2 * Math.sin(a) * 0.6, 1, 1, 1, -h, 0, 0, undefined, hand); }
       put(headI, x, y + hip + 0.85, z, 1, 1, 1, 0, 0, 0, undefined, tone);
-      put(hatI, x, y + hip + 0.88, z, 1, 1, 1, -h, 0, 0, undefined, HAT[role] || 0xF2B705);
+      if (HAT[role]) put(hatI, x, y + hip + 0.88, z, 1, 1, 1, -h, 0, 0, undefined, HAT[role]);
+      else put(hatI, x - c * 0.012, y + hip + 0.865, z - s2 * 0.012, 0.86, 0.9, 0.86, -h, 0, 0, undefined, hairOf(ref || role));   // hair
     }
     const OFFICE = [];
     {
@@ -1491,7 +1500,7 @@
           for (const kind of kinds.filter(k => BLENDER[k] === url)) {
             // the loader strips dots from node names (ML.bench becomes MLbench); the part id survives in the extras
             let root = null; g.scene.traverse(o => { if (!root && o.userData && o.userData.part_id === 'ML.' + kind) root = o; });
-            if (!root && url === ML_KIT) { console.warn('plant model: no node for', kind); continue; }
+            if (!root && KIT_FILES.has(url)) { console.warn('plant model: no node for', kind); continue; }
             root = root || g.scene;
             try { placeModel(kind, root, P.stations.filter(s => s.kind === kind)); } catch (e) { console.warn('plant model', kind, e); }
           }

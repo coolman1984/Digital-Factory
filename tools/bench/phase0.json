@@ -13,6 +13,8 @@
         { "id": "ml3-mid", "js": "Plant.V.view([150, 76, 30])", "settle": 3000 },
         { "id": "ml3-close", "js": "Plant.V.view([125, 76, 12])", "settle": 3000 },
         { "id": "ml3-eye", "js": "(function(){var V=Plant.V;V.view([118,76,8]);setTimeout(function(){V.camera.position.set(108,1.7,80.5);V.controls.target.set(124,1.0,76);V.controls.update();},1800)})()", "settle": 3500 },
+        { "id": "ml3-end", "js": "(function(){var V=Plant.V;V.view([165,76,20]);setTimeout(function(){V.camera.position.set(140,4.2,86);V.controls.target.set(160,1.0,76);V.controls.update();},1800)})()", "settle": 3500 },
+        { "id": "ml3-pack", "js": "(function(){var V=Plant.V;V.view([182,76,12]);setTimeout(function(){V.camera.position.set(172,3.2,83);V.controls.target.set(183,1.0,76);V.controls.update();},1800)})()", "settle": 3500 },
         { "id": "smd", "js": "Plant.V.view([137, 21, 30])", "settle": 3000 },
         { "id": "lcm", "js": "Plant.V.view([76, 76, 35])", "settle": 3000 },
         { "id": "injection", "js": "Plant.V.view([22, 81, 45])", "settle": 3000 },
