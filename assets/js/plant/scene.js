@@ -1495,6 +1495,37 @@
         }, undefined, e => console.warn('plant model', url, e));
       }
     })();
+    // people at work on the main lines (docs/PLANT-UPGRADE-PLAN.md phase 2, tools/blender/cells_kit.py): an operator bay in
+    // every clear gap between a line's assembly stations, and a U-shaped sub-assembly cell beside its board station.
+    // Decorative only: the engine's layout, its own operators and its staffing do not change
+    const CELL_KIT = 'assets/models/areas/cells/cells-plant.glb', BAY_LEN = 3.6;
+    (async function loadCells() {
+      if (low || !window.DFLook) return;
+      const spots = { cellbay: [], cellu: [] };
+      for (const Ln of Object.values(P.lines)) {
+        if (Ln.kind !== 'main') continue;
+        const ss = Ln.stations.slice().sort((a, b) => a.x - b.x), test = ss.findIndex(s => s.kind === 'fct');
+        for (let i = 0; i + 1 < ss.length && i < test; i++) {
+          const a = ss[i], b2 = ss[i + 1], x0 = a.x + a.w / 2, x1 = b2.x - b2.w / 2;
+          if (x1 - x0 >= BAY_LEN + 0.6) spots.cellbay.push({ x: (x0 + x1) / 2, z: a.z });
+        }
+        const board = ss.find(s => s.kind === 'bench'); if (board) spots.cellu.push({ x: board.x, z: board.z });
+      }
+      try { await DFLook.extras(); } catch (e) { return; }
+      const loader = new T.X.GLTFLoader(); loader.setMeshoptDecoder(T.X.MeshoptDecoder);
+      loader.load(DFLook.base + CELL_KIT, g => {
+        for (const [kind, id] of [['cellbay', 'CELLS.bay'], ['cellu', 'CELLS.u']]) {
+          let root = null; g.scene.traverse(o => { if (!root && o.userData && o.userData.part_id === id) root = o; });
+          if (!root || !spots[kind].length) continue;
+          try { placeModel(kind, root, spots[kind]); } catch (e) { console.warn('plant cells', kind, e); }
+        }
+        cellsVisible();
+      }, undefined, e => console.warn('plant cells', e));
+    })();
+    // the Light picture mode (and the governor's lowest level) drops the decorative people, like a phone never loads them
+    function cellsVisible() {
+      for (const k of ['cellbay', 'cellu']) if (MODELS[k]) for (const im of MODELS[k].made.body) im.visible = quality !== 'low';
+    }
 
     function applyTheme() {
       C = PAL[theme]; S = STATUS[theme];
@@ -2281,6 +2312,7 @@
       quality = L.q; ultra = !!L.ultra; buildComposer(); resize(); syncAtmos();
       renderer.shadowMap.enabled = quality !== 'low'; sun.castShadow = quality !== 'low';
       if (shadowsWere !== renderer.shadowMap.enabled) scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
+      cellsVisible();
       if (was !== quality || wasUltra !== ultra) emit('quality', quality);
     }
     // picture mode: 'ultra' and 'light' hold a level, 'standard' hands the choice back to the governor

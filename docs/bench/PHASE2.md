@@ -1,0 +1,50 @@
+# Phase 2, first slice: people at work on the six main lines (2026-10-30)
+
+Plan: `docs/PLANT-UPGRADE-PLAN.md`. Baseline: `PHASE0.md`. Same machine, same poses, same command:
+
+```bash
+node tools/bench/bench.mjs --gpu --suite tools/bench/phase0.json --only P0-plant --out E:/df-bench/phase2-a
+```
+
+## What changed on screen
+
+- **Operator bays** (`CELLS.bay`) in every clear gap between a main line's assembly stations, before the function test:
+  four per line, 24 in the plant. Each bay: two operators on the main side and one on the far side, green ESD mats, gravity
+  flow racks with blue bins, part boxes, a lean-tube frame over the line with an LED task light, a stack light, work-instruction
+  monitors and screwdrivers on yellow balancers. After the Samsung Kaluga cell line (`docs/REFERENCES-TV-PLANT.md` §2c).
+- **A U-shaped sub-assembly cell** (`CELLS.u`) beside each line's board station, on the far side: three benches, five
+  operators, flow racks outside the U, a roller conveyor to the station edge. Six in the plant.
+- Kit: `tools/blender/cells_kit.py` (Blender 5.2.3 on the RTX 3060, OptiX), packed to `assets/models/areas/cells/cells-plant.glb`
+  (150 KB, 11,900 triangles for both nodes). Drawn by `assets/js/plant/scene.js` with the existing
+  `placeModel` (instanced, theme and X-ray aware); never loaded on phones (`lowPower`) and hidden at the `low` quality level (the Light picture mode).
+- **Unchanged:** the UI (no HTML or CSS touched), the layout, the engine, its operators and staffing, labels and hotspots.
+
+Pictures: `phase2/P0-plant-desktop-ml3-eye.jpg` (compare `phase0/` at the same pose), `phase2/cells-kit-blender.jpg`.
+
+## Numbers (before → after)
+
+| Pose | fps | p95 (ms) | Draw calls | Triangles |
+|---|---|---|---|---|
+| overview | 159 → 146 | 10.0 → 10.1 | 649 → 703 | 1.64 M → 1.85 M |
+| mainlines | 148 → 123 | 10.1 → 10.1 | 779 → 876 | 2.88 M → 3.24 M |
+| ml3-mid | 170 → 155 | 10.0 → 10.0 | 484 → 579 | 2.32 M → 2.68 M |
+| ml3-close | 176 → 156 | 10.0 → 10.1 | 435 → 529 | 2.19 M → 2.55 M |
+| ml3-eye | 169 → 150 | 10.0 → 10.1 | 585 → 681 | 2.27 M → 2.63 M |
+| cinematic | 87 → 103 | 15.1 → 15.0 | 1,185 → 1,321 | 4.15 M → 4.67 M |
+
+All poses stay inside the phase 0 budgets (p95 ≤ 16.7 ms, ≤ 1,500 calls, ≤ 6 M triangles). Headless fps varies run to run
+by about ±15 %; the p95 frame time is the steadier measure.
+
+## Gates
+
+- `node tools/assets/check-glb.mjs assets/models/areas/cells/cells-plant.glb --max-tris 80000 --max-kb 600 --size 0.3,8`: PASS
+  (the kit is 7.7 m long because the cell stands 4 m off the line, so the default 3 m size limit does not apply). Console: no errors on `plant.html`.
+- `qa.mjs plant.html`: READY with the page's existing warnings (small text, weight, LCP, CLS: UI-level, unchanged by this slice).
+- `qa.mjs guide.html`: CDP timeout (the known long-page limit noted in `CLAUDE.md`).
+- `impeccable detect plant.html guide.html`: two existing advisories on `plant.html` (not touched here).
+
+## Not done yet in phase 2
+
+- The figures stand still (no work loop yet).
+- The test, aging, white-balance and packing ends keep their current models; the reference comparison side by side for this
+  slice is still to be recorded.

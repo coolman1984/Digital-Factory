@@ -1,0 +1,301 @@
+{
+ "asset": "cells",
+ "title": "Main-line cell kit (plant level of detail)",
+ "disclosure": "Illustrative reconstruction after public photos of real TV lines (Samsung Kaluga, LG Gumi); not a real plant, staffing or vendor design.",
+ "units": "metres",
+ "vectors": "explode and anchor are Blender axes (x, y, z); in glTF / three.js they are (x, z, -y)",
+ "parts": [
+  {
+   "id": "CELLS.bay",
+   "kind": "assembly",
+   "role": "Line-side work between two stations: operators at the line, flow racks, a lean frame with light, monitors and screwdrivers",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "CELLS.bay.floor",
+   "kind": "part",
+   "role": "Green ESD mats and part boxes on the floor",
+   "parent": "CELLS.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "esd_mat",
+    "cardboard"
+   ]
+  },
+  {
+   "id": "CELLS.bay.frame",
+   "kind": "part",
+   "role": "Lean-tube frame over the line: posts, top rails, balancer rail",
+   "parent": "CELLS.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "tube_cream"
+   ]
+  },
+  {
+   "id": "CELLS.bay.joints",
+   "kind": "part",
+   "role": "Frame joints",
+   "parent": "CELLS.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "joint_black"
+   ]
+  },
+  {
+   "id": "CELLS.bay.lights",
+   "kind": "part",
+   "role": "LED task light and the stack light",
+   "parent": "CELLS.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "led_white",
+    "alu_brushed",
+    "led_green",
+    "lens_amber",
+    "lens_red"
+   ]
+  },
+  {
+   "id": "CELLS.bay.screens",
+   "kind": "part",
+   "role": "Work-instruction monitors and torque controllers",
+   "parent": "CELLS.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "monitor_white",
+    "ui_page",
+    "ui_blue",
+    "anodised_dark"
+   ]
+  },
+  {
+   "id": "CELLS.bay.tools",
+   "kind": "part",
+   "role": "Electric screwdrivers on yellow spring balancers",
+   "parent": "CELLS.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "balancer_yellow",
+    "steel_dark",
+    "plastic_black"
+   ]
+  },
+  {
+   "id": "CELLS.bay.racks",
+   "kind": "part",
+   "role": "Gravity flow racks behind the operators",
+   "parent": "CELLS.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "alu_brushed",
+    "steel_dark"
+   ]
+  },
+  {
+   "id": "CELLS.bay.bins",
+   "kind": "part",
+   "role": "Part bins (blue for parts, red for rejects)",
+   "parent": "CELLS.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "bin_blue",
+    "bin_red"
+   ]
+  },
+  {
+   "id": "CELLS.bay.operators",
+   "kind": "part",
+   "role": "Operators at the line (illustrative figures)",
+   "parent": "CELLS.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "trousers",
+    "shoe",
+    "uniform_blue",
+    "skin",
+    "cap",
+    "glove"
+   ]
+  },
+  {
+   "id": "CELLS.u",
+   "kind": "assembly",
+   "role": "U-shaped sub-assembly cell beside the line: three benches, operators inside the U, a roller conveyor to the line",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "CELLS.u.floor",
+   "kind": "part",
+   "role": "ESD mat under the cell",
+   "parent": "CELLS.u",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "esd_mat"
+   ]
+  },
+  {
+   "id": "CELLS.u.benches",
+   "kind": "part",
+   "role": "Cell workbenches with ESD tops and overhead frames",
+   "parent": "CELLS.u",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "esd_mat",
+    "alu_brushed",
+    "led_white"
+   ]
+  },
+  {
+   "id": "CELLS.u.kits",
+   "kind": "part",
+   "role": "Sub-assemblies in progress: board brackets and stand kits",
+   "parent": "CELLS.u",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "chassis",
+    "pcb_green"
+   ]
+  },
+  {
+   "id": "CELLS.u.operators",
+   "kind": "part",
+   "role": "Cell operators (illustrative figures)",
+   "parent": "CELLS.u",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "trousers",
+    "shoe",
+    "vest_light",
+    "skin",
+    "cap",
+    "glove",
+    "uniform_blue",
+    "shirt_grey"
+   ]
+  },
+  {
+   "id": "CELLS.u.feed",
+   "kind": "part",
+   "role": "Flow racks outside the U and the roller conveyor to the line",
+   "parent": "CELLS.u",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "steel_dark",
+    "alu_brushed",
+    "roller_beige"
+   ]
+  },
+  {
+   "id": "CELLS.u.bins",
+   "kind": "part",
+   "role": "Cell part bins, fed from the aisle",
+   "parent": "CELLS.u",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "bin_blue",
+    "chassis"
+   ]
+  }
+ ]
+}

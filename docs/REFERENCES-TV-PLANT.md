@@ -80,6 +80,25 @@ robot with a vacuum gripper handling a panel ([Samsung smart TV video](https://w
 two people lifting a bagged set. **Not used:** the "world's biggest Samsung TV factory" video
 ([OQ9iitRMPjU](https://www.youtube.com/watch?v=OQ9iitRMPjU)) shows clearly AI-generated frames; it is not a reference.
 
+## 2c. Samsung Kaluga (seen 2026-10-30)
+
+**Press tour of Samsung's Kaluga TV plant, 2010** ([iXBT photo report](https://www.ixbt.com/dvd/samsung-1st-3dled.shtml);
+studied, not copied). The plant (Vorsino park) had assembly shops, a PCB and microchip shop and plastic moulding
+([Investkaluga](https://investkaluga.com/en/media/stories/samsung)).
+- A board hangs over each line: line type **"Cell Line"**, product LCD TV 19–32", **28 people**. Staffing as read from the
+  photo (small digits uncertain): line leader 1, repair 1, assembly 12, function inspection 4, final inspection 4,
+  unloading 2, relief 2, packing 2.
+- Operators in **royal-blue work jackets** (a few in a light vest), gloves; they stand at waist-high benches on both
+  sides of a flat line. Inspectors walk along the line.
+- The first operator lifts the LCD panel out of an EPS container, peels the films and the guard, lays a board on it,
+  plugs a flat cable, places thermal pads and closes a cover; the next operators fit the rest and screw on the back cover.
+- Grey bench frames, cardboard part boxes beside each operator, silver antistatic bags stacked at the line head.
+
+**What the plant takes from it (phase 2 of `docs/PLANT-UPGRADE-PLAN.md`):** each main line gets operator bays in the gaps
+between its first stations (two operators on the main side, one on the far side, flow racks and boxes behind them, a lean
+frame with task light, monitor and screwdrivers over the line) and a U-shaped sub-assembly cell beside the board station.
+The people stay illustrative: the engine's own operators and staffing numbers are unchanged.
+
 ## 3. What each area should look like (modelling brief)
 
 Each line becomes its own set of Blender models. Identical machines are right only where the real plant repeats them:
