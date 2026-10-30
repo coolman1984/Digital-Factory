@@ -32,7 +32,7 @@ results listed). Owner review before moving on. Nothing is merged or deployed.
 - [x] Links: live plant main line ML-3 → slice; slice → plant; studio unaffected
 - [ ] Evidence: real browser captures (wide, mid, close), 30 s walkthrough video rendered frame by frame from the page
 - [x] Side-by-side with three or more reference images (internal, not committed where licences forbid)
-- [ ] Performance at fixed poses (frame time, calls, triangles, memory, load) on this machine's software GPU
+- [x] Performance at fixed poses (frame time, calls, triangles, memory, load): on the owner's RTX 3060, `docs/bench/PHASE0.md` (2026-10-30)
 - [ ] Regression checks: QA gate, impeccable detect, check-glb, windows.mjs, studio and plant smoke runs
 - [ ] Owner review request with links to the evidence
 

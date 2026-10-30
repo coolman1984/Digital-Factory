@@ -65,7 +65,7 @@ machines in a row.
 
 | # | Phase | What changes on screen | Done when |
 |---|---|---|---|
-| 0 | **Baseline** | Nothing. Fixed camera poses of `plant.html` (overview, each area, eye level on a line); UI screenshot; real frame time, draw calls, triangles and memory in Chrome on the RTX 3060 | Numbers and pictures recorded in `docs/bench/` with the machine named |
+| 0 | **Baseline** | Nothing. Fixed camera poses of `plant.html` (overview, each area, eye level on a line); UI screenshot; real frame time, draw calls, triangles and memory in Chrome on the RTX 3060 | **Done 2026-10-30**: `docs/bench/PHASE0.md` (RTX 3060, budgets set); waiting for the owner's review |
 | 1 | **Reference sheet** | Nothing. Per area: what the photos show (people, benches, bins, frames, monitors, floor marks, light), sizes we can estimate, confidence | `REFERENCES-TV-PLANT.md` extended with Kaluga and a per-line staffing table |
 | 2 | **Main lines with cells** (owner priority) | The six main lines get the ML-3 slice look: sub-assembly cells with standing workers, the straight conveyor with benches on both sides, frames with monitors and task lights, screwdrivers on balancers, test and packing ends; workers animated (simple loops, instanced) | All six lines in place on the engine's layout; side by side with three references; frame time within the budget set in phase 0 |
 | 3 | **GPU pipeline on the PC** | Same scene, better light: Blender on the RTX bakes lighting and ambient occlusion for the kits and the hall; KTX2 textures; LOD0/1/2 per kit | `node tools/blender/build.mjs --kind …` runs on the PC; gates pass; before/after at the bench poses |

@@ -47,8 +47,13 @@ const PROBE = `window.__dfProbe = function (ms) {
   });
 };`;
 
-const b = await Browser.launch({ extraArgs: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--enable-precise-memory-info', '--ignore-gpu-blocklist'] });
-const report = { at: new Date().toISOString(), machine: { platform: process.platform, cpus: os.cpus().length, cpu: (os.cpus()[0] || {}).model, memGB: Math.round(os.totalmem() / 1073741824), gpu: 'SwiftShader (software WebGL in headless Chrome)' }, runs: [] };
+// --gpu: use the machine's real graphics card (ANGLE on D3D11 on Windows) instead of SwiftShader, so frame times mean something
+const GPU = process.argv.includes('--gpu');
+const glArgs = GPU ? ['--use-gl=angle', '--use-angle=' + (process.platform === 'win32' ? 'd3d11' : 'default'), '--enable-gpu-rasterization']
+  : ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
+const b = await Browser.launch({ extraArgs: ['--no-sandbox', ...glArgs, '--enable-precise-memory-info', '--ignore-gpu-blocklist'] });
+const report = { at: new Date().toISOString(), machine: { platform: process.platform, cpus: os.cpus().length, cpu: (os.cpus()[0] || {}).model, memGB: Math.round(os.totalmem() / 1073741824), gpu: GPU ? 'real GPU (filled from WebGL below)' : 'SwiftShader (software WebGL in headless Chrome)' }, runs: [] };
+const GL_NAME = `(function(){var c=document.createElement('canvas').getContext('webgl2');var e=c&&c.getExtension('WEBGL_debug_renderer_info');return c?(e?c.getParameter(e.UNMASKED_RENDERER_WEBGL):c.getParameter(c.RENDERER)):'no webgl2'})()`;
 for (const prod of suite.productions) {
   if (only && prod.id !== only) continue;
   for (const dev of suite.devices) {
@@ -60,6 +65,7 @@ for (const prod of suite.productions) {
     for (let i = 0; i < 240; i++) { const ok = await p.eval(prod.ready || 'true').catch(() => false); if (ok) { ready = Date.now() - t0; break; } await sleep(250); }
     const nav = await p.eval('JSON.stringify((function(){var n=performance.getEntriesByType("navigation")[0]||{};return {dcl:Math.round(n.domContentLoadedEventEnd||0),load:Math.round(n.loadEventEnd||0),bytes:performance.getEntriesByType("resource").reduce(function(a,r){return a+(r.transferSize||r.encodedBodySize||0)},0)+(n.transferSize||n.encodedBodySize||0)}})())').then(JSON.parse).catch(() => ({}));
     await p.eval(PROBE);
+    if (GPU && report.machine.gpu.startsWith('real')) report.machine.gpu = await p.eval(GL_NAME).catch(() => 'unknown');
     if (prod.setup) await p.eval(prod.setup).catch(e => console.warn('setup', prod.id, e.message));
     for (const pose of prod.poses) {
       if (pose.js) await p.eval(pose.js).catch(e => console.warn('pose', pose.id, e.message));

@@ -1,0 +1,28 @@
+{
+  "about": "Plant upgrade phase 0 baseline (docs/PLANT-UPGRADE-PLAN.md): fixed poses, compared before and after every phase. Run with --gpu on the owner's PC.",
+  "sampleMs": 5000,
+  "devices": [
+    { "id": "desktop", "width": 1440, "height": 900, "dsf": 1 }
+  ],
+  "productions": [
+    { "id": "P0-plant", "url": "plant.html", "ready": "!!(window.Plant && Plant.V && Plant.V.frames() > 10)",
+      "setup": "Plant.V.setQuality('high', true)",
+      "poses": [
+        { "id": "overview", "js": "Plant.V.view('overview')", "settle": 3500 },
+        { "id": "mainlines", "js": "Plant.V.view([155, 83, 90])", "settle": 3000 },
+        { "id": "ml3-mid", "js": "Plant.V.view([150, 76, 30])", "settle": 3000 },
+        { "id": "ml3-close", "js": "Plant.V.view([125, 76, 12])", "settle": 3000 },
+        { "id": "ml3-eye", "js": "(function(){var V=Plant.V;V.view([118,76,8]);setTimeout(function(){V.camera.position.set(108,1.7,80.5);V.controls.target.set(124,1.0,76);V.controls.update();},1800)})()", "settle": 3500 },
+        { "id": "smd", "js": "Plant.V.view([137, 21, 30])", "settle": 3000 },
+        { "id": "lcm", "js": "Plant.V.view([76, 76, 35])", "settle": 3000 },
+        { "id": "injection", "js": "Plant.V.view([22, 81, 45])", "settle": 3000 },
+        { "id": "press", "js": "Plant.V.view([35, 144, 35])", "settle": 3000 },
+        { "id": "fg-docks", "js": "Plant.V.view([233, 82, 45])", "settle": 3000 },
+        { "id": "cinematic", "js": "Plant.V.setCinematic(true)", "settle": 6000 }
+      ] },
+    { "id": "P0-line", "url": "line.html?q=0", "ready": "!!(window.Line && Line.ready && Line.frames > 5)",
+      "poses": [ { "id": "overview", "js": "Line.setCam('overview')", "settle": 3000 }, { "id": "eye", "js": "Line.setCam('eye')", "settle": 3000 },
+        { "id": "cell", "js": "Line.setCam('cell')", "settle": 3000 }, { "id": "robot", "js": "Line.setCam('robot')", "settle": 3000 },
+        { "id": "test", "js": "Line.setCam('test')", "settle": 3000 }, { "id": "pack", "js": "Line.setCam('pack')", "settle": 3000 } ] }
+  ]
+}
