@@ -24,6 +24,10 @@
     { "id": "C-motion", "url": "showroom.html#motion", "ready": "!!(window.Showroom && Showroom.motion && Showroom.motion.built)",
       "poses": [ { "id": "reel", "js": "Showroom.motion.play()", "settle": 3000 } ] },
     { "id": "C-hero2d-before", "url": "index.html", "ready": "document.readyState === 'complete'",
-      "poses": [ { "id": "hero", "js": "window.scrollTo(0, 0)", "settle": 2500 } ] }
+      "poses": [ { "id": "hero", "js": "window.scrollTo(0, 0)", "settle": 2500 } ] },
+    { "id": "E-line", "url": "line.html?q=0", "ready": "!!(window.Line && Line.ready && Line.frames > 5)",
+      "poses": [ { "id": "overview", "js": "Line.setCam('overview')", "settle": 3000 }, { "id": "eye", "js": "Line.setCam('eye')", "settle": 3000 },
+        { "id": "cell", "js": "Line.setCam('cell')", "settle": 3000 }, { "id": "robot", "js": "Line.setCam('robot')", "settle": 3000 },
+        { "id": "test", "js": "Line.setCam('test')", "settle": 3000 }, { "id": "pack", "js": "Line.setCam('pack')", "settle": 3000 } ] }
   ]
 }

@@ -74,6 +74,9 @@ X-ray keep reading the engine; the look system (`DFLook`, `DFMaterials`) and the
 
 ## Phases
 
+**2026-10-30:** the order from phase 2 on is now set by `docs/PLANT-UPGRADE-PLAN.md` (same plant and UI, main lines
+with cells first, GPU pipeline on the owner's PC).
+
 | # | Phase | Done when |
 |---|---|---|
 | 0 | Mounter B in Blender, four states, bilingual labels | **Done** (2026-10-29) |
