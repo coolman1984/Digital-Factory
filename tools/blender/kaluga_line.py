@@ -67,6 +67,8 @@ BL = 3.6              # bay length along the flow
 CW = 0.42             # half width of the conveyor frame
 ZT = 0.88             # top of the rollers
 RAILS = (-0.31, -0.105, 0.105, 0.31)
+if LOW:   # the plant's version sits over the plant's own 1.25 m pallet belt: rollers at its 0.74 m, frame just outside its rails
+    ZT, CW, RAILS = 0.74, 0.68, (-0.48, -0.16, 0.16, 0.48)
 
 
 def pipe(p, a, b, mat='pipe_cream', r=TR):
@@ -87,7 +89,7 @@ def conveyor(cv, rl, jt):
         for k in range(n):
             x = -BL / 2 + pitch / 2 + k * pitch
             rl.cyl(0.024, 0.06, (x, y, ZT - 0.024), 'roller_beige', rot=(H, 0, 0), seg=8 if LOW else 18)
-    for y in (-0.21, 0.21):                                       # the return deck
+    for y in (() if LOW else (-0.21, 0.21)):                      # the return deck
         rl.box((BL, 0.03, 0.035), (0, y, 0.33), 'rail_alu')
         if not LOW:
             for k in range(0, n, 2):
@@ -219,18 +221,21 @@ def bay():
     instruments(ins); ins.build()
     sl = Part('KLINE.bay.stack', 'Stack light: green running, amber, red', 'KLINE.bay', bevel=0)
     stack_light(sl); sl.build()
-    tv = Part('KLINE.bay.sets', 'TVs face-down on jigs, backs open for the board work', 'KLINE.bay', bevel=0)
-    tv_set(tv, -0.95); tv_set(tv, 0.75, open_back=False); tv.build()
+    if not LOW:   # in the plant the engine's own sets ride the rollers
+        tv = Part('KLINE.bay.sets', 'TVs face-down on jigs, backs open for the board work', 'KLINE.bay', bevel=0)
+        tv_set(tv, -0.95); tv_set(tv, 0.75, open_back=False); tv.build()
     pp = Part('KLINE.bay.operators', 'Operators at the line (generic illustrative figures)', 'KLINE.bay', bevel=0)
     y0 = CW + 0.38
+    hz = ZT - 0.88   # hands follow the work height
+    hd = lambda *hs: tuple((a, b, c + hz) for a, b, c in hs)
     W.worker(pp, -1.05, -y0, face=0.0, look='vest', sex='f', hair='blonde', height=1.67,
-             hands=((-0.12, 0.4, 1.0), (0.12, 0.30, 1.34)), lean=0.12, glove=False)
+             hands=hd((-0.12, 0.4, 1.0), (0.12, 0.30, 1.34)), lean=0.12, glove=False)
     W.worker(pp, 0.7, -y0, face=0.0, look='jacket', sex='f', hair='red', height=1.64,
-             hands=((-0.16, 0.42, 0.97), (0.14, 0.43, 0.98)), lean=0.16)
+             hands=hd((-0.16, 0.42, 0.97), (0.14, 0.43, 0.98)), lean=0.16)
     W.worker(pp, -0.6, y0, face=math.pi, look='jacket', sex='m', hair='brown', height=1.80,
-             hands=((-0.15, 0.40, 0.98), (0.18, 0.38, 1.0)), lean=0.14)
+             hands=hd((-0.15, 0.40, 0.98), (0.18, 0.38, 1.0)), lean=0.14)
     W.worker(pp, 1.05, y0, face=math.pi, look='polo', sex='f', hair='black', height=1.66,
-             hands=((-0.1, 0.36, 1.0), (0.14, 0.40, 0.99)), lean=0.1)
+             hands=hd((-0.1, 0.36, 1.0), (0.14, 0.40, 0.99)), lean=0.1)
     pp.build()
 
 

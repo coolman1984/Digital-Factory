@@ -1,0 +1,231 @@
+{
+ "asset": "kline",
+ "title": "Main-line bay after the Samsung Kaluga photos",
+ "disclosure": "Illustrative reconstruction after public photos of a real TV line (Samsung Kaluga, 2010); generic equipment and people, not a real plant or vendor design.",
+ "units": "metres",
+ "vectors": "explode and anchor are Blender axes (x, y, z); in glTF / three.js they are (x, z, -y)",
+ "parts": [
+  {
+   "id": "KLINE.bay",
+   "kind": "assembly",
+   "role": "One 3.6 m bay of a TV main line after the Samsung Kaluga photos: roller conveyor, lean frame, tools, screens, operators",
+   "parent": null,
+   "explode": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "KLINE.bay.floor",
+   "kind": "part",
+   "role": "Green ESD walkways along both sides",
+   "parent": "KLINE.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "esd_green"
+   ]
+  },
+  {
+   "id": "KLINE.bay.conveyor",
+   "kind": "part",
+   "role": "Free-roller conveyor frame: lean-pipe legs, side and knee rails",
+   "parent": "KLINE.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "pipe_cream",
+    "joint_dark"
+   ]
+  },
+  {
+   "id": "KLINE.bay.rollers",
+   "kind": "part",
+   "role": "Roller rails: beige free rollers on aluminium rails, return deck below",
+   "parent": "KLINE.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "rail_alu",
+    "roller_beige"
+   ]
+  },
+  {
+   "id": "KLINE.bay.frame",
+   "kind": "part",
+   "role": "Overhead lean frame with the balancer rail and the instrument shelf",
+   "parent": "KLINE.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "pipe_cream",
+    "shelf_grey"
+   ]
+  },
+  {
+   "id": "KLINE.bay.joints",
+   "kind": "part",
+   "role": "Lean-pipe joints and levelling feet",
+   "parent": "KLINE.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "joint_dark"
+   ]
+  },
+  {
+   "id": "KLINE.bay.tray",
+   "kind": "part",
+   "role": "Wire cable tray over the frame",
+   "parent": "KLINE.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "wire_tray",
+    "joint_dark"
+   ]
+  },
+  {
+   "id": "KLINE.bay.tools",
+   "kind": "part",
+   "role": "Screwdrivers on yellow spring balancers",
+   "parent": "KLINE.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "joint_dark",
+    "balancer_yellow",
+    "steel_dark",
+    "driver_green",
+    "cord_black",
+    "steel_polished"
+   ]
+  },
+  {
+   "id": "KLINE.bay.screens",
+   "kind": "part",
+   "role": "Monitors with the test sequence, one facing each side",
+   "parent": "KLINE.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "bezel_black",
+    "ui_page",
+    "ui_blue",
+    "ui_green",
+    "ui_row",
+    "joint_dark",
+    "pipe_cream"
+   ]
+  },
+  {
+   "id": "KLINE.bay.instruments",
+   "kind": "part",
+   "role": "Test instruments and a screw basket on the shelf",
+   "parent": "KLINE.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "instr_white",
+    "lcd_green",
+    "btn_orange",
+    "basket_blue"
+   ]
+  },
+  {
+   "id": "KLINE.bay.stack",
+   "kind": "part",
+   "role": "Stack light: green running, amber, red",
+   "parent": "KLINE.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "stack_white",
+    "stack_green",
+    "stack_amber",
+    "stack_red"
+   ]
+  },
+  {
+   "id": "KLINE.bay.operators",
+   "kind": "part",
+   "role": "Operators at the line (generic illustrative figures)",
+   "parent": "KLINE.bay",
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "shell": false,
+   "source": "illustrative",
+   "materials": [
+    "wk_black",
+    "wk_vest",
+    "wk_knit",
+    "wk_shoe",
+    "skin",
+    "wk_eye",
+    "hair_blonde",
+    "wk_navy",
+    "wk_blue",
+    "wk_glove",
+    "hair_red",
+    "hair_brown",
+    "wk_jeans",
+    "hair_black",
+    "wk_collar"
+   ]
+  }
+ ]
+}

@@ -1498,7 +1498,7 @@
     // people at work on the main lines (docs/PLANT-UPGRADE-PLAN.md phase 2, tools/blender/cells_kit.py): an operator bay in
     // every clear gap between a line's assembly stations, and a U-shaped sub-assembly cell beside its board station.
     // Decorative only: the engine's layout, its own operators and its staffing do not change
-    const CELL_KIT = 'assets/models/areas/cells/cells-plant.glb', BAY_LEN = 3.6;
+    const CELL_KIT = 'assets/models/areas/cells/cells-plant.glb', LINE_KIT = 'assets/models/areas/kline/kline-plant.glb', BAY_LEN = 3.6;
     (async function loadCells() {
       if (low || !window.DFLook) return;
       const spots = { cellbay: [], cellu: [] };
@@ -1513,14 +1513,16 @@
       }
       try { await DFLook.extras(); } catch (e) { return; }
       const loader = new T.X.GLTFLoader(); loader.setMeshoptDecoder(T.X.MeshoptDecoder);
-      loader.load(DFLook.base + CELL_KIT, g => {
-        for (const [kind, id] of [['cellbay', 'CELLS.bay'], ['cellu', 'CELLS.u']]) {
+      // the bays are the Kaluga line (tools/blender/kaluga_line.py): rollers over the plant's own belt, its frame, tools and crew
+      for (const [kind, file, id] of [['cellbay', LINE_KIT, 'KLINE.bay'], ['cellu', CELL_KIT, 'CELLS.u']]) {
+        if (!spots[kind].length) continue;
+        loader.load(DFLook.base + file, g => {
           let root = null; g.scene.traverse(o => { if (!root && o.userData && o.userData.part_id === id) root = o; });
-          if (!root || !spots[kind].length) continue;
+          if (!root) return;
           try { placeModel(kind, root, spots[kind]); } catch (e) { console.warn('plant cells', kind, e); }
-        }
-        cellsVisible();
-      }, undefined, e => console.warn('plant cells', e));
+          cellsVisible();
+        }, undefined, e => console.warn('plant cells', e));
+      }
     })();
     // the Light picture mode (and the governor's lowest level) drops the decorative people, like a phone never loads them
     function cellsVisible() {

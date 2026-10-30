@@ -22,6 +22,7 @@ import bpy
 from mathutils import Vector, Matrix
 import dflib as L
 from dflib import Part, assembly, principled
+import people as W
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
 ap = argparse.ArgumentParser()
@@ -29,7 +30,7 @@ ap.add_argument('--glb', default=''); ap.add_argument('--manifest', default='');
 ap.add_argument('--samples', type=int, default=32); ap.add_argument('--res', default='1600x900'); ap.add_argument('--lod', default='plant')
 ap.add_argument('--gpu', action='store_true')
 A = ap.parse_args(argv)
-L.init(lod=A.lod)
+L.init(lod=A.lod); W.materials()
 H = math.pi / 2
 
 principled('tube_cream', '#E6DFCC', rough=0.45, coat=0.3)          # plastic-coated steel pipe of lean frames
@@ -44,19 +45,10 @@ principled('bin_red', '#C23B2E', rough=0.45)
 principled('roller_beige', '#D9C7A0', rough=0.4)
 principled('cardboard', '#B98D5B', rough=0.85)
 principled('chassis', '#B8BEC6', metal=1.0, rough=0.3)
-principled('skin', '#B98F70', rough=0.55)
-principled('uniform_blue', '#1F4FB5', rough=0.8)                   # the royal-blue work jacket of the Kaluga photos
-principled('vest_light', '#C9D3DE', rough=0.8)
-principled('shirt_grey', '#7C838D', rough=0.8)
-principled('trousers', '#2B2F38', rough=0.85)
-principled('shoe', '#15161A', rough=0.6)
-principled('cap', '#F2F4F6', rough=0.7)
-principled('glove', '#E9ECEF', rough=0.7)
 
 TR = 0.014                    # lean tube radius (28 mm pipe)
 BL = 3.6                      # a bay fills the gap between two stations (the plant spaces them 7.5 m, about 4.4 m clear)
 LW = 0.625                    # half the plant's pallet conveyor width (1.25 m)
-JACKETS = ['uniform_blue', 'uniform_blue', 'uniform_blue', 'vest_light', 'uniform_blue', 'shirt_grey']
 _who = [0]
 
 
@@ -65,22 +57,15 @@ def tube(part, a, b):
     part.cyl(TR, d.length, tuple((a + b) / 2), 'tube_cream', rot=tuple(d.to_track_quat('Z', 'Y').to_euler()), seg=8)
 
 
+CREW = [('jacket', 'f', 'brown', 1.65), ('vest', 'f', 'blonde', 1.68), ('jacket', 'm', 'black', 1.79), ('polo', 'm', 'brown', 1.76),
+        ('jacket', 'f', 'red', 1.63), ('leader', 'm', 'grey', 1.78)]
+
+
 def person(part, x, y, face=0.0, reach=0.34):
-    """A standing operator facing `face` (0 = +Y, H = -X, -H = +X): cap, jacket, gloved hands at bench height."""
-    R = Matrix.Rotation(face, 4, 'Z')
-    P = lambda dx, dy, dz: tuple(Vector((x, y, 0)) + (R @ Vector((dx, dy, dz))))
-    top = JACKETS[_who[0] % len(JACKETS)]; _who[0] += 1
-    for sx in (-1, 1):
-        part.cyl(0.065, 0.8, P(sx * 0.09, 0, 0.44), 'trousers', seg=10, r2=0.055)
-        part.sphere(0.06, P(sx * 0.09, 0.05, 0.04), 'shoe', scale=(0.8, 1.9, 0.6))
-    part.sphere(0.2, P(0, 0, 0.9), 'trousers', scale=(1.0, 0.65, 0.55))
-    part.sphere(0.21, P(0, 0, 1.18), top, scale=(1.0, 0.62, 1.45))
-    part.cyl(0.05, 0.12, P(0, 0, 1.48), 'skin', seg=10)
-    part.sphere(0.105, P(0, 0.01, 1.63), 'skin', scale=(0.92, 1.0, 1.12))
-    part.sphere(0.112, P(0, -0.005, 1.69), 'cap', scale=(1.0, 1.05, 0.62))
-    for sx in (-1, 1):
-        part.sweep([P(sx * 0.22, 0, 1.38), P(sx * 0.25, 0.04, 1.16), P(sx * 0.16, reach * 0.7, 1.03), P(sx * 0.1, reach, 0.98)], 0.042, top)
-        part.sphere(0.045, P(sx * 0.1, reach + 0.03, 0.98), 'glove', scale=(0.8, 1.2, 0.6))
+    """A standing operator facing `face` (0 = +Y, H = -X, -H = +X), hands on the bench (people.py)."""
+    look, sex, hair, h = CREW[_who[0] % len(CREW)]; _who[0] += 1
+    W.worker(part, x, y, face=face, look=look, sex=sex, hair=hair, height=h, lean=0.12,
+             hands=((-0.13, reach + 0.04, 0.95), (0.14, reach + 0.06, 0.96)))
 
 
 def flow_rack(rk, bins, x, y, side, w=0.78, tiers=2):

@@ -139,6 +139,8 @@ def worker(part, x, y, face=0.0, look='jacket', sex='m', hair='brown', height=1.
     for fc in bm.faces:
         fc.material_index = part._mi(local[fc.material_index]); fc.smooth = True
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    zmin = min(v.co.z for v in bm.verts)   # soles on the floor, never through it
+    if zmin < 0: bmesh.ops.translate(bm, vec=Vector((0, 0, -zmin)), verts=bm.verts)
     bmesh.ops.transform(bm, matrix=W, verts=bm.verts)
     bm.to_mesh(body); bm.free()
     part.bm.from_mesh(body)

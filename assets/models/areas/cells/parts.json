@@ -169,12 +169,18 @@
    "shell": false,
    "source": "illustrative",
    "materials": [
-    "trousers",
-    "shoe",
-    "uniform_blue",
+    "wk_navy",
+    "wk_blue",
+    "wk_shoe",
+    "wk_glove",
     "skin",
-    "cap",
-    "glove"
+    "wk_eye",
+    "hair_brown",
+    "wk_black",
+    "wk_vest",
+    "wk_knit",
+    "hair_blonde",
+    "hair_black"
    ]
   },
   {
@@ -252,14 +258,22 @@
    "shell": false,
    "source": "illustrative",
    "materials": [
-    "trousers",
-    "shoe",
-    "vest_light",
+    "wk_jeans",
+    "wk_blue",
+    "wk_shoe",
+    "wk_glove",
     "skin",
-    "cap",
-    "glove",
-    "uniform_blue",
-    "shirt_grey"
+    "wk_eye",
+    "hair_brown",
+    "wk_collar",
+    "wk_navy",
+    "hair_red",
+    "wk_beige",
+    "hair_grey",
+    "wk_black",
+    "wk_vest",
+    "wk_knit",
+    "hair_blonde"
    ]
   },
   {
