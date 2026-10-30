@@ -95,3 +95,24 @@ the inspection studio and at eye level near the camera.
 - **Disk space.** C: and I: are nearly full; bakes and frames go to E:.
 - **Memory.** 16 GB: never run Blender, Godot and a browser benchmark at once.
 - **Accuracy.** Internals and staffing are illustrative; the plant says so.
+
+## Whole-plant rebuild in Blender (owner direction, 2026-10-30)
+
+The owner wants every area to look like a real plant: the rest of the main line, presses, LCM, injection, the vehicles
+and carts between areas, the stores and warehouses. Same layout, same UI, same engine; each area is rebuilt in Blender
+from real photos, packed for the browser and dropped into the same footprint, one area per owner review. The method is the
+one proven on the main-line bay (`kaluga_line.py`, `people.py`): photo study → Blender kit → hall still next to the photos →
+plant variant → benchmark → review.
+
+| Order | Area | Real references to model from | Notes |
+|---|---|---|---|
+| A | Main-line end: function test, aging, white balance, QA, packing | LG Gumi tour (upright sets on test fixtures, colour bars, long aging rows, silver profile frames, green belts); Kaluga packing (EPS, cartons, roller conveyors) | The owner's screenshot of this area triggered the request |
+| B | Injection | Gigazine Kaluga 2010 tour: blue-and-yellow moulding machines in a row, yellow overhead crane, take-out robots, blue bins; ENGEL electronics page (two-platen machines for big back covers) | Also the EPS (cushion) moulding area: white foam stacks |
+| C | Press | Appliance press lines (coil reel, straightener, servo feed, 3-6 presses in a row, light curtains, part racks) | Weakest photo set: find a real tour video first |
+| D | LCM | Panel-module booths: filtered ceilings, white garments, films stacked on fixtures, foam trays | No good real photos yet: research first |
+| E | Logistics between areas | Milk-run tugger trains with carts, AMRs (TCL Huizhou), forklifts, line-side supermarkets and flow racks | Vehicles move with the engine's existing routes |
+| F | Stores and warehouses | Selective pallet racks (blue uprights, orange beams), dock doors with levellers | |
+| G | The building | White roof, dark trusses, rows of linear lights, light floor with lane tape, as in the Kaluga hall | Poly Haven CC0 textures (REFERENCE_PACK §3) for floor and wall surfaces |
+
+Budget: the cinematic pose is at 1,400 calls and 5.7 M triangles of 1,500 and 6 M, so every area must replace more than it
+adds (the old procedural geometry it covers is removed, not hidden under the new kit).
